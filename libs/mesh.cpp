@@ -15,15 +15,15 @@ class Mesh
   	void calcMu();	
   	void calcQuadSet();
 	void printQuadSet();
-}
+};
 
 void Mesh::calcMu(){
 		// Allocate memory and fix one degree of freedom
-    		mu = new int[n/2];
+    		mu = new double[n/2];
 		mu[0] = 0.1672126;
-		double constant = 2*(1-3*mu[1]**2)/(n-2);
+		double constant = 2*(1-3*mu[1]^2)/(n-2);
 		for (int imu = 1; i < n; ++i){
-			mu[imu] = sqrt(mu[imu - 1]**2 + c);
+			mu[imu] = sqrt(mu[imu - 1]^2 + c);
 		}
 		cout << "mu(:) :"<<mu<<endl;
 }
