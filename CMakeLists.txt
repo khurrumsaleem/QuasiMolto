@@ -15,4 +15,9 @@ include_directories("${PROJECT_SOURCE_DIR}")
 add_subdirectory(driver)
 add_subdirectory(libs)
 
-add_executable(QuasiMolto ${PROJECT_SOURCE_DIR}/driver/driver.cpp ${PROJECT_SOURCE_DIR}/libs/materials.cpp)
+add_executable(QuasiMolto 
+	       ${PROJECT_SOURCE_DIR}/driver/driver.cpp 
+	       ${PROJECT_SOURCE_DIR}/libs/materials.cpp
+	       ${PROJECT_SOURCE_DIR}/libs/MultiGroupQD.cpp
+	       ${PROJECT_SOURCE_DIR}/libs/SingleGroupQD.cpp
+	       ${PROJECT_SOURCE_DIR}/libs/Transport.cpp)

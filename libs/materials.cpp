@@ -4,9 +4,8 @@
 
 using namespace std;
 
-int printMat() {
+void printMat() {
 
      cout << "Printed from materials" << endl;
 
-     return(0);
 }

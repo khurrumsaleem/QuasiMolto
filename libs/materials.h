@@ -3,6 +3,6 @@
 
 #include <iostream>
 
-int printMat();
+void printMat();
 
 #endif
