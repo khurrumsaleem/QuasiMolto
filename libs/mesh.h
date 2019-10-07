@@ -11,7 +11,7 @@ class Mesh
 	double* quadSet;
 	double* mu;
 	double* ordinates;
-
+        Mesh();
 	void calcMu();
 	void calcQuadSet();
 	void printQuadSet();
