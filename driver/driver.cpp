@@ -5,6 +5,7 @@
 #include "../libs/multigroupQD.h"
 #include "../libs/singlegroupQD.h"
 #include "../libs/transport.h"
+#include "../libs/mesh.h"
 
 using namespace std;
 
@@ -16,6 +17,9 @@ int main(void) {
      printMultiGroupQD();
      printSingleGroupQD();
      printTransport();
+
+     Mesh myMesh; 
+     myMesh.calcQuadSet();
 
      return(0);
 }
