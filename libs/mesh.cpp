@@ -23,8 +23,9 @@ void Mesh::calcMu(){
     		mu = new double[n/2];
 		mu[0] = 0.1672126;
 		double myConstant = 2.0*pow(1.0-3.0*mu[1],2.0)/(n-2.0);
-		for (int imu = 1; imu < n; ++imu){
+		for (int imu = 1; imu < n/2; ++imu){
 			mu[imu] = sqrt(pow(mu[imu - 1],2.0) + myConstant);
+			cout << "mu("<<imu<<"):"<<mu[imu]<<endl;
 		}
 		cout << "mu(:) :"<<mu<<endl;
 }
