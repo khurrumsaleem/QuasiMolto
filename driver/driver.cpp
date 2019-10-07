@@ -20,6 +20,7 @@ int main(void) {
 
      Mesh myMesh; 
      myMesh.calcQuadSet();
+     myMesh.printQuadSet();
 
      return(0);
 }
