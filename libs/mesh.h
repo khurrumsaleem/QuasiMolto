@@ -16,3 +16,4 @@ class Mesh
 	void calcQuadSet();
 	void printQuadSet();
 };
+#endif
