@@ -157,7 +157,7 @@ void Mesh::calcQuadSet(){
 	calcAlpha();
         
 }
-
+//! calcAlpha function for calculating differencing coefficients
 void Mesh::calcAlpha(){
 	
 	vector<int> rowLength = {2,4,6,8,10,12,12,10,8,6,4,2};
