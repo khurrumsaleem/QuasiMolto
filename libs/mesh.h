@@ -4,21 +4,24 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
+
 class Mesh
 {
 	public:
-
-	int n;
-	std::vector< std::vector<double> > quadSet;
-	std::vector<double> mu;
-	std::vector< std::vector<double> > ordinates;
-	std::vector< std::vector<double> > alpha;
-        Mesh();
-	void calcMu();
-	void calcQuadSet();
-	void calcAlpha();
+	Mesh();  	
+  	int n;		
+  	vector< vector<double> > quadSet;
+  	vector< vector<double> > alpha;
+  	void calcQuadSet();
 	void printQuadSet();
-	int quad_index(int p, int q);
+	
+        private:
+	vector<double> mu;
+  	vector< vector<double> > ordinates;
+  	void calcMu();	
+	void calcAlpha();
+	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
 };
 #endif

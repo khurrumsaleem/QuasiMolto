@@ -9,41 +9,52 @@ using namespace std;
 class Mesh
 {
 	public:
+	Mesh();  	
 	//order of quadrature set
   	int n;		
 	//quadrature set
   	vector< vector<double> > quadSet;
-	//mu variable in quadrature et
-	vector<double> mu;
-	//ordi
-  	vector< vector<double> > ordinates;
+        //difference coefficients
   	vector< vector<double> > alpha;
-	Mesh();  	
-  	void calcMu();	
+        // public functions
   	void calcQuadSet();
-	void calcAlpha();
 	void printQuadSet();
+	
+        private:
+	// viable ordinates
+	vector<double> mu;
+	// all three ordinates and weights
+  	vector< vector<double> > ordinates;
+        // private functions
+  	void calcMu();	
+	void calcAlpha();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
 };
-
-// Contructor for this object. 
+//==============================================================================
+//! Mesh Contructor for Mesh object. 
 Mesh::Mesh(){
 	n=12; // currently only works for a quadrature set of order 
 }
+//==============================================================================
 
+//==============================================================================
+//! calcMu calculate suitable ordinates
+
+//! 
 void Mesh::calcMu(){
-		// Allocate memory and fix one degree of freedom
-    		mu.resize(n/2,0.0);
-		mu[0] = 0.1672126;
-		double myConstant = 2.0*(1.0-3.0*pow(mu[0],2.0))/(n-2.0);
-		for (int imu = 1; imu < n/2; ++imu){
-			mu[imu] = sqrt(pow(mu[imu - 1],2.0) + myConstant);
-		}
+	// Allocate memory and fix one degree of freedom
+    	mu.resize(n/2,0.0);
+	mu[0] = 0.1672126;
+	double myConstant = 2.0*(1.0-3.0*pow(mu[0],2.0))/(n-2.0);
+	for (int imu = 1; imu < n/2; ++imu){
+		mu[imu] = sqrt(pow(mu[imu - 1],2.0) + myConstant);
+	}
 }
-//
-//=============================================================================
-//! calcQuadSet Function that calculates a quadrature set and 
+//==============================================================================
+
+//==============================================================================
+//! calcQuadSet function that calculates a quadrature set and 
 //! differencing coefficients for use in RZ geometry
 
 //! Uses the methodology laid out Lewis and Miller. A level symmetric
@@ -149,51 +160,75 @@ void Mesh::calcQuadSet(){
 				}
 			}
 		}
+        // Place the next smallest on orderedQuad
 	orderedQuad[iOrdered] = tempQuad[rowIndexOfMinimum];
+        // Set this last placed row to some large values so we don't
+        // accidentally recognize it as a minimum again
 	tempQuad[rowIndexOfMinimum] = {100,100,100};
 	}
+        // Set quadSet
 	quadSet.resize(4*counter,vector<double>(3,0.0)); 
 	quadSet = orderedQuad;
+        // Calculate differencing coefficients knowing the quadSet
 	calcAlpha();
         
 }
-//! calcAlpha function for calculating differencing coefficients
+//==============================================================================
+
+//==============================================================================
+//! calcAlpha function for calculating differencing coefficients in RZ geometry
+
+//! based on approach in Lewis and Miller
 void Mesh::calcAlpha(){
 	
 	vector<int> rowLength = {2,4,6,8,10,12,12,10,8,6,4,2};
 	alpha.resize(12,vector<double>(13,0.0)); 
-        
-        cout << quad_index(7,0) << endl;	
-        cout << quad_index(7,1) << endl;	
-        cout << quad_index(8,3) << endl;	
-        cout << quad_index(0,0) << endl;	
-        cout << quad_index(0,1) << endl;	
-	for (int i = 0; i < alpha.size(); ++i){
-		alpha[i][0] = 0;
+	
+        for (int i = 0; i < alpha.size(); ++i){
+		alpha[i][0] = 0; // initialize to 0 on the edge case
 		for (int j = 0; j < rowLength[i]; ++j){
 			alpha[i][j+1] = alpha[i][j]-quadSet[quad_index(i,j)][1]\
 					*quadSet[quad_index(i,j)][2];
 		}
 	}
 }
+//==============================================================================
 
+//==============================================================================
+//! quad_index returns a sequential index number based on the p and q indices 
+//! provided as arguments
+
+//! \param p the first quadrature index
+//! \param q the second quadrature index
 int Mesh::quad_index(int p, int q){
-	int index;
+	int index; ///< index to be returned
+        // if the p < 6, xi is negative and we simply call lower quad index
 	if(p < 6 )
 		index = low_quad_index(p,q);
+        // otherwise, xi is positive and we need to perform some algebraic 
+        // manipulations to ge the correct index
 	else
 		index = 42 + 42 - low_quad_index(11 - p, 2*(12 - p) - q);
 			
 	return index;
 }
+//==============================================================================
 
+//=============================================================================
+//! low_quad_index returns an index considering sequential numbering in the 
+//! region where xi is negative
+
+//! \param p the first quadrature index
+//! \param q the second quadrature index
 int Mesh::low_quad_index(int p, int q){
 	int index = q + p*p + p;
 	return index;
 }
-//=============================================================================
+//==============================================================================
+
+//==============================================================================
+//! editAngularMesh prints out quadrature set and differencing coefficients
 void Mesh::printQuadSet(){        	
-	// Check to make sure mu is initialized before printing
 	cout << "QUADRATURE SET:"<<endl;
 	cout << setw(10) << "mu" << setw(10) <<"xi" << setw(10) <<"weight" << endl;
 	for (int i = 0; i < quadSet.size(); ++i){
@@ -202,14 +237,16 @@ void Mesh::printQuadSet(){
 		}
 		cout<<""<< endl;
 	}
-	
-	cout << setw(10) << "mu" << setw(10) <<"xi" << setw(10) <<"weight" << endl;
+	cout << "Size: " << quadSet.size() << "x" << quadSet[0].size() << endl;
+	cout<<""<< endl;
+	cout << "DIFFERENCING COEFFICIENTS:"<<endl;
 	for (int i = 0; i < alpha.size(); ++i){
 		for(int j = 0; j < alpha[i].size(); ++j){
-        		cout << setw(10) <<alpha[i][j]; 
+        		cout << setw(12) <<alpha[i][j]; 
 		}
 		cout<<""<< endl;
 	}
-	cout << "Number of entries: " << alpha.size() << endl;
+	cout << "Size: " << alpha.size() << "x" << alpha[0].size() << endl;
 
-}	
+}
+//==============================================================================	
