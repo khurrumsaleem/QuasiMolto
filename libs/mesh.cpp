@@ -1,3 +1,8 @@
+// File: mesh.cpp
+// Purpose: defines a class to hold mesh data such as spatial mesh and 
+// quadrature set
+// Author: Aaron James Reynolds
+// Date: October 9, 2019
 
 #include <iostream>
 #include <cmath>
@@ -5,6 +10,8 @@
 #include <iomanip>
 
 using namespace std;
+//==============================================================================
+//! Mesh class that contains mesh data for a simulation
 
 class Mesh
 {
@@ -32,24 +39,11 @@ class Mesh
 	int low_quad_index(int p,int q);
 };
 //==============================================================================
+
+//==============================================================================
 //! Mesh Contructor for Mesh object. 
 Mesh::Mesh(){
-	n=12; // currently only works for a quadrature set of order 
-}
-//==============================================================================
-
-//==============================================================================
-//! calcMu calculate suitable ordinates
-
-//! 
-void Mesh::calcMu(){
-	// Allocate memory and fix one degree of freedom
-    	mu.resize(n/2,0.0);
-	mu[0] = 0.1672126;
-	double myConstant = 2.0*(1.0-3.0*pow(mu[0],2.0))/(n-2.0);
-	for (int imu = 1; imu < n/2; ++imu){
-		mu[imu] = sqrt(pow(mu[imu - 1],2.0) + myConstant);
-	}
+	n=12; // currently only works for a quadrature set of order 12 
 }
 //==============================================================================
 
@@ -57,8 +51,10 @@ void Mesh::calcMu(){
 //! calcQuadSet function that calculates a quadrature set and 
 //! differencing coefficients for use in RZ geometry
 
-//! Uses the methodology laid out Lewis and Miller. A level symmetric
-//! quadrature set is calculated.
+//! Uses the methodology laid out Methods of Computational Transport by
+//! Lewis and Miller. A level symmetric quadrature set is calculated. The p,q 
+//! indexing scheme is defined on page 166 in Figure 4-7. Differencing 
+//! coefficients are then calculated using that quadrature set.
 //! TODO: a lot of this is very specific to an n=12 quadrature set. Would be 
 //! better if it was more general          
 void Mesh::calcQuadSet(){	
@@ -160,11 +156,11 @@ void Mesh::calcQuadSet(){
 				}
 			}
 		}
-        // Place the next smallest on orderedQuad
-	orderedQuad[iOrdered] = tempQuad[rowIndexOfMinimum];
-        // Set this last placed row to some large values so we don't
-        // accidentally recognize it as a minimum again
-	tempQuad[rowIndexOfMinimum] = {100,100,100};
+        	// Place the next smallest on orderedQuad
+		orderedQuad[iOrdered] = tempQuad[rowIndexOfMinimum];
+        	// Set this last placed row to some large values so we don't
+        	// accidentally recognize it as a minimum again
+		tempQuad[rowIndexOfMinimum] = {100,100,100};
 	}
         // Set quadSet
 	quadSet.resize(4*counter,vector<double>(3,0.0)); 
@@ -172,6 +168,22 @@ void Mesh::calcQuadSet(){
         // Calculate differencing coefficients knowing the quadSet
 	calcAlpha();
         
+}
+//==============================================================================
+
+//==============================================================================
+//! calcMu calculate suitable ordinates
+
+//! 
+void Mesh::calcMu(){
+	// Allocate memory and fix only degree of freedom
+    	mu.resize(n/2,0.0);
+	mu[0] = 0.1672126;
+        // myConstant defined as on page 160 of L&M.
+	double myConstant = 2.0*(1.0-3.0*pow(mu[0],2.0))/(n-2.0);
+	for (int imu = 1; imu < n/2; ++imu){
+		mu[imu] = sqrt(pow(mu[imu - 1],2.0) + myConstant);
+	}
 }
 //==============================================================================
 
@@ -185,10 +197,16 @@ void Mesh::calcAlpha(){
 	alpha.resize(12,vector<double>(13,0.0)); 
 	
         for (int i = 0; i < alpha.size(); ++i){
-		alpha[i][0] = 0; // initialize to 0 on the edge case
+		alpha[i][0] = 0; // initialize to 0 on the edge case to conserve
+                                 // neutrons. Explanation on page 179 of L&M.
 		for (int j = 0; j < rowLength[i]; ++j){
 			alpha[i][j+1] = alpha[i][j]-quadSet[quad_index(i,j)][1]\
 					*quadSet[quad_index(i,j)][2];
+			// force sufficiently small quantities to 0
+                        // keeps negative values resulting from finite 
+                        // precision from coming up, too
+                        if (alpha[i][j+1]<1E-15)
+                          alpha[i][j+1] = 0.0;
 		}
 	}
 }
