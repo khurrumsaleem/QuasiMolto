@@ -10,6 +10,46 @@
 #include <iomanip>
 
 using namespace std;
+
+//==============================================================================
+//! Mesh class that contains mesh data for a simulation
+
+class quadLevel
+{
+	public:
+	quadLevel(vector< vector<double> > myQuad,\
+  		vector<double> myAlpha,\
+  		vector<double> myTau);  	
+	//number of ordinates on this quadrature level
+  	int nOrd;		
+	//quadrature set
+  	vector< vector<double> > quad;
+        //difference coefficients
+  	vector<double> alpha;
+	//factor for linear interpolation of half angles
+        vector<double> tau;
+	
+};
+//==============================================================================
+
+//==============================================================================
+//! Mesh Contructor for Mesh object. 
+quadLevel::quadLevel(vector< vector<double> > myQuad,\
+  	vector<double> myAlpha,\
+  	vector<double> myTau){
+	
+	quad.resize(myQuad.size(),vector<double>(myQuad[0].size(),0.0));
+	alpha.resize(myAlpha.size());
+	tau.resize(myTau.size());
+	
+	quad = myQuad;
+	alpha = myAlpha;
+	tau = myTau;
+	nOrd = quad.size();
+}
+//==============================================================================
+
+
 //==============================================================================
 //! Mesh class that contains mesh data for a simulation
 
@@ -23,6 +63,9 @@ class Mesh
   	vector< vector<double> > quadSet;
         //difference coefficients
   	vector< vector<double> > alpha;
+	//factor for linear interpolation of half angles
+        vector< vector<double> > tau;
+        vector<quadLevel> quadrature;
         // public functions
   	void calcQuadSet();
 	void printQuadSet();
@@ -35,6 +78,8 @@ class Mesh
         // private functions
   	void calcMu();	
 	void calcAlpha();
+        void calcTau();
+        void addLevels();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
 };
@@ -46,6 +91,7 @@ Mesh::Mesh(){
 	n=12; // currently only works for a quadrature set of order 12 
 }
 //==============================================================================
+
 
 //==============================================================================
 //! calcQuadSet function that calculates a quadrature set and 
@@ -132,12 +178,12 @@ void Mesh::calcQuadSet(){
 	// Now build quadrature over four quadrants
 	coeffQ1 = {1,-1,1,-1};
 	coeffQ2 = {1,1,-1,-1};
-	tempQuad.resize(4*counter,vector<double>(3,0.0)); 
+	tempQuad.resize(4*counter,vector<double>(4,0.0)); 
         for (int iquad = 0; iquad < 4; ++iquad){
 		for (int iset = 0; iset < ordinates.size(); ++iset){
 			tempRow = {coeffQ1[iquad]*ordinates[iset][0],\
 				coeffQ2[iquad]*ordinates[iset][1],\
-			        ordinates[iset][3]};
+			        ordinates[iset][2],ordinates[iset][3]};
 			tempQuad[counter*iquad+iset] = tempRow;
 		}
 	}
@@ -153,6 +199,10 @@ void Mesh::calcQuadSet(){
 			} else if (tempQuad[iTemp][0]==tempQuad[rowIndexOfMinimum][0]){
 				if (tempQuad[iTemp][1]<tempQuad[rowIndexOfMinimum][1]){
 					rowIndexOfMinimum = iTemp;	
+				} else if (tempQuad[iTemp][1]==tempQuad[rowIndexOfMinimum][1]){
+					if (tempQuad[iTemp][2]<tempQuad[rowIndexOfMinimum][2]){
+						rowIndexOfMinimum = iTemp;
+					}
 				}
 			}
 		}
@@ -160,13 +210,15 @@ void Mesh::calcQuadSet(){
 		orderedQuad[iOrdered] = tempQuad[rowIndexOfMinimum];
         	// Set this last placed row to some large values so we don't
         	// accidentally recognize it as a minimum again
-		tempQuad[rowIndexOfMinimum] = {100,100,100};
+		tempQuad[rowIndexOfMinimum] = {100,100,100,100};
 	}
         // Set quadSet
-	quadSet.resize(4*counter,vector<double>(3,0.0)); 
+	quadSet.resize(4*counter,vector<double>(4,0.0)); 
 	quadSet = orderedQuad;
         // Calculate differencing coefficients knowing the quadSet
 	calcAlpha();
+        calcTau();
+	addLevels();
         
 }
 //==============================================================================
@@ -201,7 +253,7 @@ void Mesh::calcAlpha(){
                                  // neutrons. Explanation on page 179 of L&M.
 		for (int j = 0; j < rowLength[i]; ++j){
 			alpha[i][j+1] = alpha[i][j]-quadSet[quad_index(i,j)][1]\
-					*quadSet[quad_index(i,j)][2];
+					*quadSet[quad_index(i,j)][3];
 			// force sufficiently small quantities to 0
                         // keeps negative values resulting from finite 
                         // precision from coming up, too
@@ -245,26 +297,141 @@ int Mesh::low_quad_index(int p, int q){
 //==============================================================================
 
 //==============================================================================
-//! editAngularMesh prints out quadrature set and differencing coefficients
-void Mesh::printQuadSet(){        	
-	cout << "QUADRATURE SET:"<<endl;
-	cout << setw(10) << "mu" << setw(10) <<"xi" << setw(10) <<"weight" << endl;
+//! calcAlpha function for calculating differencing coefficients in RZ geometry
+
+//! based on approach in Lewis and Miller
+void Mesh::calcTau(){
+	
+        double levelWeight = 0.0;
+	vector<int> rowLength = {2,4,6,8,10,12,12,10,8,6,4,2};
+        vector<double> halfOmega;
+        vector<double> halfMu;
+
+	tau.resize(12,vector<double>(12,0.0)); 
+	for (int i = 0; i < tau.size(); ++i){
+                // calculate total weight on this level
+                levelWeight = 0.0;
+        	for (int iWeight = 0; iWeight < rowLength[i]; ++iWeight){
+			levelWeight=levelWeight+quadSet[quad_index(i,iWeight)][3];
+		} 	
+                // calculate half angles on this level
+		halfOmega.resize(rowLength[i]+1,0.0);
+                halfOmega[0] = 0.0;
+		for (int iHalfOmega = 1; iHalfOmega < halfOmega.size(); ++iHalfOmega){
+			halfOmega[iHalfOmega] = halfOmega[iHalfOmega-1]\
+                        + M_PI*quadSet[quad_index(i,iHalfOmega-1)][3]/levelWeight;
+		}
+                // calculate mu ordinates that correspond to each half angle
+		halfMu.resize(rowLength[i]+1,0.0);
+                halfMu[0] = sqrt(1-pow(quadSet[quad_index(i,0)][0],2))\
+                        *cos(halfOmega[0]);
+		for (int iHalfMu = 1; iHalfMu < halfMu.size(); ++iHalfMu){
+			halfMu[iHalfMu] = \
+                        sqrt(1-pow(quadSet[quad_index(i,iHalfMu-1)][0],2))\
+                        *cos(halfOmega[iHalfMu]);
+		}
+		
+		// calculate tau on this level
+		for (int iTau = 0; iTau < rowLength[i]; ++iTau){
+                     
+			tau[i][rowLength[i]-iTau-1] = \
+                        (quadSet[quad_index(i,rowLength[i]-1-iTau)][1]-halfMu[iTau])\
+                        /(halfMu[iTau+1]-halfMu[iTau]);
+		}
+	}
+}
+//==============================================================================
+
+//==============================================================================
+//! addLevel add levels of quadrature to the mesh object
+void Mesh::addLevels(){
+
+	vector< vector<double> > tempQuad;
+	vector<double> tempAlpha;
+	vector<double> tempTau;
+	int count = 0;
+        int startIndex = 0;
+	int stopIndex = 0;
+	int levelCount = 0;
+	double myXi = 0.0;
+
+	myXi=quadSet[0][0];
 	for (int i = 0; i < quadSet.size(); ++i){
-		for(int j = 0; j < quadSet[i].size(); ++j){
-        		cout << setw(10) <<quadSet[i][j]; 
+		if (myXi != quadSet[i][0]){
+			stopIndex = i - 1;
+			tempQuad.resize(stopIndex-startIndex+1,vector<double>(4,0.0));
+			tempAlpha.resize(stopIndex-startIndex+2,0.0);
+			tempTau.resize(stopIndex-startIndex+1,0);
+			count = 0;
+			tempAlpha[0] = alpha[levelCount][0];
+			for (int iLevel = startIndex; iLevel < stopIndex + 1; ++iLevel){
+				tempQuad[count] = quadSet[iLevel];
+				tempAlpha[count+1] = alpha[levelCount][count+1];
+				tempTau[count] = tau[levelCount][count];
+				++count;
+			}
+			quadLevel myLevel(tempQuad,tempAlpha,tempTau);
+			quadrature.push_back(myLevel);
+		        ++levelCount;	
+			startIndex = i;
+			myXi = quadSet[i][0];
+		} else if (i==quadSet.size()-1){
+			stopIndex = i;
+			tempQuad.resize(stopIndex-startIndex+1,vector<double>(4,0.0));
+			tempAlpha.resize(stopIndex-startIndex+2,0.0);
+			tempTau.resize(stopIndex-startIndex+1,0);
+			count = 0;
+			tempAlpha[0] = alpha[levelCount][0];
+			for (int iLevel = startIndex; iLevel < stopIndex + 1; ++iLevel){
+				tempQuad[count] = quadSet[iLevel];
+				tempAlpha[count+1] = alpha[levelCount][count+1];
+				tempTau[count] = tau[levelCount][count];
+				++count;
+			}
+			quadLevel myLevel(tempQuad,tempAlpha,tempTau);
+			quadrature.push_back(myLevel);
+
 		}
-		cout<<""<< endl;
 	}
-	cout << "Size: " << quadSet.size() << "x" << quadSet[0].size() << endl;
+	
+}
+//==============================================================================
+
+
+//==============================================================================
+//! editAngularMesh prints out quadrature set and differencing coefficients
+void Mesh::printQuadSet(){        
+	// print quadrature set	
+	cout << "QUADRATURE SET:"<<endl;
+	cout << setw(10) << "xi" << setw(10) <<"mu" << setw(10) << "eta" << setw(10) <<"weight" << endl;
+	for (int i = 0; i < quadrature.size(); ++i){
+		for(int j = 0; j < quadrature[i].nOrd; ++j){
+			for(int k = 0; k < quadrature[i].quad[j].size(); ++k){
+        			cout << setw(10) <<quadrature[i].quad[j][k];
+			} 
+		cout<<""<< endl;
+		}
+	}
+	cout << "Number of levels: " << quadrature.size() << endl;
 	cout<<""<< endl;
+	// print differencing materials
 	cout << "DIFFERENCING COEFFICIENTS:"<<endl;
-	for (int i = 0; i < alpha.size(); ++i){
-		for(int j = 0; j < alpha[i].size(); ++j){
-        		cout << setw(12) <<alpha[i][j]; 
+	for (int i = 0; i < quadrature.size(); ++i){
+		for(int j = 0; j < quadrature[i].alpha.size(); ++j){
+        		cout << setw(12) <<quadrature[i].alpha[j]; 
 		}
 		cout<<""<< endl;
 	}
-	cout << "Size: " << alpha.size() << "x" << alpha[0].size() << endl;
+ 	// print tau info	
+	cout<<""<< endl;
+	cout << "TAU:"<<endl;
+	for (int i = 0; i < quadrature.size(); ++i){
+		for(int j = 0; j < quadrature[i].tau.size(); ++j){
+        		cout << setw(12) <<quadrature[i].tau[j]; 
+		}
+		cout<<""<< endl;
+	}
+	cout<<""<< endl;
 
 }
 //==============================================================================	
