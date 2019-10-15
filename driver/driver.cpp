@@ -1,11 +1,11 @@
 // test.cpp
 
 #include <iostream>
-#include "../libs/materials.h"
-#include "../libs/multigroupQD.h"
-#include "../libs/singlegroupQD.h"
-#include "../libs/transport.h"
-#include "../libs/mesh.h"
+#include "../libs/Materials.h"
+#include "../libs/MultiGroupQD.h"
+#include "../libs/SingleGroupQD.h"
+#include "../libs/Transport.h"
+#include "../libs/Mesh.h"
 
 using namespace std;
 
