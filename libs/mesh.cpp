@@ -12,7 +12,7 @@
 using namespace std;
 
 //==============================================================================
-//! Mesh class that contains mesh data for a simulation
+//! quadLevel class that contains information on a single quadrature level
 
 class quadLevel
 {
@@ -33,15 +33,17 @@ class quadLevel
 //==============================================================================
 
 //==============================================================================
-//! Mesh Contructor for Mesh object. 
+//! quadLevel Constructor for quadLevel object. 
 quadLevel::quadLevel(vector< vector<double> > myQuad,\
   	vector<double> myAlpha,\
   	vector<double> myTau){
 	
+	// resize vectors on quadLevel
 	quad.resize(myQuad.size(),vector<double>(myQuad[0].size(),0.0));
 	alpha.resize(myAlpha.size());
 	tau.resize(myTau.size());
 	
+	// set equal to initializing arguments
 	quad = myQuad;
 	alpha = myAlpha;
 	tau = myTau;
@@ -265,38 +267,6 @@ void Mesh::calcAlpha(){
 //==============================================================================
 
 //==============================================================================
-//! quad_index returns a sequential index number based on the p and q indices 
-//! provided as arguments
-
-//! \param p the first quadrature index
-//! \param q the second quadrature index
-int Mesh::quad_index(int p, int q){
-	int index; ///< index to be returned
-        // if the p < 6, xi is negative and we simply call lower quad index
-	if(p < 6 )
-		index = low_quad_index(p,q);
-        // otherwise, xi is positive and we need to perform some algebraic 
-        // manipulations to ge the correct index
-	else
-		index = 42 + 42 - low_quad_index(11 - p, 2*(12 - p) - q);
-			
-	return index;
-}
-//==============================================================================
-
-//=============================================================================
-//! low_quad_index returns an index considering sequential numbering in the 
-//! region where xi is negative
-
-//! \param p the first quadrature index
-//! \param q the second quadrature index
-int Mesh::low_quad_index(int p, int q){
-	int index = q + p*p + p;
-	return index;
-}
-//==============================================================================
-
-//==============================================================================
 //! calcAlpha function for calculating differencing coefficients in RZ geometry
 
 //! based on approach in Lewis and Miller
@@ -354,15 +324,21 @@ void Mesh::addLevels(){
 	int stopIndex = 0;
 	int levelCount = 0;
 	double myXi = 0.0;
-
+	
+	// initialize first myXi to search for
 	myXi=quadSet[0][0];
 	for (int i = 0; i < quadSet.size(); ++i){
+		// if the value of xi changes, set the stop index and copy 
+		// the entries between start and stop indices
 		if (myXi != quadSet[i][0]){
 			stopIndex = i - 1;
+			// resize temporary variables
 			tempQuad.resize(stopIndex-startIndex+1,vector<double>(4,0.0));
 			tempAlpha.resize(stopIndex-startIndex+2,0.0);
 			tempTau.resize(stopIndex-startIndex+1,0);
-			count = 0;
+			// counter for temporary arrays
+			count = 0; 
+			// initialize boundary value of alpha
 			tempAlpha[0] = alpha[levelCount][0];
 			for (int iLevel = startIndex; iLevel < stopIndex + 1; ++iLevel){
 				tempQuad[count] = quadSet[iLevel];
@@ -370,11 +346,16 @@ void Mesh::addLevels(){
 				tempTau[count] = tau[levelCount][count];
 				++count;
 			}
+			// initialize new quadLevel
 			quadLevel myLevel(tempQuad,tempAlpha,tempTau);
+			// add new quadLevel to quadrature vector
 			quadrature.push_back(myLevel);
+			// advance iterates
 		        ++levelCount;	
 			startIndex = i;
 			myXi = quadSet[i][0];
+		// the final index in quadSet is a boundary case, which is handled
+		// as below
 		} else if (i==quadSet.size()-1){
 			stopIndex = i;
 			tempQuad.resize(stopIndex-startIndex+1,vector<double>(4,0.0));
@@ -397,6 +378,37 @@ void Mesh::addLevels(){
 }
 //==============================================================================
 
+//==============================================================================
+//! quad_index returns a sequential index number based on the p and q indices 
+//! provided as arguments
+
+//! \param p the first quadrature index
+//! \param q the second quadrature index
+int Mesh::quad_index(int p, int q){
+	int index; ///< index to be returned
+        // if the p < 6, xi is negative and we simply call lower quad index
+	if(p < 6 )
+		index = low_quad_index(p,q);
+        // otherwise, xi is positive and we need to perform some algebraic 
+        // manipulations to ge the correct index
+	else
+		index = 42 + 42 - low_quad_index(11 - p, 2*(12 - p) - q);
+			
+	return index;
+}
+//==============================================================================
+
+//=============================================================================
+//! low_quad_index returns an index considering sequential numbering in the 
+//! region where xi is negative
+
+//! \param p the first quadrature index
+//! \param q the second quadrature index
+int Mesh::low_quad_index(int p, int q){
+	int index = q + p*p + p;
+	return index;
+}
+//==============================================================================
 
 //==============================================================================
 //! editAngularMesh prints out quadrature set and differencing coefficients
