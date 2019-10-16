@@ -29,3 +29,8 @@ script:
   - cd yaml-cpp/
   - cmake -H. -Bbuild
   - cmake --build build -- -j3
+  - cd ../../
+  - ls 
+  - ls TPLs/
+  - cmake -H. -Bbuild 
+  - cmake --build build -- -j3
