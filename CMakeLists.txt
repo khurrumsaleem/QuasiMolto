@@ -17,7 +17,7 @@ include_directories(
 )
 add_subdirectory(driver)
 add_subdirectory(libs)
-add_subdirectory(TPLS/yaml-cpp)
+add_subdirectory(TPLs/yaml-cpp)
 
 add_executable(QuasiMolto 
 	       ${PROJECT_SOURCE_DIR}/driver/driver.cpp 
