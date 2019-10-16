@@ -22,15 +22,5 @@ script:
   # Check versions of gcc, g++ and cmake
   - gcc -v && g++ -v && cmake --version
   # Run your build commands next
-  - cd /home/travis/build/aaronjamesreynolds/QuasiMolto/
-  - ls
-  - cd TPLs/
-  - ls 
-  - cd yaml-cpp/
-  - cmake -H. -Bbuild
-  - cmake --build build -- -j3
-  - cd ../../
-  - ls 
-  - ls TPLs/
   - cmake -H. -Bbuild 
   - cmake --build build -- -j3
