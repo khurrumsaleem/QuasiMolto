@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
 
@@ -26,8 +27,10 @@ class quadLevel
 class Mesh
 {
 	public:
-	Mesh();  	
+	Mesh(YAML::Node myInput);  	
   	int n;		
+	double dz; 
+	double dr;
   	vector< vector<double> > quadSet;
   	vector< vector<double> > alpha;
         vector< vector<double> > tau;
@@ -44,6 +47,7 @@ class Mesh
         void addLevels();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
+	YAML::Node * input;
 };
 
 

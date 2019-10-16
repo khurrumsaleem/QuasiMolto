@@ -8,6 +8,7 @@
 #include <cmath>
 #include <vector>
 #include <iomanip>
+#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
 
@@ -58,9 +59,11 @@ quadLevel::quadLevel(vector< vector<double> > myQuad,\
 class Mesh
 {
 	public:
-	Mesh();  	
+	Mesh(YAML::Node myInput);  	
 	//order of quadrature set
   	int n;		
+	double dz; 
+	double dr;
 	//quadrature set
   	vector< vector<double> > quadSet;
         //difference coefficients
@@ -84,13 +87,20 @@ class Mesh
         void addLevels();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
+	YAML::Node * input;
 };
 //==============================================================================
 
 //==============================================================================
 //! Mesh Contructor for Mesh object. 
-Mesh::Mesh(){
+Mesh::Mesh(YAML::Node myInput){
+	input = &myInput;
 	n=12; // currently only works for a quadrature set of order 12 
+	// read in mesh parameters
+	dz = (*input)["mesh"]["dz"].as<double>();
+	dr = (*input)["mesh"]["dr"].as<double>();
+	cout << dz << endl;
+	cout << dr << endl;
 }
 //==============================================================================
 

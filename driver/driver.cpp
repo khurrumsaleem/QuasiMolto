@@ -12,7 +12,7 @@ using namespace std;
 
 int main(void) {
 
-     YAML::Node config = YAML::LoadFile("config.yaml");
+     YAML::Node input = YAML::LoadFile("input.yaml");
      cout << "Print from driver" << endl;
 
      printMat();
@@ -20,7 +20,7 @@ int main(void) {
      printSingleGroupQD();
      printTransport();
 
-     Mesh myMesh; 
+     Mesh myMesh(input); 
      myMesh.calcQuadSet();
      myMesh.printQuadSet();
 
