@@ -23,5 +23,6 @@ script:
   - gcc -v && g++ -v && cmake --version
   # Run your build commands next
   - cd /home/travis/build/aaronjamesreynolds/QuasiMolto/
+  - ls
   - cmake -H. -Bbuild
   - cmake --build build -- -j3
