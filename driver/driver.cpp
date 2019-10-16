@@ -6,11 +6,13 @@
 #include "../libs/SingleGroupQD.h"
 #include "../libs/Transport.h"
 #include "../libs/Mesh.h"
+#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
 
 int main(void) {
 
+     YAML::Node config = YAML::LoadFile("config.yaml");
      cout << "Print from driver" << endl;
 
      printMat();

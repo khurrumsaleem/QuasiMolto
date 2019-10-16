@@ -1,0 +1,3 @@
+[submodule "TPLs/yaml-cpp"]
+	path = TPLs/yaml-cpp
+	url = git@github.com:jbeder/yaml-cpp.git

@@ -12,8 +12,12 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 # The following folder will be included
 include_directories("${PROJECT_SOURCE_DIR}")
+include_directories(
+   TPLs/yaml-cpp/include
+)
 add_subdirectory(driver)
 add_subdirectory(libs)
+add_subdirectory(TPLS/yaml-cpp)
 
 add_executable(QuasiMolto 
 	       ${PROJECT_SOURCE_DIR}/driver/driver.cpp 
@@ -22,3 +26,10 @@ add_executable(QuasiMolto
 	       ${PROJECT_SOURCE_DIR}/libs/SingleGroupQD.cpp
 	       ${PROJECT_SOURCE_DIR}/libs/Transport.cpp
 	       ${PROJECT_SOURCE_DIR}/libs/Mesh.cpp)
+
+target_link_libraries(
+    QuasiMolto  
+    PRIVATE
+    yaml-cpp  # This is the "target" exposed by 
+              # yaml-cpp's CMakeLists.txt file
+)

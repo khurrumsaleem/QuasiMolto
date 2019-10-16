@@ -1,6 +1,6 @@
 add_library(libs 
-	materials.cpp 
+	Materials.cpp 
 	MultiGroupQD.cpp 
 	SingleGroupQD.cpp 
-	transport.cpp
-	mesh.cpp)
+	Transport.cpp
+	Mesh.cpp)
