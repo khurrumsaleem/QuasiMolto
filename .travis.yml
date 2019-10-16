@@ -24,5 +24,8 @@ script:
   # Run your build commands next
   - cd /home/travis/build/aaronjamesreynolds/QuasiMolto/
   - ls
+  - cd TPLs/
+  - ls 
+  - cd yaml-cpp/
   - cmake -H. -Bbuild
   - cmake --build build -- -j3
