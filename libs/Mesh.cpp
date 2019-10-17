@@ -74,8 +74,8 @@ class Mesh
         vector< vector<double> > tau;
 	// volume of each cell
         vector< vector<double> > cellVol;
-	// surface areas of cell boundaries
-        vector< vector<double> > cellSA;
+	// verticalsurface areas of cell boundaries
+        vector< vector<double> > cellVSA;
         vector<double> dzs;
         vector<double> drs;
         vector<quadLevel> quadrature;
@@ -110,8 +110,6 @@ Mesh::Mesh(YAML::Node myInput){
 	dr = (*input)["mesh"]["dr"].as<double>();
 	Z = (*input)["mesh"]["Z"].as<double>();
 	R = (*input)["mesh"]["R"].as<double>();
-	cout << dz << endl;
-	cout << dr << endl;
 	buildSpatialMesh();
 }
 //==============================================================================
@@ -345,31 +343,28 @@ void Mesh::buildSpatialMesh(){
 	vector<double> dzs;
 	vector<double> rEdge;
 	vector<double> zEdge;
-
+	// Calculate number of cells
 	nCellsZ= Z/dz;
 	nCellsR = R/dr;
 
- 	cout << "nCellsZ: " << nCellsZ << endl;	
- 	cout << "nCellsR: " << nCellsR << endl;	
-
+	// Resize vectors storing dimensions of each cell
 	dzs.resize(nCellsZ,dz);
 	drs.resize(nCellsR,dr);
 
+	// Resize vector holding boundaries in each dimension
 	rEdge.resize(nCellsR+1,0.0);
 	zEdge.resize(nCellsZ+1,0.0);
 
+	// Populate vectors holding boundaries in each dimension
 	for (int iEdge = 1; iEdge < rEdge.size(); ++iEdge){
 		rEdge[iEdge] = rEdge[iEdge-1] + drs[iEdge-1];
-		cout << rEdge[iEdge]<< " ";
 	}
-	cout << "" << endl;
 	
 	for (int iEdge = 1; iEdge < zEdge.size(); ++iEdge){
 		zEdge[iEdge] = zEdge[iEdge-1] + dzs[iEdge-1];
-		cout << zEdge[iEdge]<< " ";
 	}
-	cout << "" << endl;
 
+	// Calculate cell volume
 	cellVol.resize(nCellsZ,vector<double>(nCellsR,0.0));
 
 	for (int iZ = 0; iZ < cellVol.size(); ++iZ){
@@ -378,6 +373,16 @@ void Mesh::buildSpatialMesh(){
 			(pow(rEdge[iR+1],2)-pow(rEdge[iR],2));
 		}
 	}
+
+	// Calculate area of vertical surfaces
+	cellVSA.resize(nCellsZ,vector<double>(nCellsR+1,0.0));
+
+	for (int iZ = 0; iZ < cellVSA.size(); ++iZ){
+		for (int iR = 0; iR < cellVSA[iZ].size(); ++iR){
+			cellVSA[iZ][iR] = dzs[iZ]*2*M_PI*rEdge[iR];
+		}
+	}
+
 }
 //==============================================================================
 

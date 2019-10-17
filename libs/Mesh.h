@@ -37,7 +37,7 @@ class Mesh
   	vector< vector<double> > alpha;
         vector< vector<double> > tau;
         vector< vector<double> > cellVol;
-        vector< vector<double> > cellSA;
+        vector< vector<double> > cellVSA;
         vector<double> dzs;
         vector<double> drs;
         vector<quadLevel> quadrature;
