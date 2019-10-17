@@ -64,12 +64,20 @@ class Mesh
   	int n;		
 	double dz; 
 	double dr;
+	double Z; 
+	double R;
 	//quadrature set
   	vector< vector<double> > quadSet;
         //difference coefficients
   	vector< vector<double> > alpha;
 	//factor for linear interpolation of half angles
         vector< vector<double> > tau;
+	// volume of each cell
+        vector< vector<double> > cellVol;
+	// surface areas of cell boundaries
+        vector< vector<double> > cellSA;
+        vector<double> dzs;
+        vector<double> drs;
         vector<quadLevel> quadrature;
         // public functions
   	void calcQuadSet();
@@ -84,6 +92,7 @@ class Mesh
   	void calcMu();	
 	void calcAlpha();
         void calcTau();
+        void buildSpatialMesh();
         void addLevels();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
@@ -99,8 +108,11 @@ Mesh::Mesh(YAML::Node myInput){
 	// read in mesh parameters
 	dz = (*input)["mesh"]["dz"].as<double>();
 	dr = (*input)["mesh"]["dr"].as<double>();
+	Z = (*input)["mesh"]["Z"].as<double>();
+	R = (*input)["mesh"]["R"].as<double>();
 	cout << dz << endl;
 	cout << dr << endl;
+	buildSpatialMesh();
 }
 //==============================================================================
 
@@ -319,6 +331,46 @@ void Mesh::calcTau(){
                         /(halfMu[iTau+1]-halfMu[iTau]);
 		}
 	}
+}
+//==============================================================================
+
+//==============================================================================
+//! buildSpatialMesh function to build uniform mesh
+
+void Mesh::buildSpatialMesh(){
+
+	int nCellsZ;
+	int nCellsR;
+	vector<double> drs;
+	vector<double> dzs;
+	vector<double> rEdge;
+	vector<double> zEdge;
+
+	nCellsZ= Z/dz;
+	nCellsR = R/dr;
+
+ 	cout << "nCellsZ: " << nCellsZ << endl;	
+ 	cout << "nCellsR: " << nCellsR << endl;	
+
+	dzs.resize(nCellsZ,dz);
+	drs.resize(nCellsR,dr);
+
+	rEdge.resize(nCellsR+1,0.0);
+	zEdge.resize(nCellsZ+1,0.0);
+
+	for (int iEdge = 1; iEdge < rEdge.size(); ++iEdge){
+		rEdge[iEdge] = rEdge[iEdge-1] + drs[iEdge-1];
+		cout << rEdge[iEdge]<< " ";
+	}
+	cout << "" << endl;
+	
+	for (int iEdge = 1; iEdge < zEdge.size(); ++iEdge){
+		zEdge[iEdge] = zEdge[iEdge-1] + dzs[iEdge-1];
+		cout << zEdge[iEdge]<< " ";
+	}
+	cout << "" << endl;
+	
+	
 }
 //==============================================================================
 

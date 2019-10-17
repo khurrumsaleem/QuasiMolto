@@ -31,9 +31,15 @@ class Mesh
   	int n;		
 	double dz; 
 	double dr;
+	double Z; 
+	double R;
   	vector< vector<double> > quadSet;
   	vector< vector<double> > alpha;
         vector< vector<double> > tau;
+        vector< vector<double> > cellVol;
+        vector< vector<double> > cellSA;
+        vector<double> dzs;
+        vector<double> drs;
         vector<quadLevel> quadrature;
   	void calcQuadSet();
 	void printQuadSet();
@@ -44,6 +50,7 @@ class Mesh
   	void calcMu();	
 	void calcAlpha();
         void calcTau();
+        void buildSpatialMesh();
         void addLevels();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
