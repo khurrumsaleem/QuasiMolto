@@ -369,8 +369,15 @@ void Mesh::buildSpatialMesh(){
 		cout << zEdge[iEdge]<< " ";
 	}
 	cout << "" << endl;
-	
-	
+
+	cellVol.resize(nCellsZ,vector<double>(nCellsR,0.0));
+
+	for (int iZ = 0; iZ < cellVol.size(); ++iZ){
+		for (int iR = 0; iR < cellVol[iZ].size(); ++iR){
+			cellVol[iZ][iR] = dzs[iZ]*M_PI*\
+			(pow(rEdge[iR+1],2)-pow(rEdge[iR],2));
+		}
+	}
 }
 //==============================================================================
 
