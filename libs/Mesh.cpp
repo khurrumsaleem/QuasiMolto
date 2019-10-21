@@ -8,6 +8,7 @@
 #include <cmath>
 #include <vector>
 #include <iomanip>
+#include <armadillo>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
