@@ -18,6 +18,8 @@ include_directories(
 add_subdirectory(driver)
 add_subdirectory(libs)
 add_subdirectory(TPLs/yaml-cpp)
+find_package(Armadillo REQUIRED)
+include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 add_executable(QuasiMolto 
 	       ${PROJECT_SOURCE_DIR}/driver/driver.cpp 
@@ -28,7 +30,9 @@ add_executable(QuasiMolto
 	       ${PROJECT_SOURCE_DIR}/libs/Mesh.cpp)
 
 target_link_libraries(
-    QuasiMolto  
+    QuasiMolto
+    PUBLIC
+    ${ARMADILLO_LIBRARIES} 
     PRIVATE
     yaml-cpp  # This is the "target" exposed by 
               # yaml-cpp's CMakeLists.txt file

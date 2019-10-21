@@ -1,3 +1,6 @@
 [submodule "TPLs/yaml-cpp"]
 	path = TPLs/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "TPLs/armadillo"]
+	path = TPLs/armadillo
+	url = https://gitlab.com/conradsnicta/armadillo-code.git
