@@ -22,5 +22,8 @@ script:
   # Check versions of gcc, g++ and cmake
   - gcc -v && g++ -v && cmake --version
   # Run your build commands next
+  - cd TPLs/armadillo
+  - cmake .
+  - cd ../../
   - cmake -H. -Bbuild 
   - cmake --build build -- -j3
