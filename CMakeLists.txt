@@ -18,7 +18,7 @@ include_directories(
 add_subdirectory(driver)
 add_subdirectory(libs)
 add_subdirectory(TPLs/yaml-cpp)
-find_package(Armadillo REQUIRED)
+find_package(armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 add_executable(QuasiMolto 
