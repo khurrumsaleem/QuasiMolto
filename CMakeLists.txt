@@ -23,7 +23,7 @@ include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 add_executable(QuasiMolto 
 	       ${PROJECT_SOURCE_DIR}/driver/driver.cpp 
-	       ${PROJECT_SOURCE_DIR}/libs/materials.cpp
+	       ${PROJECT_SOURCE_DIR}/libs/Materials.cpp
 	       ${PROJECT_SOURCE_DIR}/libs/MultiGroupQD.cpp
 	       ${PROJECT_SOURCE_DIR}/libs/SingleGroupQD.cpp
 	       ${PROJECT_SOURCE_DIR}/libs/Transport.cpp
