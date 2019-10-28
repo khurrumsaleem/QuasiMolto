@@ -93,7 +93,7 @@ class Mesh
   	void calcMu();	
 	void calcAlpha();
         void calcTau();
-        void buildSpatialMesh();
+        void calcSpatialMesh();
         void addLevels();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
@@ -112,7 +112,8 @@ Mesh::Mesh(YAML::Node myInput){
 	dr = (*input)["mesh"]["dr"].as<double>();
 	Z = (*input)["mesh"]["Z"].as<double>();
 	R = (*input)["mesh"]["R"].as<double>();
-	buildSpatialMesh();
+	calcSpatialMesh();
+	calcQuadSet();
 }
 //==============================================================================
 
@@ -335,9 +336,9 @@ void Mesh::calcTau(){
 //==============================================================================
 
 //==============================================================================
-//! buildSpatialMesh function to build uniform mesh
+//! calcSpatialMesh function to build uniform mesh
 
-void Mesh::buildSpatialMesh(){
+void Mesh::calcSpatialMesh(){
 
 	int nCellsZ;
 	int nCellsR;
