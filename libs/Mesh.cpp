@@ -97,6 +97,7 @@ class Mesh
         void addLevels();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
+        // pointer to input file
 	YAML::Node * input;
 };
 //==============================================================================
