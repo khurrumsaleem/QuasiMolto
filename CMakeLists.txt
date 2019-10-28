@@ -27,6 +27,7 @@ add_executable(QuasiMolto
 	       ${PROJECT_SOURCE_DIR}/libs/MultiGroupQD.cpp
 	       ${PROJECT_SOURCE_DIR}/libs/SingleGroupQD.cpp
 	       ${PROJECT_SOURCE_DIR}/libs/Transport.cpp
+	       ${PROJECT_SOURCE_DIR}/libs/StartingAngle.cpp
 	       ${PROJECT_SOURCE_DIR}/libs/Mesh.cpp)
 
 target_link_libraries(
