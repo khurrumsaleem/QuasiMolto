@@ -39,8 +39,8 @@ class Mesh
         vector< vector<double> > tau;
         vector< vector<double> > cellVol;
         vector< vector<double> > cellVSA;
-        vector<double> dzs;
-        vector<double> drs;
+        rowvec dzs;
+        rowvec drs;
 	rowvec rEdge;
 	rowvec zEdge;
         rowvec rCenter;

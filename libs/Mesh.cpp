@@ -78,8 +78,8 @@ class Mesh
         vector< vector<double> > cellVol;
 	// verticalsurface areas of cell boundaries
         vector< vector<double> > cellVSA;
-        vector<double> dzs;
-        vector<double> drs;
+        rowvec dzs;
+        rowvec drs;
 	rowvec rEdge;
 	rowvec zEdge;
         rowvec rCenter;
@@ -347,40 +347,40 @@ void Mesh::calcSpatialMesh(){
 
 	int nCellsZ;
 	int nCellsR;
-	vector<double> drs;
-	vector<double> dzs;
 	// Calculate number of cells
 	nCellsZ= Z/dz;
 	nCellsR = R/dr;
 
 	// Resize vectors storing dimensions of each cell
-	dzs.resize(nCellsZ,dz);
-	drs.resize(nCellsR,dr);
+	dzs.zeros(nCellsZ);
+	dzs.fill(dz);
+	drs.zeros(nCellsR);
+        drs.fill(dr);
 
 	// Resize vector holding boundaries in each dimension
-	rEdge.resize(nCellsR+1,0.0);
-	zEdge.resize(nCellsZ+1,0.0);
+	rEdge.zeros(nCellsR+1);
+	zEdge.zeros(nCellsZ+1);
 	
         // Resize cell center location in each dimension
-	rCent.resize(nCellsR,0.0);
-	zCent.resize(nCellsZ,0.0);
+	rCent.zeros(nCellsR);
+	zCent.zeros(nCellsZ);
 
 	// Populate vectors holding boundaries in each dimension
-	for (int iEdge = 1; iEdge < rEdge.size(); ++iEdge){
-		rEdge[iEdge] = rEdge[iEdge-1] + drs[iEdge-1];
+	for (int iEdge = 1; iEdge < size(rEdge); ++iEdge){
+		rEdge(iEdge) = rEdge(iEdge-1) + drs(iEdge-1);
 	}
 	
-	for (int iEdge = 1; iEdge < zEdge.size(); ++iEdge){
-		zEdge[iEdge] = zEdge[iEdge-1] + dzs[iEdge-1];
+	for (int iEdge = 1; iEdge < size(rEdge); ++iEdge){
+		zEdge(iEdge) = zEdge(iEdge-1) + dzs(iEdge-1);
 	}
 	
 	// Populate vectors holding cell center location in each dimension
-	for (int iCent = 1; iCent < rCent.size(); ++iCent){
-		rCent[iCent] = (rEdge[iCent]+rEdge[iCent+2])/2;
+	for (int iCent = 1; iCent < rCent.size(rCent); ++iCent){
+		rCent(iCent) = (rEdge(iCent)+rEdge(iCent+2))/2.0;
 	}
 	
-	for (int iCent = 1; iCent < zCent.size(); ++iCent){
-		zCent[iCent] = (zEdge[iCent]+zEdge[iCent+2])/2;
+	for (int iCent = 1; iCent < zCent.size(rCent); ++iCent){
+		zCent(iCent) = (zEdge(iCent)+zEdge(iCent+2))/2.0;
 	}
 
 	// Calculate cell volume
