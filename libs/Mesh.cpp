@@ -12,6 +12,7 @@
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
+using namespace arma;
 
 //==============================================================================
 //! quadLevel class that contains information on a single quadrature level
@@ -79,6 +80,10 @@ class Mesh
         vector< vector<double> > cellVSA;
         vector<double> dzs;
         vector<double> drs;
+	rowvec rEdge;
+	rowvec zEdge;
+        rowvec rCenter;
+        rowvec zCenter;
         vector<quadLevel> quadrature;
         // public functions
   	void calcQuadSet();
@@ -344,8 +349,6 @@ void Mesh::calcSpatialMesh(){
 	int nCellsR;
 	vector<double> drs;
 	vector<double> dzs;
-	vector<double> rEdge;
-	vector<double> zEdge;
 	// Calculate number of cells
 	nCellsZ= Z/dz;
 	nCellsR = R/dr;
@@ -357,6 +360,10 @@ void Mesh::calcSpatialMesh(){
 	// Resize vector holding boundaries in each dimension
 	rEdge.resize(nCellsR+1,0.0);
 	zEdge.resize(nCellsZ+1,0.0);
+	
+        // Resize cell center location in each dimension
+	rCent.resize(nCellsR,0.0);
+	zCent.resize(nCellsZ,0.0);
 
 	// Populate vectors holding boundaries in each dimension
 	for (int iEdge = 1; iEdge < rEdge.size(); ++iEdge){
@@ -365,6 +372,15 @@ void Mesh::calcSpatialMesh(){
 	
 	for (int iEdge = 1; iEdge < zEdge.size(); ++iEdge){
 		zEdge[iEdge] = zEdge[iEdge-1] + dzs[iEdge-1];
+	}
+	
+	// Populate vectors holding cell center location in each dimension
+	for (int iCent = 1; iCent < rCent.size(); ++iCent){
+		rCent[iCent] = (rEdge[iCent]+rEdge[iCent+2])/2;
+	}
+	
+	for (int iCent = 1; iCent < zCent.size(); ++iCent){
+		zCent[iCent] = (zEdge[iCent]+zEdge[iCent+2])/2;
 	}
 
 	// Calculate cell volume

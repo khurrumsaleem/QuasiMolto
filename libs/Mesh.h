@@ -6,6 +6,7 @@
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
+using namespace arma;
 
 class quadLevel
 {
@@ -40,6 +41,10 @@ class Mesh
         vector< vector<double> > cellVSA;
         vector<double> dzs;
         vector<double> drs;
+	rowvec rEdge;
+	rowvec zEdge;
+        rowvec rCenter;
+        rowvec zCenter;
         vector<quadLevel> quadrature;
   	void calcQuadSet();
 	void printQuadSet();
@@ -50,7 +55,7 @@ class Mesh
   	void calcMu();	
 	void calcAlpha();
         void calcTau();
-        void buildSpatialMesh();
+        void calcSpatialMesh();
         void addLevels();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
