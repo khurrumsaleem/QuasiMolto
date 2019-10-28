@@ -11,12 +11,12 @@ class StartingAngle
 {
         public:
         // public functions
-        StartingAngle(Mesh::Mesh myMesh,YAML::Node myInput);
+        StartingAngle(Mesh myMesh,YAML::Node myInput);
 
         private:
         // private functions
         YAML::Node * input;
-        Mesh::Mesh * mesh;
+        Mesh * mesh;
 };
 
 //==============================================================================
