@@ -82,8 +82,8 @@ class Mesh
         rowvec drs;
 	rowvec rEdge;
 	rowvec zEdge;
-        rowvec rCenter;
-        rowvec zCenter;
+        rowvec rCent;
+        rowvec zCent;
         vector<quadLevel> quadrature;
         // public functions
   	void calcQuadSet();
@@ -366,21 +366,21 @@ void Mesh::calcSpatialMesh(){
 	zCent.zeros(nCellsZ);
 
 	// Populate vectors holding boundaries in each dimension
-	for (int iEdge = 1; iEdge < size(rEdge); ++iEdge){
+	for (int iEdge = 1; iEdge < rEdge.n_elem; ++iEdge){
 		rEdge(iEdge) = rEdge(iEdge-1) + drs(iEdge-1);
 	}
 	
-	for (int iEdge = 1; iEdge < size(rEdge); ++iEdge){
+	for (int iEdge = 1; iEdge < zEdge.n_elem; ++iEdge){
 		zEdge(iEdge) = zEdge(iEdge-1) + dzs(iEdge-1);
 	}
 	
 	// Populate vectors holding cell center location in each dimension
-	for (int iCent = 1; iCent < rCent.size(rCent); ++iCent){
-		rCent(iCent) = (rEdge(iCent)+rEdge(iCent+2))/2.0;
+	for (int iCent = 1; iCent < rCent.n_elem; ++iCent){
+		rCent(iCent) = (rEdge(iCent)+rEdge(iCent+1))/2.0;
 	}
 	
-	for (int iCent = 1; iCent < zCent.size(rCent); ++iCent){
-		zCent(iCent) = (zEdge(iCent)+zEdge(iCent+2))/2.0;
+	for (int iCent = 1; iCent < zCent.n_elem; ++iCent){
+		zCent(iCent) = (zEdge(iCent)+zEdge(iCent+1))/2.0;
 	}
 
 	// Calculate cell volume

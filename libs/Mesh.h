@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <armadillo>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
@@ -43,8 +44,8 @@ class Mesh
         rowvec drs;
 	rowvec rEdge;
 	rowvec zEdge;
-        rowvec rCenter;
-        rowvec zCenter;
+        rowvec rCent;
+        rowvec zCent;
         vector<quadLevel> quadrature;
   	void calcQuadSet();
 	void printQuadSet();
