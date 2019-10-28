@@ -21,7 +21,6 @@ int main(void) {
      printTransport();
 
      Mesh myMesh(input); 
-     myMesh.calcQuadSet();
      myMesh.printQuadSet();
 
      return(0);
