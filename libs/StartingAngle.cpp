@@ -23,6 +23,7 @@ class StartingAngle
         public:
         // public functions
         StartingAngle(Mesh myMesh,YAML::Node myInput);
+        void calcStartingAngle();
 
         private:
         // private functions
@@ -41,6 +42,32 @@ StartingAngle::StartingAngle(Mesh myMesh,\
 	// Point to variables for mesh and input file
 	mesh = &myMesh;
 	input = &myInput;
+};
+
+//==============================================================================
+
+//==============================================================================
+//! calcStartingAngle Calculate the starting half angle angular flux
+
+// Solves using simple corner balance on a simplified neutron transport equation 
+// in RZ geometry. The simplification comes about by substituting quadrature 
+// values that correspond to the starting half angle, and results in the 
+// elimination of the angular redistribution term. 
+
+void StartingAngle::calcStartingAngle()
+{
+        // index xi value is stored in in quadLevel
+	const int xiIndex = 0;
+        // temporary variable used for looping though quad set
+	double xi;
+        	
+
+	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
+		// get value for xi at this quadrature level
+		xi = mesh->quadrature[iXi].quad[0][xiIndex];
+	}
+	
+
 };
 
 //==============================================================================
