@@ -19,6 +19,7 @@ class StartingAngle
         mat calclZ(double myGamma);
         mat calct1(double myGamma);
         mat calct2(double myGamma);
+        rowvec calcSubCellVol(int myiZ, int myiR);
 
         private:
         // private functions

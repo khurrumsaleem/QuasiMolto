@@ -30,6 +30,7 @@ class StartingAngle
         mat calclZ(double myGamma);
         mat calct1(double myGamma);
         mat calct2(double myGamma);
+        rowvec calcSubCellVol(int myiZ, int myiR);
 
         private:
         // private functions
@@ -66,6 +67,7 @@ void StartingAngle::calcStartingAngle()
 	const int xiIndex = 0;
         // temporary variable used for looping though quad set
 	double xi;
+	double sqrtXi;
         int zStart;
         int rStart;
         int zEnd; 
@@ -92,10 +94,17 @@ void StartingAngle::calcStartingAngle()
 	double t2Coeff;
 	mat t1(4,4,fill::zeros);
         mat t2(4,4,fill::zeros);
+	// A matrix of linear system Ax=b
+	mat A(4,4,fill::zeros);
+	rowvec subCellVol;
+
+	// need to bring this in from materials... kluge for now
+        double sigT = 10.0;
 	
 	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 		// get xi for this quadrature level
 		xi = mesh->quadrature[iXi].quad[0][xiIndex];
+                sqrtXi = pow(1-pow(xi,2),0.5); 
                 rStart = mesh->drs.size()-1;
                 borderCellR = 1;
                 withinUpstreamR = {1,4};
@@ -147,7 +156,9 @@ void StartingAngle::calcStartingAngle()
                                 t2Coeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
 				t2=calct2(gamma);
 				t2=t2Coeff*t2;
-              
+              			
+				A = sqrtXi*kR+xi*kZ+sigT*t1+sqrtXi*t2;
+				subCellVol = calcSubCellVol(iZ,iR);	
                         }
 		}
 	}
@@ -232,5 +243,18 @@ mat StartingAngle::calct2(double myGamma){
 	return t2;
 }
 
+rowvec StartingAngle::calcSubCellVol(int myiZ, int myiR){
+	rowvec subCellVol(3,fill::zeros);
+	
+	subCellVol(0) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
+		pow(mesh->rEdge(myiR),2));
+	subCellVol(1) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
+                pow(mesh->rCent(myiR),2));
+	subCellVol(2) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
+                pow(mesh->rCent(myiR),2));
+	subCellVol(0) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
+		pow(mesh->rEdge(myiR),2));
 
+	return subCellVol;
+}
 //==============================================================================
