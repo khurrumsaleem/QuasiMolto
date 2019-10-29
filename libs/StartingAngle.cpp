@@ -70,19 +70,35 @@ void StartingAngle::calcStartingAngle()
         vector<int> withinUpstreamZ(2);
         vector<int> outUpstreamZ(2);
         double gamma;
+	// within cell leakage matrices in R and Z directions
+	double kRCoeff;
+        double kZCoeff;
+	mat kR(4,4,fill::zeros);
+        mat kZ(4,4,fill::zeros);
+	// out of cell leakage matrices in Rand Z directions
+        double lRCoeff;
+        double lZCoeff;
+	mat lR(4,4,fill::zeros);
+        mat lZ(4,4,fill::zeros);
+        // reaction matrices
+	double t1Coeff;
+	double t2Coeff;
+	mat t1(4,4,fill::zeros);
+        mat t2(4,4,fill::zeros);
 	
 	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 		// get xi for this quadrature level
 		xi = mesh->quadrature[iXi].quad[0][xiIndex];
-		// depending on xi, define loop constants
+                rStart = mesh->drs.size()-1;
+                borderCellR = 1;
+                withinUpstreamR = {1,4};
+                outUpstreamR = {2,3};
+		// depending on xi, define loop constants	
 		if (xi > 0) {
-			zStart = mesh->dzs.size();
+			zStart = mesh->dzs.size()-1;
                         zEnd = 1;
                         zInc = -1;
                         borderCellZ = 1;
-                        borderCellR = 1;
-                        withinUpstreamR = {1,4};
-                        outUpstreamR = {2,3};
                         withinUpstreamZ = {3,4};
                         outUpstreamZ = {1,2};
 		}
@@ -91,9 +107,6 @@ void StartingAngle::calcStartingAngle()
                         zEnd = mesh->dzs.size();
                         zInc = 1;
                         borderCellZ = -1;
-                        borderCellR = 1;
-                        withinUpstreamR = {1,4};
-                        outUpstreamR = {2,3};
                         withinUpstreamZ = {1,2};
                         outUpstreamZ = {3,4};
 		}
@@ -102,7 +115,25 @@ void StartingAngle::calcStartingAngle()
 			for (int iZ = zStart, count = 0; \
 			    count < mesh->dzs.size(); iZ = iZ + zInc, ++count){
                         	cout << "iZ: " << iZ << endl;
-				gamma = mesh->rEdge(iR-1)/mesh->rEdge(iR);
+				gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
+				// calculate radial within cell leakage matrix
+                                kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
+				calckR();
+				// calculate axial within cell leakage matrix
+                                kZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/16.0;
+				calckZ();
+				// calculate radial out of cell leakage matrix
+                                lRCoeff = mesh->dzs(iZ)*mesh->rEdge(ir+1)/2.0;
+				calclR();
+				// calculate axial out of cell leakage matrix
+                                lZCoeff = mesh->drs(iR)*mesh->rEdge(ir+1)/8.0;
+				calclZ();
+				// calculate first collision matrix
+                                t1Coeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(ir+1)/16.0;
+				calct1();
+				// calculate second collision matrix
+                                t2Coeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
+				calct2();
                         }
 		}
 	}
