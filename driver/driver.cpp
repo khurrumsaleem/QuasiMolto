@@ -6,6 +6,7 @@
 #include "../libs/SingleGroupQD.h"
 #include "../libs/Transport.h"
 #include "../libs/Mesh.h"
+#include "../libs/StartingAngle.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
@@ -20,8 +21,11 @@ int main(void) {
      printSingleGroupQD();
      printTransport();
 
-     Mesh myMesh(input); 
-     myMesh.printQuadSet();
+     Mesh * myMesh; 
+     myMesh = new Mesh(input);
+     myMesh->printQuadSet();
+     StartingAngle myStartingAngle(myMesh,input);
+     myStartingAngle.calcStartingAngle();
 
      return(0);
 }
