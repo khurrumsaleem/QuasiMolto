@@ -22,7 +22,7 @@ class StartingAngle
 {
         public:
         // public functions
-        StartingAngle(Mesh myMesh,YAML::Node myInput);
+        StartingAngle(Mesh * myMesh,YAML::Node myInput);
         void calcStartingAngle();
 
         private:
@@ -36,11 +36,11 @@ class StartingAngle
 //==============================================================================
 //! StartingAngle object constructor
 
-StartingAngle::StartingAngle(Mesh myMesh,\
+StartingAngle::StartingAngle(Mesh * myMesh,\
                              YAML::Node myInput)
 {
 	// Point to variables for mesh and input file
-	mesh = &myMesh;
+	mesh = myMesh;
 	input = &myInput;
 };
 
@@ -60,10 +60,8 @@ void StartingAngle::calcStartingAngle()
 	const int xiIndex = 0;
         // temporary variable used for looping though quad set
 	double xi;
-        	
-
+	
 	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
-		// get value for xi at this quadrature level
 		xi = mesh->quadrature[iXi].quad[0][xiIndex];
 	}
 	
