@@ -13,6 +13,12 @@ class StartingAngle
         // public functions
         StartingAngle(Mesh * myMesh,YAML::Node * myInput);
 	void calcStartingAngle();
+        mat calckR(double myGamma);
+        mat calckZ(double myGamma);
+        mat calclR(double myGamma);
+        mat calclZ(double myGamma);
+        mat calct1(double myGamma);
+        mat calct2(double myGamma);
 
         private:
         // private functions

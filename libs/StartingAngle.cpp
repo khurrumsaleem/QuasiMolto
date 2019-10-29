@@ -24,6 +24,12 @@ class StartingAngle
         // public functions
         StartingAngle(Mesh * myMesh,YAML::Node * myInput);
         void calcStartingAngle();
+        mat calckR(double myGamma);
+        mat calckZ(double myGamma);
+        mat calclR(double myGamma);
+        mat calclZ(double myGamma);
+        mat calct1(double myGamma);
+        mat calct2(double myGamma);
 
         private:
         // private functions
@@ -61,6 +67,7 @@ void StartingAngle::calcStartingAngle()
         // temporary variable used for looping though quad set
 	double xi;
         int zStart;
+        int rStart;
         int zEnd; 
         int zInc; 
 	int borderCellZ;
@@ -96,21 +103,21 @@ void StartingAngle::calcStartingAngle()
 		// depending on xi, define loop constants	
 		if (xi > 0) {
 			zStart = mesh->dzs.size()-1;
-                        zEnd = 1;
+                        zEnd = 0;
                         zInc = -1;
                         borderCellZ = 1;
                         withinUpstreamZ = {3,4};
                         outUpstreamZ = {1,2};
 		}
                 else {			
-			zStart = 1;
+			zStart = 0;
                         zEnd = mesh->dzs.size();
                         zInc = 1;
                         borderCellZ = -1;
                         withinUpstreamZ = {1,2};
                         outUpstreamZ = {3,4};
 		}
-                for (int iR = mesh->drs.size(); iR > 0; --iR){
+                for (int iR = rStart; iR > 0; --iR){
                         cout << "iR: " << iR << endl;
 			for (int iZ = zStart, count = 0; \
 			    count < mesh->dzs.size(); iZ = iZ + zInc, ++count){
@@ -118,27 +125,112 @@ void StartingAngle::calcStartingAngle()
 				gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
 				// calculate radial within cell leakage matrix
                                 kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
-				calckR();
+				kR=calckR(gamma);
+				kR=kRCoeff*kR;
 				// calculate axial within cell leakage matrix
                                 kZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/16.0;
-				calckZ();
+				kZ=calckZ(gamma);
+				kZ=kZCoeff*kZ;
 				// calculate radial out of cell leakage matrix
-                                lRCoeff = mesh->dzs(iZ)*mesh->rEdge(ir+1)/2.0;
-				calclR();
+                                lRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/2.0;
+				lR=calclR(gamma);
+				lR=lRCoeff*lR;
 				// calculate axial out of cell leakage matrix
-                                lZCoeff = mesh->drs(iR)*mesh->rEdge(ir+1)/8.0;
-				calclZ();
+                                lZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/8.0;
+				lZ=calclZ(gamma);
+				lZ=lZCoeff*lZ;
 				// calculate first collision matrix
-                                t1Coeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(ir+1)/16.0;
-				calct1();
+                                t1Coeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(iR+1)/16.0;
+				t1=calct1(gamma);
+				t1=t1Coeff*t1;
 				// calculate second collision matrix
                                 t2Coeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
-				calct2();
+				t2=calct2(gamma);
+				t2=t2Coeff*t2;
+              
                         }
 		}
 	}
 	
 
 };
+
+mat StartingAngle::calckR(double myGamma){
+	double a = -(1+myGamma);
+	double b = 1+myGamma;
+	mat kR(4,4,fill::zeros);
+
+	kR(0,0) = a; kR(0,1) = a;
+	kR(1,0) = b; kR(1,1) = b;
+	kR(2,2) = b; kR(2,3) = b;
+	kR(3,2) = a; kR(3,3) = a;
+         
+	return kR;
+}
+
+mat StartingAngle::calckZ(double myGamma){
+	double a = 1+3*myGamma;
+	double b = 3+myGamma;
+	mat kZ(4,4,fill::zeros);
+
+	kZ(0,0) = a; kZ(0,3) = a;
+	kZ(1,2) = b; kZ(1,3) = b;
+	kZ(2,2) = -b; kZ(2,3) = -b;
+	kZ(3,0) = -a; kZ(3,3) = -a;
+         
+	return kZ;
+}
+
+mat StartingAngle::calclR(double myGamma){
+	double a = myGamma;
+	double b = -1;
+	mat lR(4,4,fill::zeros);
+
+	lR(0,0) = a; 
+	lR(1,1) = b; 
+	lR(2,2) = b; 
+	lR(3,3) = a; 
+         
+	return lR;
+}
+
+mat StartingAngle::calclZ(double myGamma){
+	double a = 1+3*myGamma;
+	double b = 3+myGamma;
+	mat lZ(4,4,fill::zeros);
+
+	lZ(0,0) = -a; 
+	lZ(1,1) = -b; 
+	lZ(2,2) = b; 
+	lZ(3,3) = a; 
+         
+	return lZ;
+}
+
+mat StartingAngle::calct1(double myGamma){
+	double a = 1+3*myGamma;
+	double b = 3+myGamma;
+	mat t1(4,4,fill::zeros);
+
+	t1(0,0) = a; 
+	t1(1,1) = b; 
+	t1(2,2) = b; 
+	t1(3,3) = a; 
+         
+	return t1;
+}
+
+mat StartingAngle::calct2(double myGamma){
+	double a = 1;
+	mat t2(4,4,fill::zeros);
+
+	t2(0,0) = a; 
+	t2(1,1) = a; 
+	t2(2,2) = a;
+	t2(3,3) = a; 
+         
+	return t2;
+}
+
 
 //==============================================================================
