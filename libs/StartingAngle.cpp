@@ -60,9 +60,51 @@ void StartingAngle::calcStartingAngle()
 	const int xiIndex = 0;
         // temporary variable used for looping though quad set
 	double xi;
+        int zStart;
+        int zEnd; 
+        int zInc; 
+	int borderCellZ;
+        int borderCellR;
+        vector<int> withinUpstreamR(2);
+        vector<int> outUpstreamR(2);
+        vector<int> withinUpstreamZ(2);
+        vector<int> outUpstreamZ(2);
+        double gamma;
 	
 	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
+		// get xi for this quadrature level
 		xi = mesh->quadrature[iXi].quad[0][xiIndex];
+		// depending on xi, define loop constants
+		if (xi > 0) {
+			zStart = mesh->dzs.size();
+                        zEnd = 1;
+                        zInc = -1;
+                        borderCellZ = 1;
+                        borderCellR = 1;
+                        withinUpstreamR = {1,4};
+                        outUpstreamR = {2,3};
+                        withinUpstreamZ = {3,4};
+                        outUpstreamZ = {1,2};
+		}
+                else {			
+			zStart = 1;
+                        zEnd = mesh->dzs.size();
+                        zInc = 1;
+                        borderCellZ = -1;
+                        borderCellR = 1;
+                        withinUpstreamR = {1,4};
+                        outUpstreamR = {2,3};
+                        withinUpstreamZ = {1,2};
+                        outUpstreamZ = {3,4};
+		}
+                for (int iR = mesh->drs.size(); iR > 0; --iR){
+                        cout << "iR: " << iR << endl;
+			for (int iZ = zStart, count = 0; \
+			    count < mesh->dzs.size(); iZ = iZ + zInc, ++count){
+                        	cout << "iZ: " << iZ << endl;
+				gamma = mesh->rEdge(iR-1)/mesh->rEdge(iR);
+                        }
+		}
 	}
 	
 
