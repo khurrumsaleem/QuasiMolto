@@ -22,7 +22,7 @@ class StartingAngle
 {
         public:
         // public functions
-        StartingAngle(Mesh * myMesh,YAML::Node myInput);
+        StartingAngle(Mesh * myMesh,YAML::Node * myInput);
         void calcStartingAngle();
 
         private:
@@ -37,11 +37,11 @@ class StartingAngle
 //! StartingAngle object constructor
 
 StartingAngle::StartingAngle(Mesh * myMesh,\
-                             YAML::Node myInput)
+                             YAML::Node * myInput)
 {
 	// Point to variables for mesh and input file
 	mesh = myMesh;
-	input = &myInput;
+	input = myInput;
 };
 
 //==============================================================================

@@ -13,7 +13,9 @@ using namespace std;
 
 int main(void) {
 
-     YAML::Node input = YAML::LoadFile("input.yaml");
+     YAML::Node * input;
+     input = new YAML::Node;
+     *input = YAML::LoadFile("input.yaml");
      cout << "Print from driver" << endl;
 
      printMat();

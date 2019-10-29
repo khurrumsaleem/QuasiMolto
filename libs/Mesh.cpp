@@ -61,7 +61,7 @@ quadLevel::quadLevel(vector< vector<double> > myQuad,\
 class Mesh
 {
 	public:
-	Mesh(YAML::Node myInput);  	
+	Mesh(YAML::Node * myInput);  	
 	//order of quadrature set
   	int n;		
 	double dz; 
@@ -109,8 +109,8 @@ class Mesh
 
 //==============================================================================
 //! Mesh Contructor for Mesh object. 
-Mesh::Mesh(YAML::Node myInput){
-	input = &myInput;
+Mesh::Mesh(YAML::Node * myInput){
+	input = myInput;
 	n=12; // currently only works for a quadrature set of order 12 
 	// read in mesh parameters
 	dz = (*input)["mesh"]["dz"].as<double>();

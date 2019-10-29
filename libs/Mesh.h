@@ -29,7 +29,7 @@ class quadLevel
 class Mesh
 {
 	public:
-	Mesh(YAML::Node myInput);  	
+	Mesh(YAML::Node * myInput);  	
   	int n;		
 	double dz; 
 	double dr;

@@ -11,7 +11,7 @@ class StartingAngle
 {
         public:
         // public functions
-        StartingAngle(Mesh * myMesh,YAML::Node myInput);
+        StartingAngle(Mesh * myMesh,YAML::Node * myInput);
 	void calcStartingAngle();
 
         private:
