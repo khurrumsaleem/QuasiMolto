@@ -12,6 +12,7 @@
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
+using namespace arma;
 
 //==============================================================================
 //! quadLevel class that contains information on a single quadrature level
@@ -60,7 +61,7 @@ quadLevel::quadLevel(vector< vector<double> > myQuad,\
 class Mesh
 {
 	public:
-	Mesh(YAML::Node myInput);  	
+	Mesh(YAML::Node * myInput);  	
 	//order of quadrature set
   	int n;		
 	double dz; 
@@ -77,8 +78,12 @@ class Mesh
         vector< vector<double> > cellVol;
 	// verticalsurface areas of cell boundaries
         vector< vector<double> > cellVSA;
-        vector<double> dzs;
-        vector<double> drs;
+        rowvec dzs;
+        rowvec drs;
+	rowvec rEdge;
+	rowvec zEdge;
+        rowvec rCent;
+        rowvec zCent;
         vector<quadLevel> quadrature;
         // public functions
   	void calcQuadSet();
@@ -93,7 +98,7 @@ class Mesh
   	void calcMu();	
 	void calcAlpha();
         void calcTau();
-        void buildSpatialMesh();
+        void calcSpatialMesh();
         void addLevels();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
@@ -104,15 +109,16 @@ class Mesh
 
 //==============================================================================
 //! Mesh Contructor for Mesh object. 
-Mesh::Mesh(YAML::Node myInput){
-	input = &myInput;
+Mesh::Mesh(YAML::Node * myInput){
+	input = myInput;
 	n=12; // currently only works for a quadrature set of order 12 
 	// read in mesh parameters
 	dz = (*input)["mesh"]["dz"].as<double>();
 	dr = (*input)["mesh"]["dr"].as<double>();
 	Z = (*input)["mesh"]["Z"].as<double>();
 	R = (*input)["mesh"]["R"].as<double>();
-	buildSpatialMesh();
+	calcSpatialMesh();
+	calcQuadSet();
 }
 //==============================================================================
 
@@ -335,35 +341,46 @@ void Mesh::calcTau(){
 //==============================================================================
 
 //==============================================================================
-//! buildSpatialMesh function to build uniform mesh
+//! calcSpatialMesh function to build uniform mesh
 
-void Mesh::buildSpatialMesh(){
+void Mesh::calcSpatialMesh(){
 
 	int nCellsZ;
 	int nCellsR;
-	vector<double> drs;
-	vector<double> dzs;
-	vector<double> rEdge;
-	vector<double> zEdge;
 	// Calculate number of cells
 	nCellsZ= Z/dz;
 	nCellsR = R/dr;
 
 	// Resize vectors storing dimensions of each cell
-	dzs.resize(nCellsZ,dz);
-	drs.resize(nCellsR,dr);
+	dzs.zeros(nCellsZ);
+	dzs.fill(dz);
+	drs.zeros(nCellsR);
+        drs.fill(dr);
 
 	// Resize vector holding boundaries in each dimension
-	rEdge.resize(nCellsR+1,0.0);
-	zEdge.resize(nCellsZ+1,0.0);
+	rEdge.zeros(nCellsR+1);
+	zEdge.zeros(nCellsZ+1);
+	
+        // Resize cell center location in each dimension
+	rCent.zeros(nCellsR);
+	zCent.zeros(nCellsZ);
 
 	// Populate vectors holding boundaries in each dimension
-	for (int iEdge = 1; iEdge < rEdge.size(); ++iEdge){
-		rEdge[iEdge] = rEdge[iEdge-1] + drs[iEdge-1];
+	for (int iEdge = 1; iEdge < rEdge.n_elem; ++iEdge){
+		rEdge(iEdge) = rEdge(iEdge-1) + drs(iEdge-1);
 	}
 	
-	for (int iEdge = 1; iEdge < zEdge.size(); ++iEdge){
-		zEdge[iEdge] = zEdge[iEdge-1] + dzs[iEdge-1];
+	for (int iEdge = 1; iEdge < zEdge.n_elem; ++iEdge){
+		zEdge(iEdge) = zEdge(iEdge-1) + dzs(iEdge-1);
+	}
+	
+	// Populate vectors holding cell center location in each dimension
+	for (int iCent = 1; iCent < rCent.n_elem; ++iCent){
+		rCent(iCent) = (rEdge(iCent)+rEdge(iCent+1))/2.0;
+	}
+	
+	for (int iCent = 1; iCent < zCent.n_elem; ++iCent){
+		zCent(iCent) = (zEdge(iCent)+zEdge(iCent+1))/2.0;
 	}
 
 	// Calculate cell volume
