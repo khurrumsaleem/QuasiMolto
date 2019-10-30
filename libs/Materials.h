@@ -18,8 +18,10 @@ using namespace arma;
 class Materials
 {
         public:
+	umat matMap; //resized later
         // public functions
         Materials(Mesh * myMesh,YAML::Node * myInput);
+	void readInput();
 
         private:
         // private functions

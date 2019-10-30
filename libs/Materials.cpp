@@ -19,9 +19,10 @@ using namespace arma;
 class Materials
 {
         public:
+	umat matMap;
         // public functions
         Materials(Mesh * myMesh,YAML::Node * myInput);
-
+	void readInput();
         private:
         // private functions
         YAML::Node * input;
@@ -39,7 +40,33 @@ Materials::Materials(Mesh * myMesh,\
 	// Point to variables for mesh and input file
 	mesh = myMesh;
 	input = myInput;
+	matMap.set_size(mesh->zCent.size(),mesh->rCent.size());
+	matMap.fill(0);
+	readInput();
 };
 
 //==============================================================================
+
+//==============================================================================
+//! readInput Parse input and define material and geometry parameters
+
+void Materials::readInput()
+{
+	YAML::Node geometry = (*input)["geometry"];
+	string regType;
+        
+	cout << "size of geometry" << geometry.size() << endl;
+	for (YAML::const_iterator it=geometry.begin(); it!=geometry.end(); ++it){
+		regType=it->first.as<string>();
+		if (regType=="background"){
+			cout << "blanke region in type!" << endl;
+		} else if (regType=="region"){
+			cout << "fill specific region"<< endl;
+			cout << it->second["material"].as<string>() << endl;
+		}
+	}
+};
+
+//==============================================================================
+
 
