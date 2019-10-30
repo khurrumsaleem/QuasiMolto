@@ -18,7 +18,6 @@ int main(void) {
      *input = YAML::LoadFile("input.yaml");
      cout << "Print from driver" << endl;
 
-     printMat();
      printMultiGroupQD();
      printSingleGroupQD();
      printTransport();
@@ -29,5 +28,8 @@ int main(void) {
      StartingAngle myStartingAngle(myMesh,input);
      myStartingAngle.calcStartingAngle();
 
+     Materials * myMaterials;
+     myMaterials = new Materials(myMesh,input);
+    
      return(0);
 }
