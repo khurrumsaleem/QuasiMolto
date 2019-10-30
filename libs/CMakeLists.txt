@@ -4,4 +4,5 @@ add_library(libs
 	SingleGroupQD.cpp 
 	Transport.cpp
 	Mesh.cpp
-        StartingAngle.cpp)
+        StartingAngle.cpp
+        Material.cpp)

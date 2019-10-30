@@ -7,6 +7,7 @@
 #include "../libs/Transport.h"
 #include "../libs/Mesh.h"
 #include "../libs/StartingAngle.h"
+#include "../libs/Material.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
