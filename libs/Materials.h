@@ -19,7 +19,7 @@ class Materials
 {
         public:
         // public functions
-        Material(Mesh * myMesh,YAML::Node * myInput);
+        Materials(Mesh * myMesh,YAML::Node * myInput);
 
         private:
         // private functions
