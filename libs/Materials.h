@@ -21,7 +21,10 @@ class Materials
 	umat matMap; //resized later
         // public functions
         Materials(Mesh * myMesh,YAML::Node * myInput);
-	void readInput();
+	void readMats();
+	void readGeom();
+        void setMatRegion(int myIndex,double rIn,double rOut,\
+		double zUp,double zLow);
 
         private:
         // private functions

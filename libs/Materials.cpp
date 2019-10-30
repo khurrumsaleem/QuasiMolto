@@ -22,11 +22,16 @@ class Materials
 	umat matMap;
         // public functions
         Materials(Mesh * myMesh,YAML::Node * myInput);
-	void readInput();
+	void readMats();
+	void readGeom();
+        void setMatRegion(int myIndex,double rIn,double rOut,\
+		double zUp,double zLow);
+
         private:
         // private functions
         YAML::Node * input;
         Mesh * mesh;
+	map<string,int> mat2idx;
 };
 
 //==============================================================================
@@ -42,31 +47,73 @@ Materials::Materials(Mesh * myMesh,\
 	input = myInput;
 	matMap.set_size(mesh->zCent.size(),mesh->rCent.size());
 	matMap.fill(0);
-	readInput();
+	readMats();
+	readGeom();
 };
 
 //==============================================================================
 
 //==============================================================================
-//! readInput Parse input and define material and geometry parameters
+//! readInput Parse input and define  geometry parameters
 
-void Materials::readInput()
+void Materials::readGeom()
 {
 	YAML::Node geometry = (*input)["geometry"];
 	string regType;
+	string matName;
+	double rIn, rOut, zLow, zUp;
+	int index;
         
-	cout << "size of geometry" << geometry.size() << endl;
 	for (YAML::const_iterator it=geometry.begin(); it!=geometry.end(); ++it){
 		regType=it->first.as<string>();
 		if (regType=="background"){
-			cout << "blanke region in type!" << endl;
+			index = mat2idx[it->second.as<string>()];
+			setMatRegion(index,0.0,mesh->R,0.0,mesh->Z);
 		} else if (regType=="region"){
-			cout << "fill specific region"<< endl;
-			cout << it->second["material"].as<string>() << endl;
+			index = mat2idx[it->second["material"].as<string>()];
+			rIn = it->second["inner-r"].as<double>(); 
+			rOut = it->second["outer-r"].as<double>(); 
+			zLow = it->second["lower-z"].as<double>(); 
+			zUp = it->second["upper-z"].as<double>();
+			setMatRegion(index,rIn,rOut,zLow,zUp);
 		}
 	}
 };
 
 //==============================================================================
 
+//==============================================================================
+//! readInput Parse input and define material parameters
+
+void Materials::readMats()
+{
+	YAML::Node mats = (*input)["materials"];
+	string regType;
+        int iCount=0;
+	for (YAML::const_iterator it=mats.begin(); it!=mats.end(); ++it){
+		mat2idx.insert(pair<string,int>(it->first.as<string>(),iCount));
+		++iCount;
+	}
+};
+
+//==============================================================================
+
+//==============================================================================
+//! setMatRegions set material region to provided index
+
+// Set all locations within the input bounds equal to the input index
+void Materials::setMatRegion(int myIndex,double rIn,double rOut,double zLow,double zUp)
+{
+	for (int iZ = 0; iZ < mesh->zCent.size(); iZ++){
+		if (mesh->zCent(iZ)>zLow && mesh->zCent(iZ)<zUp){
+			for (int iR = 0; iR < mesh->rCent.size(); iR++){
+				if (mesh->rCent(iR)>rIn && mesh->rCent(iR)<rOut){
+					matMap(iZ,iR) = myIndex;
+				}
+			}
+		}
+	}
+};
+
+//==============================================================================
 
