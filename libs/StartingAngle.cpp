@@ -30,7 +30,7 @@ class StartingAngle
         mat calclZ(double myGamma);
         mat calct1(double myGamma);
         mat calct2(double myGamma);
-        rowvec calcSubCellVol(int myiZ, int myiR);
+        colvec calcSubCellVol(int myiZ, int myiR);
 
         private:
         // private functions
@@ -96,10 +96,25 @@ void StartingAngle::calcStartingAngle()
         mat t2(4,4,fill::zeros);
 	// A matrix of linear system Ax=b
 	mat A(4,4,fill::zeros);
-	rowvec subCellVol;
+	colvec subCellVol;
+        // downstream values
+	mat downstream(4,4,fill::zeros);
+        // downstream values
+	colvec upstream(4,fill::zeros);
+	// right-hand side
+	colvec b(4,fill::zeros);
+	// solution vector 
+	colvec x(4,fill::zeros);
+	// source 
+	colvec q(4,fill::ones);
+	q = 8*q;
 
 	// need to bring this in from materials... kluge for now
         double sigT = 10.0;
+	
+	// need to bring this in from transport... fluge for now
+	cube halfAFlux(mesh->dzs.size(),mesh->drs.size(),mesh->quadrature.size(),\
+			fill::zeros);
 	
 	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 		// get xi for this quadrature level
@@ -107,30 +122,28 @@ void StartingAngle::calcStartingAngle()
                 sqrtXi = pow(1-pow(xi,2),0.5); 
                 rStart = mesh->drs.size()-1;
                 borderCellR = 1;
-                withinUpstreamR = {1,4};
-                outUpstreamR = {2,3};
+                withinUpstreamR = {0,3};
+                outUpstreamR = {1,2};
 		// depending on xi, define loop constants	
 		if (xi > 0) {
 			zStart = mesh->dzs.size()-1;
                         zEnd = 0;
                         zInc = -1;
                         borderCellZ = 1;
-                        withinUpstreamZ = {3,4};
-                        outUpstreamZ = {1,2};
+                        withinUpstreamZ = {2,3};
+                        outUpstreamZ = {0,1};
 		}
                 else {			
 			zStart = 0;
                         zEnd = mesh->dzs.size();
                         zInc = 1;
                         borderCellZ = -1;
-                        withinUpstreamZ = {1,2};
-                        outUpstreamZ = {3,4};
+                        withinUpstreamZ = {0,1};
+                        outUpstreamZ = {2,3};
 		}
-                for (int iR = rStart; iR > 0; --iR){
-                        cout << "iR: " << iR << endl;
-			for (int iZ = zStart, count = 0; \
-			    count < mesh->dzs.size(); iZ = iZ + zInc, ++count){
-                        	cout << "iZ: " << iZ << endl;
+                for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
+			for (int iZ = zStart, countZ = 0; \
+			    countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
 				gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
 				// calculate radial within cell leakage matrix
                                 kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
@@ -156,14 +169,46 @@ void StartingAngle::calcStartingAngle()
                                 t2Coeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
 				t2=calct2(gamma);
 				t2=t2Coeff*t2;
-              			
+              			// calculate A considering within cell leakage and 
+				// collision matrices
 				A = sqrtXi*kR+xi*kZ+sigT*t1+sqrtXi*t2;
-				subCellVol = calcSubCellVol(iZ,iR);	
+				// consider radial downstream values defined in this cell
+				subCellVol = calcSubCellVol(iZ,iR);
+				for (int iCol = 0; iCol < downstream.n_cols; ++iCol){
+					downstream.col(iCol) = subCellVol(iCol)*\
+					sqrtXi*(lR.col(withinUpstreamR[0])+\
+                                        lR.col(withinUpstreamR[1]))/sum(subCellVol);
+				}
+				// consider axial downstream values defined in this cell
+				for (int iCol = 0; iCol < downstream.n_cols; ++iCol){
+					downstream.col(iCol) = downstream.col(iCol)
+                                        +subCellVol(iCol)\
+                                        *xi*(lZ.col(withinUpstreamZ[0])\
+                                        +lZ.col(withinUpstreamZ[1]))/sum(subCellVol);
+				}
+				A = A + downstream;
+				// form b matrix
+				b = t1*q;
+				// consider upstream values in other cells or BCs
+				if (iR!=rStart){
+					upstream = sqrtXi*halfAFlux(iZ,iR+borderCellR,iXi)\
+					*(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+					b = b - upstream;
+				}
+				if (iZ!=zStart){
+					upstream = xi*halfAFlux(iZ+borderCellZ,iR,iXi)\
+					*(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
+					b = b - upstream;
+				}
+				x = solve(A,b);
+				// Take average of subcells
+				halfAFlux(iZ,iR,iXi) = dot(x,subCellVol)/sum(subCellVol);
                         }
 		}
 	}
 	
-
+	cout << "half angle flux calculated! " << endl;
+	//cout << halfAFlux << endl;
 };
 
 mat StartingAngle::calckR(double myGamma){
@@ -243,8 +288,8 @@ mat StartingAngle::calct2(double myGamma){
 	return t2;
 }
 
-rowvec StartingAngle::calcSubCellVol(int myiZ, int myiR){
-	rowvec subCellVol(3,fill::zeros);
+colvec StartingAngle::calcSubCellVol(int myiZ, int myiR){
+	colvec subCellVol(4,fill::zeros);
 	
 	subCellVol(0) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
 		pow(mesh->rEdge(myiR),2));
@@ -252,7 +297,7 @@ rowvec StartingAngle::calcSubCellVol(int myiZ, int myiR){
                 pow(mesh->rCent(myiR),2));
 	subCellVol(2) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
                 pow(mesh->rCent(myiR),2));
-	subCellVol(0) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
+	subCellVol(3) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
 		pow(mesh->rEdge(myiR),2));
 
 	return subCellVol;
