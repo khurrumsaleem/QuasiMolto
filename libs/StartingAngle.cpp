@@ -11,6 +11,8 @@
 #include <armadillo>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "Mesh.h"
+#include "Materials.h"
+#include "Material.h"
 
 using namespace std; 
 using namespace arma;
@@ -22,7 +24,9 @@ class StartingAngle
 {
         public:
         // public functions
-        StartingAngle(Mesh * myMesh,YAML::Node * myInput);
+        StartingAngle(Mesh * myMesh,
+		Materials * myMaterials,\
+		YAML::Node * myInput);
         void calcStartingAngle();
         mat calckR(double myGamma);
         mat calckZ(double myGamma);
@@ -36,6 +40,7 @@ class StartingAngle
         // private functions
         YAML::Node * input;
         Mesh * mesh;
+        Materials * materials;
 };
 
 //==============================================================================
@@ -44,11 +49,14 @@ class StartingAngle
 //! StartingAngle object constructor
 
 StartingAngle::StartingAngle(Mesh * myMesh,\
-                             YAML::Node * myInput)
+	Materials * myMaterials,\
+	YAML::Node * myInput)	      
 {
 	// Point to variables for mesh and input file
 	mesh = myMesh;
 	input = myInput;
+	materials = myMaterials;
+	
 };
 
 //==============================================================================
@@ -110,7 +118,7 @@ void StartingAngle::calcStartingAngle()
 	q = 8*q;
 
 	// need to bring this in from materials... kluge for now
-        double sigT = 10.0;
+        double sigT = 1.0;
 	
 	// need to bring this in from transport... fluge for now
 	cube halfAFlux(mesh->dzs.size(),mesh->drs.size(),mesh->quadrature.size(),\
@@ -144,6 +152,7 @@ void StartingAngle::calcStartingAngle()
                 for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
 			for (int iZ = zStart, countZ = 0; \
 			    countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
+				sigT = materials->sigT(iZ,iR,0);
 				gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
 				// calculate radial within cell leakage matrix
                                 kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
@@ -208,7 +217,7 @@ void StartingAngle::calcStartingAngle()
 	}
 	
 	cout << "half angle flux calculated! " << endl;
-	//cout << halfAFlux << endl;
+	cout << halfAFlux << endl;
 };
 
 mat StartingAngle::calckR(double myGamma){

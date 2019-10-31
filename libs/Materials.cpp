@@ -9,6 +9,7 @@
 #include <armadillo>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "Mesh.h"
+#include "Material.h"
 
 using namespace std; 
 using namespace arma;
@@ -26,12 +27,15 @@ class Materials
 	void readGeom();
         void setMatRegion(int myIndex,double rIn,double rOut,\
 		double zUp,double zLow);
+	double sigT(int zIdx,int rIdx,int eIndx);
+        void edit();
 
         private:
         // private functions
         YAML::Node * input;
         Mesh * mesh;
 	map<string,int> mat2idx;
+	vector<shared_ptr<Material>> matBank;
 };
 
 //==============================================================================
@@ -59,9 +63,8 @@ Materials::Materials(Mesh * myMesh,\
 void Materials::readGeom()
 {
 	YAML::Node geometry = (*input)["geometry"];
-	string regType;
-	string matName;
-	double rIn, rOut, zLow, zUp;
+	string regType,matName;
+	double rIn,rOut,zLow,zUp;
 	int index;
         
 	for (YAML::const_iterator it=geometry.begin(); it!=geometry.end(); ++it){
@@ -88,10 +91,35 @@ void Materials::readGeom()
 void Materials::readMats()
 {
 	YAML::Node mats = (*input)["materials"];
-	string regType;
+	string name;
+	vector<double> sigTInp,sigSInp,sigFInp;
+	rowvec sigT,sigS,sigF; 
+	int ID,size;
+	double nu;
+	
         int iCount=0;
 	for (YAML::const_iterator it=mats.begin(); it!=mats.end(); ++it){
 		mat2idx.insert(pair<string,int>(it->first.as<string>(),iCount));
+		name = it->first.as<string>();
+		// pull values from input
+		sigTInp = it->second["sigT"].as<vector<double>>();
+		sigSInp = it->second["sigS"].as<vector<double>>();
+		sigFInp = it->second["sigF"].as<vector<double>>();
+		nu = it->second["nu"].as<double>();
+		// set size of arma vectors
+		size = sigTInp.size();
+		sigT.set_size(size); 
+		sigS.set_size(size);
+		sigF.set_size(size);
+		// load standard vector inputs into arma vector
+		for (int iSig = 0; iSig < size; ++iSig){
+			sigT(iSig) = sigTInp[iSig];
+			sigS(iSig) = sigSInp[iSig];
+			sigF(iSig) = sigFInp[iSig];
+		}
+		// add material to bank
+		shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,sigF,nu));
+		matBank.push_back(std::move(newMat));
 		++iCount;
 	}
 };
@@ -113,6 +141,36 @@ void Materials::setMatRegion(int myIndex,double rIn,double rOut,double zLow,doub
 			}
 		}
 	}
+};
+
+//==============================================================================
+
+//==============================================================================
+//! edit Print out material map and all entries in material bank
+
+void Materials::edit()
+{
+	cout << "Material map: " << endl;
+	cout << matMap << endl;
+	for (int iCount = 0; iCount < matBank.size(); ++iCount){
+		matBank[iCount]->edit();
+	}
+};
+
+//==============================================================================
+
+//==============================================================================
+//! sigT return total cross 
+
+// return total cross section at location indicated by input indices
+double Materials::sigT(int zIdx,int rIdx,int eIndx){
+
+	double sigT = matBank[matMap(zIdx,rIdx)]->sigT(eIndx);
+
+	// eventually there will need to be some manipulation here that 
+	// extrapolates the cross section based on temperature
+
+	return sigT;
 };
 
 //==============================================================================

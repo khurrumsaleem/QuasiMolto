@@ -25,6 +25,8 @@ class Materials
 	void readGeom();
         void setMatRegion(int myIndex,double rIn,double rOut,\
 		double zUp,double zLow);
+	double sigT(int zIdx,int rIdx,int eIndx);
+        void edit();
 
         private:
         // private functions

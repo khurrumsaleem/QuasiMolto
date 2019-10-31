@@ -26,11 +26,13 @@ int main(void) {
      Mesh * myMesh; 
      myMesh = new Mesh(input);
      myMesh->printQuadSet();
-     StartingAngle myStartingAngle(myMesh,input);
-     myStartingAngle.calcStartingAngle();
 
      Materials * myMaterials;
      myMaterials = new Materials(myMesh,input);
     
+     StartingAngle myStartingAngle(myMesh,myMaterials,input);
+     myStartingAngle.calcStartingAngle();
+     myMaterials->edit();
+
      return(0);
 }
