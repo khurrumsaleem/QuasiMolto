@@ -28,6 +28,9 @@ class Materials
         void setMatRegion(int myIndex,double rIn,double rOut,\
 		double zUp,double zLow);
 	double sigT(int zIdx,int rIdx,int eIndx);
+	double sigS(int zIdx,int rIdx,int eIndx);
+	double sigF(int zIdx,int rIdx,int eIndx);
+	double nu(int zIdx,int rIdx);
         void edit();
 
         private:
@@ -160,7 +163,7 @@ void Materials::edit()
 //==============================================================================
 
 //==============================================================================
-//! sigT return total cross 
+//! sigT return total cross section
 
 // return total cross section at location indicated by input indices
 double Materials::sigT(int zIdx,int rIdx,int eIndx){
@@ -174,4 +177,55 @@ double Materials::sigT(int zIdx,int rIdx,int eIndx){
 };
 
 //==============================================================================
+
+//==============================================================================
+//! sigS return scattering cross section
+
+// return scatter cross section at location indicated by input indices
+double Materials::sigS(int zIdx,int rIdx,int eIndx){
+
+	double sigS = matBank[matMap(zIdx,rIdx)]->sigS(eIndx);
+
+	// eventually there will need to be some manipulation here that 
+	// extrapolates the cross section based on temperature
+
+	return sigS;
+};
+
+//==============================================================================
+
+//==============================================================================
+//! sigF return fission cross section 
+
+// return fission cross section at location indicated by input indices
+double Materials::sigF(int zIdx,int rIdx,int eIndx){
+
+	double sigF = matBank[matMap(zIdx,rIdx)]->sigF(eIndx);
+
+	// eventually there will need to be some manipulation here that 
+	// extrapolates the cross section based on temperature
+
+	return sigF;
+};
+
+//==============================================================================
+
+//==============================================================================
+//! nu return nu, the average number of neutrons produced per fission event
+
+// return nu at location indicated by input indices
+double Materials::nu(int zIdx,int rIdx){
+
+	double nu = matBank[matMap(zIdx,rIdx)]->nu;
+
+	// eventually there will need to be some manipulation here that 
+	// extrapolates the cross section based on temperature
+
+	return nu;
+};
+
+//==============================================================================
+
+
+
 
