@@ -10,6 +10,7 @@
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "../TPLs/eigen-git-mirror/Eigen/Dense"
 
 using namespace std; 
 using namespace arma;
@@ -28,7 +29,7 @@ class Materials
         void setMatRegion(int myIndex,double rIn,double rOut,\
 		double zUp,double zLow);
 	double sigT(int zIdx,int rIdx,int eIndx);
-	double sigS(int zIdx,int rIdx,int eIndx);
+	double sigS(int zIdx,int rIdx,int gprime, int g);
 	double sigF(int zIdx,int rIdx,int eIndx);
 	double nu(int zIdx,int rIdx);
         void edit();
@@ -56,6 +57,8 @@ Materials::Materials(Mesh * myMesh,\
 	matMap.fill(0);
 	readMats();
 	readGeom();
+	Eigen::MatrixXd m = Eigen::MatrixXd::Random(3,3);
+	cout << "matrix: " << m << endl;
 };
 
 //==============================================================================
@@ -96,7 +99,8 @@ void Materials::readMats()
 	YAML::Node mats = (*input)["materials"];
 	string name;
 	vector<double> sigTInp,sigSInp,sigFInp;
-	rowvec sigT,sigS,sigF; 
+	rowvec sigT,sigF; 
+	mat sigS;
 	int ID,size;
 	double nu;
 	
@@ -112,13 +116,15 @@ void Materials::readMats()
 		// set size of arma vectors
 		size = sigTInp.size();
 		sigT.set_size(size); 
-		sigS.set_size(size);
+		sigS.set_size(size,size);
 		sigF.set_size(size);
 		// load standard vector inputs into arma vector
 		for (int iSig = 0; iSig < size; ++iSig){
 			sigT(iSig) = sigTInp[iSig];
-			sigS(iSig) = sigSInp[iSig];
 			sigF(iSig) = sigFInp[iSig];
+			for(int iGroup = 0; iGroup < size; ++iGroup){
+				sigS(iSig,iGroup) = sigSInp[iSig*size+iGroup];
+			}
 		}
 		// add material to bank
 		shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,sigF,nu));
@@ -182,9 +188,9 @@ double Materials::sigT(int zIdx,int rIdx,int eIndx){
 //! sigS return scattering cross section
 
 // return scatter cross section at location indicated by input indices
-double Materials::sigS(int zIdx,int rIdx,int eIndx){
+double Materials::sigS(int zIdx,int rIdx,int gprime,int g){
 
-	double sigS = matBank[matMap(zIdx,rIdx)]->sigS(eIndx);
+	double sigS = matBank[matMap(zIdx,rIdx)]->sigS(gprime,g);
 
 	// eventually there will need to be some manipulation here that 
 	// extrapolates the cross section based on temperature

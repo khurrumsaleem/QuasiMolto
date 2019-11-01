@@ -26,7 +26,7 @@ class Materials
         void setMatRegion(int myIndex,double rIn,double rOut,\
 		double zUp,double zLow);
 	double sigT(int zIdx,int rIdx,int eIndx);
-	double sigS(int zIdx,int rIdx,int eIndx);
+	double sigS(int zIdx,int rIdx,int gprime,int g);
 	double sigF(int zIdx,int rIdx,int eIndx);
 	double nu(int zIdx,int rIdx);
 

@@ -19,15 +19,14 @@ class Material
         public:
 	int matID;
 	string name;
- 	rowvec sigT;
-	rowvec sigS;
-	rowvec sigF;
+ 	rowvec sigT,sigF;
+	mat sigS;
 	double nu;	
         // public functions
 	Material(int myMatID,\
 		string name,\
 		rowvec mySigT,\
-		rowvec mySigS,\
+		mat mySigS,\
 		rowvec mySigF,\
 		double myNu);
 	void edit();
@@ -42,7 +41,7 @@ class Material
 Material::Material(int myMatID,\
 	string myName,\
 	rowvec mySigT,\
-	rowvec mySigS,\
+	mat mySigS,\
 	rowvec mySigF,\
 	double myNu)
 {
@@ -69,9 +68,12 @@ cout << "MATERIAL: " << setw(spacing2) << name << "\n";
 cout << "-------------------------------------------"<< endl;
 cout << "matID:"<< matID << endl;
 cout << endl;
-cout << "sigT:"<< sigT << endl;
-cout << "sigS:"<< sigS << endl;
-cout << "sigF:"<< sigF << endl;
+cout << "sigT:"<<endl;
+cout << sigT << endl;
+cout << "sigS:"<< endl;
+cout << sigS << endl;
+cout << "sigF:"<< endl; 
+cout << sigF << endl;
 cout << "nu:  "<< nu << endl;
 cout << "==========================================="<< endl;
 };

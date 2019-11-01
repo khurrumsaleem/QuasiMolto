@@ -18,15 +18,14 @@ class Material
         public:
 	int matID;
 	string name;
- 	rowvec sigT;
-	rowvec sigS;
-	rowvec sigF;
+ 	rowvec sigT,sigF;
+	mat sigS;
 	double nu;	
         // public functions
 	Material(int myMatID,\
 		string name,\
 		rowvec mySigT,\
-		rowvec mySigS,\
+		mat mySigS,\
 		rowvec mySigF,\
 		double myNu);
 	void edit();
