@@ -375,11 +375,11 @@ void Mesh::calcSpatialMesh(){
 	}
 	
 	// Populate vectors holding cell center location in each dimension
-	for (int iCent = 1; iCent < rCent.n_elem; ++iCent){
+	for (int iCent = 0; iCent < rCent.n_elem; ++iCent){
 		rCent(iCent) = (rEdge(iCent)+rEdge(iCent+1))/2.0;
 	}
 	
-	for (int iCent = 1; iCent < zCent.n_elem; ++iCent){
+	for (int iCent = 0; iCent < zCent.n_elem; ++iCent){
 		zCent(iCent) = (zEdge(iCent)+zEdge(iCent+1))/2.0;
 	}
 

@@ -8,6 +8,7 @@
 #include <armadillo>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "Mesh.h"
+#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;
@@ -18,8 +19,19 @@ using namespace arma;
 class Materials
 {
         public:
+	Eigen::MatrixXi matMap; //resized later
         // public functions
         Materials(Mesh * myMesh,YAML::Node * myInput);
+	void readMats();
+	void readGeom();
+        void setMatRegion(int myIndex,double rIn,double rOut,\
+		double zUp,double zLow);
+	double sigT(int zIdx,int rIdx,int eIndx);
+	double sigS(int zIdx,int rIdx,int gprime,int g);
+	double sigF(int zIdx,int rIdx,int eIndx);
+	double nu(int zIdx,int rIdx);
+
+        void edit();
 
         private:
         // private functions

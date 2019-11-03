@@ -9,8 +9,11 @@
 #include <vector>
 #include <iomanip>
 #include <armadillo>
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "Mesh.h"
+#include "Materials.h"
+#include "Material.h"
+#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
+#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;
@@ -22,20 +25,23 @@ class StartingAngle
 {
         public:
         // public functions
-        StartingAngle(Mesh * myMesh,YAML::Node * myInput);
+        StartingAngle(Mesh * myMesh,
+		Materials * myMaterials,\
+		YAML::Node * myInput);
         void calcStartingAngle();
-        mat calckR(double myGamma);
-        mat calckZ(double myGamma);
-        mat calclR(double myGamma);
-        mat calclZ(double myGamma);
-        mat calct1(double myGamma);
-        mat calct2(double myGamma);
-        colvec calcSubCellVol(int myiZ, int myiR);
+        Eigen::MatrixXd calckR(double myGamma);
+        Eigen::MatrixXd calckZ(double myGamma);
+        Eigen::MatrixXd calclR(double myGamma);
+        Eigen::MatrixXd calclZ(double myGamma);
+        Eigen::MatrixXd calct1(double myGamma);
+        Eigen::MatrixXd calct2(double myGamma);
+        Eigen::VectorXd calcSubCellVol(int myiZ, int myiR);
 
         private:
         // private functions
         YAML::Node * input;
         Mesh * mesh;
+        Materials * materials;
 };
 
 //==============================================================================
@@ -44,11 +50,14 @@ class StartingAngle
 //! StartingAngle object constructor
 
 StartingAngle::StartingAngle(Mesh * myMesh,\
-                             YAML::Node * myInput)
+	Materials * myMaterials,\
+	YAML::Node * myInput)	      
 {
 	// Point to variables for mesh and input file
 	mesh = myMesh;
 	input = myInput;
+	materials = myMaterials;
+	
 };
 
 //==============================================================================
@@ -66,14 +75,9 @@ void StartingAngle::calcStartingAngle()
         // index xi value is stored in in quadLevel
 	const int xiIndex = 0;
         // temporary variable used for looping though quad set
-	double xi;
-	double sqrtXi;
-        int zStart;
-        int rStart;
-        int zEnd; 
-        int zInc; 
-	int borderCellZ;
-        int borderCellR;
+	double xi,sqrtXi;
+        int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR;
+	int rows = 4,cols = 4;
         vector<int> withinUpstreamR(2);
         vector<int> outUpstreamR(2);
         vector<int> withinUpstreamZ(2);
@@ -82,35 +86,35 @@ void StartingAngle::calcStartingAngle()
 	// within cell leakage matrices in R and Z directions
 	double kRCoeff;
         double kZCoeff;
-	mat kR(4,4,fill::zeros);
-        mat kZ(4,4,fill::zeros);
+	Eigen::MatrixXd kR = Eigen::MatrixXd::Zero(rows,cols);
+	Eigen::MatrixXd kZ = Eigen::MatrixXd::Zero(rows,cols);
 	// out of cell leakage matrices in Rand Z directions
         double lRCoeff;
         double lZCoeff;
-	mat lR(4,4,fill::zeros);
-        mat lZ(4,4,fill::zeros);
+	Eigen::MatrixXd lR = Eigen::MatrixXd::Zero(rows,cols);
+	Eigen::MatrixXd lZ = Eigen::MatrixXd::Zero(rows,cols);
         // reaction matrices
 	double t1Coeff;
 	double t2Coeff;
-	mat t1(4,4,fill::zeros);
-        mat t2(4,4,fill::zeros);
+	Eigen::MatrixXd t1 = Eigen::MatrixXd::Zero(rows,cols);
+	Eigen::MatrixXd t2 = Eigen::MatrixXd::Zero(rows,cols);
 	// A matrix of linear system Ax=b
-	mat A(4,4,fill::zeros);
-	colvec subCellVol;
+	Eigen::MatrixXd A = Eigen::MatrixXd::Zero(rows,cols);
+	Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(rows);
         // downstream values
-	mat downstream(4,4,fill::zeros);
+	Eigen::MatrixXd downstream = Eigen::MatrixXd::Zero(rows,cols);
         // downstream values
-	colvec upstream(4,fill::zeros);
+	Eigen::VectorXd upstream = Eigen::VectorXd::Zero(rows);
 	// right-hand side
-	colvec b(4,fill::zeros);
+	Eigen::VectorXd b = Eigen::VectorXd::Zero(rows);
 	// solution vector 
-	colvec x(4,fill::zeros);
+	Eigen::VectorXd x = Eigen::VectorXd::Zero(rows);
 	// source 
-	colvec q(4,fill::ones);
+	Eigen::VectorXd q = Eigen::VectorXd::Ones(rows);
 	q = 8*q;
 
 	// need to bring this in from materials... kluge for now
-        double sigT = 10.0;
+        double sigT = 1.0;
 	
 	// need to bring this in from transport... fluge for now
 	cube halfAFlux(mesh->dzs.size(),mesh->drs.size(),mesh->quadrature.size(),\
@@ -144,6 +148,7 @@ void StartingAngle::calcStartingAngle()
                 for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
 			for (int iZ = zStart, countZ = 0; \
 			    countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
+				sigT = materials->sigT(iZ,iR,0);
 				gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
 				// calculate radial within cell leakage matrix
                                 kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
@@ -174,17 +179,17 @@ void StartingAngle::calcStartingAngle()
 				A = sqrtXi*kR+xi*kZ+sigT*t1+sqrtXi*t2;
 				// consider radial downstream values defined in this cell
 				subCellVol = calcSubCellVol(iZ,iR);
-				for (int iCol = 0; iCol < downstream.n_cols; ++iCol){
+				for (int iCol = 0; iCol < downstream.cols(); ++iCol){
 					downstream.col(iCol) = subCellVol(iCol)*\
 					sqrtXi*(lR.col(withinUpstreamR[0])+\
-                                        lR.col(withinUpstreamR[1]))/sum(subCellVol);
+                                        lR.col(withinUpstreamR[1]))/subCellVol.sum();
 				}
 				// consider axial downstream values defined in this cell
-				for (int iCol = 0; iCol < downstream.n_cols; ++iCol){
+				for (int iCol = 0; iCol < downstream.cols(); ++iCol){
 					downstream.col(iCol) = downstream.col(iCol)
                                         +subCellVol(iCol)\
                                         *xi*(lZ.col(withinUpstreamZ[0])\
-                                        +lZ.col(withinUpstreamZ[1]))/sum(subCellVol);
+                                        +lZ.col(withinUpstreamZ[1]))/subCellVol.sum();
 				}
 				A = A + downstream;
 				// form b matrix
@@ -200,21 +205,25 @@ void StartingAngle::calcStartingAngle()
 					*(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
 					b = b - upstream;
 				}
-				x = solve(A,b);
+				x = A.lu().solve(b);
 				// Take average of subcells
-				halfAFlux(iZ,iR,iXi) = dot(x,subCellVol)/sum(subCellVol);
+				halfAFlux(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
                         }
 		}
 	}
 	
 	cout << "half angle flux calculated! " << endl;
-	//cout << halfAFlux << endl;
+	cout << halfAFlux << endl;
 };
+//==============================================================================
 
-mat StartingAngle::calckR(double myGamma){
+//==============================================================================
+//! calckR calculate within cell radial leakage matrix
+
+Eigen::MatrixXd StartingAngle::calckR(double myGamma){
 	double a = -(1+myGamma);
 	double b = 1+myGamma;
-	mat kR(4,4,fill::zeros);
+	Eigen::MatrixXd kR = Eigen::MatrixXd::Zero(4,4);
 
 	kR(0,0) = a; kR(0,1) = a;
 	kR(1,0) = b; kR(1,1) = b;
@@ -224,10 +233,16 @@ mat StartingAngle::calckR(double myGamma){
 	return kR;
 }
 
-mat StartingAngle::calckZ(double myGamma){
+//==============================================================================
+
+
+//==============================================================================
+//! calckZ calculate within cell axial leakage matrix
+
+Eigen::MatrixXd StartingAngle::calckZ(double myGamma){
 	double a = 1+3*myGamma;
 	double b = 3+myGamma;
-	mat kZ(4,4,fill::zeros);
+	Eigen::MatrixXd kZ = Eigen::MatrixXd::Zero(4,4);
 
 	kZ(0,0) = a; kZ(0,3) = a;
 	kZ(1,2) = b; kZ(1,3) = b;
@@ -237,10 +252,13 @@ mat StartingAngle::calckZ(double myGamma){
 	return kZ;
 }
 
-mat StartingAngle::calclR(double myGamma){
+//==============================================================================
+//! calclR calculate out of cell radial leakage matrix
+
+Eigen::MatrixXd StartingAngle::calclR(double myGamma){
 	double a = myGamma;
 	double b = -1;
-	mat lR(4,4,fill::zeros);
+	Eigen::MatrixXd lR = Eigen::MatrixXd::Zero(4,4);
 
 	lR(0,0) = a; 
 	lR(1,1) = b; 
@@ -249,11 +267,15 @@ mat StartingAngle::calclR(double myGamma){
          
 	return lR;
 }
+//==============================================================================
 
-mat StartingAngle::calclZ(double myGamma){
+//==============================================================================
+//! calclZ calculate out of cell axial leakage matrix
+
+Eigen::MatrixXd StartingAngle::calclZ(double myGamma){
 	double a = 1+3*myGamma;
 	double b = 3+myGamma;
-	mat lZ(4,4,fill::zeros);
+	Eigen::MatrixXd lZ = Eigen::MatrixXd::Zero(4,4);
 
 	lZ(0,0) = -a; 
 	lZ(1,1) = -b; 
@@ -262,11 +284,16 @@ mat StartingAngle::calclZ(double myGamma){
          
 	return lZ;
 }
+//==============================================================================
 
-mat StartingAngle::calct1(double myGamma){
+
+//==============================================================================
+//! calct1 calculate first collision matrix
+
+Eigen::MatrixXd StartingAngle::calct1(double myGamma){
 	double a = 1+3*myGamma;
 	double b = 3+myGamma;
-	mat t1(4,4,fill::zeros);
+	Eigen::MatrixXd t1 = Eigen::MatrixXd::Zero(4,4);
 
 	t1(0,0) = a; 
 	t1(1,1) = b; 
@@ -275,10 +302,14 @@ mat StartingAngle::calct1(double myGamma){
          
 	return t1;
 }
+//==============================================================================
 
-mat StartingAngle::calct2(double myGamma){
+//==============================================================================
+//! calct2 calculate second collision matrix
+
+Eigen::MatrixXd StartingAngle::calct2(double myGamma){
 	double a = 1;
-	mat t2(4,4,fill::zeros);
+	Eigen::MatrixXd t2 = Eigen::MatrixXd::Zero(4,4);
 
 	t2(0,0) = a; 
 	t2(1,1) = a; 
@@ -287,9 +318,13 @@ mat StartingAngle::calct2(double myGamma){
          
 	return t2;
 }
+//==============================================================================
 
-colvec StartingAngle::calcSubCellVol(int myiZ, int myiR){
-	colvec subCellVol(4,fill::zeros);
+//==============================================================================
+//! calcSubCellVol calculate volumes of subcell regions
+
+Eigen::VectorXd StartingAngle::calcSubCellVol(int myiZ, int myiR){
+	Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(4);
 	
 	subCellVol(0) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
 		pow(mesh->rEdge(myiR),2));
