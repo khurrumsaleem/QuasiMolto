@@ -8,15 +8,13 @@
 #include <cmath>
 #include <vector>
 #include <iomanip>
-#include <armadillo>
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "Mesh.h"
 #include "Materials.h"
 #include "Material.h"
+#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
-using namespace arma;
 
 //==============================================================================
 //! StartingAngle class that solves RZ neutron transport at the starting angles
@@ -75,16 +73,9 @@ void StartingAngle::calcStartingAngle()
         // index xi value is stored in in quadLevel
 	const int xiIndex = 0;
         // temporary variable used for looping though quad set
-	double xi;
-	double sqrtXi;
-        int zStart;
-        int rStart;
-        int zEnd; 
-        int zInc; 
-	int borderCellZ;
-        int borderCellR;
-	int rows = 4;
-	int cols = 4;
+	double xi,sqrtXi;
+        int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR;
+	int rows = 4,cols = 4;
         vector<int> withinUpstreamR(2);
         vector<int> outUpstreamR(2);
         vector<int> withinUpstreamZ(2);

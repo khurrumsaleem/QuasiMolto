@@ -5,7 +5,6 @@
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
-using namespace arma;
 
 //==============================================================================
 //! StartingAngle class that solves RZ neutron transport at the starting angles
