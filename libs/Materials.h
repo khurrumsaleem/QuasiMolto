@@ -19,7 +19,7 @@ using namespace arma;
 class Materials
 {
         public:
-	umat matMap; //resized later
+	Eigen::MatrixXi matMap; //resized later
         // public functions
         Materials(Mesh * myMesh,YAML::Node * myInput);
 	void readMats();

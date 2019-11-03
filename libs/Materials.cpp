@@ -21,7 +21,7 @@ using namespace arma;
 class Materials
 {
         public:
-	umat matMap;
+	Eigen::MatrixXi matMap;
         // public functions
         Materials(Mesh * myMesh,YAML::Node * myInput);
 	void readMats();
@@ -53,8 +53,7 @@ Materials::Materials(Mesh * myMesh,\
 	// Point to variables for mesh and input file
 	mesh = myMesh;
 	input = myInput;
-	matMap.set_size(mesh->zCent.size(),mesh->rCent.size());
-	matMap.fill(0);
+	matMap.setZero(mesh->zCent.size(),mesh->rCent.size());
 	readMats();
 	readGeom();
 	Eigen::MatrixXd m;
