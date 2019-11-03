@@ -8,6 +8,7 @@
 #include <cmath>
 #include <vector>
 #include <iomanip>
+#include <armadillo>
 #include "Mesh.h"
 #include "Materials.h"
 #include "Material.h"
@@ -15,6 +16,7 @@
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
+using namespace arma;
 
 //==============================================================================
 //! StartingAngle class that solves RZ neutron transport at the starting angles
@@ -213,6 +215,10 @@ void StartingAngle::calcStartingAngle()
 	cout << "half angle flux calculated! " << endl;
 	cout << halfAFlux << endl;
 };
+//==============================================================================
+
+//==============================================================================
+//! calckR calculate within cell radial leakage matrix
 
 Eigen::MatrixXd StartingAngle::calckR(double myGamma){
 	double a = -(1+myGamma);
@@ -227,6 +233,12 @@ Eigen::MatrixXd StartingAngle::calckR(double myGamma){
 	return kR;
 }
 
+//==============================================================================
+
+
+//==============================================================================
+//! calckZ calculate within cell axial leakage matrix
+
 Eigen::MatrixXd StartingAngle::calckZ(double myGamma){
 	double a = 1+3*myGamma;
 	double b = 3+myGamma;
@@ -240,6 +252,9 @@ Eigen::MatrixXd StartingAngle::calckZ(double myGamma){
 	return kZ;
 }
 
+//==============================================================================
+//! calclR calculate out of cell radial leakage matrix
+
 Eigen::MatrixXd StartingAngle::calclR(double myGamma){
 	double a = myGamma;
 	double b = -1;
@@ -252,6 +267,10 @@ Eigen::MatrixXd StartingAngle::calclR(double myGamma){
          
 	return lR;
 }
+//==============================================================================
+
+//==============================================================================
+//! calclZ calculate out of cell axial leakage matrix
 
 Eigen::MatrixXd StartingAngle::calclZ(double myGamma){
 	double a = 1+3*myGamma;
@@ -265,6 +284,11 @@ Eigen::MatrixXd StartingAngle::calclZ(double myGamma){
          
 	return lZ;
 }
+//==============================================================================
+
+
+//==============================================================================
+//! calct1 calculate first collision matrix
 
 Eigen::MatrixXd StartingAngle::calct1(double myGamma){
 	double a = 1+3*myGamma;
@@ -278,6 +302,10 @@ Eigen::MatrixXd StartingAngle::calct1(double myGamma){
          
 	return t1;
 }
+//==============================================================================
+
+//==============================================================================
+//! calct2 calculate second collision matrix
 
 Eigen::MatrixXd StartingAngle::calct2(double myGamma){
 	double a = 1;
@@ -290,6 +318,10 @@ Eigen::MatrixXd StartingAngle::calct2(double myGamma){
          
 	return t2;
 }
+//==============================================================================
+
+//==============================================================================
+//! calcSubCellVol calculate volumes of subcell regions
 
 Eigen::VectorXd StartingAngle::calcSubCellVol(int myiZ, int myiR){
 	Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(4);
