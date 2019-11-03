@@ -2,6 +2,7 @@
 #include "Mesh.h"
 #include "Materials.h"
 #include "Material.h"
+#include "../TPLS/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;
@@ -17,13 +18,13 @@ class StartingAngle
 		Materials * myMaterials,\
 		YAML::Node * myInput);
         void calcStartingAngle();
-        mat calckR(double myGamma);
-        mat calckZ(double myGamma);
-        mat calclR(double myGamma);
-        mat calclZ(double myGamma);
-        mat calct1(double myGamma);
-        mat calct2(double myGamma);
-        colvec calcSubCellVol(int myiZ, int myiR);
+        Eigen::MatrixXd calckR(double myGamma);
+        Eigen::MatrixXd calckZ(double myGamma);
+        Eigen::MatrixXd calclR(double myGamma);
+        Eigen::MatrixXd calclZ(double myGamma);
+        Eigen::MatrixXd calct1(double myGamma);
+        Eigen::MatrixXd calct2(double myGamma);
+        Eigen::VectorXd calcSubCellVol(int myiZ, int myiR);
 
         private:
         // private functions
