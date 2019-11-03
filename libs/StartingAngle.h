@@ -2,7 +2,7 @@
 #include "Mesh.h"
 #include "Materials.h"
 #include "Material.h"
-#include "../TPLS/eigen-git-mirror/Eigen/Eigen"
+#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;
