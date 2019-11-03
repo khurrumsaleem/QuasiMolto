@@ -8,6 +8,7 @@
 #include <armadillo>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "Mesh.h"
+#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;

@@ -10,7 +10,7 @@
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "Mesh.h"
 #include "Material.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Dense"
+#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;
@@ -57,7 +57,9 @@ Materials::Materials(Mesh * myMesh,\
 	matMap.fill(0);
 	readMats();
 	readGeom();
-	Eigen::MatrixXd m = Eigen::MatrixXd::Random(3,3);
+	Eigen::MatrixXd m;
+	m.setZero(3,3);
+
 	cout << "matrix: " << m << endl;
 };
 
@@ -99,8 +101,8 @@ void Materials::readMats()
 	YAML::Node mats = (*input)["materials"];
 	string name;
 	vector<double> sigTInp,sigSInp,sigFInp;
-	rowvec sigT,sigF; 
-	mat sigS;
+	Eigen::VectorXd sigT,sigF; 
+	Eigen::MatrixXd sigS;
 	int ID,size;
 	double nu;
 	
@@ -115,9 +117,9 @@ void Materials::readMats()
 		nu = it->second["nu"].as<double>();
 		// set size of arma vectors
 		size = sigTInp.size();
-		sigT.set_size(size); 
-		sigS.set_size(size,size);
-		sigF.set_size(size);
+		sigT.setZero(size); 
+		sigS.setZero(size,size);
+		sigF.setZero(size);
 		// load standard vector inputs into arma vector
 		for (int iSig = 0; iSig < size; ++iSig){
 			sigT(iSig) = sigTInp[iSig];
