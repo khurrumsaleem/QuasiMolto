@@ -56,10 +56,7 @@ Materials::Materials(Mesh * myMesh,\
 	matMap.setZero(mesh->zCent.size(),mesh->rCent.size());
 	readMats();
 	readGeom();
-	Eigen::MatrixXd m;
-	m.setZero(3,3);
 
-	cout << "matrix: " << m << endl;
 };
 
 //==============================================================================
