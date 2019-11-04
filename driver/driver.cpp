@@ -8,6 +8,8 @@
 #include "../libs/Mesh.h"
 #include "../libs/StartingAngle.h"
 #include "../libs/Material.h"
+#include "../libs/MultiGroupTransport.h"
+#include "../libs/SingleGroupTransport.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
@@ -33,6 +35,9 @@ int main(void) {
      StartingAngle myStartingAngle(myMesh,myMaterials,input);
      myStartingAngle.calcStartingAngle();
      myMaterials->edit();
+
+     MultiGroupTransport * myMGT; 
+     myMGT = new MultiGroupTransport(myMesh,input);
 
      return(0);
 }

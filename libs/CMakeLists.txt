@@ -5,4 +5,6 @@ add_library(libs
 	Transport.cpp
 	Mesh.cpp
         StartingAngle.cpp
+        MultiGroupTransport.cpp
+        SingleGroupTransport.cpp
         Material.cpp)
