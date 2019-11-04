@@ -10,39 +10,11 @@
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "Materials.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;
-
-//==============================================================================
-//! Material class that holds material and geometry information
-
-class Materials
-{
-        public:
-	Eigen::MatrixXi matMap;
-        // public functions
-        Materials(Mesh * myMesh,YAML::Node * myInput);
-	void readMats();
-	void readGeom();
-        void setMatRegion(int myIndex,double rIn,double rOut,\
-		double zUp,double zLow);
-	double sigT(int zIdx,int rIdx,int eIndx);
-	double sigS(int zIdx,int rIdx,int gprime, int g);
-	double sigF(int zIdx,int rIdx,int eIndx);
-	double nu(int zIdx,int rIdx);
-        void edit();
-
-        private:
-        // private functions
-        YAML::Node * input;
-        Mesh * mesh;
-	map<string,int> mat2idx;
-	vector<shared_ptr<Material>> matBank;
-};
-
-//==============================================================================
 
 //==============================================================================
 //! Material class object constructor
@@ -113,6 +85,7 @@ void Materials::readMats()
 		nu = it->second["nu"].as<double>();
 		// set size of arma vectors
 		size = sigTInp.size();
+                nGroups = size;
 		sigT.setZero(size); 
 		sigS.setZero(size,size);
 		sigF.setZero(size);
@@ -128,7 +101,7 @@ void Materials::readMats()
 		shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,sigF,nu));
 		matBank.push_back(std::move(newMat));
 		++iCount;
-	}
+	}	
 };
 
 //==============================================================================
