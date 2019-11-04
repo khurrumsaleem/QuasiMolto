@@ -9,31 +9,11 @@
 #include <vector>
 #include <iomanip>
 #include <armadillo>
+#include "Mesh.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
 using namespace arma;
-
-//==============================================================================
-//! quadLevel class that contains information on a single quadrature level
-
-class quadLevel
-{
-	public:
-	quadLevel(vector< vector<double> > myQuad,\
-  		vector<double> myAlpha,\
-  		vector<double> myTau);  	
-	//number of ordinates on this quadrature level
-  	int nOrd;		
-	//quadrature set
-  	vector< vector<double> > quad;
-        //difference coefficients
-  	vector<double> alpha;
-	//factor for linear interpolation of half angles
-        vector<double> tau;
-	
-};
-//==============================================================================
 
 //==============================================================================
 //! quadLevel Constructor for quadLevel object. 
@@ -52,59 +32,6 @@ quadLevel::quadLevel(vector< vector<double> > myQuad,\
 	tau = myTau;
 	nOrd = quad.size();
 }
-//==============================================================================
-
-
-//==============================================================================
-//! Mesh class that contains mesh data for a simulation
-
-class Mesh
-{
-	public:
-	Mesh(YAML::Node * myInput);  	
-	//order of quadrature set
-  	int n;		
-	double dz; 
-	double dr;
-	double Z; 
-	double R;
-	//quadrature set
-  	vector< vector<double> > quadSet;
-        //difference coefficients
-  	vector< vector<double> > alpha;
-	//factor for linear interpolation of half angles
-        vector< vector<double> > tau;
-	// volume of each cell
-        vector< vector<double> > cellVol;
-	// verticalsurface areas of cell boundaries
-        vector< vector<double> > cellVSA;
-        rowvec dzs;
-        rowvec drs;
-	rowvec rEdge;
-	rowvec zEdge;
-        rowvec rCent;
-        rowvec zCent;
-        vector<quadLevel> quadrature;
-        // public functions
-  	void calcQuadSet();
-	void printQuadSet();
-	
-        private:
-	// viable ordinates
-	vector<double> mu;
-	// all three ordinates and weights
-  	vector< vector<double> > ordinates;
-        // private functions
-  	void calcMu();	
-	void calcAlpha();
-        void calcTau();
-        void calcSpatialMesh();
-        void addLevels();
-	int quad_index(int p,int q);
-	int low_quad_index(int p,int q);
-        // pointer to input file
-	YAML::Node * input;
-};
 //==============================================================================
 
 //==============================================================================

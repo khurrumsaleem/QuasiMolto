@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <armadillo>
 #include "Mesh.h"
-#include "Material.h"
+#include "Materials.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
@@ -23,12 +23,14 @@ class MultiGroupTransport
   public:
   vector< shared_ptr<SingleGroupTransport> > SGTs;
   // public functions
-  MultiGroupTransport(Mesh * myMesh,\
+  MultiGroupTransport(Materials * myMaterials,\
+    Mesh * myMesh,\
     YAML::Node * myInput);
 
   private:
   YAML::Node * input;
   Mesh * mesh;
+  Materials * materials;
 
 };
 
