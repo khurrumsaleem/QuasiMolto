@@ -7,6 +7,7 @@
 #include <armadillo>
 #include "Mesh.h"
 #include "Material.h"
+#include "Materials.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
@@ -21,13 +22,17 @@ class MultiGroupTransport; // forward declaration
 class SingleGroupTransport
 {
   public:
+  int energyGroup;
   // public functions
-  SingleGroupTransport(MultiGroupTransport * myMGT,\
+  SingleGroupTransport(int myEnergyGroup,\
+    MultiGroupTransport * myMGT,\
+    Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * myInput);
 
   private:
   MultiGroupTransport * MGT;
+  Materials * mats;
   YAML::Node * input;
   Mesh * mesh;
 

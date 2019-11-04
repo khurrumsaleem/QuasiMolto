@@ -26,7 +26,12 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
   materials = myMaterials;
   mesh = myMesh;
   input = myInput;
- // cout << "number of energy groups: " <<materials->nGroups << endl;
+  cout << "number of energy groups: " <<materials->nGroups << endl;
+  for (int iGroups = 0; iGroups < materials->nGroups; ++iGroups){
+    shared_ptr<SingleGroupTransport> newSGT (new SingleGroupTransport(iGroups,\
+      this,materials,mesh,input));
+    SGTs.push_back(std::move(newSGT)); 
+  }
 };
 
 //==============================================================================
