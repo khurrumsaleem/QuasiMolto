@@ -37,7 +37,7 @@ int main(void) {
      myMaterials->edit();
 
      MultiGroupTransport * myMGT; 
-     myMGT = new MultiGroupTransport(myMesh,input);
+     myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
 
      return(0);
 }
