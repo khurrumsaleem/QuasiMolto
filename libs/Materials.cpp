@@ -85,7 +85,6 @@ void Materials::readMats()
 		nu = it->second["nu"].as<double>();
 		// set size of arma vectors
 		size = sigTInp.size();
-                nGroups = size;
 		sigT.setZero(size); 
 		sigS.setZero(size,size);
 		sigF.setZero(size);
@@ -102,6 +101,7 @@ void Materials::readMats()
 		matBank.push_back(std::move(newMat));
 		++iCount;
 	}	
+        nGroups = size;
 };
 
 //==============================================================================
