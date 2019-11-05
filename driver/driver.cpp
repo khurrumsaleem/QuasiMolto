@@ -32,8 +32,6 @@ int main(void) {
      Materials * myMaterials;
      myMaterials = new Materials(myMesh,input);
     
-     StartingAngle myStartingAngle(myMesh,myMaterials,input);
-     myStartingAngle.calcStartingAngle();
      myMaterials->edit();
 
      MultiGroupTransport * myMGT; 
