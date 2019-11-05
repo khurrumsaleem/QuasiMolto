@@ -43,7 +43,9 @@ StartingAngle::StartingAngle(Mesh * myMesh,\
 // values that correspond to the starting half angle, and results in the 
 // elimination of the angular redistribution term. 
 
-void StartingAngle::calcStartingAngle()
+void StartingAngle::calcStartingAngle(cube * halfAFlux,\
+  Eigen::MatrixXd * sFlux,\
+  int energyGroup)
 {
         // index xi value is stored in in quadLevel
 	const int xiIndex = 0;
@@ -90,7 +92,7 @@ void StartingAngle::calcStartingAngle()
         double sigT = 1.0;
 	
 	// need to bring this in from transport... fluge for now
-	cube halfAFlux(mesh->dzs.size(),mesh->drs.size(),mesh->quadrature.size(),\
+	//cube halfAFlux(mesh->dzs.size(),mesh->drs.size(),mesh->quadrature.size(),\
 			fill::zeros);
 	
 	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
@@ -121,7 +123,9 @@ void StartingAngle::calcStartingAngle()
                 for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
 			for (int iZ = zStart, countZ = 0; \
 			    countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
-				sigT = materials->sigT(iZ,iR,0);
+	                        q.setOnes();
+                                q = 8*(*sFlux)(iZ,iR)*q;
+				sigT = materials->sigT(iZ,iR,energyGroup);
 				gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
 				// calculate radial within cell leakage matrix
                                 kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
@@ -169,24 +173,24 @@ void StartingAngle::calcStartingAngle()
 				b = t1*q;
 				// consider upstream values in other cells or BCs
 				if (iR!=rStart){
-					upstream = sqrtXi*halfAFlux(iZ,iR+borderCellR,iXi)\
+					upstream = sqrtXi*(*halfAFlux)(iZ,iR+borderCellR,iXi)\
 					*(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
 					b = b - upstream;
 				}
 				if (iZ!=zStart){
-					upstream = xi*halfAFlux(iZ+borderCellZ,iR,iXi)\
+					upstream = xi*(*halfAFlux)(iZ+borderCellZ,iR,iXi)\
 					*(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
 					b = b - upstream;
 				}
 				x = A.lu().solve(b);
 				// Take average of subcells
-				halfAFlux(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
+				(*halfAFlux)(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
                         }
 		}
 	}
 	
 	cout << "half angle flux calculated! " << endl;
-	cout << halfAFlux << endl;
+	cout << *halfAFlux << endl;
 };
 //==============================================================================
 

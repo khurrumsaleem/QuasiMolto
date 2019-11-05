@@ -23,12 +23,16 @@ class SingleGroupTransport
 {
   public:
   int energyGroup;
+  cube aFlux;
+  cube aHalfFlux;
+  Eigen::MatrixXd sFlux; 
   // public functions
   SingleGroupTransport(int myEnergyGroup,\
     MultiGroupTransport * myMGT,\
     Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * myInput);
+  void solveStartAngle(); 
 
   private:
   MultiGroupTransport * MGT;

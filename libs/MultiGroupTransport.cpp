@@ -10,6 +10,7 @@
 #include "Materials.h"
 #include "SingleGroupTransport.h"
 #include "MultiGroupTransport.h"
+#include "StartingAngle.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
@@ -31,6 +32,21 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
     shared_ptr<SingleGroupTransport> newSGT (new SingleGroupTransport(iGroups,\
       this,materials,mesh,input));
     SGTs.push_back(std::move(newSGT)); 
+  }
+  startAngleSolve = std::make_shared<StartingAngle>(mesh,materials,input);
+  solveStartAngles(); 
+};
+
+//==============================================================================
+
+//==============================================================================
+//! solveStartAngles loop over energy groups and call starting angle solver
+
+void MultiGroupTransport::solveStartAngles()
+{
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    SGTs[iGroup]->solveStartAngle();
+    cout << "Solved for group "<< SGTs[iGroup]->energyGroup << endl;
   }
 };
 

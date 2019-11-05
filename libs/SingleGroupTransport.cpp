@@ -11,6 +11,7 @@
 #include "Materials.h"
 #include "MultiGroupTransport.h"
 #include "SingleGroupTransport.h"
+#include "StartingAngle.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
@@ -31,7 +32,23 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
   mats = myMaterials;
   mesh = myMesh;
   input = myInput;
+
+  aFlux.set_size(mesh->zCent.size(),mesh->rCent.size(),mesh->nAngles);
+  aFlux.zeros();
+  aHalfFlux.set_size(mesh->zCent.size(),mesh->rCent.size(),mesh->quadrature.size());
+  aHalfFlux.zeros();
+  sFlux.setOnes(mesh->zCent.size(),mesh->rCent.size());
   cout << "Created transport energy group " << energyGroup << endl;
+};
+
+//==============================================================================
+
+//==============================================================================
+//! SingleGroupTransport class object constructor
+
+void SingleGroupTransport::solveStartAngle()
+{
+  MGT->startAngleSolve->calcStartingAngle(&aHalfFlux,&sFlux,energyGroup);
 };
 
 //==============================================================================
