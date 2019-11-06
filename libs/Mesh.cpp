@@ -19,18 +19,25 @@ using namespace arma;
 //! quadLevel Constructor for quadLevel object. 
 quadLevel::quadLevel(vector< vector<double> > myQuad,\
   	vector<double> myAlpha,\
-  	vector<double> myTau){
-	
+  	vector<double> myTau,\
+        int myStartIndex){
+
+	int ordIdxCount = myStartIndex;	
 	// resize vectors on quadLevel
 	quad.resize(myQuad.size(),vector<double>(myQuad[0].size(),0.0));
 	alpha.resize(myAlpha.size());
 	tau.resize(myTau.size());
+        ordIdx.resize(myQuad.size());
 	
 	// set equal to initializing arguments
 	quad = myQuad;
 	alpha = myAlpha;
 	tau = myTau;
 	nOrd = quad.size();
+	for (int iOrd = 0; iOrd < nOrd; ++iOrd){
+		ordIdx[iOrd]=ordIdxCount;
+		++ordIdxCount;
+	}
 }
 //==============================================================================
 
@@ -367,7 +374,7 @@ void Mesh::addLevels(){
 				++count;
 			}
 			// initialize new quadLevel
-			quadLevel myLevel(tempQuad,tempAlpha,tempTau);
+			quadLevel myLevel(tempQuad,tempAlpha,tempTau,startIndex);
 			// add new quadLevel to quadrature vector
 			quadrature.push_back(myLevel);
 			// advance iterates
@@ -389,7 +396,7 @@ void Mesh::addLevels(){
 				tempTau[count] = tau[levelCount][count];
 				++count;
 			}
-			quadLevel myLevel(tempQuad,tempAlpha,tempTau);
+			quadLevel myLevel(tempQuad,tempAlpha,tempTau,startIndex);
 			quadrature.push_back(myLevel);
 
 		}
@@ -449,13 +456,14 @@ int Mesh::low_quad_index(int p, int q){
 void Mesh::printQuadSet(){        
 	// print quadrature set	
 	cout << "QUADRATURE SET:"<<endl;
-	cout << setw(10) << "xi" << setw(10) <<"mu" << setw(10) << "eta" << setw(10) <<"weight" << endl;
+	cout << setw(10) << "xi" << setw(10) <<"mu" << setw(10) << "eta" << setw(10) <<"weight" << setw(10) << "ordIdx" <<endl;
 	for (int i = 0; i < quadrature.size(); ++i){
 		for(int j = 0; j < quadrature[i].nOrd; ++j){
 			for(int k = 0; k < quadrature[i].quad[j].size(); ++k){
         			cout << setw(10) <<quadrature[i].quad[j][k];
 			} 
-		cout<<""<< endl;
+                  
+		cout<<setw(10)<<quadrature[i].ordIdx[j]<< endl;
 		}
 	}
 	cout << "Number of levels: " << quadrature.size() << endl;

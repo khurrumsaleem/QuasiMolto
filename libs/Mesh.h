@@ -14,7 +14,8 @@ class quadLevel
 	public:
 	quadLevel(vector< vector<double> > myQuad,\
   		vector<double> myAlpha,\
-  		vector<double> myTau);  	
+  		vector<double> myTau,\
+                int myStartIndex);  	
 	//number of ordinates on this quadrature level
   	int nOrd;		
 	//quadrature set
@@ -23,6 +24,8 @@ class quadLevel
   	vector<double> alpha;
 	//factor for linear interpolation of half angles
         vector<double> tau;
+	//index of each ordinate in angular flux matrices
+	vector<int> ordIdx; 
 	
 };
 
