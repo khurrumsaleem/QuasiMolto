@@ -26,13 +26,15 @@ class SingleGroupTransport
   cube aFlux;
   cube aHalfFlux;
   Eigen::MatrixXd sFlux; 
+  Eigen::MatrixXd q; 
   // public functions
   SingleGroupTransport(int myEnergyGroup,\
     MultiGroupTransport * myMGT,\
     Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * myInput);
-  void solveStartAngle(); 
+  void solveStartAngle();
+  void calcSource(); 
 
   private:
   MultiGroupTransport * MGT;

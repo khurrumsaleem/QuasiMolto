@@ -38,18 +38,43 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
   aHalfFlux.set_size(mesh->zCent.size(),mesh->rCent.size(),mesh->quadrature.size());
   aHalfFlux.zeros();
   sFlux.setOnes(mesh->zCent.size(),mesh->rCent.size());
+  q.setZero(mesh->zCent.size(),mesh->rCent.size());
   cout << "Created transport energy group " << energyGroup << endl;
 };
 
 //==============================================================================
 
 //==============================================================================
-//! SingleGroupTransport class object constructor
+//! solveStartAngle call starting angle solver
 
 void SingleGroupTransport::solveStartAngle()
 {
   MGT->startAngleSolve->calcStartingAngle(&aHalfFlux,&sFlux,energyGroup);
+  cout << aHalfFlux << endl;
 };
 
 //==============================================================================
+
+//==============================================================================
+//! calcSource calculate the source in an energy group
+
+// Assuming the fluxes currently contained in each SGT object
+void SingleGroupTransport::calcSource()
+{
+  q.setZero(mesh->zCent.size(),mesh->rCent.size());
+  for (int iZ = 0; iZ < mesh->zCent.size(); ++iZ){
+    for (int iR = 0; iR < mesh->rCent.size(); ++iR){
+      for (int iGroup = 0; iGroup < MGT->SGTs.size(); ++iGroup){
+        q(iZ,iR) = q(iZ,iR) \
+        +mats->sigS(iZ,iR,iGroup,energyGroup)*MGT->SGTs[iGroup]->sFlux(iZ,iR)\
+        + mats->nu(iZ,iR)*mats->sigF(iZ,iR,energyGroup)\
+        *MGT->SGTs[iGroup]->sFlux(iZ,iR);
+        // need to account for precursors, too.
+      }
+    }
+  } 
+};
+
+//==============================================================================
+
 
