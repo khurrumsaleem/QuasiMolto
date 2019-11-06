@@ -67,9 +67,10 @@ void SingleGroupTransport::calcSource()
       for (int iGroup = 0; iGroup < MGT->SGTs.size(); ++iGroup){
         q(iZ,iR) = q(iZ,iR) \
         +mats->sigS(iZ,iR,iGroup,energyGroup)*MGT->SGTs[iGroup]->sFlux(iZ,iR)\
-        + mats->nu(iZ,iR)*mats->sigF(iZ,iR,energyGroup)\
+        + mats->nu(iZ,iR)*mats->sigF(iZ,iR,iGroup)\
         *MGT->SGTs[iGroup]->sFlux(iZ,iR);
         // need to account for precursors, too.
+        // and allow input of xi
       }
     }
   } 
