@@ -49,7 +49,7 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
 
 void SingleGroupTransport::solveStartAngle()
 {
-  MGT->startAngleSolve->calcStartingAngle(&aHalfFlux,&sFlux,energyGroup);
+  MGT->startAngleSolve->calcStartingAngle(&aHalfFlux,&q,energyGroup);
   cout << aHalfFlux << endl;
 };
 
