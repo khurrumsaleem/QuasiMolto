@@ -34,8 +34,8 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
     SGTs.push_back(std::move(newSGT)); 
   }
   startAngleSolve = std::make_shared<StartingAngle>(mesh,materials,input);
-  solveStartAngles();
   calcSources(); 
+  solveStartAngles();
 };
 
 //==============================================================================
