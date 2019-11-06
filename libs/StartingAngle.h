@@ -17,7 +17,7 @@ class StartingAngle
 		Materials * myMaterials,\
 		YAML::Node * myInput);
         void calcStartingAngle(cube * halfAFlux,\
-          Eigen::MatrixXd * sFlux,\
+          Eigen::MatrixXd * source,\
           int energyGroup);
         Eigen::MatrixXd calckR(double myGamma);
         Eigen::MatrixXd calckZ(double myGamma);

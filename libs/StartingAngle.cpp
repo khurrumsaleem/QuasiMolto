@@ -44,7 +44,7 @@ StartingAngle::StartingAngle(Mesh * myMesh,\
 // elimination of the angular redistribution term. 
 
 void StartingAngle::calcStartingAngle(cube * halfAFlux,\
-  Eigen::MatrixXd * sFlux,\
+  Eigen::MatrixXd * source,\
   int energyGroup)
 {
         // index xi value is stored in in quadLevel
@@ -124,7 +124,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 			for (int iZ = zStart, countZ = 0; \
 			    countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
 	                        q.setOnes();
-                                q = 8*(*sFlux)(iZ,iR)*q;
+                                q = (*source)(iZ,iR)*q;
 				sigT = materials->sigT(iZ,iR,energyGroup);
 				gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
 				// calculate radial within cell leakage matrix
