@@ -34,7 +34,8 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
     SGTs.push_back(std::move(newSGT)); 
   }
   startAngleSolve = std::make_shared<StartingAngle>(mesh,materials,input);
-  solveStartAngles(); 
+  solveStartAngles();
+  calcSources(); 
 };
 
 //==============================================================================
@@ -46,9 +47,23 @@ void MultiGroupTransport::solveStartAngles()
 {
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     SGTs[iGroup]->solveStartAngle();
-    cout << "Solved for group "<< SGTs[iGroup]->energyGroup << endl;
   }
 };
 
 //==============================================================================
+
+//==============================================================================
+//! calcSources loop over SGTS and make call to calc sources in each
+
+void MultiGroupTransport::calcSources()
+{
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    SGTs[iGroup]->calcSource();
+    cout << "Source for group "<< SGTs[iGroup]->energyGroup << endl;
+    cout << SGTs[iGroup]->q << endl;
+  }
+};
+
+//==============================================================================
+
 
