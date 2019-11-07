@@ -75,6 +75,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 	Eigen::MatrixXd t2 = Eigen::MatrixXd::Zero(rows,cols);
 	// A matrix of linear system Ax=b
 	Eigen::MatrixXd A = Eigen::MatrixXd::Zero(rows,cols);
+	Eigen::MatrixXd mask = Eigen::MatrixXd::Zero(rows,cols);
 	Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(rows);
         // downstream values
 	Eigen::MatrixXd downstream = Eigen::MatrixXd::Zero(rows,cols);
@@ -127,47 +128,55 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
                                 q = (*source)(iZ,iR)*q;
 				sigT = materials->sigT(iZ,iR,energyGroup);
 				gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
+				
 				// calculate radial within cell leakage matrix
                                 kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
 				kR=calckR(gamma);
 				kR=kRCoeff*kR;
+				
 				// calculate axial within cell leakage matrix
                                 kZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/16.0;
 				kZ=calckZ(gamma);
 				kZ=kZCoeff*kZ;
+				
 				// calculate radial out of cell leakage matrix
                                 lRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/2.0;
 				lR=calclR(gamma);
 				lR=lRCoeff*lR;
+				
 				// calculate axial out of cell leakage matrix
                                 lZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/8.0;
 				lZ=calclZ(gamma);
 				lZ=lZCoeff*lZ;
+				
 				// calculate first collision matrix
                                 t1Coeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(iR+1)/16.0;
 				t1=calct1(gamma);
 				t1=t1Coeff*t1;
+				
 				// calculate second collision matrix
                                 t2Coeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
 				t2=calct2(gamma);
 				t2=t2Coeff*t2;
-              			// calculate A considering within cell leakage and 
+              			
+				// calculate A considering within cell leakage and 
 				// collision matrices
 				A = sqrtXi*kR+xi*kZ+sigT*t1+sqrtXi*t2;
+				
 				// consider radial downstream values defined in this cell
-				subCellVol = calcSubCellVol(iZ,iR);
-				for (int iCol = 0; iCol < downstream.cols(); ++iCol){
-					downstream.col(iCol) = subCellVol(iCol)*\
-					sqrtXi*(lR.col(withinUpstreamR[0])+\
-                                        lR.col(withinUpstreamR[1]))/subCellVol.sum();
+                                mask.setIdentity();
+				for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
+					mask(outUpstreamR[iCol],outUpstreamR[iCol])=0;
 				}
+ 				downstream = sqrtXi*lR*mask;	
+				
 				// consider axial downstream values defined in this cell
-				for (int iCol = 0; iCol < downstream.cols(); ++iCol){
-					downstream.col(iCol) = downstream.col(iCol)
-                                        +subCellVol(iCol)\
-                                        *xi*(lZ.col(withinUpstreamZ[0])\
-                                        +lZ.col(withinUpstreamZ[1]))/subCellVol.sum();
+				mask.setIdentity();
+				for (int iCol = 0; iCol < outUpstreamZ.size(); ++iCol){
+					mask(outUpstreamZ[iCol],outUpstreamZ[iCol])=0;
 				}
+ 				downstream = downstream + xi*lZ*mask;	
+				
 				A = A + downstream;
 				// form b matrix
 				b = t1*q;
