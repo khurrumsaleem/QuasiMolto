@@ -34,6 +34,7 @@ class SingleGroupTransport
     Mesh * myMesh,\
     YAML::Node * myInput);
   void solveStartAngle();
+  void solveSCB();
   void calcSource(); 
 
   private:

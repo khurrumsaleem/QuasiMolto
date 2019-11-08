@@ -12,6 +12,7 @@
 #include "MultiGroupTransport.h"
 #include "SingleGroupTransport.h"
 #include "StartingAngle.h"
+#include "SimpleCornerBalance.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
@@ -51,6 +52,17 @@ void SingleGroupTransport::solveStartAngle()
 {
   MGT->startAngleSolve->calcStartingAngle(&aHalfFlux,&q,energyGroup);
   cout << aHalfFlux << endl;
+};
+
+//==============================================================================
+
+//==============================================================================
+//! solveSCB call starting angle solver
+
+void SingleGroupTransport::solveSCB()
+{
+  MGT->SCBSolve->solve(&aFlux,&aHalfFlux,&q,energyGroup);
+  cout << aFlux << endl;
 };
 
 //==============================================================================
