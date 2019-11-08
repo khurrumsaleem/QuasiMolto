@@ -65,10 +65,10 @@ void SimpleCornerBalance::solve(cube * halfAFlux,\
 	Eigen::MatrixXd lR = Eigen::MatrixXd::Zero(rows,cols);
 	Eigen::MatrixXd lZ = Eigen::MatrixXd::Zero(rows,cols);
         // reaction matrices
-	double t1Coeff;
-	double t2Coeff;
-	Eigen::MatrixXd t1 = Eigen::MatrixXd::Zero(rows,cols);
-	Eigen::MatrixXd t2 = Eigen::MatrixXd::Zero(rows,cols);
+	double tCoeff;
+	double RCoeff;
+	Eigen::MatrixXd t = Eigen::MatrixXd::Zero(rows,cols);
+	Eigen::MatrixXd R = Eigen::MatrixXd::Zero(rows,cols);
 	// A matrix of linear system Ax=b
 	Eigen::MatrixXd A = Eigen::MatrixXd::Zero(rows,cols);
 	Eigen::MatrixXd mask = Eigen::MatrixXd::Zero(rows,cols);
@@ -139,19 +139,19 @@ void SimpleCornerBalance::solve(cube * halfAFlux,\
 				lZ=lZCoeff*lZ;
 				
 				// calculate first collision matrix
-                                t1Coeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(iR+1)/16.0;
-				t1=calct1(gamma);
-				t1=t1Coeff*t1;
+                                tCoeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(iR+1)/16.0;
+				t=calct(gamma);
+				t=tCoeff*t;
 				
 				// calculate second collision matrix
-                                t2Coeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
-				t2=calcR(gamma);
-				t2=t2Coeff*t2;
+                                RCoeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
+				R=calcR(gamma);
+				R=RCoeff*R;
               		
 				subCellVol = calcSubCellVol(iZ,iR);	
 				// calculate A considering within cell leakage and 
 				// collision matrices
-				A = sqrtXi*kR+xi*kZ+sigT*t1+sqrtXi*t2;
+				A = sqrtXi*kR+xi*kZ+sigT*t+sqrtXi*R;
 				// consider radial downstream values defined in this cell
                                 mask.setIdentity();
 				for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
@@ -168,7 +168,7 @@ void SimpleCornerBalance::solve(cube * halfAFlux,\
 				
 				A = A + downstream;
 				// form b matrix
-				b = t1*q;
+				b = t*q;
 				// consider upstream values in other cells or BCs
 				if (iR!=rStart){
 					upstream = sqrtXi*(*halfAFlux)(iZ,iR+borderCellR,iXi)\
@@ -263,35 +263,35 @@ Eigen::MatrixXd SimpleCornerBalance::calclZ(double myGamma){
 
 
 //==============================================================================
-//! calct1 calculate first collision matrix
+//! calct calculate first collision matrix
 
-Eigen::MatrixXd SimpleCornerBalance::calct1(double myGamma){
+Eigen::MatrixXd SimpleCornerBalance::calct(double myGamma){
 	double a = 1+3*myGamma;
 	double b = 3+myGamma;
-	Eigen::MatrixXd t1 = Eigen::MatrixXd::Zero(4,4);
+	Eigen::MatrixXd t = Eigen::MatrixXd::Zero(4,4);
 
-	t1(0,0) = a; 
-	t1(1,1) = b; 
-	t1(2,2) = b; 
-	t1(3,3) = a; 
+	t(0,0) = a; 
+	t(1,1) = b; 
+	t(2,2) = b; 
+	t(3,3) = a; 
          
-	return t1;
+	return t;
 }
 //==============================================================================
 
 //==============================================================================
-//! calct2 calculate second collision matrix
+//! calcR calculate second collision matrix
 
 Eigen::MatrixXd SimpleCornerBalance::calcR(double myGamma){
 	double a = 1;
-	Eigen::MatrixXd t2 = Eigen::MatrixXd::Zero(4,4);
+	Eigen::MatrixXd R = Eigen::MatrixXd::Zero(4,4);
 
-	t2(0,0) = a; 
-	t2(1,1) = a; 
-	t2(2,2) = a;
-	t2(3,3) = a; 
+	R(0,0) = a; 
+	R(1,1) = a; 
+	R(2,2) = a;
+	R(3,3) = a; 
          
-	return t2;
+	return R;
 }
 //==============================================================================
 
