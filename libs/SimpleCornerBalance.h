@@ -24,7 +24,7 @@ class SimpleCornerBalance
         Eigen::MatrixXd calclR(double myGamma);
         Eigen::MatrixXd calclZ(double myGamma);
         Eigen::MatrixXd calct1(double myGamma);
-        Eigen::MatrixXd calct2(double myGamma);
+        Eigen::MatrixXd calcR(double myGamma);
         Eigen::VectorXd calcSubCellVol(int myiZ, int myiR);
 
         private:

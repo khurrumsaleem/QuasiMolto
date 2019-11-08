@@ -221,7 +221,7 @@ Eigen::MatrixXd SimpleCornerBalance::calckR(double myGamma){
 //==============================================================================
 //! calckZ calculate within cell axial leakage matrix
 
-Eigen::MatrixXd SimpleCornerBalanace::calckZ(double myGamma){
+Eigen::MatrixXd SimpleCornerBalance::calckZ(double myGamma){
 	double a = 1+3*myGamma;
 	double b = 3+myGamma;
 	Eigen::MatrixXd kZ = Eigen::MatrixXd::Zero(4,4);
@@ -289,7 +289,7 @@ Eigen::MatrixXd SimpleCornerBalance::calct1(double myGamma){
 //==============================================================================
 //! calct2 calculate second collision matrix
 
-Eigen::MatrixXd SimpleCornerBalance::calct2(double myGamma){
+Eigen::MatrixXd SimpleCornerBalance::calcR(double myGamma){
 	double a = 1;
 	Eigen::MatrixXd t2 = Eigen::MatrixXd::Zero(4,4);
 
