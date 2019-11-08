@@ -125,8 +125,6 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 				// calculate radial within cell leakage matrix
                                 kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
 				kR=calckR(gamma);
-				cout << "kR: " << endl;
-				cout << kR << endl;
 				kR=kRCoeff*kR;
 				
 				// calculate axial within cell leakage matrix
