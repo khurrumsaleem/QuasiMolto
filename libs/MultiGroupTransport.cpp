@@ -38,6 +38,7 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
   SCBSolve = std::make_shared<SimpleCornerBalance>(mesh,materials,input);
   calcSources(); 
   solveStartAngles();
+  solveSCBs();
 };
 
 //==============================================================================
@@ -53,6 +54,19 @@ void MultiGroupTransport::solveStartAngles()
 };
 
 //==============================================================================
+
+//==============================================================================
+//! solveSCBs loop over energy groups and call starting angle solver
+
+void MultiGroupTransport::solveSCBs()
+{
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    SGTs[iGroup]->solveSCB();
+  }
+};
+
+//==============================================================================
+
 
 //==============================================================================
 //! calcSources loop over SGTS and make call to calc sources in each

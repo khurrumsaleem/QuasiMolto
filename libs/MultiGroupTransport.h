@@ -31,6 +31,7 @@ class MultiGroupTransport
     Mesh * myMesh,\
     YAML::Node * myInput);
   void solveStartAngles();
+  void solveSCBs();
   void calcSources();
 
   private:
