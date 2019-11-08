@@ -168,10 +168,10 @@ void SimpleCornerBalance::solve(cube * aFlux,\
             RCoeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
             R=calcR(gamma);
             R=RCoeff*R;
+            angRedistCoeff = alphaPlusOneHalf/(weight*tau); 
 
             // calculate A considering within cell leakage and 
             // collision matrices
-            angRedistCoeff = alphaPlusOneHalf/(weight*tau); 
             A = mu*kR+xi*kZ+sigT*t+angRedistCoeff*R;
 
             // consider radial downstream values defined in this cell
@@ -240,8 +240,8 @@ void SimpleCornerBalance::solve(cube * aFlux,\
 //! calckR calculate within cell radial leakage matrix
 
 Eigen::MatrixXd SimpleCornerBalance::calckR(double myGamma){
-  double a = -(1+myGamma);
-  double b = 1+myGamma;
+  double a = (1+myGamma);
+  double b = -(1+myGamma);
   Eigen::MatrixXd kR = Eigen::MatrixXd::Zero(4,4);
 
   kR(0,0) = a; kR(0,1) = a;
