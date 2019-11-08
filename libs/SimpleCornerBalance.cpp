@@ -38,7 +38,8 @@ SimpleCornerBalance::SimpleCornerBalance(Mesh * myMesh,\
 // Solves using simple corner balance on the neutron transport equation 
 // in RZ geometry. 
 
-void SimpleCornerBalance::solve(cube * halfAFlux,\
+void SimpleCornerBalance::solve(cube * aFlux,\
+  cube * halfAFlux,\
   Eigen::MatrixXd * source,\
   int energyGroup)
 {
@@ -46,9 +47,12 @@ void SimpleCornerBalance::solve(cube * halfAFlux,\
   const int xiIndex = 0;
   // index xi value is stored in in quadLevel
   const int muIndex = 1;
+  // index weight value is stored in in quadLevel
+  const int weightIndex = 3;
   // temporary variable used for looping though quad set
-  double xi,sqrtXi,sigT,mu;
-  int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR;
+  double xi,sqrtXi,sigT,mu,alphaMinusOneHalf,alphaPlusOneHalf,weight,tau;
+  double angRedistCoeff = 0;
+  int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR,angIdx;
   int rows = 4,cols = 4;
   vector<int> withinUpstreamR(2);
   vector<int> outUpstreamR(2);
@@ -78,6 +82,8 @@ void SimpleCornerBalance::solve(cube * halfAFlux,\
   Eigen::MatrixXd downstream = Eigen::MatrixXd::Zero(rows,cols);
   // downstream values
   Eigen::VectorXd upstream = Eigen::VectorXd::Zero(rows);
+  // half-angle fluxes 
+  Eigen::VectorXd cellHalfAFlux = Eigen::VectorXd::Zero(rows);
   // right-hand side
   Eigen::VectorXd b = Eigen::VectorXd::Zero(rows);
   // solution vector 
@@ -87,115 +93,146 @@ void SimpleCornerBalance::solve(cube * halfAFlux,\
   q = 8*q;
 
   for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
+    // get xi for this quadrature level
     xi = mesh->quadrature[iXi].quad[0][xiIndex];
-    for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrds; ++iMu){
-      // get xi for this quadrature level
+
+    for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu){
+
+      // get xi for this ordinate 
       mu = mesh->quadrature[iXi].quad[iMu][muIndex]; 
-      sqrtXi = pow(1-pow(xi,2),0.5); 
-      rStart = mesh->drs.size()-1;
-      borderCellR = 1;
-      withinUpstreamR = {0,3};
-      outUpstreamR = {1,2};
-      // depending on xi, define loop constants	
-      if (xi > 0) {
-        zStart = mesh->dzs.size()-1;
-        zEnd = 0;
-        zInc = -1;
-        borderCellZ = 1;
-        withinUpstreamZ = {2,3};
-        outUpstreamZ = {0,1};
+      alphaPlusOneHalf = mesh->quadrature[iXi].alpha[iMu+1];
+      alphaMinusOneHalf = mesh->quadrature[iXi].alpha[iMu];
+      weight = mesh->quadrature[iXi].quad[iMu][weightIndex]; 
+      tau = mesh->quadrature[iXi].tau[iMu];
+      angIdx= mesh->quadrature[iXi].ordIdx[iMu];
+
+      if (mu < 0 ){
+
+        rStart = mesh->drs.size()-1;
+        borderCellR = 1;
+        withinUpstreamR = {0,3};
+        outUpstreamR = {1,2};
+
+        // depending on xi, define loop constants	
+        if (xi > 0) {
+          zStart = mesh->dzs.size()-1;
+          zEnd = 0;
+          zInc = -1;
+          borderCellZ = 1;
+          withinUpstreamZ = {2,3};
+          outUpstreamZ = {0,1};
+        }
+        else {			
+          zStart = 0;
+          zEnd = mesh->dzs.size();
+          zInc = 1;
+          borderCellZ = -1;
+          withinUpstreamZ = {0,1};
+          outUpstreamZ = {2,3};
+        }
+        for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
+          for (int iZ = zStart, countZ = 0; \
+            countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
+
+            q.setOnes();
+            q = (*source)(iZ,iR)*q;
+            sigT = materials->sigT(iZ,iR,energyGroup);
+            gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
+            
+            // calculate radial within cell leakage matrix
+            kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
+            kR=calckR(gamma);
+            kR=kRCoeff*kR;
+            
+            // calculate axial within cell leakage matrix
+            kZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/16.0;
+            kZ=calckZ(gamma);
+            kZ=kZCoeff*kZ;
+            
+            // calculate radial out of cell leakage matrix
+            lRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/2.0;
+            lR=calclR(gamma);
+            lR=lRCoeff*lR;
+                                    
+            // calculate axial out of cell leakage matrix
+            lZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/8.0;
+            lZ=calclZ(gamma);
+            lZ=lZCoeff*lZ;
+            
+            // calculate first collision matrix
+            tCoeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(iR+1)/16.0;
+            t=calct(gamma);
+            t=tCoeff*t;
+                                    
+            // calculate second collision matrix
+            RCoeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
+            R=calcR(gamma);
+            R=RCoeff*R;
+
+            // calculate A considering within cell leakage and 
+            // collision matrices
+            angRedistCoeff = alphaPlusOneHalf/(weight*tau); 
+            A = mu*kR+xi*kZ+sigT*t+angRedistCoeff*R;
+
+            // consider radial downstream values defined in this cell
+            mask.setIdentity();
+            for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
+              mask(outUpstreamR[iCol],outUpstreamR[iCol])=0;
+            }
+            downstream = mu*lR*mask;	
+            
+            // consider axial downstream values defined in this cell
+            mask.setIdentity();
+            for (int iCol = 0; iCol < outUpstreamZ.size(); ++iCol){
+              mask(outUpstreamZ[iCol],outUpstreamZ[iCol])=0;
+            }
+            downstream = downstream + xi*lZ*mask;	
+            
+            A = A + downstream;
+
+            // form b matrix
+            b = t*q;
+
+            angRedistCoeff = ((alphaPlusOneHalf/tau)*(tau - 1.0)\
+              - alphaMinusOneHalf)/weight;
+            cellHalfAFlux.setOnes();
+            cellHalfAFlux=(*halfAFlux)(iZ,iR,iXi)*cellHalfAFlux;
+            b = b - angRedistCoeff*R*cellHalfAFlux;
+
+            // consider upstream values in other cells or BCs
+            if (iR!=rStart){
+              upstream = mu*(*halfAFlux)(iZ,iR+borderCellR,iXi)\
+              *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+              b = b - upstream;
+            }
+
+            if (iZ!=zStart){
+              upstream = xi*(*halfAFlux)(iZ+borderCellZ,iR,iXi)\
+              *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
+              b = b - upstream;
+            }
+
+            x = A.lu().solve(b);
+
+            // Take average of subcells
+            subCellVol = calcSubCellVol(iZ,iR);	
+            (*aFlux)(iZ,iR,angIdx) = x.dot(subCellVol)/subCellVol.sum();
+
+            // use weighted diamond difference to calculate next half
+            // angle flux
+            (*halfAFlux)(iZ,iR,iXi) = ((*aFlux)(iZ,iR,angIdx)\
+            +(tau-1.0)*(*halfAFlux)(iZ,iR,iXi))/tau; 
+
+          } //iR
+        } //iZ
+      } else if (mu > 0){
+        //case when mu > 0
       }
-      else {			
-        zStart = 0;
-        zEnd = mesh->dzs.size();
-        zInc = 1;
-        borderCellZ = -1;
-        withinUpstreamZ = {0,1};
-        outUpstreamZ = {2,3};
-      }
-      for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
-        for (int iZ = zStart, countZ = 0; \
-          countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
-
-          q.setOnes();
-          q = (*source)(iZ,iR)*q;
-          sigT = materials->sigT(iZ,iR,energyGroup);
-          gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
-          
-          // calculate radial within cell leakage matrix
-          kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
-          kR=calckR(gamma);
-          kR=kRCoeff*kR;
-          
-          // calculate axial within cell leakage matrix
-          kZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/16.0;
-          kZ=calckZ(gamma);
-          kZ=kZCoeff*kZ;
-          
-          // calculate radial out of cell leakage matrix
-          lRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/2.0;
-          lR=calclR(gamma);
-          lR=lRCoeff*lR;
-                                  
-          // calculate axial out of cell leakage matrix
-          lZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/8.0;
-          lZ=calclZ(gamma);
-          lZ=lZCoeff*lZ;
-          
-          // calculate first collision matrix
-          tCoeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(iR+1)/16.0;
-          t=calct(gamma);
-          t=tCoeff*t;
-                                  
-          // calculate second collision matrix
-          RCoeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
-          R=calcR(gamma);
-          R=RCoeff*R;
-
-          subCellVol = calcSubCellVol(iZ,iR);	
-          // calculate A considering within cell leakage and 
-          // collision matrices
-          A = sqrtXi*kR+xi*kZ+sigT*t+sqrtXi*R;
-          // consider radial downstream values defined in this cell
-          mask.setIdentity();
-          for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
-            mask(outUpstreamR[iCol],outUpstreamR[iCol])=0;
-          }
-          downstream = sqrtXi*lR*mask;	
-          
-          // consider axial downstream values defined in this cell
-          mask.setIdentity();
-          for (int iCol = 0; iCol < outUpstreamZ.size(); ++iCol){
-            mask(outUpstreamZ[iCol],outUpstreamZ[iCol])=0;
-          }
-          downstream = downstream + xi*lZ*mask;	
-          
-          A = A + downstream;
-          // form b matrix
-          b = t*q;
-          // consider upstream values in other cells or BCs
-          if (iR!=rStart){
-            upstream = sqrtXi*(*halfAFlux)(iZ,iR+borderCellR,iXi)\
-            *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
-            b = b - upstream;
-          }
-          if (iZ!=zStart){
-            upstream = xi*(*halfAFlux)(iZ+borderCellZ,iR,iXi)\
-            *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
-            b = b - upstream;
-          }
-          x = A.lu().solve(b);
-
-          // Take average of subcells
-          (*halfAFlux)(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
-
-        } //iR
-      } //iZ
     } //iMu
   } //iXi
 	
-  cout << "half angle flux calculated! " << endl;
-  cout << *halfAFlux << endl;
+  cout << "angular flux calculated! " << endl;
+  cout << *aFlux << endl;
 };
 //==============================================================================
 
