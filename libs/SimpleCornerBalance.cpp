@@ -21,14 +21,13 @@ using namespace arma;
 //! SimpleCornerBalance object constructor
 
 SimpleCornerBalance::SimpleCornerBalance(Mesh * myMesh,\
-	Materials * myMaterials,\
-	YAML::Node * myInput)	      
+  Materials * myMaterials,\
+  YAML::Node * myInput)	      
 {
-	// Point to variables for mesh and input file
-	mesh = myMesh;
-	input = myInput;
-	materials = myMaterials;
-	
+// Point to variables for mesh and input file
+  mesh = myMesh;
+  input = myInput;
+  materials = myMaterials;
 };
 
 //==============================================================================
@@ -43,152 +42,160 @@ void SimpleCornerBalance::solve(cube * halfAFlux,\
   Eigen::MatrixXd * source,\
   int energyGroup)
 {
-        // index xi value is stored in in quadLevel
-	const int xiIndex = 0;
-        // temporary variable used for looping though quad set
-	double xi,sqrtXi,sigT;
-        int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR;
-	int rows = 4,cols = 4;
-        vector<int> withinUpstreamR(2);
-        vector<int> outUpstreamR(2);
-        vector<int> withinUpstreamZ(2);
-        vector<int> outUpstreamZ(2);
-        double gamma;
-	// within cell leakage matrices in R and Z directions
-	double kRCoeff;
-        double kZCoeff;
-	Eigen::MatrixXd kR = Eigen::MatrixXd::Zero(rows,cols);
-	Eigen::MatrixXd kZ = Eigen::MatrixXd::Zero(rows,cols);
-	// out of cell leakage matrices in Rand Z directions
-        double lRCoeff;
-        double lZCoeff;
-	Eigen::MatrixXd lR = Eigen::MatrixXd::Zero(rows,cols);
-	Eigen::MatrixXd lZ = Eigen::MatrixXd::Zero(rows,cols);
-        // reaction matrices
-	double tCoeff;
-	double RCoeff;
-	Eigen::MatrixXd t = Eigen::MatrixXd::Zero(rows,cols);
-	Eigen::MatrixXd R = Eigen::MatrixXd::Zero(rows,cols);
-	// A matrix of linear system Ax=b
-	Eigen::MatrixXd A = Eigen::MatrixXd::Zero(rows,cols);
-	Eigen::MatrixXd mask = Eigen::MatrixXd::Zero(rows,cols);
-	Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(rows);
-        // downstream values
-	Eigen::MatrixXd downstream = Eigen::MatrixXd::Zero(rows,cols);
-        // downstream values
-	Eigen::VectorXd upstream = Eigen::VectorXd::Zero(rows);
-	// right-hand side
-	Eigen::VectorXd b = Eigen::VectorXd::Zero(rows);
-	// solution vector 
-	Eigen::VectorXd x = Eigen::VectorXd::Zero(rows);
-	// source 
-	Eigen::VectorXd q = Eigen::VectorXd::Ones(rows);
-	q = 8*q;
+  // index xi value is stored in in quadLevel
+  const int xiIndex = 0;
+  // index xi value is stored in in quadLevel
+  const int muIndex = 1;
+  // temporary variable used for looping though quad set
+  double xi,sqrtXi,sigT,mu;
+  int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR;
+  int rows = 4,cols = 4;
+  vector<int> withinUpstreamR(2);
+  vector<int> outUpstreamR(2);
+  vector<int> withinUpstreamZ(2);
+  vector<int> outUpstreamZ(2);
+  double gamma;
+  // within cell leakage matrices in R and Z directions
+  double kRCoeff;
+  double kZCoeff;
+  Eigen::MatrixXd kR = Eigen::MatrixXd::Zero(rows,cols);
+  Eigen::MatrixXd kZ = Eigen::MatrixXd::Zero(rows,cols);
+  // out of cell leakage matrices in Rand Z directions
+  double lRCoeff;
+  double lZCoeff;
+  Eigen::MatrixXd lR = Eigen::MatrixXd::Zero(rows,cols);
+  Eigen::MatrixXd lZ = Eigen::MatrixXd::Zero(rows,cols);
+  // reaction matrices
+  double tCoeff;
+  double RCoeff;
+  Eigen::MatrixXd t = Eigen::MatrixXd::Zero(rows,cols);
+  Eigen::MatrixXd R = Eigen::MatrixXd::Zero(rows,cols);
+  // A matrix of linear system Ax=b
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(rows,cols);
+  Eigen::MatrixXd mask = Eigen::MatrixXd::Zero(rows,cols);
+  Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(rows);
+  // downstream values
+  Eigen::MatrixXd downstream = Eigen::MatrixXd::Zero(rows,cols);
+  // downstream values
+  Eigen::VectorXd upstream = Eigen::VectorXd::Zero(rows);
+  // right-hand side
+  Eigen::VectorXd b = Eigen::VectorXd::Zero(rows);
+  // solution vector 
+  Eigen::VectorXd x = Eigen::VectorXd::Zero(rows);
+  // source 
+  Eigen::VectorXd q = Eigen::VectorXd::Ones(rows);
+  q = 8*q;
 
-	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
-		// get xi for this quadrature level
-		xi = mesh->quadrature[iXi].quad[0][xiIndex];
-                sqrtXi = pow(1-pow(xi,2),0.5); 
-                rStart = mesh->drs.size()-1;
-                borderCellR = 1;
-                withinUpstreamR = {0,3};
-                outUpstreamR = {1,2};
-		// depending on xi, define loop constants	
-		if (xi > 0) {
-			zStart = mesh->dzs.size()-1;
-                        zEnd = 0;
-                        zInc = -1;
-                        borderCellZ = 1;
-                        withinUpstreamZ = {2,3};
-                        outUpstreamZ = {0,1};
-		}
-                else {			
-			zStart = 0;
-                        zEnd = mesh->dzs.size();
-                        zInc = 1;
-                        borderCellZ = -1;
-                        withinUpstreamZ = {0,1};
-                        outUpstreamZ = {2,3};
-		}
-                for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
-			for (int iZ = zStart, countZ = 0; \
-			    countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
-	                        q.setOnes();
-                                q = (*source)(iZ,iR)*q;
-				sigT = materials->sigT(iZ,iR,energyGroup);
-				gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
-				
-				// calculate radial within cell leakage matrix
-                                kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
-				kR=calckR(gamma);
-				kR=kRCoeff*kR;
-				
-				// calculate axial within cell leakage matrix
-                                kZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/16.0;
-				kZ=calckZ(gamma);
-				kZ=kZCoeff*kZ;
-				
-				// calculate radial out of cell leakage matrix
-                                lRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/2.0;
-				lR=calclR(gamma);
-				lR=lRCoeff*lR;
-				
-				// calculate axial out of cell leakage matrix
-                                lZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/8.0;
-				lZ=calclZ(gamma);
-				lZ=lZCoeff*lZ;
-				
-				// calculate first collision matrix
-                                tCoeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(iR+1)/16.0;
-				t=calct(gamma);
-				t=tCoeff*t;
-				
-				// calculate second collision matrix
-                                RCoeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
-				R=calcR(gamma);
-				R=RCoeff*R;
-              		
-				subCellVol = calcSubCellVol(iZ,iR);	
-				// calculate A considering within cell leakage and 
-				// collision matrices
-				A = sqrtXi*kR+xi*kZ+sigT*t+sqrtXi*R;
-				// consider radial downstream values defined in this cell
-                                mask.setIdentity();
-				for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
-					mask(outUpstreamR[iCol],outUpstreamR[iCol])=0;
-				}
- 				downstream = sqrtXi*lR*mask;	
-				
-				// consider axial downstream values defined in this cell
-				mask.setIdentity();
-				for (int iCol = 0; iCol < outUpstreamZ.size(); ++iCol){
-					mask(outUpstreamZ[iCol],outUpstreamZ[iCol])=0;
-				}
- 				downstream = downstream + xi*lZ*mask;	
-				
-				A = A + downstream;
-				// form b matrix
-				b = t*q;
-				// consider upstream values in other cells or BCs
-				if (iR!=rStart){
-					upstream = sqrtXi*(*halfAFlux)(iZ,iR+borderCellR,iXi)\
-					*(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
-					b = b - upstream;
-				}
-				if (iZ!=zStart){
-					upstream = xi*(*halfAFlux)(iZ+borderCellZ,iR,iXi)\
-					*(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
-					b = b - upstream;
-				}
-				x = A.lu().solve(b);
-				// Take average of subcells
-				(*halfAFlux)(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
-                        }
-		}
-	}
+  for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
+    xi = mesh->quadrature[iXi].quad[0][xiIndex];
+    for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrds; ++iMu){
+      // get xi for this quadrature level
+      mu = mesh->quadrature[iXi].quad[iMu][muIndex]; 
+      sqrtXi = pow(1-pow(xi,2),0.5); 
+      rStart = mesh->drs.size()-1;
+      borderCellR = 1;
+      withinUpstreamR = {0,3};
+      outUpstreamR = {1,2};
+      // depending on xi, define loop constants	
+      if (xi > 0) {
+        zStart = mesh->dzs.size()-1;
+        zEnd = 0;
+        zInc = -1;
+        borderCellZ = 1;
+        withinUpstreamZ = {2,3};
+        outUpstreamZ = {0,1};
+      }
+      else {			
+        zStart = 0;
+        zEnd = mesh->dzs.size();
+        zInc = 1;
+        borderCellZ = -1;
+        withinUpstreamZ = {0,1};
+        outUpstreamZ = {2,3};
+      }
+      for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
+        for (int iZ = zStart, countZ = 0; \
+          countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
+
+          q.setOnes();
+          q = (*source)(iZ,iR)*q;
+          sigT = materials->sigT(iZ,iR,energyGroup);
+          gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
+          
+          // calculate radial within cell leakage matrix
+          kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
+          kR=calckR(gamma);
+          kR=kRCoeff*kR;
+          
+          // calculate axial within cell leakage matrix
+          kZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/16.0;
+          kZ=calckZ(gamma);
+          kZ=kZCoeff*kZ;
+          
+          // calculate radial out of cell leakage matrix
+          lRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/2.0;
+          lR=calclR(gamma);
+          lR=lRCoeff*lR;
+                                  
+          // calculate axial out of cell leakage matrix
+          lZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/8.0;
+          lZ=calclZ(gamma);
+          lZ=lZCoeff*lZ;
+          
+          // calculate first collision matrix
+          tCoeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(iR+1)/16.0;
+          t=calct(gamma);
+          t=tCoeff*t;
+                                  
+          // calculate second collision matrix
+          RCoeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
+          R=calcR(gamma);
+          R=RCoeff*R;
+
+          subCellVol = calcSubCellVol(iZ,iR);	
+          // calculate A considering within cell leakage and 
+          // collision matrices
+          A = sqrtXi*kR+xi*kZ+sigT*t+sqrtXi*R;
+          // consider radial downstream values defined in this cell
+          mask.setIdentity();
+          for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
+            mask(outUpstreamR[iCol],outUpstreamR[iCol])=0;
+          }
+          downstream = sqrtXi*lR*mask;	
+          
+          // consider axial downstream values defined in this cell
+          mask.setIdentity();
+          for (int iCol = 0; iCol < outUpstreamZ.size(); ++iCol){
+            mask(outUpstreamZ[iCol],outUpstreamZ[iCol])=0;
+          }
+          downstream = downstream + xi*lZ*mask;	
+          
+          A = A + downstream;
+          // form b matrix
+          b = t*q;
+          // consider upstream values in other cells or BCs
+          if (iR!=rStart){
+            upstream = sqrtXi*(*halfAFlux)(iZ,iR+borderCellR,iXi)\
+            *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+            b = b - upstream;
+          }
+          if (iZ!=zStart){
+            upstream = xi*(*halfAFlux)(iZ+borderCellZ,iR,iXi)\
+            *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
+            b = b - upstream;
+          }
+          x = A.lu().solve(b);
+
+          // Take average of subcells
+          (*halfAFlux)(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
+
+        } //iR
+      } //iZ
+    } //iMu
+  } //iXi
 	
-	cout << "half angle flux calculated! " << endl;
-	cout << *halfAFlux << endl;
+  cout << "half angle flux calculated! " << endl;
+  cout << *halfAFlux << endl;
 };
 //==============================================================================
 
@@ -196,16 +203,16 @@ void SimpleCornerBalance::solve(cube * halfAFlux,\
 //! calckR calculate within cell radial leakage matrix
 
 Eigen::MatrixXd SimpleCornerBalance::calckR(double myGamma){
-	double a = -(1+myGamma);
-	double b = 1+myGamma;
-	Eigen::MatrixXd kR = Eigen::MatrixXd::Zero(4,4);
+  double a = -(1+myGamma);
+  double b = 1+myGamma;
+  Eigen::MatrixXd kR = Eigen::MatrixXd::Zero(4,4);
 
-	kR(0,0) = a; kR(0,1) = a;
-	kR(1,0) = b; kR(1,1) = b;
-	kR(2,2) = b; kR(2,3) = b;
-	kR(3,2) = a; kR(3,3) = a;
-         
-	return kR;
+  kR(0,0) = a; kR(0,1) = a;
+  kR(1,0) = b; kR(1,1) = b;
+  kR(2,2) = b; kR(2,3) = b;
+  kR(3,2) = a; kR(3,3) = a;
+           
+  return kR;
 }
 
 //==============================================================================
@@ -215,32 +222,32 @@ Eigen::MatrixXd SimpleCornerBalance::calckR(double myGamma){
 //! calckZ calculate within cell axial leakage matrix
 
 Eigen::MatrixXd SimpleCornerBalance::calckZ(double myGamma){
-	double a = 1+3*myGamma;
-	double b = 3+myGamma;
-	Eigen::MatrixXd kZ = Eigen::MatrixXd::Zero(4,4);
+  double a = 1+3*myGamma;
+  double b = 3+myGamma;
+  Eigen::MatrixXd kZ = Eigen::MatrixXd::Zero(4,4);
 
-	kZ(0,0) = a; kZ(0,3) = a;
-	kZ(1,1) = b; kZ(1,2) = b;
-	kZ(2,1) = -b; kZ(2,2) = -b;
-	kZ(3,0) = -a; kZ(3,3) = -a;
-         
-	return kZ;
+  kZ(0,0) = a; kZ(0,3) = a;
+  kZ(1,1) = b; kZ(1,2) = b;
+  kZ(2,1) = -b; kZ(2,2) = -b;
+  kZ(3,0) = -a; kZ(3,3) = -a;
+
+  return kZ;
 }
 
 //==============================================================================
 //! calclR calculate out of cell radial leakage matrix
 
 Eigen::MatrixXd SimpleCornerBalance::calclR(double myGamma){
-	double a = myGamma;
-	double b = -1;
-	Eigen::MatrixXd lR = Eigen::MatrixXd::Zero(4,4);
+  double a = myGamma;
+  double b = -1;
+  Eigen::MatrixXd lR = Eigen::MatrixXd::Zero(4,4);
 
-	lR(0,0) = a; 
-	lR(1,1) = b; 
-	lR(2,2) = b; 
-	lR(3,3) = a; 
-         
-	return lR;
+  lR(0,0) = a; 
+  lR(1,1) = b; 
+  lR(2,2) = b; 
+  lR(3,3) = a; 
+           
+  return lR;
 }
 //==============================================================================
 
@@ -248,16 +255,16 @@ Eigen::MatrixXd SimpleCornerBalance::calclR(double myGamma){
 //! calclZ calculate out of cell axial leakage matrix
 
 Eigen::MatrixXd SimpleCornerBalance::calclZ(double myGamma){
-	double a = 1+3*myGamma;
-	double b = 3+myGamma;
-	Eigen::MatrixXd lZ = Eigen::MatrixXd::Zero(4,4);
+  double a = 1+3*myGamma;
+  double b = 3+myGamma;
+  Eigen::MatrixXd lZ = Eigen::MatrixXd::Zero(4,4);
 
-	lZ(0,0) = -a; 
-	lZ(1,1) = -b; 
-	lZ(2,2) = b; 
-	lZ(3,3) = a; 
-         
-	return lZ;
+  lZ(0,0) = -a; 
+  lZ(1,1) = -b; 
+  lZ(2,2) = b; 
+  lZ(3,3) = a; 
+           
+  return lZ;
 }
 //==============================================================================
 
@@ -266,16 +273,16 @@ Eigen::MatrixXd SimpleCornerBalance::calclZ(double myGamma){
 //! calct calculate first collision matrix
 
 Eigen::MatrixXd SimpleCornerBalance::calct(double myGamma){
-	double a = 1+3*myGamma;
-	double b = 3+myGamma;
-	Eigen::MatrixXd t = Eigen::MatrixXd::Zero(4,4);
+  double a = 1+3*myGamma;
+  double b = 3+myGamma;
+  Eigen::MatrixXd t = Eigen::MatrixXd::Zero(4,4);
 
-	t(0,0) = a; 
-	t(1,1) = b; 
-	t(2,2) = b; 
-	t(3,3) = a; 
-         
-	return t;
+  t(0,0) = a; 
+  t(1,1) = b; 
+  t(2,2) = b; 
+  t(3,3) = a; 
+           
+  return t;
 }
 //==============================================================================
 
@@ -283,15 +290,15 @@ Eigen::MatrixXd SimpleCornerBalance::calct(double myGamma){
 //! calcR calculate second collision matrix
 
 Eigen::MatrixXd SimpleCornerBalance::calcR(double myGamma){
-	double a = 1;
-	Eigen::MatrixXd R = Eigen::MatrixXd::Zero(4,4);
+  double a = 1;
+  Eigen::MatrixXd R = Eigen::MatrixXd::Zero(4,4);
 
-	R(0,0) = a; 
-	R(1,1) = a; 
-	R(2,2) = a;
-	R(3,3) = a; 
-         
-	return R;
+  R(0,0) = a; 
+  R(1,1) = a; 
+  R(2,2) = a;
+  R(3,3) = a; 
+           
+  return R;
 }
 //==============================================================================
 
@@ -299,17 +306,20 @@ Eigen::MatrixXd SimpleCornerBalance::calcR(double myGamma){
 //! calcSubCellVol calculate volumes of subcell regions
 
 Eigen::VectorXd SimpleCornerBalance::calcSubCellVol(int myiZ, int myiR){
-	Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(4);
-	
-	subCellVol(0) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
-		pow(mesh->rEdge(myiR),2));
-	subCellVol(1) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
-                pow(mesh->rCent(myiR),2));
-	subCellVol(2) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
-                pow(mesh->rCent(myiR),2));
-	subCellVol(3) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
-		pow(mesh->rEdge(myiR),2));
+  Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(4);
+          
+  subCellVol(0) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
+    pow(mesh->rEdge(myiR),2));
 
-	return subCellVol;
+  subCellVol(1) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
+    pow(mesh->rCent(myiR),2));
+
+  subCellVol(2) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
+    pow(mesh->rCent(myiR),2));
+
+  subCellVol(3) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
+    pow(mesh->rEdge(myiR),2));
+
+  return subCellVol;
 }
 //==============================================================================
