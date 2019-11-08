@@ -7,4 +7,5 @@ add_library(libs
         StartingAngle.cpp
         MultiGroupTransport.cpp
         SingleGroupTransport.cpp
+	SimpleCornerBalance.cpp
         Material.cpp)

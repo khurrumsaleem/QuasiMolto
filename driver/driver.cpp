@@ -10,6 +10,7 @@
 #include "../libs/Material.h"
 #include "../libs/MultiGroupTransport.h"
 #include "../libs/SingleGroupTransport.h"
+#include "../libs/SimpleCornerBalance.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
