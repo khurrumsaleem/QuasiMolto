@@ -409,13 +409,11 @@ void Mesh::addLevels(){
 //! calcNAngles calculate number of discrete angles in ordinate set
 
 void Mesh::calcNumAngles(){        
-	// print quadrature set	
-	nAngles = 0;
-	for (int i = 0; i < quadrature.size(); ++i){
-		for(int j = 0; j < quadrature[i].nOrd; ++j){
-			nAngles = nAngles + quadrature[i].nOrd;
-		}
-	}
+  // print quadrature set	
+  nAngles = 0;
+  for (int i = 0; i < quadrature.size(); ++i){
+    nAngles = nAngles + quadrature[i].nOrd;
+  }
 }
 //==============================================================================
 
