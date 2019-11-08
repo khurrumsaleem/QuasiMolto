@@ -152,13 +152,13 @@ void SimpleCornerBalance::solve(cube * halfAFlux,\
 				
 				// calculate second collision matrix
                                 t2Coeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
-				t2=calct2(gamma);
+				t2=calcR(gamma);
 				t2=t2Coeff*t2;
-              			
+              		
+				subCellVol = calcSubCellVol(iZ,iR);	
 				// calculate A considering within cell leakage and 
 				// collision matrices
 				A = sqrtXi*kR+xi*kZ+sigT*t1+sqrtXi*t2;
-				
 				// consider radial downstream values defined in this cell
                                 mask.setIdentity();
 				for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
@@ -227,8 +227,8 @@ Eigen::MatrixXd SimpleCornerBalance::calckZ(double myGamma){
 	Eigen::MatrixXd kZ = Eigen::MatrixXd::Zero(4,4);
 
 	kZ(0,0) = a; kZ(0,3) = a;
-	kZ(1,2) = b; kZ(1,3) = b;
-	kZ(2,2) = -b; kZ(2,3) = -b;
+	kZ(1,1) = b; kZ(1,2) = b;
+	kZ(2,1) = -b; kZ(2,2) = -b;
 	kZ(3,0) = -a; kZ(3,3) = -a;
          
 	return kZ;

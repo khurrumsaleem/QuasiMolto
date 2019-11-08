@@ -88,13 +88,6 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 	// source 
 	Eigen::VectorXd q = Eigen::VectorXd::Ones(rows);
 	q = 8*q;
-
-	// need to bring this in from materials... kluge for now
-        double sigT = 1.0;
-	
-	// need to bring this in from transport... fluge for now
-	//cube halfAFlux(mesh->dzs.size(),mesh->drs.size(),mesh->quadrature.size(),\
-			fill::zeros);
 	
 	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 		// get xi for this quadrature level
@@ -132,6 +125,8 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 				// calculate radial within cell leakage matrix
                                 kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
 				kR=calckR(gamma);
+				cout << "kR: " << endl;
+				cout << kR << endl;
 				kR=kRCoeff*kR;
 				
 				// calculate axial within cell leakage matrix
@@ -158,11 +153,11 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
                                 t2Coeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
 				t2=calct2(gamma);
 				t2=t2Coeff*t2;
-              			
+              		
+				subCellVol = calcSubCellVol(iZ,iR);	
 				// calculate A considering within cell leakage and 
 				// collision matrices
 				A = sqrtXi*kR+xi*kZ+sigT*t1+sqrtXi*t2;
-				
 				// consider radial downstream values defined in this cell
                                 mask.setIdentity();
 				for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
@@ -178,6 +173,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
  				downstream = downstream + xi*lZ*mask;	
 				
 				A = A + downstream;
+				
 				// form b matrix
 				b = t1*q;
 				// consider upstream values in other cells or BCs
@@ -192,6 +188,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 					b = b - upstream;
 				}
 				x = A.lu().solve(b);
+				
 				// Take average of subcells
 				(*halfAFlux)(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
                         }
@@ -231,8 +228,8 @@ Eigen::MatrixXd StartingAngle::calckZ(double myGamma){
 	Eigen::MatrixXd kZ = Eigen::MatrixXd::Zero(4,4);
 
 	kZ(0,0) = a; kZ(0,3) = a;
-	kZ(1,2) = b; kZ(1,3) = b;
-	kZ(2,2) = -b; kZ(2,3) = -b;
+	kZ(1,1) = b; kZ(1,2) = b;
+	kZ(2,1) = -b; kZ(2,2) = -b;
 	kZ(3,0) = -a; kZ(3,3) = -a;
          
 	return kZ;
