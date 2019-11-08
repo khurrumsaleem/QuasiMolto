@@ -413,7 +413,7 @@ void Mesh::calcNumAngles(){
 	nAngles = 0;
 	for (int i = 0; i < quadrature.size(); ++i){
 		for(int j = 0; j < quadrature[i].nOrd; ++j){
-			nAngles = nAngles + quadrature[i].quad[j].size();
+			nAngles = nAngles + quadrature[i].nOrd;
 		}
 	}
 }
