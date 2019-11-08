@@ -15,6 +15,7 @@ using namespace arma;
 
 class SingleGroupTransport; // forward declaration
 class StartingAngle; // forward declaration
+class SimpleCornerBalance; // forward declaration
 
 //==============================================================================
 //! MultGroupTransport class that holds multigroup transport information
@@ -24,6 +25,7 @@ class MultiGroupTransport
   public:
   vector< shared_ptr<SingleGroupTransport> > SGTs;
   shared_ptr<StartingAngle> startAngleSolve;
+  shared_ptr<SimpleCornerBalance> SCBSolve;
   // public functions
   MultiGroupTransport(Materials * myMaterials,\
     Mesh * myMesh,\

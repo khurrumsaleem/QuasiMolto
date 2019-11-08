@@ -11,6 +11,7 @@
 #include "SingleGroupTransport.h"
 #include "MultiGroupTransport.h"
 #include "StartingAngle.h"
+#include "SimpleCornerBalance.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
@@ -34,6 +35,7 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
     SGTs.push_back(std::move(newSGT)); 
   }
   startAngleSolve = std::make_shared<StartingAngle>(mesh,materials,input);
+  SCBSolve = std::make_shared<SimpleCornerBalance>(mesh,materials,input);
   calcSources(); 
   solveStartAngles();
 };
