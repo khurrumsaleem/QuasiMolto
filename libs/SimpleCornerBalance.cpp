@@ -46,7 +46,7 @@ void SimpleCornerBalance::solve(cube * halfAFlux,\
         // index xi value is stored in in quadLevel
 	const int xiIndex = 0;
         // temporary variable used for looping though quad set
-	double xi,sqrtXi;
+	double xi,sqrtXi,sigT;
         int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR;
 	int rows = 4,cols = 4;
         vector<int> withinUpstreamR(2);
@@ -85,13 +85,6 @@ void SimpleCornerBalance::solve(cube * halfAFlux,\
 	Eigen::VectorXd q = Eigen::VectorXd::Ones(rows);
 	q = 8*q;
 
-	// need to bring this in from materials... kluge for now
-        double sigT = 1.0;
-	
-	// need to bring this in from transport... fluge for now
-	//cube halfAFlux(mesh->dzs.size(),mesh->drs.size(),mesh->quadrature.size(),\
-			fill::zeros);
-	
 	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 		// get xi for this quadrature level
 		xi = mesh->quadrature[iXi].quad[0][xiIndex];

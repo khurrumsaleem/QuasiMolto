@@ -50,7 +50,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
         // index xi value is stored in in quadLevel
 	const int xiIndex = 0;
         // temporary variable used for looping though quad set
-	double xi,sqrtXi;
+	double xi,sqrtXi,sigT;
         int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR;
 	int rows = 4,cols = 4;
         vector<int> withinUpstreamR(2);
