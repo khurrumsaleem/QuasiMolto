@@ -133,7 +133,10 @@ void SimpleCornerBalance::solve(cube * aFlux,\
         for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
           for (int iZ = zStart, countZ = 0; \
             countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
-
+            cout << "iR: " << iR << endl;
+            cout << "iZ: " << iZ << endl;
+            cout << "iMu: " << iMu << endl;
+            cout << "iXi: " << iXi << endl;
             q.setOnes();
             q = (*source)(iZ,iR)*q;
             sigT = materials->sigT(iZ,iR,energyGroup);
@@ -195,9 +198,17 @@ void SimpleCornerBalance::solve(cube * aFlux,\
 
             angRedistCoeff = ((alphaPlusOneHalf/tau)*(tau - 1.0)\
               - alphaMinusOneHalf)/weight;
+            cout << "angRedistCoeff " << endl;
+            cout << angRedistCoeff << endl;
             cellHalfAFlux.setOnes();
             cellHalfAFlux=(*halfAFlux)(iZ,iR,iXi)*cellHalfAFlux;
+            cout << "cellHalfAFlux: " << endl;
+            cout << cellHalfAFlux << endl;
+            cout << "before b: " << endl;
+            cout << b << endl;
             b = b - angRedistCoeff*R*cellHalfAFlux;
+            cout << "after b: " << endl;
+            cout << b << endl;
 
             // consider upstream values in other cells or BCs
             if (iR!=rStart){
@@ -223,6 +234,9 @@ void SimpleCornerBalance::solve(cube * aFlux,\
             (*halfAFlux)(iZ,iR,iXi) = ((*aFlux)(iZ,iR,angIdx)\
             +(tau-1.0)*(*halfAFlux)(iZ,iR,iXi))/tau; 
 
+            cout << "aFlux: " << (*aFlux)(iZ,iR,angIdx) << endl;
+            cout << "next half angle flux: " << (*halfAFlux)(iZ,iR,iXi) << endl;
+            cout << endl;
           } //iR
         } //iZ
       } else if (mu > 0){
