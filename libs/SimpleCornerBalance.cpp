@@ -93,6 +93,7 @@ void SimpleCornerBalance::solve(cube * aFlux,\
   q = 8*q;
 
   for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
+
     // get xi for this quadrature level
     xi = mesh->quadrature[iXi].quad[0][xiIndex];
 
@@ -133,10 +134,6 @@ void SimpleCornerBalance::solve(cube * aFlux,\
         for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
           for (int iZ = zStart, countZ = 0; \
             countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
-            cout << "iR: " << iR << endl;
-            cout << "iZ: " << iZ << endl;
-            cout << "iMu: " << iMu << endl;
-            cout << "iXi: " << iXi << endl;
             q.setOnes();
             q = (*source)(iZ,iR)*q;
             sigT = materials->sigT(iZ,iR,energyGroup);
@@ -198,27 +195,19 @@ void SimpleCornerBalance::solve(cube * aFlux,\
 
             angRedistCoeff = ((alphaPlusOneHalf/tau)*(tau - 1.0)\
               - alphaMinusOneHalf)/weight;
-            cout << "angRedistCoeff " << endl;
-            cout << angRedistCoeff << endl;
             cellHalfAFlux.setOnes();
             cellHalfAFlux=(*halfAFlux)(iZ,iR,iXi)*cellHalfAFlux;
-            cout << "cellHalfAFlux: " << endl;
-            cout << cellHalfAFlux << endl;
-            cout << "before b: " << endl;
-            cout << b << endl;
             b = b - angRedistCoeff*R*cellHalfAFlux;
-            cout << "after b: " << endl;
-            cout << b << endl;
 
             // consider upstream values in other cells or BCs
             if (iR!=rStart){
-              upstream = mu*(*halfAFlux)(iZ,iR+borderCellR,iXi)\
+              upstream = mu*(*aFlux)(iZ,iR+borderCellR,angIdx)\
               *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
               b = b - upstream;
             }
 
             if (iZ!=zStart){
-              upstream = xi*(*halfAFlux)(iZ+borderCellZ,iR,iXi)\
+              upstream = xi*(*aFlux)(iZ+borderCellZ,iR,angIdx)\
               *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
               b = b - upstream;
             }
@@ -234,13 +223,8 @@ void SimpleCornerBalance::solve(cube * aFlux,\
             (*halfAFlux)(iZ,iR,iXi) = ((*aFlux)(iZ,iR,angIdx)\
             +(tau-1.0)*(*halfAFlux)(iZ,iR,iXi))/tau; 
 
-            cout << "aFlux: " << (*aFlux)(iZ,iR,angIdx) << endl;
-            cout << "next half angle flux: " << (*halfAFlux)(iZ,iR,iXi) << endl;
-            cout << endl;
           } //iR
         } //iZ
-      } else if (mu > 0){
-        //case when mu > 0
       }
     } //iMu
   } //iXi
@@ -289,8 +273,8 @@ Eigen::MatrixXd SimpleCornerBalance::calckZ(double myGamma){
 //! calclR calculate out of cell radial leakage matrix
 
 Eigen::MatrixXd SimpleCornerBalance::calclR(double myGamma){
-  double a = myGamma;
-  double b = -1;
+  double a = -myGamma;
+  double b = 1;
   Eigen::MatrixXd lR = Eigen::MatrixXd::Zero(4,4);
 
   lR(0,0) = a; 
