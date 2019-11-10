@@ -52,6 +52,8 @@ void SimpleCornerBalance::solve(cube * aFlux,\
   // temporary variable used for looping though quad set
   double xi,sqrtXi,sigT,mu,alphaMinusOneHalf,alphaPlusOneHalf,weight,tau;
   double angRedistCoeff = 0;
+  int numPs,numQs,reflectedP,reflectedQ,reflectedAngIdx;
+  double reflBoundaryFlux; 
   int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR,angIdx;
   int rows = 4,cols = 4;
   vector<int> withinUpstreamR(2);
@@ -228,6 +230,155 @@ void SimpleCornerBalance::solve(cube * aFlux,\
       }
     } //iMu
   } //iXi
+  
+  // Repeat for mu > 0
+  for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
+
+    // get xi for this quadrature level
+    xi = mesh->quadrature[iXi].quad[0][xiIndex];
+
+    for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu){
+    
+      // get xi for this ordinate 
+      mu = mesh->quadrature[iXi].quad[iMu][muIndex]; 
+      alphaPlusOneHalf = mesh->quadrature[iXi].alpha[iMu+1];
+      alphaMinusOneHalf = mesh->quadrature[iXi].alpha[iMu];
+      weight = mesh->quadrature[iXi].quad[iMu][weightIndex]; 
+      tau = mesh->quadrature[iXi].tau[iMu];
+      angIdx= mesh->quadrature[iXi].ordIdx[iMu];
+
+      if (mu > 0 ){
+        rStart = 0;
+        borderCellR = -1;
+        withinUpstreamR = {1,2};
+        outUpstreamR = {0,3};
+
+        // depending on xi, define loop constants	
+        if (xi > 0) {
+          zStart = mesh->dzs.size()-1;
+          zEnd = 0;
+          zInc = -1;
+          borderCellZ = 1;
+          withinUpstreamZ = {2,3};
+          outUpstreamZ = {0,1};
+        }
+        else {			
+          zStart = 0;
+          zEnd = mesh->dzs.size();
+          zInc = 1;
+          borderCellZ = -1;
+          withinUpstreamZ = {0,1};
+          outUpstreamZ = {2,3};
+        }
+        for (int iR = rStart, countR = 0; countR < mesh->drs.size(); ++iR, ++countR){
+          for (int iZ = zStart, countZ = 0; \
+            countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
+            q.setOnes();
+            q = (*source)(iZ,iR)*q;
+            sigT = materials->sigT(iZ,iR,energyGroup);
+            gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
+            
+            // calculate radial within cell leakage matrix
+            kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
+            kR=calckR(gamma);
+            kR=kRCoeff*kR;
+            
+            // calculate axial within cell leakage matrix
+            kZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/16.0;
+            kZ=calckZ(gamma);
+            kZ=kZCoeff*kZ;
+            
+            // calculate radial out of cell leakage matrix
+            lRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/2.0;
+            lR=calclR(gamma);
+            lR=lRCoeff*lR;
+                                    
+            // calculate axial out of cell leakage matrix
+            lZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/8.0;
+            lZ=calclZ(gamma);
+            lZ=lZCoeff*lZ;
+            
+            // calculate first collision matrix
+            tCoeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(iR+1)/16.0;
+            t=calct(gamma);
+            t=tCoeff*t;
+                                    
+            // calculate second collision matrix
+            RCoeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
+            R=calcR(gamma);
+            R=RCoeff*R;
+            angRedistCoeff = alphaPlusOneHalf/(weight*tau); 
+
+            // calculate A considering within cell leakage and 
+            // collision matrices
+            A = mu*kR+xi*kZ+sigT*t+angRedistCoeff*R;
+
+            // consider radial downstream values defined in this cell
+            mask.setIdentity();
+            for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
+              mask(outUpstreamR[iCol],outUpstreamR[iCol])=0;
+            }
+            downstream = mu*lR*mask;	
+            
+            // consider axial downstream values defined in this cell
+            mask.setIdentity();
+            for (int iCol = 0; iCol < outUpstreamZ.size(); ++iCol){
+              mask(outUpstreamZ[iCol],outUpstreamZ[iCol])=0;
+            }
+            downstream = downstream + xi*lZ*mask;	
+            
+            A = A + downstream;
+
+            // form b matrix
+            b = t*q;
+
+            angRedistCoeff = ((alphaPlusOneHalf/tau)*(tau - 1.0)\
+              - alphaMinusOneHalf)/weight;
+            cellHalfAFlux.setOnes();
+            cellHalfAFlux=(*halfAFlux)(iZ,iR,iXi)*cellHalfAFlux;
+            b = b - angRedistCoeff*R*cellHalfAFlux;
+
+            // consider upstream values in other cells or BCs
+            if (iR==rStart){
+              numPs = mesh->quadrature.size();
+              numQs = mesh->quadrature[iXi].nOrd;
+              reflectedP= numPs-iXi-1;
+              reflectedQ= numQs-iMu-1;
+              reflectedAngIdx = mesh->quadrature[reflectedP].ordIdx[reflectedQ]; 
+              //reflBoundaryFlux = (*aFlux)(iZ,iR,reflectedAngIdx); 
+              upstream = mu*(*aFlux)(iZ,iR,reflectedAngIdx)\
+              *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+              b = b - upstream;
+            }
+            else if (iR!=rStart){
+              upstream = mu*(*aFlux)(iZ,iR+borderCellR,angIdx)\
+              *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+              b = b - upstream;
+            }
+
+            if (iZ!=zStart){
+              upstream = xi*(*aFlux)(iZ+borderCellZ,iR,angIdx)\
+              *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
+              b = b - upstream;
+            }
+
+            x = A.lu().solve(b);
+
+            // Take average of subcells
+            subCellVol = calcSubCellVol(iZ,iR);	
+            (*aFlux)(iZ,iR,angIdx) = x.dot(subCellVol)/subCellVol.sum();
+
+            // use weighted diamond difference to calculate next half
+            // angle flux
+            (*halfAFlux)(iZ,iR,iXi) = ((*aFlux)(iZ,iR,angIdx)\
+            +(tau-1.0)*(*halfAFlux)(iZ,iR,iXi))/tau; 
+
+          } //iR
+        } //iZ
+      }
+    } //iMu
+  } //iXi
+
 	
   cout << "angular flux calculated! " << endl;
   cout << *aFlux << endl;
