@@ -68,8 +68,8 @@ void Materials::readMats()
 {
 	YAML::Node mats = (*input)["materials"];
 	string name;
-	vector<double> sigTInp,sigSInp,sigFInp;
-	Eigen::VectorXd sigT,sigF; 
+	vector<double> sigTInp,sigSInp,sigFInp,chiPInp,chiDInp;
+	Eigen::VectorXd sigT,sigF,chiP,chiD; 
 	Eigen::MatrixXd sigS;
 	int ID,size;
 	double nu;
@@ -82,22 +82,29 @@ void Materials::readMats()
 		sigTInp = it->second["sigT"].as<vector<double>>();
 		sigSInp = it->second["sigS"].as<vector<double>>();
 		sigFInp = it->second["sigF"].as<vector<double>>();
+		chiPInp = it->second["chiP"].as<vector<double>>();
+		chiDInp = it->second["chiD"].as<vector<double>>();
 		nu = it->second["nu"].as<double>();
 		// set size of arma vectors
 		size = sigTInp.size();
 		sigT.setZero(size); 
-		sigS.setZero(size,size);
 		sigF.setZero(size);
+		chiP.setZero(size);
+		chiD.setZero(size);
+		sigS.setZero(size,size);
 		// load standard vector inputs into arma vector
 		for (int iSig = 0; iSig < size; ++iSig){
 			sigT(iSig) = sigTInp[iSig];
 			sigF(iSig) = sigFInp[iSig];
+                        chiP(iSig) = chiPInp[iSig];
+                        chiD(iSig) = chiDInp[iSig];
 			for(int iGroup = 0; iGroup < size; ++iGroup){
 				sigS(iSig,iGroup) = sigSInp[iSig*size+iGroup];
 			}
 		}
 		// add material to bank
-		shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,sigF,nu));
+		shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,\
+                  sigF,chiP,chiD,nu));
 		matBank.push_back(std::move(newMat));
 		++iCount;
 	}	

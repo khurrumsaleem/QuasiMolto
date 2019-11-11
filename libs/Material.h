@@ -19,7 +19,7 @@ class Material
         public:
 	int matID;
 	string name;
- 	Eigen::VectorXd sigT,sigF;
+ 	Eigen::VectorXd sigT,sigF,chiP,chiD;
 	Eigen::MatrixXd sigS;
 	double nu;	
         // public functions
@@ -28,6 +28,8 @@ class Material
 		Eigen::VectorXd mySigT,\
 		Eigen::MatrixXd mySigS,\
 		Eigen::VectorXd mySigF,\
+                Eigen::VectorXd myChiP,\
+                Eigen::VectorXd myChiD,\
 		double myNu);
 	void edit();
 

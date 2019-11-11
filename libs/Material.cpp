@@ -21,6 +21,8 @@ Material::Material(int myMatID,\
 	Eigen::VectorXd mySigT,\
 	Eigen::MatrixXd mySigS,\
 	Eigen::VectorXd mySigF,\
+	Eigen::VectorXd myChiP,\
+	Eigen::VectorXd myChiD,\
 	double myNu)
 {
 	matID = myMatID;
@@ -28,6 +30,8 @@ Material::Material(int myMatID,\
 	sigT = mySigT;
 	sigS = mySigS;
 	sigF = mySigF;
+        chiP = myChiP;
+        chiD = myChiD;
 	nu = myNu;
 };
 
@@ -56,6 +60,12 @@ cout << "sigF:"<< endl;
 cout << sigF.transpose() << endl;
 cout << endl;
 cout << "nu:  "<< nu << endl;
+cout << "chiP:"<< endl;
+cout << chiP << endl;
+cout << endl;
+cout << "chiD:"<< endl;
+cout << chiD << endl;
+cout << endl;
 cout << "==========================================="<< endl;
 };
 
