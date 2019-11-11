@@ -15,28 +15,35 @@
 
 using namespace std;
 
-int main(void) {
+int main(int argc, char** argv) {
 
-     YAML::Node * input;
-     input = new YAML::Node;
-     *input = YAML::LoadFile("input.yaml");
-     cout << "Print from driver" << endl;
+  // get input file
+  YAML::Node * input;
+  input = new YAML::Node;
+  if (argc>1){
+    *input = YAML::LoadFile(argv[1]);
+  } else {
+    *input = YAML::LoadFile("input.yaml");
+  }
+       
+  printMultiGroupQD();
+  printSingleGroupQD();
+  printTransport();
 
-     printMultiGroupQD();
-     printSingleGroupQD();
-     printTransport();
+  // initialize mesh object
+  Mesh * myMesh; 
+  myMesh = new Mesh(input);
+  myMesh->printQuadSet();
 
-     Mesh * myMesh; 
-     myMesh = new Mesh(input);
-     myMesh->printQuadSet();
+  // initialize materials object
+  Materials * myMaterials;
+  myMaterials = new Materials(myMesh,input);
+      
+  myMaterials->edit();
 
-     Materials * myMaterials;
-     myMaterials = new Materials(myMesh,input);
-    
-     myMaterials->edit();
+  // initialize multigroup transport object
+  MultiGroupTransport * myMGT; 
+  myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
 
-     MultiGroupTransport * myMGT; 
-     myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
-
-     return(0);
+return(0);
 }
