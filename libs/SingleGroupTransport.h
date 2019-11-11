@@ -2,6 +2,7 @@
 #define SINGLEGROUPTRANSPORT_H
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <iomanip>
 #include <armadillo>
@@ -36,6 +37,8 @@ class SingleGroupTransport
   void solveStartAngle();
   void solveSCB();
   void calcSource(); 
+  void calcFlux();
+  void writeFlux();
 
   private:
   MultiGroupTransport * MGT;
