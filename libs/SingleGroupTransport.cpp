@@ -113,14 +113,14 @@ void SingleGroupTransport::calcFlux()
       weight = mesh->quadrature[iQ].quad[iP][weightIdx];
       angIdx = mesh->quadrature[iQ].ordIdx[iP];
 
-        for (int iZ = 0; iZ < mesh->zCent.size(); ++iZ){
-          for (int iR = 0; iR < mesh->rCent.size(); ++iR){
-            
-            sFlux(iZ,iR) = sFlux(iZ,iR)\
-            +weight*aFlux(iZ,iR,angIdx);
+      for (int iZ = 0; iZ < mesh->zCent.size(); ++iZ){
+        for (int iR = 0; iR < mesh->rCent.size(); ++iR){
           
-          } // iR
-        } // iZ
+          sFlux(iZ,iR) = sFlux(iZ,iR)\
+          +weight*aFlux(iZ,iR,angIdx);
+        
+        } // iR
+      } // iZ
     } // iP
   } // iQ
 
