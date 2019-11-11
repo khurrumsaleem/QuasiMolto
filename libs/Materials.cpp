@@ -195,6 +195,37 @@ double Materials::sigF(int zIdx,int rIdx,int eIndx){
 //==============================================================================
 
 //==============================================================================
+//! chiP return probability that a prompt neutron will be born
+
+// return probability at location and energy indicated by input indices
+double Materials::chiP(int zIdx,int rIdx,int eIndx){
+
+	double chiP = matBank[matMap(zIdx,rIdx)]->chiP(eIndx);
+
+	// eventually there will need to be some manipulation here that 
+	// extrapolates the cross section based on temperature
+
+	return chiP;
+};
+
+//==============================================================================
+//==============================================================================
+//! chiD return probability that a delayed neutron will be born
+
+// return probability at location and energy indicated by input indices
+double Materials::chiD(int zIdx,int rIdx,int eIndx){
+
+	double chiD = matBank[matMap(zIdx,rIdx)]->chiD(eIndx);
+
+	// eventually there will need to be some manipulation here that 
+	// extrapolates the cross section based on temperature
+
+	return chiD;
+};
+
+//==============================================================================
+
+//==============================================================================
 //! nu return nu, the average number of neutrons produced per fission event
 
 // return nu at location indicated by input indices

@@ -30,6 +30,8 @@ class Materials
 	double sigT(int zIdx,int rIdx,int eIndx);
 	double sigS(int zIdx,int rIdx,int gprime,int g);
 	double sigF(int zIdx,int rIdx,int eIndx);
+	double chiP(int zIdx,int rIdx,int eIndx);
+	double chiD(int zIdx,int rIdx,int eIndx);
 	double nu(int zIdx,int rIdx);
         int nGroups;
         void edit();
