@@ -85,10 +85,9 @@ void SingleGroupTransport::calcSource()
 
         q(iZ,iR) = q(iZ,iR) \
         +mats->sigS(iZ,iR,iGroup,energyGroup)*MGT->SGTs[iGroup]->sFlux(iZ,iR)\
-        + mats->nu(iZ,iR)*mats->sigF(iZ,iR,iGroup)\
+        +mats->chiP(iZ,iR,energyGroup)*mats->nu(iZ,iR)*mats->sigF(iZ,iR,iGroup)\
         *MGT->SGTs[iGroup]->sFlux(iZ,iR);
         // need to account for precursors, too.
-        // and allow input of xi
       } // iGroup
     } // iR
   } // iZ 
@@ -114,16 +113,14 @@ void SingleGroupTransport::calcFlux()
       weight = mesh->quadrature[iQ].quad[iP][weightIdx];
       angIdx = mesh->quadrature[iQ].ordIdx[iP];
 
-      for (int iGroup = 0; iGroup < MGT->SGTs.size(); ++iGroup){
         for (int iZ = 0; iZ < mesh->zCent.size(); ++iZ){
           for (int iR = 0; iR < mesh->rCent.size(); ++iR){
             
             sFlux(iZ,iR) = sFlux(iZ,iR)\
-            +weight*MGT->SGTs[iGroup]->aFlux(iZ,iR,angIdx);
+            +weight*aFlux(iZ,iR,angIdx);
           
           } // iR
         } // iZ
-      } // iGroup
     } // iP
   } // iQ
 
