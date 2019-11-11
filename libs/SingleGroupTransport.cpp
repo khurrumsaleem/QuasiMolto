@@ -64,9 +64,6 @@ void SingleGroupTransport::solveSCB()
 {
   MGT->SCBSolve->solve(&aFlux,&aHalfFlux,&q,energyGroup);
   calcFlux();
-  calcSource();
-  MGT->SCBSolve->solve(&aFlux,&aHalfFlux,&q,energyGroup);
-  calcFlux();
   writeFlux();
 };
 
@@ -150,14 +147,39 @@ void SingleGroupTransport::writeFlux()
   fluxFile.open(fileName);
   cout << "rows: " << sFlux.rows() << endl;
   cout << "cols: " << sFlux.cols() << endl;
+
   // write flux values to .csv
   for (int iZ = 0; iZ < sFlux.rows(); ++iZ) {
-    for (int iR = 0; iR < sFlux.cols(); ++iR) {
-      fluxFile << sFlux(iZ,iR) << ",";
+    fluxFile << sFlux(iZ,0);
+    for (int iR = 1; iR < sFlux.cols(); ++iR) {
+      fluxFile <<","<< sFlux(iZ,iR);
     }
     fluxFile << endl;
   }
   fluxFile.close();
+
+  // if this is the first energy group, write mesh too
+  if (energyGroup==0){
+    // write radial mesh to .csv 
+    fileName = "r-mesh.csv"; 
+    fluxFile.open(fileName); 
+    fluxFile << mesh->rCent(0);
+    for (int iR = 1; iR < mesh->rCent.size(); ++iR) {
+      fluxFile << "," << mesh->rCent(iR);
+    }
+    fluxFile << endl;
+    fluxFile.close();
+  
+    // write axial mesh to .csv
+    fileName = "z-mesh.csv"; 
+    fluxFile.open(fileName); 
+    fluxFile << mesh->zCent(0);
+    for (int iZ = 1; iZ < mesh->zCent.size(); ++iZ) {
+      fluxFile << "," << mesh->zCent(iZ);
+    }
+    fluxFile << endl;
+    fluxFile.close();
+  }
   
 };
 
