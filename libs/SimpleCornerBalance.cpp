@@ -486,7 +486,7 @@ void SimpleCornerBalance::solve(cube * aFlux,\
       } // if mu > 0
     } //iMu
   } //iXi
-  cout << *aFlux << endl;
+  //cout << *aFlux << endl;
 };
 //==============================================================================
 

@@ -193,8 +193,6 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 		}
 	}
 	
-	cout << "half angle flux calculated! " << endl;
-	cout << *halfAFlux << endl;
 };
 //==============================================================================
 
