@@ -51,8 +51,8 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
 
 void SingleGroupTransport::solveStartAngle()
 {
+  aHalfFlux.zeros();
   MGT->startAngleSolve->calcStartingAngle(&aHalfFlux,&q,energyGroup);
-  cout << aHalfFlux << endl;
 };
 
 //==============================================================================
@@ -62,9 +62,8 @@ void SingleGroupTransport::solveStartAngle()
 
 void SingleGroupTransport::solveSCB()
 {
+  aFlux.zeros();  
   MGT->SCBSolve->solve(&aFlux,&aHalfFlux,&q,energyGroup);
-  calcFlux();
-  writeFlux();
 };
 
 //==============================================================================
@@ -73,24 +72,31 @@ void SingleGroupTransport::solveSCB()
 //! calcSource calculate the source in an energy group
 
 // Assuming the fluxes currently contained in each SGT object
-void SingleGroupTransport::calcSource()
-{
+double SingleGroupTransport::calcSource()
+{  
+  
+  double sourceNorm;
+  Eigen::MatrixXd q_old = q;
   q.setZero(mesh->zCent.size(),mesh->rCent.size());
-
+  
   for (int iZ = 0; iZ < mesh->zCent.size(); ++iZ){
 
     for (int iR = 0; iR < mesh->rCent.size(); ++iR){
 
       for (int iGroup = 0; iGroup < MGT->SGTs.size(); ++iGroup){
 
-        q(iZ,iR) = q(iZ,iR) \
-        +mats->sigS(iZ,iR,iGroup,energyGroup)*MGT->SGTs[iGroup]->sFlux(iZ,iR)\
+        q(iZ,iR) = q(iZ,iR) + (1.0/mesh->totalWeight)*(
+        mats->sigS(iZ,iR,iGroup,energyGroup)*MGT->SGTs[iGroup]->sFlux(iZ,iR)\
         +mats->chiP(iZ,iR,energyGroup)*mats->nu(iZ,iR)*mats->sigF(iZ,iR,iGroup)\
-        *MGT->SGTs[iGroup]->sFlux(iZ,iR);
+        *MGT->SGTs[iGroup]->sFlux(iZ,iR));
         // need to account for precursors, too.
       } // iGroup
     } // iR
-  } // iZ 
+  } // iZ
+   
+  sourceNorm = (q_old-q).norm();
+
+  return sourceNorm;
 };
 
 //==============================================================================
@@ -124,8 +130,8 @@ void SingleGroupTransport::calcFlux()
     } // iP
   } // iQ
 
-  cout << "Scalar flux: " << endl;
-  cout << sFlux << endl;
+  //cout << "Scalar flux: " << endl;
+  //cout << sFlux << endl;
 };
 
 //==============================================================================
