@@ -53,6 +53,7 @@ Mesh::Mesh(YAML::Node * myInput){
 	R = (*input)["mesh"]["R"].as<double>();
 	calcSpatialMesh();
 	calcQuadSet();
+        calcNumAnglesTotalWeight();
 }
 //==============================================================================
 
@@ -401,18 +402,22 @@ void Mesh::addLevels(){
 
 		}
 	}
-	calcNumAngles();	
 }
 //==============================================================================
 
 //==============================================================================
-//! calcNAngles calculate number of discrete angles in ordinate set
+//! calcNAngles calculate number of discrete angles in ordinate set and weight
 
-void Mesh::calcNumAngles(){        
-  // print quadrature set	
+void Mesh::calcNumAnglesTotalWeight(){        
+  int weightIdx = 3;
+
   nAngles = 0;
-  for (int i = 0; i < quadrature.size(); ++i){
-    nAngles = nAngles + quadrature[i].nOrd;
+  totalWeight = 0.0;
+
+  for (int iLevel = 0; iLevel < quadrature.size(); ++iLevel){
+    nAngles = nAngles + quadrature[iLevel].nOrd;
+    for (int iOrd = 0; iOrd < quadrature[iLevel].nOrd; ++iOrd)
+      totalWeight = totalWeight + quadrature[iLevel].quad[iOrd][weightIdx];
   }
 }
 //==============================================================================
@@ -454,6 +459,8 @@ int Mesh::low_quad_index(int p, int q){
 void Mesh::printQuadSet(){        
 	// print quadrature set	
 	cout << "QUADRATURE SET:"<<endl;
+        cout << "Number of ordinates: " << nAngles;
+        cout << ", total weight: " << totalWeight << endl; 
 	cout << setw(10) << "xi" << setw(10) <<"mu" << setw(10) << "eta" << setw(10) <<"weight" << setw(10) << "ordIdx" <<endl;
 	for (int i = 0; i < quadrature.size(); ++i){
 		for(int j = 0; j < quadrature[i].nOrd; ++j){

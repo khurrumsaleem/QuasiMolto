@@ -34,7 +34,7 @@ class Mesh
 	public:
 	Mesh(YAML::Node * myInput);  	
   	int n,nAngles;		
-	double dz,dr,Z,R; 
+	double dz,dr,Z,R,totalWeight; 
   	vector< vector<double> > quadSet;
   	vector< vector<double> > alpha;
         vector< vector<double> > tau;
@@ -58,7 +58,7 @@ class Mesh
         void calcTau();
         void calcSpatialMesh();
         void addLevels();
- 	void calcNumAngles();
+ 	void calcNumAnglesTotalWeight();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
 	YAML::Node * input;
