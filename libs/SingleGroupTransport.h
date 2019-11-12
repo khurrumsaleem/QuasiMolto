@@ -28,6 +28,8 @@ class SingleGroupTransport
   cube aHalfFlux;
   Eigen::MatrixXd sFlux; 
   Eigen::MatrixXd q; 
+  Eigen::MatrixXd fissionSource; 
+  Eigen::MatrixXd scatterSource; 
   // public functions
   SingleGroupTransport(int myEnergyGroup,\
     MultiGroupTransport * myMGT,\
@@ -36,8 +38,10 @@ class SingleGroupTransport
     YAML::Node * myInput);
   void solveStartAngle();
   void solveSCB();
-  double calcSource(); 
-  void calcFlux();
+  double calcSource(string calcType="FS"); 
+  void calcFissionSource(); 
+  void calcScatterSource(); 
+  double calcFlux();
   void writeFlux();
 
   private:

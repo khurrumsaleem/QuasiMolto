@@ -41,6 +41,8 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
   aHalfFlux.zeros();
   sFlux.setOnes(mesh->zCent.size(),mesh->rCent.size());
   q.setZero(mesh->zCent.size(),mesh->rCent.size());
+  scatterSource.setZero(mesh->zCent.size(),mesh->rCent.size());
+  fissionSource.setZero(mesh->zCent.size(),mesh->rCent.size());
   cout << "Created transport energy group " << energyGroup << endl;
 };
 
@@ -72,12 +74,35 @@ void SingleGroupTransport::solveSCB()
 //! calcSource calculate the source in an energy group
 
 // Assuming the fluxes currently contained in each SGT object
-double SingleGroupTransport::calcSource()
+double SingleGroupTransport::calcSource(string calcType)
+{ 
+  double residual; 
+  Eigen::MatrixXd q_old = q;
+
+  if (calcType=="s" or calcType=="S"){
+    calcScatterSource();
+    q = scatterSource + fissionSource;
+  } else if (calcType == "fs" or calcType == "FS"){
+    calcScatterSource();
+    calcFissionSource();
+    q = scatterSource+fissionSource;
+  }
+  residual =  (q_old-q).norm();
+  return residual;
+};
+
+//==============================================================================
+
+//==============================================================================
+//! calcFissionSource calculate the fission source in an energy group
+
+// Assuming the fluxes currently contained in each SGT object
+void SingleGroupTransport::calcFissionSource()
 {  
   
   double sourceNorm;
-  Eigen::MatrixXd q_old = q;
-  q.setZero(mesh->zCent.size(),mesh->rCent.size());
+  Eigen::MatrixXd fissionSource_old = fissionSource;
+  fissionSource.setZero(mesh->zCent.size(),mesh->rCent.size());
   
   for (int iZ = 0; iZ < mesh->zCent.size(); ++iZ){
 
@@ -85,31 +110,61 @@ double SingleGroupTransport::calcSource()
 
       for (int iGroup = 0; iGroup < MGT->SGTs.size(); ++iGroup){
 
-        q(iZ,iR) = q(iZ,iR) + (1.0/mesh->totalWeight)*(
-        mats->sigS(iZ,iR,iGroup,energyGroup)*MGT->SGTs[iGroup]->sFlux(iZ,iR)\
-        +mats->chiP(iZ,iR,energyGroup)*mats->nu(iZ,iR)*mats->sigF(iZ,iR,iGroup)\
+        fissionSource(iZ,iR) = fissionSource(iZ,iR) + (1.0/mesh->totalWeight)*(
+        mats->chiP(iZ,iR,energyGroup)*mats->nu(iZ,iR)*mats->sigF(iZ,iR,iGroup)\
         *MGT->SGTs[iGroup]->sFlux(iZ,iR));
         // need to account for precursors, too.
       } // iGroup
     } // iR
   } // iZ
    
-  sourceNorm = (q_old-q).norm();
+  sourceNorm = (fissionSource_old-fissionSource).norm();
 
-  return sourceNorm;
 };
 
 //==============================================================================
 
 //==============================================================================
+//! calcScatteringSource calculate the fission source in an energy group
+
+// Assuming the fluxes currently contained in each SGT object
+void SingleGroupTransport::calcScatterSource()
+{  
+  
+  double sourceNorm;
+  Eigen::MatrixXd scatterSource_old = scatterSource;
+  scatterSource.setZero(mesh->zCent.size(),mesh->rCent.size());
+  
+  for (int iZ = 0; iZ < mesh->zCent.size(); ++iZ){
+
+    for (int iR = 0; iR < mesh->rCent.size(); ++iR){
+
+      for (int iGroup = 0; iGroup < MGT->SGTs.size(); ++iGroup){
+
+        scatterSource(iZ,iR) = scatterSource(iZ,iR) + (1.0/mesh->totalWeight)*(
+        mats->sigS(iZ,iR,iGroup,energyGroup)*MGT->SGTs[iGroup]->sFlux(iZ,iR));
+
+        // need to account for precursors, too.
+      } // iGroup
+    } // iR
+  } // iZ
+   
+  sourceNorm = (scatterSource_old-scatterSource).norm();
+};
+
+//==============================================================================
+
+
+//==============================================================================
 //! calcFlux calculate the flux in this energy group
 
 // Assuming the fluxes currently contained in each SGT object
-void SingleGroupTransport::calcFlux()
+double SingleGroupTransport::calcFlux()
 {
   
-  double weight; 
+  double weight,residual; 
   int weightIdx=3,angIdx;
+  Eigen::MatrixXd sFlux_old = sFlux;
 
   sFlux.setZero(mesh->zCent.size(),mesh->rCent.size());
 
@@ -129,6 +184,9 @@ void SingleGroupTransport::calcFlux()
       } // iZ
     } // iP
   } // iQ
+  
+  residual =  ((sFlux_old-sFlux).cwiseQuotient(sFlux)).norm();
+  return residual;
 
   //cout << "Scalar flux: " << endl;
   //cout << sFlux << endl;
