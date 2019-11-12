@@ -68,11 +68,27 @@ void MultiGroupTransport::solveSCBs()
 //==============================================================================
 //! solveSCBs loop over energy groups and call starting angle solver
 
-void MultiGroupTransport::calcFluxes()
+bool MultiGroupTransport::calcFluxes()
 {
+  
+  typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
+  VectorXb converged(SGTs.size());
+  Eigen::VectorXd residuals(SGTs.size());
+  double epsilon = 1E-5;
+  bool allConverged;
+
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
-    SGTs[iGroup]->calcFlux();
+    residuals(iGroup)=SGTs[iGroup]->calcFlux();
+    cout << "Scalar flux group " << iGroup << endl;
+    cout << SGTs[iGroup]->sFlux<<endl;
+    cout << endl;
+    converged(iGroup) = residuals(iGroup) < epsilon;
   }
+
+  allConverged = not(converged.isZero());
+
+  return allConverged;  
+
 };
 
 //==============================================================================
@@ -82,24 +98,20 @@ void MultiGroupTransport::calcFluxes()
 //==============================================================================
 //! calcSources loop over SGTS and make call to calc sources in each
 
-void MultiGroupTransport::calcSources()
+void MultiGroupTransport::calcSources(string calcType)
 {
   typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
   VectorXb converged(SGTs.size());
   Eigen::VectorXd sourceNorms(SGTs.size());
   double epsilon = 1E-5;
-
+  
   converged.fill(false); 
   sourceNorms.setZero();
 
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
-    sourceNorms(iGroup)=SGTs[iGroup]->calcSource();
+    SGTs[iGroup]->calcSource(calcType);
     //cout << "Source for group "<< SGTs[iGroup]->energyGroup << endl;
-    cout << SGTs[iGroup]->q << endl;
-    converged(iGroup)=sourceNorms[iGroup]<epsilon;
   }
-  cout << "sourceNorms: " << endl;
-  cout << sourceNorms << endl;
 };
 
 //==============================================================================
@@ -111,15 +123,29 @@ void MultiGroupTransport::sourceIteration()
 {
   typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
   VectorXb converged(SGTs.size());
+  cout << "In source iteration loop!"<< endl;
+  calcSources(); 
+  cout << "Fission source calculated!"<< endl;
+  bool allConverged= false;
+  int maxIter = 500;
 
-  for (int iter = 0; iter < 50; ++iter){
+  for (int iter = 0; iter < maxIter; ++iter){
   
-    calcSources(); 
+    calcSources("s"); 
     solveStartAngles();
     solveSCBs();
-    calcFluxes();
+    allConverged=calcFluxes();
+    if (allConverged) {
+      cout << "Converged in " << iter << " iterations."<< endl;
+      break;
+    }
 
   } 
+
+  if(not(allConverged)){
+    cout << "Fixed source iteration did NOT converge within " << maxIter;
+    cout << " iterations." << endl;
+  }
 
   writeFluxes(); 
 };
