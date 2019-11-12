@@ -36,7 +36,7 @@ class SingleGroupTransport
     YAML::Node * myInput);
   void solveStartAngle();
   void solveSCB();
-  void calcSource(); 
+  double calcSource(); 
   void calcFlux();
   void writeFlux();
 
