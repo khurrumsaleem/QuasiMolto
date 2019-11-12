@@ -36,9 +36,7 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
   }
   startAngleSolve = std::make_shared<StartingAngle>(mesh,materials,input);
   SCBSolve = std::make_shared<SimpleCornerBalance>(mesh,materials,input);
-  calcSources(); 
-  solveStartAngles();
-  solveSCBs();
+  sourceIteration();
 };
 
 //==============================================================================
@@ -67,19 +65,76 @@ void MultiGroupTransport::solveSCBs()
 
 //==============================================================================
 
+//==============================================================================
+//! solveSCBs loop over energy groups and call starting angle solver
+
+void MultiGroupTransport::calcFluxes()
+{
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    SGTs[iGroup]->calcFlux();
+  }
+};
+
+//==============================================================================
+
+
 
 //==============================================================================
 //! calcSources loop over SGTS and make call to calc sources in each
 
 void MultiGroupTransport::calcSources()
 {
+  typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
+  VectorXb converged(SGTs.size());
+  Eigen::VectorXd sourceNorms(SGTs.size());
+  double epsilon = 1E-5;
+
+  converged.fill(false); 
+  sourceNorms.setZero();
+
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
-    SGTs[iGroup]->calcSource();
-    cout << "Source for group "<< SGTs[iGroup]->energyGroup << endl;
+    sourceNorms(iGroup)=SGTs[iGroup]->calcSource();
+    //cout << "Source for group "<< SGTs[iGroup]->energyGroup << endl;
     cout << SGTs[iGroup]->q << endl;
+    converged(iGroup)=sourceNorms[iGroup]<epsilon;
   }
+  cout << "sourceNorms: " << endl;
+  cout << sourceNorms << endl;
 };
 
 //==============================================================================
 
+//==============================================================================
+//! calcSources loop over SGTS and make call to calc sources in each
+
+void MultiGroupTransport::sourceIteration()
+{
+  typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
+  VectorXb converged(SGTs.size());
+
+  for (int iter = 0; iter < 50; ++iter){
+  
+    calcSources(); 
+    solveStartAngles();
+    solveSCBs();
+    calcFluxes();
+
+  } 
+
+  writeFluxes(); 
+};
+
+//==============================================================================
+
+//==============================================================================
+//! solveSCBs loop over energy groups and call starting angle solver
+
+void MultiGroupTransport::writeFluxes()
+{
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    SGTs[iGroup]->writeFlux();
+  }
+};
+
+//==============================================================================
 

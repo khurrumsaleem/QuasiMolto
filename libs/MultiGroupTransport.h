@@ -33,6 +33,9 @@ class MultiGroupTransport
   void solveStartAngles();
   void solveSCBs();
   void calcSources();
+  void calcFluxes();
+  void sourceIteration();
+  void writeFluxes();
 
   private:
   YAML::Node * input;
