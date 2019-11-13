@@ -41,6 +41,7 @@ SimpleCornerBalance::SimpleCornerBalance(Mesh * myMesh,\
 void SimpleCornerBalance::solve(cube * aFlux,\
   cube * halfAFlux,\
   Eigen::MatrixXd * source,\
+  Eigen::MatrixXd * alpha,\
   int energyGroup)
 {
   // index xi, mu, and weight values are stored in quadLevel object
@@ -48,7 +49,7 @@ void SimpleCornerBalance::solve(cube * aFlux,\
 
   // temporary variables used for looping though quad set
   double xi,sigT,mu,alphaMinusOneHalf,alphaPlusOneHalf,weight,\
-    tau,gamma,angRedistCoeff = 0;
+    tau,gamma,angRedistCoeff = 0,sigTEps=1E-4,v=2200.0;
   int numPs,numQs,reflectedP,reflectedQ,reflectedAngIdx,zStart,rStart,\
     zEnd,zInc,borderCellZ,borderCellR,angIdx;
 
@@ -178,7 +179,10 @@ void SimpleCornerBalance::solve(cube * aFlux,\
             q = (*source)(iZ,iR)*q;
 
             // get the total cross section in this cell
-            sigT = materials->sigT(iZ,iR,energyGroup);
+            sigT = materials->sigT(iZ,iR,energyGroup)+(*alpha)(iZ,iR)/v;
+            if (sigT < sigTEps){
+              sigT = sigTEps;
+            }
 
             // calculate the the ratio of the inner to outer radius
             // for this cell
@@ -364,7 +368,10 @@ void SimpleCornerBalance::solve(cube * aFlux,\
             q = (*source)(iZ,iR)*q;
 
             // get the total cross section in this cell
-            sigT = materials->sigT(iZ,iR,energyGroup);
+            sigT = materials->sigT(iZ,iR,energyGroup)+(*alpha)(iZ,iR)/v;
+            if (sigT < sigTEps){
+              sigT = sigTEps;
+            }
 
             // calculate the the ratio of the inner to outer radius
             // for this cell
