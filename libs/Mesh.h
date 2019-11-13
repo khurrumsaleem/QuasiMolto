@@ -5,6 +5,7 @@
 #include <vector>
 #include <armadillo>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
+#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std;
 using namespace arma;
@@ -64,5 +65,6 @@ class Mesh
 	YAML::Node * input;
 };
 
+typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
 
 #endif
