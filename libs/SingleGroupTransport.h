@@ -27,6 +27,8 @@ class SingleGroupTransport
   cube aFlux;
   cube aHalfFlux;
   Eigen::MatrixXd sFlux; 
+  Eigen::MatrixXd sFluxPrev; 
+  Eigen::MatrixXd alpha; 
   Eigen::MatrixXd q; 
   Eigen::MatrixXd fissionSource; 
   Eigen::MatrixXd scatterSource; 
@@ -39,9 +41,10 @@ class SingleGroupTransport
   void solveStartAngle();
   void solveSCB();
   double calcSource(string calcType="FS"); 
-  void calcFissionSource(); 
-  void calcScatterSource(); 
+  double calcFissionSource(); 
+  double calcScatterSource(); 
   double calcFlux();
+  double calcAlpha();
   void writeFlux();
 
   private:

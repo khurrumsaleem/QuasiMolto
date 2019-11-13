@@ -40,6 +40,9 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
     mesh->quadrature.size());
   aHalfFlux.zeros();
   sFlux.setOnes(mesh->zCent.size(),mesh->rCent.size());
+  sFluxPrev.setOnes(mesh->zCent.size(),mesh->rCent.size());
+  sFluxPrev = sFluxPrev;
+  alpha.setZero(mesh->zCent.size(),mesh->rCent.size());
   q.setZero(mesh->zCent.size(),mesh->rCent.size());
   scatterSource.setZero(mesh->zCent.size(),mesh->rCent.size());
   fissionSource.setZero(mesh->zCent.size(),mesh->rCent.size());
@@ -54,7 +57,7 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
 void SingleGroupTransport::solveStartAngle()
 {
   aHalfFlux.zeros();
-  MGT->startAngleSolve->calcStartingAngle(&aHalfFlux,&q,energyGroup);
+  MGT->startAngleSolve->calcStartingAngle(&aHalfFlux,&q,&alpha,energyGroup);
 };
 
 //==============================================================================
@@ -65,7 +68,7 @@ void SingleGroupTransport::solveStartAngle()
 void SingleGroupTransport::solveSCB()
 {
   aFlux.zeros();  
-  MGT->SCBSolve->solve(&aFlux,&aHalfFlux,&q,energyGroup);
+  MGT->SCBSolve->solve(&aFlux,&aHalfFlux,&q,&alpha,energyGroup);
 };
 
 //==============================================================================
@@ -97,11 +100,12 @@ double SingleGroupTransport::calcSource(string calcType)
 //! calcFissionSource calculate the fission source in an energy group
 
 // Assuming the fluxes currently contained in each SGT object
-void SingleGroupTransport::calcFissionSource()
+double SingleGroupTransport::calcFissionSource()
 {  
   
   double sourceNorm;
   Eigen::MatrixXd fissionSource_old = fissionSource;
+  Eigen::MatrixXd fissionSourceDiff;
   fissionSource.setZero(mesh->zCent.size(),mesh->rCent.size());
   
   for (int iZ = 0; iZ < mesh->zCent.size(); ++iZ){
@@ -118,7 +122,31 @@ void SingleGroupTransport::calcFissionSource()
     } // iR
   } // iZ
    
-  sourceNorm = (fissionSource_old-fissionSource).norm();
+  //sourceNorm = ((fissionSource_old-fissionSource)\
+  //  .cwiseQuotient(fissionSource)).norm();
+  cout << "Old fission source: " << endl;
+  cout << fissionSource_old << endl;
+  cout << endl;
+  cout << "New fission source: " << endl;
+  cout << fissionSource << endl;
+  cout << endl;
+
+  fissionSourceDiff = (fissionSource_old-fissionSource);
+
+  for (int iRow = 0; iRow < fissionSourceDiff.rows(); ++iRow){
+    for (int iCol = 0; iCol < fissionSourceDiff.cols(); ++iCol){
+      if (fissionSource(iRow,iCol)!=0){
+        fissionSourceDiff(iRow,iCol) = fissionSourceDiff(iRow,iCol)\
+          /fissionSource(iRow,iCol);
+      } else {
+        fissionSourceDiff(iRow,iCol) = 0;
+      }
+    }
+  }
+
+  sourceNorm=fissionSourceDiff.norm();
+  
+  return sourceNorm;
 
 };
 
@@ -128,7 +156,7 @@ void SingleGroupTransport::calcFissionSource()
 //! calcScatteringSource calculate the fission source in an energy group
 
 // Assuming the fluxes currently contained in each SGT object
-void SingleGroupTransport::calcScatterSource()
+double SingleGroupTransport::calcScatterSource()
 {  
   
   double sourceNorm;
@@ -149,7 +177,9 @@ void SingleGroupTransport::calcScatterSource()
     } // iR
   } // iZ
    
-  sourceNorm = (scatterSource_old-scatterSource).norm();
+  sourceNorm = ((scatterSource_old-scatterSource)\
+    .cwiseQuotient(scatterSource)).norm();
+  return sourceNorm;
 };
 
 //==============================================================================
@@ -185,14 +215,45 @@ double SingleGroupTransport::calcFlux()
     } // iP
   } // iQ
   
-  residual =  ((sFlux_old-sFlux).cwiseQuotient(sFlux)).norm();
+  residual = ((sFlux_old-sFlux).cwiseQuotient(sFlux)).norm();
   return residual;
 
-  //cout << "Scalar flux: " << endl;
-  //cout << sFlux << endl;
 };
 
 //==============================================================================
+
+//==============================================================================
+//! calcFissionSource calculate the fission source in an energy group
+
+// Assuming the fluxes currently contained in each SGT object
+double SingleGroupTransport::calcAlpha()
+{  
+  
+  double residual,deltaT = 0.0001;
+  Eigen::MatrixXd alpha_old = alpha;
+  alpha.setZero(mesh->zCent.size(),mesh->rCent.size());
+
+  for (int iZ = 0; iZ < mesh->zCent.size(); ++iZ){
+    for (int iR = 0; iR < mesh->rCent.size(); ++iR){
+      alpha(iZ,iR) = (1.0/deltaT)*log(sFlux(iZ,iR)/sFluxPrev(iZ,iR));
+    } // iR
+  } // iZ
+   
+  cout << "Old alpha: " << endl;
+  cout << alpha_old << endl;
+  cout << endl;
+  cout << "New alpha: " << endl;
+  cout << alpha << endl;
+  cout << endl;
+
+  residual = ((alpha_old-alpha).cwiseQuotient(alpha)).norm();
+
+  return residual;
+
+};
+
+//==============================================================================
+
 
 //==============================================================================
 //! writeFlux write the flux in this energy group to a CVS
@@ -206,8 +267,6 @@ void SingleGroupTransport::writeFlux()
   // parse file name 
   fileName = "scalar-flux-group-" + to_string(energyGroup) + ".csv";
   fluxFile.open(fileName);
-  cout << "rows: " << sFlux.rows() << endl;
-  cout << "cols: " << sFlux.cols() << endl;
 
   // write flux values to .csv
   for (int iZ = 0; iZ < sFlux.rows(); ++iZ) {
