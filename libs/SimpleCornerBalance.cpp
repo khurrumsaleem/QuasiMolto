@@ -267,7 +267,7 @@ void SimpleCornerBalance::solve(cube * aFlux,\
             }
 
             // solve for angular fluxes in each corner
-            x = A.lu().solve(b);
+            x = A.partialPivLu().solve(b);
 
             // take average of corner values to get angular flux 
             // for this cell
@@ -475,7 +475,7 @@ void SimpleCornerBalance::solve(cube * aFlux,\
             }
 
             // solve for angular fluxes in each corner 
-            x = A.lu().solve(b);
+            x = A.partialPivLu().solve(b);
 
             // take average of corner values to get angular flux
             // for this cell

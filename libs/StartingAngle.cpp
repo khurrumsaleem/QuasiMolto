@@ -190,7 +190,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 					*(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
 					b = b - upstream;
 				}
-				x = A.lu().solve(b);
+				x = A.partialPivLu().solve(b);
 				
 				// Take average of subcells
 				(*halfAFlux)(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
