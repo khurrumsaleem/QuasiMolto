@@ -25,24 +25,30 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * myInput)
 {
+  // assign pointers for materials, mesh, and input objects
   materials = myMaterials;
   mesh = myMesh;
   input = myInput;
-  cout << "number of energy groups: " <<materials->nGroups << endl;
+
+  // initialize pointers to each SGT group
   for (int iGroups = 0; iGroups < materials->nGroups; ++iGroups){
     shared_ptr<SingleGroupTransport> newSGT (new SingleGroupTransport(iGroups,\
       this,materials,mesh,input));
     SGTs.push_back(std::move(newSGT)); 
   }
+
+  // initialize StartingAngle and SimplCornerBalance solvers 
   startAngleSolve = std::make_shared<StartingAngle>(mesh,materials,input);
   SCBSolve = std::make_shared<SimpleCornerBalance>(mesh,materials,input);
+  
+  // call source/power iteration solver
   solveTransportOnly();
 };
 
 //==============================================================================
 
 //==============================================================================
-//! solveStartAngles loop over energy groups and call starting angle solver
+//! solveStartAngles wrapper over SGTs to call starting angle solver
 
 void MultiGroupTransport::solveStartAngles()
 {
@@ -54,7 +60,7 @@ void MultiGroupTransport::solveStartAngles()
 //==============================================================================
 
 //==============================================================================
-//! solveSCBs loop over energy groups and call starting angle solver
+//! solveSCBs wrapper over SGTs to call SCB solver
 
 void MultiGroupTransport::solveSCBs()
 {
@@ -66,27 +72,40 @@ void MultiGroupTransport::solveSCBs()
 //==============================================================================
 
 //==============================================================================
-//! solveSCBs loop over energy groups and call starting angle solver
+//! calcFluxes wrapper over SGTs to calculate scalar fluxes from angular fluxes
 
+// uses the angular fluxes currently on each SGT object
 bool MultiGroupTransport::calcFluxes()
 {
   
-  typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
-  VectorXb converged(SGTs.size());
+  //typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
+  
+  // vector containing the flux residuals in each SGT
   Eigen::VectorXd residuals(SGTs.size());
+  residuals.setZero();
+  
+  // vector indicating whether flux in each SGT is converged 
+  VectorXb converged(SGTs.size());
+  converged.fill(false); 
+
+  // criteria for flux convergence 
   double epsilon = 1E-5;
+
+  // boolean indicating whether all fluxes are converged
   bool allConverged=true;
 
+  // loop over SGTs, calculate fluxes, and determine whether the flux
+  // in each SGT is converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     residuals(iGroup)=SGTs[iGroup]->calcFlux();
-    //cout << "Scalar flux group " << iGroup << endl;
-    //cout << SGTs[iGroup]->sFlux<<endl;
-    //cout << endl;
     converged(iGroup) = residuals(iGroup) < epsilon;
   }
 
   cout << "Flux residuals: " << endl;
   cout << residuals << endl;
+
+  // perform an AND operation over all SGTs to determine whether
+  // flux is globally converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     allConverged = (allConverged and converged(iGroup)); 
   }
@@ -97,40 +116,69 @@ bool MultiGroupTransport::calcFluxes()
 
 //==============================================================================
 
-
-
 //==============================================================================
-//! calcSources loop over SGTS and make call to calc sources in each
+//! calcSources wrapper over SGTs to calculate sources 
 
-void MultiGroupTransport::calcSources(string calcType)
+// calcType determines how source is calculated
+//   "s" only re-evaluate scattering term
+//   "fs" (default) re-evaluate scattering and fission terms
+bool MultiGroupTransport::calcSources(string calcType)
 {
-  typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
+  
+  // vector indicating whether source in each SGT is converged
   VectorXb converged(SGTs.size());
-  Eigen::VectorXd sourceNorms(SGTs.size());
+  converged.fill(false); 
+  
+  // vector containing the source residuals in each SGT
+  Eigen::VectorXd residuals(SGTs.size());
+  residuals.setZero();
+
+  // criteria for source convergence 
   double epsilon = 1E-5;
   
-  converged.fill(false); 
-  sourceNorms.setZero();
+  // boolean indicating whether all sources are converged
+  bool allConverged=true;
 
+  // loop over SGTs, calculate sources, and determine whether the source
+  // in each SGT is converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
-    SGTs[iGroup]->calcSource(calcType);
+    residuals(iGroup)=SGTs[iGroup]->calcSource(calcType);
+    converged(iGroup) = residuals(iGroup) < epsilon;
   }
+
+  // perform an AND operation over all SGTs to determine whether
+  // sources are globally converged
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    allConverged = (allConverged and converged(iGroup)); 
+  }
+  
+  return allConverged;
 };
 
 //==============================================================================
 
 //==============================================================================
-//! solveSCBs loop over energy groups and call starting angle solver
+//! calcAlphas wrapper over SGTs to calculate alphas
 
+// In line with the alpha approximation to the time dependent neutron transport 
+// equation
 bool MultiGroupTransport::calcAlphas()
 {
   
-  typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
+  // vector indicating whether alpha in each SGT is converged
   VectorXb converged(SGTs.size());
+
+  // vector containing the alpha residuals in each SGT
   Eigen::VectorXd residuals(SGTs.size());
+
+  // criteria for alpha convergence 
   double epsilon = 1E-3;
+
+  // boolean indicating whether all alphas are converged
   bool allConverged=true;
 
+  // loop over SGTs, calculate alphas, and determine whether the alphas
+  // in each SGT are converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     residuals(iGroup)=SGTs[iGroup]->calcAlpha();
     converged(iGroup) = residuals(iGroup) < epsilon;
@@ -138,6 +186,9 @@ bool MultiGroupTransport::calcAlphas()
 
   cout << "Alpha residuals: " << endl;
   cout << residuals << endl;
+  
+  // perform an AND operation over all SGTs to determine whether
+  // the alpha estimates are globally converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     allConverged = (allConverged and converged(iGroup)); 
   }
@@ -149,23 +200,37 @@ bool MultiGroupTransport::calcAlphas()
 //==============================================================================
 
 //==============================================================================
-//! solveSCBs loop over energy groups and call starting angle solver
+//! calcFissionSources wrapper over SGTs to calculate the fission source.
 
+// allConverged: indicates whether the newly calculated fission source is 
+//   converged based on the convergence criteria epsilon  
 bool MultiGroupTransport::calcFissionSources()
 {
   
-  typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
+  // vector indicating whether fission source in each SGT is converged
   VectorXb converged(SGTs.size());
+
+  // vector containing the fission source residuals in each SGT
   Eigen::VectorXd residuals(SGTs.size());
+
+  // criteria for fission source convergence 
   double epsilon = 1E-5;
+
+  // boolean indicating whether all fission sources are converged
   bool allConverged=true;
 
+  // loop over SGTs, calculate fission source, and determine whether the fission
+  // sources in each SGT are converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     residuals(iGroup)=SGTs[iGroup]->calcFissionSource();
     converged(iGroup) = residuals(iGroup) < epsilon;
   }
+
   cout << "Fission source residuals: " << endl;
   cout << residuals << endl;
+
+  // perform an AND operation over all SGTs to determine whether
+  // fission sources are globally converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     allConverged = (allConverged and converged(iGroup)); 
   }
@@ -177,22 +242,30 @@ bool MultiGroupTransport::calcFissionSources()
 //==============================================================================
 
 //==============================================================================
-//! calcSources loop over SGTS and make call to calc sources in each
+//! sourceIteration iterate on a solution for a fixed source
 
+// allConverged: indicates whether fluxes are converged
 bool MultiGroupTransport::sourceIteration()
 {
-  typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
-  VectorXb converged(SGTs.size());
+  // boolean indicated whether flux is globally converged
   bool allConverged= false;
+
+  // maximum number of iterations
   int maxIter = 500;
 
+  // iterate on fission source
   for (int iter = 0; iter < maxIter; ++iter){
-  
+    
+    // calculate scatter source, solve for the starting angle equation, then 
+    // solve the full time dependent neutron tranport equation with a 
+    // fixed source. Then calculate the scalar flux with the newly calculated
+    // angular flux
     calcSources("s"); 
     solveStartAngles();
     solveSCBs();
     allConverged=calcFluxes();
 
+    // if the fluxes are globally converged, break out of the for loop
     if (allConverged) {
       cout << "Converged in " << iter << " iterations."<< endl;
       break;
@@ -200,6 +273,7 @@ bool MultiGroupTransport::sourceIteration()
 
   } 
 
+  // print a statement indicating fixed source iteration was unsuccessful
   if(not(allConverged)){
     cout << "Fixed source iteration did NOT converge within " << maxIter;
     cout << " iterations." << endl;
@@ -211,42 +285,58 @@ bool MultiGroupTransport::sourceIteration()
 //==============================================================================
 
 //==============================================================================
-//! calcSources loop over SGTS and make call to calc sources in each
+//! powerIteration perform a power iteration 
 
+// converged: indicates whether alpha and fission source estimates are converged
+// update alphas and fission source in each SGT
 bool MultiGroupTransport::powerIteration()
 {
+  // booleans indicating whether the alphas and fission source estimates are 
+  // globally converged
+  bool alphaConverged=false,fissionConverged=false; 
 
-  bool alphaConverged=false,fissionConverged=false,converged; 
-
+  // calculate alphas in each SGT
   alphaConverged=calcAlphas();
-  //if(alphaConverged)
+
+  // calculate fission source in SGT
   fissionConverged=calcFissionSources(); 
 
-  converged = (alphaConverged and fissionConverged);
-  
-  return converged;
+  return (alphaConverged and fissionConverged);
 };
 
 //==============================================================================
 
 //==============================================================================
-//! calcSources loop over SGTS and make call to calc sources in each
+//! solveTransportOnly solve without any multiphysics coupling
 
+// iterates using power (outer) and source (inner) iteration functions
 void MultiGroupTransport::solveTransportOnly()
 {
+  // booleans indicating whether source and power iterations are converged
   bool fluxConverged,fissionSourceConverged;
+
+  // maximum number of iterations
   int maxIter = 10000;
 
+  // calculate initial source
   calcSources(); 
 
   for (int iter = 0; iter < maxIter; ++iter){
+
+    // perform source iteration
     fluxConverged=sourceIteration();
+
     if (fluxConverged){
+
+      // perform power iteration
       fissionSourceConverged=powerIteration(); 
+
+      // problem is fully converged 
       if (fissionSourceConverged){
         cout << "Solution converged!" << endl;
         break;
       }
+    
     } else {
       cout << "Source iteration non-convergent." << endl;
       break;
@@ -258,10 +348,8 @@ void MultiGroupTransport::solveTransportOnly()
 
 //==============================================================================
 
-
-
 //==============================================================================
-//! solveSCBs loop over energy groups and call starting angle solver
+//! writeFluxes wrapper over SGTs to write flux present in each
 
 void MultiGroupTransport::writeFluxes()
 {
