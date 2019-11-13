@@ -45,14 +45,16 @@ StartingAngle::StartingAngle(Mesh * myMesh,\
 
 void StartingAngle::calcStartingAngle(cube * halfAFlux,\
   Eigen::MatrixXd * source,\
+  Eigen::MatrixXd * alpha,\
   int energyGroup)
 {
         // index xi value is stored in in quadLevel
 	const int xiIndex = 0;
         // temporary variable used for looping though quad set
-	double xi,sqrtXi,sigT;
+	double xi,sqrtXi,sigT,sigTEps=1E-4;
         int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR;
 	int rows = 4,cols = 4;
+        double v = 2200.0;
         vector<int> withinUpstreamR(2);
         vector<int> outUpstreamR(2);
         vector<int> withinUpstreamZ(2);
@@ -87,7 +89,6 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 	Eigen::VectorXd x = Eigen::VectorXd::Zero(rows);
 	// source 
 	Eigen::VectorXd q = Eigen::VectorXd::Ones(rows);
-	q = 8*q;
 	
 	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 		// get xi for this quadrature level
@@ -119,7 +120,11 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 			    countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
 	                        q.setOnes();
                                 q = (*source)(iZ,iR)*q;
-				sigT = materials->sigT(iZ,iR,energyGroup);
+				sigT = materials->sigT(iZ,iR,energyGroup)
+                                  + (*alpha)(iZ,iR)/v;
+                                if (sigT < sigTEps){
+                                  sigT = sigTEps;
+                                }
 				gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
 				
 				// calculate radial within cell leakage matrix
