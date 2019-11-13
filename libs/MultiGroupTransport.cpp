@@ -36,7 +36,7 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
   }
   startAngleSolve = std::make_shared<StartingAngle>(mesh,materials,input);
   SCBSolve = std::make_shared<SimpleCornerBalance>(mesh,materials,input);
-  sourceIteration();
+  solveTransportOnly();
 };
 
 //==============================================================================
@@ -75,17 +75,21 @@ bool MultiGroupTransport::calcFluxes()
   VectorXb converged(SGTs.size());
   Eigen::VectorXd residuals(SGTs.size());
   double epsilon = 1E-5;
-  bool allConverged;
+  bool allConverged=true;
 
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     residuals(iGroup)=SGTs[iGroup]->calcFlux();
-    cout << "Scalar flux group " << iGroup << endl;
-    cout << SGTs[iGroup]->sFlux<<endl;
-    cout << endl;
+    //cout << "Scalar flux group " << iGroup << endl;
+    //cout << SGTs[iGroup]->sFlux<<endl;
+    //cout << endl;
     converged(iGroup) = residuals(iGroup) < epsilon;
   }
 
-  allConverged = not(converged.isZero());
+  cout << "Flux residuals: " << endl;
+  cout << residuals << endl;
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    allConverged = (allConverged and converged(iGroup)); 
+  }
 
   return allConverged;  
 
@@ -110,8 +114,64 @@ void MultiGroupTransport::calcSources(string calcType)
 
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     SGTs[iGroup]->calcSource(calcType);
-    //cout << "Source for group "<< SGTs[iGroup]->energyGroup << endl;
   }
+};
+
+//==============================================================================
+
+//==============================================================================
+//! solveSCBs loop over energy groups and call starting angle solver
+
+bool MultiGroupTransport::calcAlphas()
+{
+  
+  typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
+  VectorXb converged(SGTs.size());
+  Eigen::VectorXd residuals(SGTs.size());
+  double epsilon = 1E-3;
+  bool allConverged=true;
+
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    residuals(iGroup)=SGTs[iGroup]->calcAlpha();
+    converged(iGroup) = residuals(iGroup) < epsilon;
+  }
+
+  cout << "Alpha residuals: " << endl;
+  cout << residuals << endl;
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    allConverged = (allConverged and converged(iGroup)); 
+  }
+
+  return allConverged;  
+
+};
+
+//==============================================================================
+
+//==============================================================================
+//! solveSCBs loop over energy groups and call starting angle solver
+
+bool MultiGroupTransport::calcFissionSources()
+{
+  
+  typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
+  VectorXb converged(SGTs.size());
+  Eigen::VectorXd residuals(SGTs.size());
+  double epsilon = 1E-5;
+  bool allConverged=true;
+
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    residuals(iGroup)=SGTs[iGroup]->calcFissionSource();
+    converged(iGroup) = residuals(iGroup) < epsilon;
+  }
+  cout << "Fission source residuals: " << endl;
+  cout << residuals << endl;
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    allConverged = (allConverged and converged(iGroup)); 
+  }
+
+  return allConverged;  
+
 };
 
 //==============================================================================
@@ -119,13 +179,10 @@ void MultiGroupTransport::calcSources(string calcType)
 //==============================================================================
 //! calcSources loop over SGTS and make call to calc sources in each
 
-void MultiGroupTransport::sourceIteration()
+bool MultiGroupTransport::sourceIteration()
 {
   typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
   VectorXb converged(SGTs.size());
-  cout << "In source iteration loop!"<< endl;
-  calcSources(); 
-  cout << "Fission source calculated!"<< endl;
   bool allConverged= false;
   int maxIter = 500;
 
@@ -135,6 +192,7 @@ void MultiGroupTransport::sourceIteration()
     solveStartAngles();
     solveSCBs();
     allConverged=calcFluxes();
+
     if (allConverged) {
       cout << "Converged in " << iter << " iterations."<< endl;
       break;
@@ -147,10 +205,60 @@ void MultiGroupTransport::sourceIteration()
     cout << " iterations." << endl;
   }
 
+  return allConverged;
+};
+
+//==============================================================================
+
+//==============================================================================
+//! calcSources loop over SGTS and make call to calc sources in each
+
+bool MultiGroupTransport::powerIteration()
+{
+
+  bool alphaConverged=false,fissionConverged=false,converged; 
+
+  alphaConverged=calcAlphas();
+  //if(alphaConverged)
+  fissionConverged=calcFissionSources(); 
+
+  converged = (alphaConverged and fissionConverged);
+  
+  return converged;
+};
+
+//==============================================================================
+
+//==============================================================================
+//! calcSources loop over SGTS and make call to calc sources in each
+
+void MultiGroupTransport::solveTransportOnly()
+{
+  bool fluxConverged,fissionSourceConverged;
+  int maxIter = 10000;
+
+  calcSources(); 
+
+  for (int iter = 0; iter < maxIter; ++iter){
+    fluxConverged=sourceIteration();
+    if (fluxConverged){
+      fissionSourceConverged=powerIteration(); 
+      if (fissionSourceConverged){
+        cout << "Solution converged!" << endl;
+        break;
+      }
+    } else {
+      cout << "Source iteration non-convergent." << endl;
+      break;
+    }
+  } 
+
   writeFluxes(); 
 };
 
 //==============================================================================
+
+
 
 //==============================================================================
 //! solveSCBs loop over energy groups and call starting angle solver

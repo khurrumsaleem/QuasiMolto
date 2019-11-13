@@ -34,7 +34,11 @@ class MultiGroupTransport
   void solveSCBs();
   void calcSources(string calcType="FS");
   bool calcFluxes();
-  void sourceIteration();
+  bool calcAlphas();
+  bool calcFissionSources();
+  bool sourceIteration();
+  bool powerIteration();
+  void solveTransportOnly();
   void writeFluxes();
 
   private:
