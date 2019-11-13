@@ -32,7 +32,7 @@ class MultiGroupTransport
     YAML::Node * myInput);
   void solveStartAngles();
   void solveSCBs();
-  void calcSources(string calcType="FS");
+  bool calcSources(string calcType="FS");
   bool calcFluxes();
   bool calcAlphas();
   bool calcFissionSources();
