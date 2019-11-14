@@ -30,6 +30,13 @@ class MultiGroupTransport
   MultiGroupTransport(Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * myInput);
+  
+  //default convergence criteria
+  double epsAlpha=1E-3;
+  double epsFlux=1E-5;
+  double epsFissionSource=1E-5;
+  
+  // public functions
   void solveStartAngles();
   void solveSCBs();
   bool calcSources(string calcType="FS");
@@ -39,12 +46,15 @@ class MultiGroupTransport
   bool sourceIteration();
   bool powerIteration();
   void solveTransportOnly();
+  void printDividers();
   void writeFluxes();
 
   private:
   YAML::Node * input;
   Mesh * mesh;
   Materials * materials;
+  // for print formatting
+  int spacing = 15;
   
 };
 

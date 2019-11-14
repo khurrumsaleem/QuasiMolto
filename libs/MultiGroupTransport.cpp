@@ -40,6 +40,17 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
   // initialize StartingAngle and SimplCornerBalance solvers 
   startAngleSolve = std::make_shared<StartingAngle>(mesh,materials,input);
   SCBSolve = std::make_shared<SimpleCornerBalance>(mesh,materials,input);
+
+  // check to see if any convergence criteria are specified in input
+  if ((*input)["parameters"]["epsAlpha"]){
+    epsAlpha=(*input)["parameters"]["epsAlpha"].as<double>();
+  }
+  if ((*input)["parameters"]["epsFlux"]){
+    epsFlux=(*input)["parameters"]["epsFlux"].as<double>();
+  }
+  if ((*input)["parameters"]["epsFissionSource"]){
+    epsFissionSource=(*input)["parameters"]["epsFissionSource"].as<double>();
+  }
   
   // call source/power iteration solver
   solveTransportOnly();
@@ -98,11 +109,15 @@ bool MultiGroupTransport::calcFluxes()
   // in each SGT is converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     residuals(iGroup)=SGTs[iGroup]->calcFlux();
-    converged(iGroup) = residuals(iGroup) < epsilon;
+    converged(iGroup) = residuals(iGroup) < epsFlux;
   }
 
-  cout << "Flux residuals: " << endl;
-  cout << residuals << endl;
+  // print flux residuals
+  for (int iResidual = 0; iResidual < residuals.size(); ++iResidual){
+    cout << setw(spacing) << residuals(iResidual);
+  }
+  cout << endl;
+  //cout << setw(10) <<residuals.transpose() << endl;
 
   // perform an AND operation over all SGTs to determine whether
   // flux is globally converged
@@ -143,7 +158,7 @@ bool MultiGroupTransport::calcSources(string calcType)
   // in each SGT is converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     residuals(iGroup)=SGTs[iGroup]->calcSource(calcType);
-    converged(iGroup) = residuals(iGroup) < epsilon;
+    converged(iGroup) = residuals(iGroup) < epsFissionSource;
   }
 
   // perform an AND operation over all SGTs to determine whether
@@ -181,12 +196,17 @@ bool MultiGroupTransport::calcAlphas()
   // in each SGT are converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     residuals(iGroup)=SGTs[iGroup]->calcAlpha();
-    converged(iGroup) = residuals(iGroup) < epsilon;
+    converged(iGroup) = residuals(iGroup) < epsAlpha;
   }
 
+  // print alpha residuals
   cout << "Alpha residuals: " << endl;
-  cout << residuals << endl;
-  
+  for (int iResidual = 0; iResidual < residuals.size(); ++iResidual){
+    cout << setw(spacing) << residuals(iResidual);
+  }
+  cout << endl; 
+  cout << endl; 
+ 
   // perform an AND operation over all SGTs to determine whether
   // the alpha estimates are globally converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
@@ -223,11 +243,15 @@ bool MultiGroupTransport::calcFissionSources()
   // sources in each SGT are converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     residuals(iGroup)=SGTs[iGroup]->calcFissionSource();
-    converged(iGroup) = residuals(iGroup) < epsilon;
+    converged(iGroup) = residuals(iGroup) < epsFissionSource;
   }
 
   cout << "Fission source residuals: " << endl;
-  cout << residuals << endl;
+  for (int iResidual = 0; iResidual < residuals.size(); ++iResidual){
+    cout << setw(spacing) << residuals(iResidual);
+  }
+  cout << endl; 
+  cout << endl; 
 
   // perform an AND operation over all SGTs to determine whether
   // fission sources are globally converged
@@ -321,6 +345,7 @@ void MultiGroupTransport::solveTransportOnly()
   // calculate initial source
   calcSources(); 
 
+  cout << "Flux residuals: " << endl;
   for (int iter = 0; iter < maxIter; ++iter){
 
     // perform source iteration
@@ -328,13 +353,19 @@ void MultiGroupTransport::solveTransportOnly()
 
     if (fluxConverged){
 
+      cout << endl; 
+
       // perform power iteration
+      printDividers();
       fissionSourceConverged=powerIteration(); 
+      printDividers(); 
 
       // problem is fully converged 
       if (fissionSourceConverged){
         cout << "Solution converged!" << endl;
         break;
+      } else{
+        cout << "Flux residuals: " << endl;
       }
     
     } else {
@@ -347,6 +378,23 @@ void MultiGroupTransport::solveTransportOnly()
 };
 
 //==============================================================================
+
+//==============================================================================
+//! writeFluxes wrapper over SGTs to write flux present in each
+
+void MultiGroupTransport::printDividers()
+{
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    for (int iSpace = 0; iSpace < spacing; ++iSpace ){
+      cout << "=";
+    }
+  }
+  cout << endl;
+  cout << endl;
+};
+
+//==============================================================================
+
 
 //==============================================================================
 //! writeFluxes wrapper over SGTs to write flux present in each
