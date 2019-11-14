@@ -49,7 +49,10 @@ void SimpleCornerBalance::solve(cube * aFlux,\
 
   // temporary variables used for looping though quad set
   double xi,sigT,mu,alphaMinusOneHalf,alphaPlusOneHalf,weight,\
-    tau,gamma,angRedistCoeff = 0,sigTEps=1E-4,v=2200.0;
+    tau,gamma,angRedistCoeff = 0,sigTEps=1E-4;
+  
+  // get neutron velocity in energyGroup 
+  double v = materials->neutV(energyGroup);
   int numPs,numQs,reflectedP,reflectedQ,reflectedAngIdx,zStart,rStart,\
     zEnd,zInc,borderCellZ,borderCellR,angIdx;
 

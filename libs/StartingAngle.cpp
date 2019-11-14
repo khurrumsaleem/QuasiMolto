@@ -54,7 +54,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 	double xi,sqrtXi,sigT,sigTEps=1E-4;
         int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR;
 	int rows = 4,cols = 4;
-        double v = 2200.0;
+        double v = materials->neutV(energyGroup);
         vector<int> withinUpstreamR(2);
         vector<int> outUpstreamR(2);
         vector<int> withinUpstreamZ(2);
