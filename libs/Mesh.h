@@ -35,7 +35,7 @@ class Mesh
 	public:
 	Mesh(YAML::Node * myInput);  	
   	int n,nAngles;		
-	double dz,dr,Z,R,totalWeight; 
+	double dz,dr,Z,R,dt,totalWeight; 
   	vector< vector<double> > quadSet;
   	vector< vector<double> > alpha;
         vector< vector<double> > tau;

@@ -51,6 +51,7 @@ Mesh::Mesh(YAML::Node * myInput){
 	dr = (*input)["mesh"]["dr"].as<double>();
 	Z = (*input)["mesh"]["Z"].as<double>();
 	R = (*input)["mesh"]["R"].as<double>();
+	dt = (*input)["mesh"]["dt"].as<double>();
 	calcSpatialMesh();
 	calcQuadSet();
         calcNumAnglesTotalWeight();
