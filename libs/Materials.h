@@ -33,6 +33,7 @@ class Materials
 	double chiP(int zIdx,int rIdx,int eIndx);
 	double chiD(int zIdx,int rIdx,int eIndx);
 	double nu(int zIdx,int rIdx);
+        Eigen::VectorXd neutV;
         int nGroups;
         void edit();
 

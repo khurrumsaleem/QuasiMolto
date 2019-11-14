@@ -22,13 +22,29 @@ using namespace arma;
 Materials::Materials(Mesh * myMesh,\
                              YAML::Node * myInput)
 {
+        vector<double> neutVInp;    
+
 	// Point to variables for mesh and input file
 	mesh = myMesh;
 	input = myInput;
 	matMap.setZero(mesh->zCent.size(),mesh->rCent.size());
 	readMats();
 	readGeom();
-
+        
+        // check if neutron velocities are specified in input
+        if ((*input)["parameters"]["neutron velocity"]){
+	        neutVInp = (*input)["parameters"]["neutron velocity"]\
+                        .as<vector<double>>();
+                neutV.setZero(nGroups);
+                for (int iGroup = 0; iGroup < nGroups; ++iGroup){
+                        neutV(iGroup) = neutVInp[iGroup];
+                }
+        } else {
+          
+                // set default neutron velocities 
+                neutV.setOnes(nGroups);
+                neutV = 2200.0*neutV;
+        }
 };
 
 //==============================================================================
