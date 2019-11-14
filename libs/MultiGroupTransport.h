@@ -31,18 +31,22 @@ class MultiGroupTransport
     Mesh * myMesh,\
     YAML::Node * myInput);
   
-  //default convergence criteria
+  // default convergence criteria
   double epsAlpha=1E-3;
   double epsFlux=1E-5;
   double epsFissionSource=1E-5;
+  
+  // defaults for maximum iterations
+  double sourceMaxIter=500;
+  double powerMaxIter=10000;
   
   // public functions
   void solveStartAngles();
   void solveSCBs();
   bool calcSources(string calcType="FS");
-  bool calcFluxes();
-  bool calcAlphas();
-  bool calcFissionSources();
+  bool calcFluxes(string printResidual="noprint");
+  bool calcAlphas(string printResidual="noprint");
+  bool calcFissionSources(string printResidual="noprint");
   bool sourceIteration();
   bool powerIteration();
   void solveTransportOnly();

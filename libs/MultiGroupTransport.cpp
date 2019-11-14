@@ -51,6 +51,12 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
   if ((*input)["parameters"]["epsFissionSource"]){
     epsFissionSource=(*input)["parameters"]["epsFissionSource"].as<double>();
   }
+  if ((*input)["parameters"]["sourceMaxIter"]){
+    epsAlpha=(*input)["parameters"]["sourceMaxIter"].as<double>();
+  }
+  if ((*input)["parameters"]["powerMaxIter"]){
+    epsAlpha=(*input)["parameters"]["powerMaxIter"].as<double>();
+  }
   
   // call source/power iteration solver
   solveTransportOnly();
@@ -86,7 +92,7 @@ void MultiGroupTransport::solveSCBs()
 //! calcFluxes wrapper over SGTs to calculate scalar fluxes from angular fluxes
 
 // uses the angular fluxes currently on each SGT object
-bool MultiGroupTransport::calcFluxes()
+bool MultiGroupTransport::calcFluxes(string printResidual)
 {
   
   //typedef Eigen::Array<bool,Eigen::Dynamic,1> VectorXb;
@@ -113,10 +119,12 @@ bool MultiGroupTransport::calcFluxes()
   }
 
   // print flux residuals
-  for (int iResidual = 0; iResidual < residuals.size(); ++iResidual){
-    cout << setw(spacing) << residuals(iResidual);
+  if (printResidual == "print"){
+    for (int iResidual = 0; iResidual < residuals.size(); ++iResidual){
+      cout << setw(spacing) << residuals(iResidual);
+    }
+    cout << endl;
   }
-  cout << endl;
   //cout << setw(10) <<residuals.transpose() << endl;
 
   // perform an AND operation over all SGTs to determine whether
@@ -177,7 +185,7 @@ bool MultiGroupTransport::calcSources(string calcType)
 
 // In line with the alpha approximation to the time dependent neutron transport 
 // equation
-bool MultiGroupTransport::calcAlphas()
+bool MultiGroupTransport::calcAlphas(string printResidual)
 {
   
   // vector indicating whether alpha in each SGT is converged
@@ -200,12 +208,14 @@ bool MultiGroupTransport::calcAlphas()
   }
 
   // print alpha residuals
-  cout << "Alpha residuals: " << endl;
-  for (int iResidual = 0; iResidual < residuals.size(); ++iResidual){
-    cout << setw(spacing) << residuals(iResidual);
-  }
-  cout << endl; 
-  cout << endl; 
+  if (printResidual == "print"){
+    cout << "Alpha residuals: " << endl;
+    for (int iResidual = 0; iResidual < residuals.size(); ++iResidual){
+      cout << setw(spacing) << residuals(iResidual);
+    }
+    cout << endl; 
+    cout << endl;
+  } 
  
   // perform an AND operation over all SGTs to determine whether
   // the alpha estimates are globally converged
@@ -224,7 +234,7 @@ bool MultiGroupTransport::calcAlphas()
 
 // allConverged: indicates whether the newly calculated fission source is 
 //   converged based on the convergence criteria epsilon  
-bool MultiGroupTransport::calcFissionSources()
+bool MultiGroupTransport::calcFissionSources(string printResidual)
 {
   
   // vector indicating whether fission source in each SGT is converged
@@ -246,12 +256,14 @@ bool MultiGroupTransport::calcFissionSources()
     converged(iGroup) = residuals(iGroup) < epsFissionSource;
   }
 
-  cout << "Fission source residuals: " << endl;
-  for (int iResidual = 0; iResidual < residuals.size(); ++iResidual){
-    cout << setw(spacing) << residuals(iResidual);
+  if (printResidual == "print"){
+    cout << "Fission source residuals: " << endl;
+    for (int iResidual = 0; iResidual < residuals.size(); ++iResidual){
+      cout << setw(spacing) << residuals(iResidual);
+    }
+    cout << endl; 
+    cout << endl; 
   }
-  cout << endl; 
-  cout << endl; 
 
   // perform an AND operation over all SGTs to determine whether
   // fission sources are globally converged
@@ -274,11 +286,8 @@ bool MultiGroupTransport::sourceIteration()
   // boolean indicated whether flux is globally converged
   bool allConverged= false;
 
-  // maximum number of iterations
-  int maxIter = 500;
-
   // iterate on fission source
-  for (int iter = 0; iter < maxIter; ++iter){
+  for (int iter = 0; iter < sourceMaxIter; ++iter){
     
     // calculate scatter source, solve for the starting angle equation, then 
     // solve the full time dependent neutron tranport equation with a 
@@ -287,7 +296,7 @@ bool MultiGroupTransport::sourceIteration()
     calcSources("s"); 
     solveStartAngles();
     solveSCBs();
-    allConverged=calcFluxes();
+    allConverged=calcFluxes("print");
 
     // if the fluxes are globally converged, break out of the for loop
     if (allConverged) {
@@ -299,7 +308,7 @@ bool MultiGroupTransport::sourceIteration()
 
   // print a statement indicating fixed source iteration was unsuccessful
   if(not(allConverged)){
-    cout << "Fixed source iteration did NOT converge within " << maxIter;
+    cout << "Fixed source iteration did NOT converge within " << sourceMaxIter;
     cout << " iterations." << endl;
   }
 
@@ -320,10 +329,10 @@ bool MultiGroupTransport::powerIteration()
   bool alphaConverged=false,fissionConverged=false; 
 
   // calculate alphas in each SGT
-  alphaConverged=calcAlphas();
+  alphaConverged=calcAlphas("print");
 
   // calculate fission source in SGT
-  fissionConverged=calcFissionSources(); 
+  fissionConverged=calcFissionSources("print"); 
 
   return (alphaConverged and fissionConverged);
 };
@@ -346,7 +355,7 @@ void MultiGroupTransport::solveTransportOnly()
   calcSources(); 
 
   cout << "Flux residuals: " << endl;
-  for (int iter = 0; iter < maxIter; ++iter){
+  for (int iter = 0; iter < powerMaxIter; ++iter){
 
     // perform source iteration
     fluxConverged=sourceIteration();
