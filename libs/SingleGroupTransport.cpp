@@ -122,15 +122,6 @@ double SingleGroupTransport::calcFissionSource()
     } // iR
   } // iZ
    
-  //sourceNorm = ((fissionSource_old-fissionSource)\
-  //  .cwiseQuotient(fissionSource)).norm();
-  cout << "Old fission source: " << endl;
-  cout << fissionSource_old << endl;
-  cout << endl;
-  cout << "New fission source: " << endl;
-  cout << fissionSource << endl;
-  cout << endl;
-
   fissionSourceDiff = (fissionSource_old-fissionSource);
 
   for (int iRow = 0; iRow < fissionSourceDiff.rows(); ++iRow){
@@ -229,7 +220,7 @@ double SingleGroupTransport::calcFlux()
 double SingleGroupTransport::calcAlpha()
 {  
   
-  double residual,deltaT = 0.0001;
+  double residual,deltaT = mesh->dt;
   Eigen::MatrixXd alpha_old = alpha;
   alpha.setZero(mesh->zCent.size(),mesh->rCent.size());
 
@@ -239,13 +230,6 @@ double SingleGroupTransport::calcAlpha()
     } // iR
   } // iZ
    
-  cout << "Old alpha: " << endl;
-  cout << alpha_old << endl;
-  cout << endl;
-  cout << "New alpha: " << endl;
-  cout << alpha << endl;
-  cout << endl;
-
   residual = ((alpha_old-alpha).cwiseQuotient(alpha)).norm();
 
   return residual;
