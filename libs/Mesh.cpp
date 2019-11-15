@@ -16,24 +16,34 @@ using namespace std;
 using namespace arma;
 
 //==============================================================================
-//! quadLevel Constructor for quadLevel object. 
+/// Constructor for quadLevel object.
+///
+/// @param [in] myQuad Contains ordinates on a single quadrature level 
+/// @param [in] myAlpha Differencing coefficients for a single quadrature level 
+/// @param [in] myTau Coefficient for weighted diamond differencing on a single 
+/// quadrature level
+/// @param [in] myStartIndex Starting index for ordinates on the quadrature level
+/// to be created 
 quadLevel::quadLevel(vector< vector<double> > myQuad,\
   vector<double> myAlpha,\
   vector<double> myTau,\
   int myStartIndex){
 
   int ordIdxCount = myStartIndex;	
-  // resize vectors on quadLevel
+
+  // Resize vectors on quadLevel
   quad.resize(myQuad.size(),vector<double>(myQuad[0].size(),0.0));
   alpha.resize(myAlpha.size());
   tau.resize(myTau.size());
   ordIdx.resize(myQuad.size());
   
-  // set equal to initializing arguments
+  // Set equal to initializing arguments
   quad = myQuad;
   alpha = myAlpha;
   tau = myTau;
   nOrd = quad.size();
+  
+  // Assign index to each ordinate
   for (int iOrd = 0; iOrd < nOrd; ++iOrd){
     ordIdx[iOrd]=ordIdxCount;
     ++ordIdxCount;
@@ -42,36 +52,42 @@ quadLevel::quadLevel(vector< vector<double> > myQuad,\
 //==============================================================================
 
 //==============================================================================
-//! Mesh Contructor for Mesh object. 
+/// Mesh Contructor for Mesh object.
+///
+/// @param [in] myInput YAML input object for this simulation 
 Mesh::Mesh(YAML::Node * myInput){
-  input = myInput;
-  n=12; // currently only works for a quadrature set of order 12 
 
-  // read in input mesh parameters
+  // Set input pointer
+  input = myInput;
+
+  // Currently only works for a quadrature set of order 12 
+  n=12; 
+
+  // Read in input mesh parameters
   dz = (*input)["mesh"]["dz"].as<double>();
   dr = (*input)["mesh"]["dr"].as<double>();
   Z = (*input)["mesh"]["Z"].as<double>();
   R = (*input)["mesh"]["R"].as<double>();
   dt = (*input)["mesh"]["dt"].as<double>();
   
-  // set up the mesh and quadrature set
+  // Set up the mesh and quadrature set
   calcSpatialMesh();
   calcQuadSet();
   calcNumAnglesTotalWeight();
+
 }
 //==============================================================================
 
 
 //==============================================================================
-//! calcQuadSet function that calculates a quadrature set and 
-//! differencing coefficients for use in RZ geometry
-
-//! Uses the methodology laid out Methods of Computational Transport by
-//! Lewis and Miller. A level symmetric quadrature set is calculated. The p,q 
-//! indexing scheme is defined on page 166 in Figure 4-7. Differencing 
-//! coefficients are then calculated using that quadrature set.
-//! TODO: a lot of this is very specific to an n=12 quadrature set. Would be 
-//! better if it was more general          
+/// Calculates a quadrature set and differencing coefficients
+///
+/// Uses the methodology laid out Methods of Computational Transport by
+/// Lewis and Miller. A level symmetric quadrature set is calculated. The p,q 
+/// indexing scheme is defined on page 166 in Figure 4-7. Differencing 
+/// coefficients are then calculated using that quadrature set.
+/// TODO: a lot of this is very specific to an n=12 quadrature set. Would be 
+/// better if it was more general          
 void Mesh::calcQuadSet(){	
 	
   // Weights in quadrature set given in L&M
@@ -211,7 +227,7 @@ void Mesh::calcQuadSet(){
 //==============================================================================
 
 //==============================================================================
-//! calcMu calculate suitable ordinates
+/// Calculate ordinates for a level symmetric quadrature set
 
 void Mesh::calcMu(){
 
@@ -228,23 +244,27 @@ void Mesh::calcMu(){
 //==============================================================================
 
 //==============================================================================
-//! calcAlpha function for calculating differencing coefficients in RZ geometry
-
-//! based on approach in Lewis and Miller
+/// Calculate differencing coefficients for approximating angular redist term
+///
+/// Based on approach in Lewis and Miller
 void Mesh::calcAlpha(){
   
   vector<int> rowLength = {2,4,6,8,10,12,12,10,8,6,4,2};
   alpha.resize(12,vector<double>(13,0.0)); 
   
   for (int i = 0; i < alpha.size(); ++i){
-    alpha[i][0] = 0; // initialize to 0 on the edge case to conserve
-                     // neutrons. Explanation on page 179 of L&M.
+    
+    // Initialize to 0 on the edge case to conservei neutrons. Explanation 
+    // on page 179 of L&M.
+    alpha[i][0] = 0; 
+    
+    // Use recursive definition to define subsequent values of alpha
     for (int j = 0; j < rowLength[i]; ++j){
-
+      
       alpha[i][j+1] = alpha[i][j]-quadSet[quad_index(i,j)][1]\
         *quadSet[quad_index(i,j)][3];
 
-      // force sufficiently small quantities to 0
+      // Force sufficiently small quantities to 0
       // keeps negative values resulting from finite 
       // precision from coming up, too
       if (alpha[i][j+1]<1E-15)
@@ -255,9 +275,9 @@ void Mesh::calcAlpha(){
 //==============================================================================
 
 //==============================================================================
-//! calcAlpha function for calculating differencing coefficients in RZ geometry
-
-//! based on approach in Lewis and Miller
+/// Calculate tau value used in determining half angle angular fluxes
+///
+/// Based on approach in Lewis and Miller
 void Mesh::calcTau(){
 	
   double levelWeight = 0.0;
@@ -268,13 +288,13 @@ void Mesh::calcTau(){
   tau.resize(12,vector<double>(12,0.0)); 
   for (int i = 0; i < tau.size(); ++i){
     
-    // calculate total weight on this level
+    // Calculate total weight on this level
     levelWeight = 0.0;
     for (int iWeight = 0; iWeight < rowLength[i]; ++iWeight){
       levelWeight=levelWeight+quadSet[quad_index(i,iWeight)][3];
     } 	
     
-    // calculate half angles on this level
+    // Calculate half angles on this level
     halfOmega.resize(rowLength[i]+1,0.0);
     halfOmega[0] = 0.0;
 
@@ -285,7 +305,7 @@ void Mesh::calcTau(){
 
     }
 
-    // calculate mu ordinates that correspond to each half angle
+    // Calculate mu ordinates that correspond to each half angle
     halfMu.resize(rowLength[i]+1,0.0);
     halfMu[0] = sqrt(1-pow(quadSet[quad_index(i,0)][0],2))\
       *cos(halfOmega[0]);
@@ -298,7 +318,7 @@ void Mesh::calcTau(){
 
     }
     
-    // calculate tau on this level
+    // Calculate tau on this level
     for (int iTau = 0; iTau < rowLength[i]; ++iTau){
          
       tau[i][rowLength[i]-iTau-1] = \
@@ -311,7 +331,7 @@ void Mesh::calcTau(){
 //==============================================================================
 
 //==============================================================================
-//! calcSpatialMesh function to build uniform mesh
+/// Build uniform mesh
 
 void Mesh::calcSpatialMesh(){
 
@@ -381,7 +401,8 @@ void Mesh::calcSpatialMesh(){
 //==============================================================================
 
 //==============================================================================
-//! addLevel add levels of quadrature to the mesh object
+/// Add quadrature levels to the mesh object
+
 void Mesh::addLevels(){
 
   vector< vector<double> > tempQuad;
@@ -393,23 +414,24 @@ void Mesh::addLevels(){
   int levelCount = 0;
   double myXi = 0.0;
   
-  // initialize first myXi to search for
+  // Initialize first myXi to search for
   myXi=quadSet[0][0];
   for (int i = 0; i < quadSet.size(); ++i){
-    // if the value of xi changes, set the stop index and copy 
+
+    // If the value of xi changes, set the stop index and copy 
     // the entries between start and stop indices
     if (myXi != quadSet[i][0]){
       stopIndex = i - 1;
 
-      // resize temporary variables
+      // Resize temporary variables
       tempQuad.resize(stopIndex-startIndex+1,vector<double>(4,0.0));
       tempAlpha.resize(stopIndex-startIndex+2,0.0);
       tempTau.resize(stopIndex-startIndex+1,0);
       
-      // counter for temporary arrays
+      // Counter for temporary arrays
       count = 0; 
       
-      // initialize boundary value of alpha
+      // Initialize boundary value of alpha
       tempAlpha[0] = alpha[levelCount][0];
       for (int iLevel = startIndex; iLevel < stopIndex + 1; ++iLevel){
         tempQuad[count] = quadSet[iLevel];
@@ -418,18 +440,18 @@ void Mesh::addLevels(){
         ++count;
       }
       
-      // initialize new quadLevel
+      // Initialize new quadLevel
       quadLevel myLevel(tempQuad,tempAlpha,tempTau,startIndex);
       
-      // add new quadLevel to quadrature vector
+      // Add new quadLevel to quadrature vector
       quadrature.push_back(myLevel);
       
-      // advance iterates
+      // Advance iterates
       ++levelCount;	
       startIndex = i;
       myXi = quadSet[i][0];
     
-    // the final index in quadSet is a boundary case, which is handled
+    // The final index in quadSet is a boundary case, which is handled
     // as below
     } else if (i==quadSet.size()-1){
       
@@ -457,7 +479,7 @@ void Mesh::addLevels(){
 //==============================================================================
 
 //==============================================================================
-//! calcNAngles calculate number of discrete angles in ordinate set and weight
+/// Calculate number of discrete angles and total weight in quadrature set
 
 void Mesh::calcNumAnglesTotalWeight(){        
   int weightIdx = 3;
@@ -475,20 +497,21 @@ void Mesh::calcNumAnglesTotalWeight(){
 //==============================================================================
 
 //==============================================================================
-//! quad_index returns a sequential index number based on the p and q indices 
-//! provided as arguments
-
-//! \param p the first quadrature index
-//! \param q the second quadrature index
+/// Calculates the ordinate index based on the p and q indices provided
+///
+/// @param [in] p The first quadrature index
+/// @param [in] q The second quadrature index
+/// @param [out] index The ordinate index 
 int Mesh::quad_index(int p, int q){
 
-  int index; ///< index to be returned
+  // Index to be returned
+  int index; 
 
-  // if the p < 6, xi is negative and we simply call lower quad index
-  if(p < 6 )
+  // If the p < 6, xi is negative and we simply call lower quad index
+  if(p < 6)
     index = low_quad_index(p,q);
 
-  // otherwise, xi is positive and we need to perform some algebraic 
+  // Otherwise, xi is positive and we need to perform some algebraic 
   // manipulations to ge the correct index
   else
     index = 42 + 42 - low_quad_index(11 - p, 2*(12 - p) - q);
@@ -498,11 +521,11 @@ int Mesh::quad_index(int p, int q){
 //==============================================================================
 
 //=============================================================================
-//! low_quad_index returns an index considering sequential numbering in the 
-//! region where xi is negative
-
-//! \param p the first quadrature index
-//! \param q the second quadrature index
+/// Returns an index for an ordinate located where xi < 0 
+///
+/// @param [in] p The first quadrature index
+/// @param [in] q The second quadrature index
+/// @param [out] index The ordinate index 
 int Mesh::low_quad_index(int p, int q){
 
   int index = q + p*p + p;
@@ -512,10 +535,11 @@ int Mesh::low_quad_index(int p, int q){
 //==============================================================================
 
 //==============================================================================
-//! editAngularMesh prints out quadrature set and differencing coefficients
+/// Prints out quadrature set, differencing coefficients, and tau coefficients
+
 void Mesh::printQuadSet(){        
 
-  // print quadrature set	
+  // Print quadrature set	
   cout << "QUADRATURE SET:"<<endl;
   cout << "Number of ordinates: " << nAngles;
   cout << ", total weight: " << totalWeight << endl; 
@@ -535,7 +559,7 @@ void Mesh::printQuadSet(){
   cout << "Number of levels: " << quadrature.size() << endl;
   cout<<""<< endl;
 
-  // print differencing materials
+  // Print differencing materials
   cout << "DIFFERENCING COEFFICIENTS:"<<endl;
   for (int i = 0; i < quadrature.size(); ++i){
     for(int j = 0; j < quadrature[i].alpha.size(); ++j){
@@ -546,7 +570,7 @@ void Mesh::printQuadSet(){
     cout<< endl;
   }
 
-  // print tau info	
+  // Print tau info	
   cout<< endl;
   cout << "TAU:"<<endl;
   for (int i = 0; i < quadrature.size(); ++i){
