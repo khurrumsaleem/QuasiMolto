@@ -7,16 +7,17 @@
 using namespace std; 
 
 //==============================================================================
-//! StartingAngle class that solves RZ neutron transport at the starting angles
+//! SimpleCornerBalance class that solves RZ neutron transport
 
-class StartingAngle
+class SimpleCornerBalance
 {
   public:
   // public functions
-  StartingAngle(Mesh * myMesh,
-          Materials * myMaterials,\
-          YAML::Node * myInput);
-  void calcStartingAngle(cube * halfAFlux,\
+  SimpleCornerBalance(Mesh * myMesh,\
+    Materials * myMaterials,\
+    YAML::Node * myInput);
+  void solve(cube * aFlux,\
+    cube * halfAFlux,\
     Eigen::MatrixXd * source,\
     Eigen::MatrixXd * alpha,\
     int energyGroup);
@@ -27,8 +28,8 @@ class StartingAngle
   Eigen::MatrixXd calckZ(double myGamma);
   Eigen::MatrixXd calclR(double myGamma);
   Eigen::MatrixXd calclZ(double myGamma);
-  Eigen::MatrixXd calct1(double myGamma);
-  Eigen::MatrixXd calct2(double myGamma);
+  Eigen::MatrixXd calct(double myGamma);
+  Eigen::MatrixXd calcR(double myGamma);
   Eigen::VectorXd calcSubCellVol(int myiZ, int myiR);
 
   private:

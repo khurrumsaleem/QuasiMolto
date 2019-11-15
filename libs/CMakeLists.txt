@@ -5,4 +5,7 @@ add_library(libs
 	Transport.cpp
 	Mesh.cpp
         StartingAngle.cpp
+        MultiGroupTransport.cpp
+        SingleGroupTransport.cpp
+	SimpleCornerBalance.cpp
         Material.cpp)

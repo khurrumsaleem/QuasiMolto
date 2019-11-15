@@ -8,31 +8,40 @@
 #include "../libs/Mesh.h"
 #include "../libs/StartingAngle.h"
 #include "../libs/Material.h"
+#include "../libs/MultiGroupTransport.h"
+#include "../libs/SingleGroupTransport.h"
+#include "../libs/SimpleCornerBalance.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
 
-int main(void) {
+int main(int argc, char** argv) {
 
-     YAML::Node * input;
-     input = new YAML::Node;
-     *input = YAML::LoadFile("input.yaml");
-     cout << "Print from driver" << endl;
+  // get input file
+  YAML::Node * input;
+  input = new YAML::Node;
+  if (argc>1){
+    *input = YAML::LoadFile(argv[1]);
+  } else {
+    *input = YAML::LoadFile("input.yaml");
+  }
+       
+  printMultiGroupQD();
+  printSingleGroupQD();
+  printTransport();
 
-     printMultiGroupQD();
-     printSingleGroupQD();
-     printTransport();
+  // initialize mesh object
+  Mesh * myMesh; 
+  myMesh = new Mesh(input);
+  myMesh->printQuadSet();
 
-     Mesh * myMesh; 
-     myMesh = new Mesh(input);
-     myMesh->printQuadSet();
+  // initialize materials object
+  Materials * myMaterials;
+  myMaterials = new Materials(myMesh,input);
+      
+  // initialize multigroup transport object
+  MultiGroupTransport * myMGT; 
+  myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
 
-     Materials * myMaterials;
-     myMaterials = new Materials(myMesh,input);
-    
-     StartingAngle myStartingAngle(myMesh,myMaterials,input);
-     myStartingAngle.calcStartingAngle();
-     myMaterials->edit();
-
-     return(0);
+return(0);
 }
