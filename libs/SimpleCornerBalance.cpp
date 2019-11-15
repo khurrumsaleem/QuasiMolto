@@ -105,6 +105,9 @@ void SimpleCornerBalance::solve(cube * aFlux,\
   // cell average value.
   Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(rows);
 
+  // set dirichlet boundary conditions
+  double rBC = 5,zBC = 5;
+
   for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 
     // get xi for this quadrature level
@@ -259,12 +262,20 @@ void SimpleCornerBalance::solve(cube * aFlux,\
               upstream = mu*(*aFlux)(iZ,iR+borderCellR,angIdx)\
               *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
               b = b - upstream;
+            } else {
+              upstream = mu*rBC\
+              *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+              b = b - upstream;
             }
 
             // consider axial boundary values defined in other cells 
             // or by BCs
             if (iZ!=zStart){
               upstream = xi*(*aFlux)(iZ+borderCellZ,iR,angIdx)\
+              *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
+              b = b - upstream;
+            } else{
+              upstream = xi*zBC\
               *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
               b = b - upstream;
             }
@@ -475,7 +486,12 @@ void SimpleCornerBalance::solve(cube * aFlux,\
               upstream = xi*(*aFlux)(iZ+borderCellZ,iR,angIdx)\
               *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
               b = b - upstream;
+            } else{
+              upstream = xi*zBC\
+              *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
+              b = b - upstream;
             }
+
 
             // solve for angular fluxes in each corner 
             x = A.partialPivLu().solve(b);
