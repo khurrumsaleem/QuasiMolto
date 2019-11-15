@@ -35,6 +35,7 @@ class Materials
 	double nu(int zIdx,int rIdx);
         Eigen::VectorXd neutV;
         int nGroups;
+        void checkMats();
         void edit();
 
         private:

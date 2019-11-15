@@ -31,6 +31,7 @@ class Material
                 Eigen::VectorXd myChiP,\
                 Eigen::VectorXd myChiD,\
 		double myNu);
+        void checkMat();
 	void edit();
 
 };

@@ -30,7 +30,9 @@ Materials::Materials(Mesh * myMesh,\
 	matMap.setZero(mesh->zCent.size(),mesh->rCent.size());
 	readMats();
 	readGeom();
-        
+        edit();
+        checkMats();        
+       
         // check if neutron velocities are specified in input
         if ((*input)["parameters"]["neutron velocity"]){
 	        neutVInp = (*input)["parameters"]["neutron velocity"]\
@@ -149,20 +151,6 @@ void Materials::setMatRegion(int myIndex,double rIn,double rOut,double zLow,doub
 //==============================================================================
 
 //==============================================================================
-//! edit Print out material map and all entries in material bank
-
-void Materials::edit()
-{
-	cout << "Material map: " << endl;
-	cout << matMap << endl;
-	for (int iCount = 0; iCount < matBank.size(); ++iCount){
-		matBank[iCount]->edit();
-	}
-};
-
-//==============================================================================
-
-//==============================================================================
 //! sigT return total cross section
 
 // return total cross section at location indicated by input indices
@@ -225,6 +213,7 @@ double Materials::chiP(int zIdx,int rIdx,int eIndx){
 };
 
 //==============================================================================
+
 //==============================================================================
 //! chiD return probability that a delayed neutron will be born
 
@@ -257,6 +246,32 @@ double Materials::nu(int zIdx,int rIdx){
 
 //==============================================================================
 
+//==============================================================================
+//! checkMats Check to see if nuclear data defined on each group is sensible
+
+void Materials::checkMats()
+{
+	for (int iCount = 0; iCount < matBank.size(); ++iCount){
+		matBank[iCount]->checkMat();
+	}
+};
+
+//==============================================================================
+
+//==============================================================================
+//! edit Print out material map and all entries in material bank
+
+void Materials::edit()
+{
+	cout << "Material map: " << endl;
+	cout << matMap << endl;
+	cout << endl;
+	for (int iCount = 0; iCount < matBank.size(); ++iCount){
+		matBank[iCount]->edit();
+	}
+};
+
+//==============================================================================
 
 
 
