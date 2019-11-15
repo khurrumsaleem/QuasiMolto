@@ -24,10 +24,21 @@ SimpleCornerBalance::SimpleCornerBalance(Mesh * myMesh,\
   Materials * myMaterials,\
   YAML::Node * myInput)	      
 {
-// Point to variables for mesh and input file
+  // Point to variables for mesh and input file
   mesh = myMesh;
   input = myInput;
   materials = myMaterials;
+
+  // check for optional inputs  
+  if ((*input)["parameters"]["upperBC"]){
+    upperBC=(*input)["parameters"]["upperBC"].as<double>();
+  }
+  if ((*input)["parameters"]["lowerBC"]){
+    lowerBC=(*input)["parameters"]["lowerBC"].as<double>();
+  }
+  if ((*input)["parameters"]["outerBC"]){
+    outerBC=(*input)["parameters"]["outerBC"].as<double>();
+  }
 };
 
 //==============================================================================
@@ -106,7 +117,7 @@ void SimpleCornerBalance::solve(cube * aFlux,\
   Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(rows);
 
   // set dirichlet boundary conditions
-  double rBC = 5,zBC = 5;
+  double rBC,zBC;
 
   for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 
@@ -145,21 +156,33 @@ void SimpleCornerBalance::solve(cube * aFlux,\
         // outside the cell 
         outUpstreamR = {1,2};
 
+        // set dirichlet boundary condition
+        rBC = outerBC;
+
         // depending on xi, define parameters for marching across the
         // axial domain	
         if (xi > 0) {
  
-          // marching from the top to the bottom
+          // marching from the bottom to the top
           zStart = mesh->dzs.size()-1;
           zEnd = 0;
           zInc = -1;
           borderCellZ = 1;
+          
+          // corners whose axial boundaries are defined by values
+          // within the cell 
           withinUpstreamZ = {2,3};
+          
+          // corners whose axial boundaries are defined by values 
+          // outside the cell
           outUpstreamZ = {0,1};
+          
+          // set dirichlet bc
+          zBC = lowerBC;
         }
         else {			
 
-          // marching from the bottom to the top
+          // marching from the top to the bottom
           zStart = 0;
           zEnd = mesh->dzs.size();
           zInc = 1;
@@ -172,6 +195,9 @@ void SimpleCornerBalance::solve(cube * aFlux,\
           // corners whose axial boundaries are defined by values 
           // outside the cell
           outUpstreamZ = {2,3};
+
+          // set dirichlet bc
+          zBC = upperBC;
         }
 
         for (int iR = rStart, countR = 0; countR < mesh->drs.size();\
@@ -341,7 +367,7 @@ void SimpleCornerBalance::solve(cube * aFlux,\
         // axial domain
         if (xi > 0) {
 
-          // marhcing from the top to the bottom
+          // marching from the bottom to the top
           zStart = mesh->dzs.size()-1;
           zEnd = 0;
           zInc = -1;
@@ -354,10 +380,13 @@ void SimpleCornerBalance::solve(cube * aFlux,\
           // corners whose axial boundaries are defined by values
           // outside the cell
           outUpstreamZ = {0,1};
+        
+          // set dirichlet boundary condition
+          zBC = lowerBC;
         }
         else {			
 
-          // marching from the bottom to the top
+          // marching from the top to the bottom
           zStart = 0;
           zEnd = mesh->dzs.size();
           zInc = 1;
@@ -370,6 +399,9 @@ void SimpleCornerBalance::solve(cube * aFlux,\
           // corners whose axial boundaries are defined by values
           // outside the cell
           outUpstreamZ = {2,3};
+          
+          // set dirichlet boundary condition
+          zBC = upperBC;
         }
         for (int iR = rStart, countR = 0; countR < mesh->drs.size();\
            ++iR, ++countR){
@@ -512,7 +544,6 @@ void SimpleCornerBalance::solve(cube * aFlux,\
       } // if mu > 0
     } //iMu
   } //iXi
-  //cout << *aFlux << endl;
 };
 //==============================================================================
 

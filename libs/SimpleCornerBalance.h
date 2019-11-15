@@ -21,6 +21,9 @@ class SimpleCornerBalance
     Eigen::MatrixXd * source,\
     Eigen::MatrixXd * alpha,\
     int energyGroup);
+  
+  // default boundary conditions; homogeneous
+  double upperBC=0,lowerBC=0,outerBC=0;
   Eigen::MatrixXd calckR(double myGamma);
   Eigen::MatrixXd calckZ(double myGamma);
   Eigen::MatrixXd calclR(double myGamma);
