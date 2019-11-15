@@ -300,7 +300,7 @@ bool MultiGroupTransport::sourceIteration()
 
     // if the fluxes are globally converged, break out of the for loop
     if (allConverged) {
-      cout << "Converged in " << iter << " iterations."<< endl;
+      cout << "Converged in " << iter+1 << " iteration(s)."<< endl;
       break;
     }
 
