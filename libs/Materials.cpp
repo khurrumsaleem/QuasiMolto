@@ -201,7 +201,7 @@ double Materials::sigT(int zIdx,int rIdx,int eIdx){
 
   double sigT = matBank[matMap(zIdx,rIdx)]->sigT(eIdx);
 
-  // eventually there will need to be some manipulation here that 
+  // Eventually there will need to be some manipulation here that 
   // extrapolates the cross section based on temperature
 
   return sigT;
@@ -219,7 +219,7 @@ double Materials::sigS(int zIdx,int rIdx,int gprime,int g){
 
   double sigS = matBank[matMap(zIdx,rIdx)]->sigS(gprime,g);
 
-  // eventually there will need to be some manipulation here that 
+  // Eventually there will need to be some manipulation here that 
   // extrapolates the cross section based on temperature
 
   return sigS;
@@ -237,7 +237,7 @@ double Materials::sigF(int zIdx,int rIdx,int eIndx){
 
   double sigF = matBank[matMap(zIdx,rIdx)]->sigF(eIndx);
 
-  // eventually there will need to be some manipulation here that 
+  // Eventually there will need to be some manipulation here that 
   // extrapolates the cross section based on temperature
 
   return sigF;
@@ -255,7 +255,7 @@ double Materials::chiP(int zIdx,int rIdx,int eIndx){
 
   double chiP = matBank[matMap(zIdx,rIdx)]->chiP(eIndx);
 
-  // eventually there will need to be some manipulation here that 
+  // Eventually there will need to be some manipulation here that 
   // extrapolates the cross section based on temperature
 
   return chiP;
@@ -273,7 +273,7 @@ double Materials::chiD(int zIdx,int rIdx,int eIndx){
 
   double chiD = matBank[matMap(zIdx,rIdx)]->chiD(eIndx);
 
-  // eventually there will need to be some manipulation here that 
+  // Eventually there will need to be some manipulation here that 
   // extrapolates the cross section based on temperature
 
   return chiD;
@@ -291,7 +291,7 @@ double Materials::nu(int zIdx,int rIdx){
 
   double nu = matBank[matMap(zIdx,rIdx)]->nu;
 
-  // eventually there will need to be some manipulation here that 
+  // Eventually there will need to be some manipulation here that 
   // extrapolates the cross section based on temperature
 
   return nu;
