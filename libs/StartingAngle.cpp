@@ -26,11 +26,22 @@ StartingAngle::StartingAngle(Mesh * myMesh,\
 	Materials * myMaterials,\
 	YAML::Node * myInput)	      
 {
-	// Point to variables for mesh and input file
-	mesh = myMesh;
-	input = myInput;
-	materials = myMaterials;
-	
+  // Point to variables for mesh and input file
+  mesh = myMesh;
+  input = myInput;
+  materials = myMaterials;
+
+  // check for optional inputs  
+  if ((*input)["parameters"]["upperBC"]){
+    upperBC=(*input)["parameters"]["upperBC"].as<double>();
+  }
+  if ((*input)["parameters"]["lowerBC"]){
+    lowerBC=(*input)["parameters"]["lowerBC"].as<double>();
+  }
+  if ((*input)["parameters"]["outerBC"]){
+    outerBC=(*input)["parameters"]["outerBC"].as<double>();
+  }
+
 };
 
 //==============================================================================
@@ -89,6 +100,9 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 	Eigen::VectorXd x = Eigen::VectorXd::Zero(rows);
 	// source 
 	Eigen::VectorXd q = Eigen::VectorXd::Ones(rows);
+
+        // dirichlet boundary condition
+        double rBC,zBC;
 	
 	for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 		// get xi for this quadrature level
@@ -98,14 +112,23 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
                 borderCellR = 1;
                 withinUpstreamR = {0,3};
                 outUpstreamR = {1,2};
+              
+                // set dirichlet bc
+                rBC=outerBC;
+
 		// depending on xi, define loop constants	
 		if (xi > 0) {
+                        // marching from bottom to top
 			zStart = mesh->dzs.size()-1;
                         zEnd = 0;
                         zInc = -1;
                         borderCellZ = 1;
                         withinUpstreamZ = {2,3};
                         outUpstreamZ = {0,1};
+
+                        // set dirichlet bc
+                        zBC = lowerBC;
+                        
 		}
                 else {			
 			zStart = 0;
@@ -114,6 +137,9 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
                         borderCellZ = -1;
                         withinUpstreamZ = {0,1};
                         outUpstreamZ = {2,3};
+
+                        // set dirichlet bc
+                        zBC = upperBC;
 		}
                 for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
 			for (int iZ = zStart, countZ = 0; \
@@ -184,12 +210,20 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 					upstream = sqrtXi*(*halfAFlux)(iZ,iR+borderCellR,iXi)\
 					*(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
 					b = b - upstream;
-				}
+				}else {
+                                        upstream = sqrtXi*rBC\
+                                        *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+                                        b = b - upstream;
+                                }
 				if (iZ!=zStart){
 					upstream = xi*(*halfAFlux)(iZ+borderCellZ,iR,iXi)\
 					*(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
 					b = b - upstream;
-				}
+				}else{
+                                        upstream = xi*zBC\
+                                        *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
+                                        b = b - upstream;
+                                }
 				x = A.partialPivLu().solve(b);
 				
 				// Take average of subcells
