@@ -40,13 +40,21 @@ minVal=np.min(flux)
 maxVal=np.max(flux)
 
 # Plot the surface.
-for count,ax in enumerate(axes.flat):
-  colorGrid=ax.pcolormesh(Z,R,flux[:,:,count],cmap=cm.viridis,
+if (numGroups > 1):
+  for count,ax in enumerate(axes.flat):
+    colorGrid=ax.pcolormesh(Z,R,flux[:,:,count],cmap=cm.viridis,
+                          norm=(colors.LogNorm(vmin=minVal,vmax=maxVal)))
+#  colorGrid=ax.pcolormesh(Z,R,flux[:,:,count],cmap=cm.viridis,
+#                          vmin=minVal,vmax=maxVal);
+    ax.set_title('Group '+str(count))
+  fig.colorbar(colorGrid, ax=axes.ravel().tolist(),extend='max')
+else:
+  colorGrid=axes.pcolormesh(Z,R,flux[:,:,0],cmap=cm.viridis,
                           norm=(colors.LogNorm(vmin=minVal,vmax=maxVal)))
 
-  ax.set_title('Group '+str(count))
+  axes.set_title('Group '+str(0))
 
-fig.colorbar(colorGrid, ax=axes.ravel().tolist(),extend='max')
+  fig.colorbar(colorGrid, ax=axes,extend='max')
+
 fig.suptitle('Scalar Flux',fontsize=16)
-
 plt.savefig("flux.png")
