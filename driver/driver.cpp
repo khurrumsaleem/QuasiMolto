@@ -39,8 +39,6 @@ int main(int argc, char** argv) {
   Materials * myMaterials;
   myMaterials = new Materials(myMesh,input);
       
-  myMaterials->edit();
-
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
