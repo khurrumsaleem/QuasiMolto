@@ -48,12 +48,20 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
   // Check if neutron velocities are specified in input
   if ((*input)["parameters"]["neutron velocity"]){
     
+    
     neutVInp = (*input)["parameters"]["neutron velocity"]\
             .as<vector<double>>();
-    neutV.setZero(nGroups);
 
-    for (int iGroup = 0; iGroup < nGroups; ++iGroup){
-            neutV(iGroup) = neutVInp[iGroup];
+    if (neutVInp.size() == 1){
+      neutV.setOnes(nGroups);
+      neutV = neutVInp[0]*neutV;
+    } 
+    else {
+      
+      neutV.setZero(nGroups);
+      for (int iGroup = 0; iGroup < nGroups; ++iGroup){
+        neutV(iGroup) = neutVInp[iGroup];
+      }
     }
   } else {
 
