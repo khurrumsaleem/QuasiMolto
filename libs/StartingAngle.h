@@ -22,7 +22,7 @@ class StartingAngle
     int energyGroup);
   
   // default boundary conditions; homogeneous
-  double upperBC=0,lowerBC=0,outerBC=0;
+  vector<double> upperBC,lowerBC,outerBC;
   Eigen::MatrixXd calckR(double myGamma);
   Eigen::MatrixXd calckZ(double myGamma);
   Eigen::MatrixXd calclR(double myGamma);

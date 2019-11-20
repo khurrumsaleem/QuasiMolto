@@ -33,16 +33,60 @@ StartingAngle::StartingAngle(Mesh * myMesh,\
   mesh = myMesh;
   input = myInput;
   materials = myMaterials;
+  
+  // Size boundary value vectors to hold boundaries in each energy group
+  upperBC.resize(materials->nGroups);
+  lowerBC.resize(materials->nGroups);
+  outerBC.resize(materials->nGroups);
+  
+  vector<double> inpUpperBC,inpLowerBC,inpOuterBC;
 
-  // Check for optional inputs  
+  // Check for optional inputs
   if ((*input)["parameters"]["upperBC"]){
-    upperBC=(*input)["parameters"]["upperBC"].as<double>();
+    inpUpperBC=(*input)["parameters"]["upperBC"].as<vector<double>>();
+
+    // Check if a blanket or unique conditions are input
+    if (inpUpperBC.size() == 1)
+      std::fill(upperBC.begin(),upperBC.end(),inpUpperBC[0]);
+    else
+      upperBC = inpUpperBC;
   }
+  else{
+
+    // Set default value
+    std::fill(upperBC.begin(),upperBC.end(),0.0);
+  }
+
   if ((*input)["parameters"]["lowerBC"]){
-    lowerBC=(*input)["parameters"]["lowerBC"].as<double>();
+    inpLowerBC=(*input)["parameters"]["lowerBC"].as<vector<double>>();
+
+    // Check if a blanket or unique conditions are input
+    if (inpLowerBC.size() == 1)
+      std::fill(lowerBC.begin(),lowerBC.end(),inpLowerBC[0]);
+    else
+      lowerBC = inpLowerBC;
+
   }
+  else{
+
+    // Set default value
+    std::fill(lowerBC.begin(),lowerBC.end(),0.0);
+  }
+
   if ((*input)["parameters"]["outerBC"]){
-    outerBC=(*input)["parameters"]["outerBC"].as<double>();
+    inpOuterBC=(*input)["parameters"]["outerBC"].as<vector<double>>();
+
+    // Check if a blanket or unique conditions are input
+    if (inpOuterBC.size() == 1)
+      std::fill(outerBC.begin(),outerBC.end(),inpOuterBC[0]);
+    else
+      outerBC = inpOuterBC;
+
+  }
+  else{
+
+    // Set default value
+    std::fill(outerBC.begin(),outerBC.end(),0.0);
   }
 
 };
@@ -128,7 +172,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
     outUpstreamR = {1,2};
   
     // Set dirichlet bc
-    rBC=outerBC;
+    rBC=outerBC[energyGroup];
 
     // Depending on xi, define loop constants	
     if (xi > 0) {
@@ -141,7 +185,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
       outUpstreamZ = {0,1};
 
       // Set dirichlet bc
-      zBC = lowerBC;
+      zBC = lowerBC[energyGroup];
             
     }
     else {			
@@ -153,7 +197,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
       outUpstreamZ = {2,3};
 
       // Set dirichlet bc
-      zBC = upperBC;
+      zBC = upperBC[energyGroup];
     }
     for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
       for (int iZ = zStart, countZ = 0; \

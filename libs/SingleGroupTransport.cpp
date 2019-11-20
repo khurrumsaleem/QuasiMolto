@@ -43,6 +43,9 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
   mesh = myMesh;
   input = myInput;
 
+  // vectors for reading in temporary variables
+  vector<double> inpSFlux0,inpSFluxPrev0,inpAlpha0;
+
   // Initialize angular fluxes
   aFlux.set_size(mesh->zCent.size(),mesh->rCent.size(),mesh->nAngles);
   aFlux.zeros();
@@ -61,12 +64,42 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
   sFluxPrev.setOnes(mesh->zCent.size(),mesh->rCent.size());
 
   // Initialize alphas, total source, scattering source, and fission source
-  alpha.setZero(mesh->zCent.size(),mesh->rCent.size());
+  alpha.setOnes(mesh->zCent.size(),mesh->rCent.size());
   q.setZero(mesh->zCent.size(),mesh->rCent.size());
   scatterSource.setZero(mesh->zCent.size(),mesh->rCent.size());
   fissionSource.setZero(mesh->zCent.size(),mesh->rCent.size());
 
-  cout << "Created transport energy group " << energyGroup << endl;
+  // Check for optional inputs and read them in.
+  if ((*input)["parameters"]["initial flux"]){
+
+    inpSFlux0=(*input)["parameters"]["initial flux"].as<vector<double>>();
+
+    if (inpSFlux0.size() == 1)
+      sFlux = inpSFlux0[0]*sFlux;
+    else
+      sFlux = inpSFlux0[energyGroup]*sFlux;
+  } 
+
+  if ((*input)["parameters"]["initial previous flux"]){
+
+    inpSFluxPrev0=(*input)["parameters"]["initial previous flux"].as<vector<double>>();
+
+    if (inpSFluxPrev0.size() == 1)
+      sFluxPrev = inpSFluxPrev0[0]*sFluxPrev;
+    else
+      sFluxPrev = inpSFluxPrev0[energyGroup]*sFluxPrev;
+  } 
+
+  if ((*input)["parameters"]["initial alpha"]){
+
+    inpAlpha0=(*input)["parameters"]["initial alpha"].as<vector<double>>();
+
+    if (inpAlpha0.size() == 1)
+      alpha = inpAlpha0[0]*alpha;
+    else
+      alpha = inpAlpha0[energyGroup]*alpha;
+  } 
+
 };
 
 //==============================================================================
@@ -122,7 +155,7 @@ double SingleGroupTransport::calcSource(string calcType)
     calcFissionSource();
     q = scatterSource+fissionSource;
   }
-  
+
   // Calculate residual
   residual =  (q_old-q).norm();
   return residual;
@@ -184,7 +217,7 @@ double SingleGroupTransport::calcFissionSource()
 //==============================================================================
 
 //==============================================================================
-/// Calculate the fission source in this object
+/// Calculate the scatter source in this object
 ///
 /// Assuming the fluxes currently contained in this object
 /// @param [out] residual L2 norm of difference between newly calculated 
