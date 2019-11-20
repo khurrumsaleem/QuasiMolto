@@ -84,7 +84,7 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
 
     inpSFluxPrev0=(*input)["parameters"]["initial previous flux"].as<vector<double>>();
 
-    if (inpSFlux0.size() == 1)
+    if (inpSFluxPrev0.size() == 1)
       sFluxPrev = inpSFluxPrev0[0]*sFluxPrev;
     else
       sFluxPrev = inpSFluxPrev0[energyGroup]*sFluxPrev;
@@ -94,20 +94,11 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
 
     inpAlpha0=(*input)["parameters"]["initial alpha"].as<vector<double>>();
 
-    if (inpSFlux0.size() == 1)
+    if (inpAlpha0.size() == 1)
       alpha = inpAlpha0[0]*alpha;
     else
       alpha = inpAlpha0[energyGroup]*alpha;
   } 
-
-  cout << "Created transport energy group " << energyGroup << endl;
-  cout << "alpha" << endl;
-  cout << alpha << endl;
-  cout << "sFlux" << endl;
-  cout << sFlux << endl;
-  cout << "sFluxPrev" << endl;
-  cout << sFluxPrev << endl;
-
 
 };
 
@@ -162,17 +153,9 @@ double SingleGroupTransport::calcSource(string calcType)
     // Re-evaluate scattering and fission source
     calcScatterSource();
     calcFissionSource();
-    //fissionSource.setOnes();
-    //fissionSource = 10*fissionSource;
     q = scatterSource+fissionSource;
   }
 
-  cout << "Source: " << endl;
-  cout << q << endl;  
-  cout << "Alpha: " << endl;
-  cout << alpha << endl;  
-  cout << "Fission source: " << endl;
-  cout << fissionSource << endl;  
   // Calculate residual
   residual =  (q_old-q).norm();
   return residual;
