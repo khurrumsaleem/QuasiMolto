@@ -307,9 +307,12 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
         x = A.partialPivLu().solve(b);
         
         // Take average of half angle fluxes in corners
-        (*halfAFlux)(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
-        (*halfAFlux)(iZ,iR,iXi) = x.sum()/4.0;
-        (*halfAFlux)(iZ,iR,iXi) = x();
+        //(*halfAFlux)(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
+        //(*halfAFlux)(iZ,iR,iXi) = x.sum()/4.0;
+        (*halfAFlux)(iZ+corner1Offset[1],iR+corner1Offset[0],iXi) = x(0);
+        (*halfAFlux)(iZ+corner2Offset[1],iR+corner2Offset[0],iXi) = x(1);
+        (*halfAFlux)(iZ+corner3Offset[1],iR+corner3Offset[0],iXi) = x(2);
+        (*halfAFlux)(iZ+corner4Offset[1],iR+corner4Offset[0],iXi) = x(3);
       }
     }
   }
