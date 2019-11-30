@@ -254,7 +254,7 @@ void Mesh::calcAlpha(){
   
   for (int i = 0; i < alpha.size(); ++i){
     
-    // Initialize to 0 on the edge case to conservei neutrons. Explanation 
+    // Initialize to 0 on the edge case to conserve neutrons. Explanation 
     // on page 179 of L&M.
     alpha[i][0] = 0; 
     
@@ -324,7 +324,7 @@ void Mesh::calcTau(){
       tau[i][rowLength[i]-iTau-1] = \
       (quadSet[quad_index(i,rowLength[i]-1-iTau)][1]-halfMu[iTau])\
       /(halfMu[iTau+1]-halfMu[iTau]);
-
+      
     }
   }
 }
@@ -343,10 +343,10 @@ void Mesh::calcSpatialMesh(){
   nCellsR = R/dr;
 
   // Resize vectors storing dimensions of each cell
-  dzs.zeros(nCellsZ);
-  dzs.fill(dz);
-  drs.zeros(nCellsR);
-  drs.fill(dr);
+  dzs.zeros(2*nCellsZ);
+  dzs.fill(dz/2.0);
+  drs.zeros(2*nCellsR);
+  drs.fill(dr/2.0);
 
   // Resize vector holding boundaries in each dimension
   rEdge.zeros(nCellsR+1);
