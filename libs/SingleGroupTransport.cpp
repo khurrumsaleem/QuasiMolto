@@ -47,27 +47,27 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
   vector<double> inpSFlux0,inpSFluxPrev0,inpAlpha0;
 
   // Initialize angular fluxes
-  aFlux.set_size(mesh->zCent.size(),mesh->rCent.size(),mesh->nAngles);
+  aFlux.set_size(2*mesh->zCent.size(),2*mesh->rCent.size(),mesh->nAngles);
   aFlux.zeros();
   
   // Initialize half angle angular fluxes used to approximate the angular
   // redistribution term of the RZ neutron transport equation
-  aHalfFlux.set_size(mesh->zCent.size(),mesh->rCent.size(),\
+  aHalfFlux.set_size(2*mesh->zCent.size(),2*mesh->rCent.size(),\
     mesh->quadrature.size());
   aHalfFlux.zeros();
 
   // Initialize scalar fluxes
-  sFlux.setOnes(mesh->zCent.size(),mesh->rCent.size());
+  sFlux.setOnes(2*mesh->zCent.size(),2*mesh->rCent.size());
 
   // Set scalar flux at previous time step. Set to ones. Setting to zero
   // would produce NaNs when calculating the alphas in each cell
-  sFluxPrev.setOnes(mesh->zCent.size(),mesh->rCent.size());
+  sFluxPrev.setOnes(2*mesh->zCent.size(),2*mesh->rCent.size());
 
   // Initialize alphas, total source, scattering source, and fission source
-  alpha.setOnes(mesh->zCent.size(),mesh->rCent.size());
-  q.setZero(mesh->zCent.size(),mesh->rCent.size());
-  scatterSource.setZero(mesh->zCent.size(),mesh->rCent.size());
-  fissionSource.setZero(mesh->zCent.size(),mesh->rCent.size());
+  alpha.setOnes(2*mesh->zCent.size(),2*mesh->rCent.size());
+  q.setZero(2*mesh->zCent.size(),2*mesh->rCent.size());
+  scatterSource.setZero(2*mesh->zCent.size(),2*mesh->rCent.size());
+  fissionSource.setZero(2*mesh->zCent.size(),2*mesh->rCent.size());
 
   // Check for optional inputs and read them in.
   if ((*input)["parameters"]["initial flux"]){
