@@ -118,6 +118,8 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
   vector<int> outUpstreamR(2);
   vector<int> withinUpstreamZ(2);
   vector<int> outUpstreamZ(2);
+  vector<int> corner1Offest(2),corner2Offest(2),corner3Offest(2),\
+  corner4Offest(2);
   double gamma;
 
   // Within cell leakage matrices in R and Z directions
@@ -182,10 +184,14 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
       // Marching from bottom to top
       zStart = mesh->dzs.size()-1;
       zEnd = 0;
-      zInc = -1;
+      zInc = -2;
       borderCellZ = 1;
       withinUpstreamZ = {2,3};
       outUpstreamZ = {0,1};
+      corner1Offset = {-1,0};
+      corner2Offset = {0,0};
+      corner3Offset = {0,-1};
+      corner4Offset = {-1,-1};
 
       // Set dirichlet bc
       zBC = lowerBC[energyGroup];
@@ -194,17 +200,22 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
     else {			
       zStart = 0;
       zEnd = mesh->dzs.size();
-      zInc = 1;
+      zInc = 2;
       borderCellZ = -1;
       withinUpstreamZ = {0,1};
       outUpstreamZ = {2,3};
+      corner1Offset = {-1,1};
+      corner2Offset = {0,1};
+      corner3Offset = {0,0};
+      corner4Offset = {-1,0};
 
       // Set dirichlet bc
       zBC = upperBC[energyGroup];
     }
-    for (int iR = rStart, countR = 0; countR < mesh->drs.size(); --iR, ++countR){
+    for (int iR = rStart, countR = 0; countR < mesh->drs.size(); iR = iR - 2,\
+    countR = countR + 2){
       for (int iZ = zStart, countZ = 0; \
-        countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
+        countZ < mesh->dzs.size(); iZ = iZ + zInc, countZ = countZ + 2){
         
         // determine source, effective cross section, and gamma in this cell
         q.setOnes();
@@ -298,6 +309,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
         // Take average of half angle fluxes in corners
         (*halfAFlux)(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
         (*halfAFlux)(iZ,iR,iXi) = x.sum()/4.0;
+        (*halfAFlux)(iZ,iR,iXi) = x();
       }
     }
   }
