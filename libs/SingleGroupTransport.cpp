@@ -314,6 +314,8 @@ double SingleGroupTransport::calcAlpha()
   for (int iZ = 0; iZ < mesh->zCent.size(); ++iZ){
     for (int iR = 0; iR < mesh->rCent.size(); ++iR){
       alpha(iZ,iR) = (1.0/deltaT)*log(sFlux(iZ,iR)/sFluxPrev(iZ,iR));
+      // for debugging MMS
+      alpha(iZ,iR) = 1.0;
     } // iR
   } // iZ
    

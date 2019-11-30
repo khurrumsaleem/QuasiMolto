@@ -107,7 +107,7 @@ void SimpleCornerBalance::solve(cube * aFlux,\
   int energyGroup)
 {
   // Index xi, mu, and weight values are stored in quadLevel object
-  const int xiIndex=0,muIndex=1,weightIndex=3;
+  const int xiIndex=0,muIndex=1,etaIndex=2,weightIndex=3;
 
   // Temporary variables used for looping though quad set
   double xi,sigT,mu,alphaMinusOneHalf,alphaPlusOneHalf,weight,\
@@ -170,6 +170,11 @@ void SimpleCornerBalance::solve(cube * aFlux,\
   // Set dirichlet boundary conditions
   double rBC,zBC;
 
+  // MMS terms
+  Eigen::VectorXd mmsQ;
+
+  double inverse_average;  
+
   for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 
     // Get xi for this quadrature level
@@ -191,6 +196,7 @@ void SimpleCornerBalance::solve(cube * aFlux,\
       // flux for this ordinate
       angIdx= mesh->quadrature[iXi].ordIdx[iMu];
 
+      cout << "mu < 0" << endl;
       // Do cases where mu < 0 first, as those solutions are needed to 
       // to define the reflecting boundary condition at Z=0 
       if (mu < 0 ){
@@ -253,6 +259,9 @@ void SimpleCornerBalance::solve(cube * aFlux,\
 
         for (int iR = rStart, countR = 0; countR < mesh->drs.size();\
           --iR, ++countR){
+          
+          cout << "iR: " << endl;
+          cout << iR << endl;
 
           for (int iZ = zStart, countZ = 0; \
             countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
@@ -356,6 +365,13 @@ void SimpleCornerBalance::solve(cube * aFlux,\
               *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
               b = b - upstream;
             }
+            
+            
+            subCellVol = calcSubCellVol(iZ,iR);	
+            mmsQ=calcMMSSource(iZ,iR,energyGroup,iXi,iMu,sigT,subCellVol);
+            b = b + 0.25*mmsQ;
+
+            // Solve for angular fluxes in each corner 
 
             // Solve for angular fluxes in each corner
             x = A.partialPivLu().solve(b);
@@ -363,8 +379,10 @@ void SimpleCornerBalance::solve(cube * aFlux,\
             // Take average of corner values to get angular flux 
             // for this cell
             subCellVol = calcSubCellVol(iZ,iR);	
+            cout << "x: " << x << endl;	
             (*aFlux)(iZ,iR,angIdx) = x.dot(subCellVol)/subCellVol.sum();
-
+ 
+            (*aFlux)(iZ,iR,angIdx) = x.sum()/4.0;            
             // Use weighted diamond difference to calculate next half
             // angle flux used for next value of mu in this quadrature 
             // level
@@ -398,6 +416,8 @@ void SimpleCornerBalance::solve(cube * aFlux,\
       // This is the index [aFlux(:,:,angIdx)] that contains the angular
       // flux for this ordinate
       angIdx= mesh->quadrature[iXi].ordIdx[iMu];
+      
+      cout << "mu > 0" << endl;
 
       // Do cases where mu > 0, as the boundary values are defined now
       if (mu > 0 ){
@@ -456,7 +476,10 @@ void SimpleCornerBalance::solve(cube * aFlux,\
         }
         for (int iR = rStart, countR = 0; countR < mesh->drs.size();\
            ++iR, ++countR){
-          
+         
+          cout << "iR: " << endl;
+          cout << iR << endl;
+           
           for (int iZ = zStart, countZ = 0; \
             countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
 
@@ -545,9 +568,11 @@ void SimpleCornerBalance::solve(cube * aFlux,\
               numQs = mesh->quadrature[iXi].nOrd;
               reflectedP= numPs-iXi-1;
               reflectedQ= numQs-iMu-1;
-
+              cout << "iXi: " << iXi << ", iMu: " << iMu << endl;    
+              cout << "Reflected iXi: " << reflectedP << ", iMu: " << reflectedQ << endl;    
+              cout << endl; 
               // Get angular index of reflect flux
-              reflectedAngIdx = mesh->quadrature[reflectedP].ordIdx[reflectedQ]; 
+              reflectedAngIdx = mesh->quadrature[iXi].ordIdx[reflectedQ]; 
               
               // Account for reflected flux at boundary
               upstream = mu*(*aFlux)(iZ,iR,reflectedAngIdx)\
@@ -574,16 +599,21 @@ void SimpleCornerBalance::solve(cube * aFlux,\
               *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
               b = b - upstream;
             }
-
+                        
+            subCellVol = calcSubCellVol(iZ,iR);	
+            mmsQ=calcMMSSource(iZ,iR,energyGroup,iXi,iMu,sigT,subCellVol);
+            b = b + 0.25*mmsQ;
 
             // Solve for angular fluxes in each corner 
             x = A.partialPivLu().solve(b);
 
             // Take average of corner values to get angular flux
             // for this cell
-            subCellVol = calcSubCellVol(iZ,iR);	
+            subCellVol = calcSubCellVol(iZ,iR);
+            cout << "x: " << x << endl;	
             (*aFlux)(iZ,iR,angIdx) = x.dot(subCellVol)/subCellVol.sum();
-
+            
+            (*aFlux)(iZ,iR,angIdx) = x.sum()/4.0;            
             // Use weighted diamond difference to calculate next half
             // angle flux used for next nvalue of mu in this quadrature 
             // level
@@ -595,6 +625,8 @@ void SimpleCornerBalance::solve(cube * aFlux,\
       } // if mu > 0
     } //iMu
   } //iXi
+
+  cout << *aFlux << endl;
 };
 //==============================================================================
 
@@ -720,17 +752,158 @@ Eigen::VectorXd SimpleCornerBalance::calcSubCellVol(int myiZ, int myiR){
   Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(4);
           
   subCellVol(0) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
-    pow(mesh->rEdge(myiR),2));
+    pow(mesh->rEdge(myiR),2))/2;
 
   subCellVol(1) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
-    pow(mesh->rCent(myiR),2));
+    pow(mesh->rCent(myiR),2))/2;
 
   subCellVol(2) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
-    pow(mesh->rCent(myiR),2));
+    pow(mesh->rCent(myiR),2))/2;
 
   subCellVol(3) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
-    pow(mesh->rEdge(myiR),2));
+    pow(mesh->rEdge(myiR),2))/2;
 
   return subCellVol;
 }
 //==============================================================================
+
+//==============================================================================
+/// Calculate MMS source in subcell regions
+///
+/// @param [out]  mmsSource Contains the mmsSource in each cell
+Eigen::VectorXd SimpleCornerBalance::calcMMSSource(int myiZ,int myiR,\
+  int energyGroup, int iXi, int iMu, double sigT, Eigen::VectorXd subCellVol){
+ 
+  // Define material parameters
+  double sigS = materials->sigS(myiZ,myiR,energyGroup,energyGroup);
+  double sigF = materials->sigF(myiZ,myiR,energyGroup);
+  double mySigT = materials->sigT(myiZ,myiR,energyGroup);
+  double nu = materials->nu(myiZ,myiR);
+  double xi = mesh->quadrature[iXi].quad[iMu][0]; 
+  double mu = mesh->quadrature[iXi].quad[iMu][1]; 
+  double eta = mesh->quadrature[iXi].quad[iMu][2]; 
+  double t = 0.0001;
+ 
+  // Return variable
+  Eigen::VectorXd mmsSource = Eigen::VectorXd::Zero(4);
+  
+  // Define bounds corners are integrated over
+  Eigen::MatrixXd z = Eigen::MatrixXd::Zero(2,2);
+  z << mesh->zEdge(myiZ),mesh->zCent(myiZ),\
+    mesh->zCent(myiZ), mesh->zEdge(myiZ+1);
+  Eigen::MatrixXd r = Eigen::MatrixXd::Zero(2,2);
+  r << mesh->rEdge(myiR),mesh->rCent(myiR),\
+    mesh->rCent(myiR), mesh->rEdge(myiR+1);
+  //z << mesh->zEdge(myiZ),mesh->zEdge(myiZ+1),\
+    mesh->zEdge(myiZ), mesh->zEdge(myiZ+1);
+  //r << mesh->rEdge(myiR),mesh->rEdge(myiR+1),\
+    mesh->rEdge(myiR), mesh->rEdge(myiR+1);
+  // Get maximum radius and axial height
+  double R = mesh->R,Z = mesh->Z;
+ 
+  // Set coefficient in exponential
+  double c = 1.0; 
+  double v = 1.0;
+  
+  // Define some temporary variables to clean things up
+  double A = exp(c*t) * pow(mu,3);
+  double B = exp(c*t) * M_PI * xi * pow(mu,2) / Z;
+  double D = -exp(c*t) * mu * ( pow(sin(acos(xi)),2) - 3*pow(eta,2));
+  double F = exp(c*t) * ( pow(mu,2) * (mySigT + c/v) - (4.0*M_PI/3.0)\
+    *(sigS + nu * sigF)); 
+
+  A = exp(c*t) * (mySigT + c/v -1.0*(sigS + nu * sigF)); 
+  B = exp(c*t) * mu;
+  D = exp(c*t) * M_PI * xi/ Z;
+  cout << "xi: " << xi << endl; 
+  cout << "mu: " << mu << endl; 
+  cout << "eta: " << eta << endl; 
+  cout << endl; 
+  cout << "A: " << A << endl; 
+  cout << "B: " << B << endl; 
+  cout << "D: " << D << endl; 
+  cout << "F: " << F << endl; 
+   
+  // Temporary variables to evaluate whole MMS term
+  double term1,term2,term3,term4,term5;
+  double sinUp,sinDown,cosUp,cosDown;
+  double rad1,rad2,rad3,rad4;
+
+  // Counter to index return variable 
+  int count = 0; 
+
+  // Loop over each corner and calculate source
+  for (int iAx = 0; iAx < 2; ++iAx){
+    for (int iRad = 0; iRad < 2; ++iRad){
+    
+      // Evaluate sine and cosine terms
+      sinUp = sin(M_PI*z(iAx,1)/Z);
+      sinDown = sin(M_PI*z(iAx,0)/Z);
+      cosUp = cos(M_PI*z(iAx,1)/Z);
+      cosDown = cos(M_PI*z(iAx,0)/Z);
+      
+      // Evaluate constituent terms
+      rad1 = ((pow(R,2)*r(iRad,1)-pow(r(iRad,1),3))\
+        -(pow(R,2)*r(iRad,0) - pow(r(iRad,0),3)));
+      term1 = -(A*Z/M_PI)*(cosUp-cosDown)*rad1;
+      
+      rad2 = ((pow(R,2)*pow(r(iRad,1),2)/2.0-pow(r(iRad,1),4)/4.0)
+        -(pow(R,2)*pow(r(iRad,0),2)/2.0 - pow(r(iRad,0),4)/4.0));
+      term2 = (B*Z/M_PI)*(sinUp-sinDown)*rad2;
+      
+      rad3 = ((pow(R,2)*r(iRad,1)-pow(r(iRad,1),3)/3.0)\
+        -(pow(R,2)*r(iRad,0)-pow(r(iRad,0),3)/3.0));
+      term3 = -(D*Z/M_PI)*(cosUp-cosDown)*rad3;
+
+      rad4 = ((pow(R,2)*pow(r(iRad,1),2)/2.0-pow(r(iRad,1),4)/4.0)\
+        -(pow(R,2)*pow(r(iRad,0),2)/2.0-pow(r(iRad,0),4)/4.0));
+      term4 = -(F*Z/M_PI)*(cosUp-cosDown)*rad4;
+
+      // define angular independent mms
+      rad1 = ((pow(R,2)*pow(r(iRad,1),2)/2.0-pow(r(iRad,1),4)/4.0)
+        -(pow(R,2)*pow(r(iRad,0),2)/2.0 - pow(r(iRad,0),4)/4.0));
+      term1 = -(A*Z/M_PI)*(cosUp-cosDown)*rad1;
+      
+      rad2 = ((pow(R,2)*r(iRad,1)-pow(r(iRad,1),3)/3.0)\
+        -(pow(R,2)*r(iRad,0)-pow(r(iRad,0),3)/3.0));
+      term2 = (B*Z/M_PI)*(cosUp-cosDown)*rad2;
+      
+      rad3 = ((pow(R,2)*r(iRad,1)-pow(r(iRad,1),3))\
+        -(pow(R,2)*r(iRad,0) - pow(r(iRad,0),3)));
+      term3 = -(B*Z/M_PI)*(cosUp-cosDown)*rad3;
+
+      rad4 = ((pow(R,2)*pow(r(iRad,1),2)/2.0-pow(r(iRad,1),4)/4.0)\
+        -(pow(R,2)*pow(r(iRad,0),2)/2.0-pow(r(iRad,0),4)/4.0));
+      term4 = (D*Z/M_PI)*(sinUp-sinDown)*rad4;
+      
+      term5 = mySigT*subCellVol(count);
+      
+  //    cout <<  "rad1: " << rad1 << endl;
+  //    cout <<  "rad2: " << rad2 << endl;
+  //    cout <<  "rad3: " << rad3 << endl;
+  //    cout <<  "rad4: " << rad4 << endl;
+  
+  //    cout << "term1: " << term1 << endl; 
+  //    cout << "term2: " << term2 << endl; 
+  //    cout << "term3: " << term3 << endl; 
+//      cout << "term4: " << term4 << endl; 
+   //   cout << endl;
+      mmsSource(count) = 4.0*(term1 + term2 + term3 + term4 + term5);
+//      mmsSource(count) = 4.0* (term1 + term2 + term3 + term4) * \
+        subCellVol(count)/subCellVol.sum()+ 4.0*term5;
+      ++count;
+    }
+  }
+  cout << "MMS Source: " << endl;
+  cout << mmsSource << endl;
+  cout <<  "rad1: " << rad1 << endl;
+  cout <<  "rad2: " << rad2 << endl;
+  cout <<  "rad3: " << rad3 << endl;
+  cout <<  "rad4: " << rad4 << endl;
+  cout << endl;
+        
+  return mmsSource;
+}
+//==============================================================================
+
+

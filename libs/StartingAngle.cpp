@@ -160,6 +160,9 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 
   // Dirichlet boundary condition
   double rBC,zBC;
+
+  // MMS source 
+  Eigen::VectorXd mmsQ = Eigen::VectorXd::Zero(rows);
   
   for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 
@@ -286,10 +289,15 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
           *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
           b = b - upstream;
         }
+        
+        mmsQ = calcMMSSource(iZ,iR,energyGroup,iXi,sigT,subCellVol);
+        b = b + 0.25*mmsQ;
+
         x = A.partialPivLu().solve(b);
         
         // Take average of half angle fluxes in corners
         (*halfAFlux)(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
+        (*halfAFlux)(iZ,iR,iXi) = x.sum()/4.0;
       }
     }
   }
@@ -420,14 +428,153 @@ Eigen::VectorXd StartingAngle::calcSubCellVol(int myiZ, int myiR){
   Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(4);
   
   subCellVol(0) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
-          pow(mesh->rEdge(myiR),2));
+          pow(mesh->rEdge(myiR),2))/2;
   subCellVol(1) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
           pow(mesh->rCent(myiR),2));
   subCellVol(2) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
-          pow(mesh->rCent(myiR),2));
+          pow(mesh->rCent(myiR),2))/2;
   subCellVol(3) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
-          pow(mesh->rEdge(myiR),2));
+          pow(mesh->rEdge(myiR),2))/2;
 
   return subCellVol;
 }
 //==============================================================================
+
+//==============================================================================
+/// Calculate MMS source in subcell regions
+///
+/// @param [out]  mmsSource Contains the mmsSource in each cell
+Eigen::VectorXd StartingAngle::calcMMSSource(int myiZ,int myiR,\
+  int energyGroup, int iXi, double sigT, Eigen::VectorXd subCellVol){
+ 
+  // Define material parameters
+  double sigS = materials->sigS(myiZ,myiR,energyGroup,energyGroup);
+  double sigF = materials->sigF(myiZ,myiR,energyGroup);
+  double mySigT = materials->sigT(myiZ,myiR,energyGroup);
+  double nu = materials->nu(myiZ,myiR);
+  double xi = mesh->quadrature[iXi].quad[0][0]; 
+  double mu = -1.0*sin(acos(xi)); 
+  double eta = 0.0; 
+  double t = 0.0001;
+  double gamma = sin(acos(xi));
+ 
+  // Return variable
+  Eigen::VectorXd mmsSource = Eigen::VectorXd::Zero(4);
+  
+  // Define bounds corners are integrated over
+  Eigen::MatrixXd z = Eigen::MatrixXd::Zero(2,2);
+  z << mesh->zEdge(myiZ),mesh->zCent(myiZ),\
+    mesh->zCent(myiZ), mesh->zEdge(myiZ+1);
+  Eigen::MatrixXd r = Eigen::MatrixXd::Zero(2,2);
+  r << mesh->rEdge(myiR),mesh->rCent(myiR),\
+    mesh->rCent(myiR), mesh->rEdge(myiR+1);
+ // z << mesh->zEdge(myiZ),mesh->zEdge(myiZ+1),\
+    mesh->zEdge(myiZ), mesh->zEdge(myiZ+1);
+//  r << mesh->rEdge(myiR),mesh->rEdge(myiR+1),\
+    mesh->rEdge(myiR), mesh->rEdge(myiR+1);
+  // Get maximum radius and axial height
+  double R = mesh->R,Z = mesh->Z;
+  
+  // Set coefficient in exponential
+  double c = 1.0;
+  double v = 1.0;
+
+  // Define some temporary variables to clean things up
+  double A = exp(c*t) * pow(mu,3);
+  double B = exp(c*t) * M_PI * xi * pow(mu,2) / Z;
+  double D = -exp(c*t) * mu * ( pow(sin(acos(xi)),2) - 3*pow(eta,2));
+  double F = exp(c*t) * ( pow(mu,2) * (mySigT + c/v) - (4.0*M_PI/3.0)\
+    *(sigS + nu * sigF)); 
+
+  A = 2.0*exp(c*t) * pow(sin(gamma),3);
+  B = exp(c*t) * M_PI * xi * pow(sin(gamma),2) / Z;
+  D = exp(c*t) * ( pow(sin(gamma),2) * (mySigT + c/v) - (4.0*M_PI/3.0)\
+    *(sigS + nu * sigF)); 
+
+  A = exp(c*t) * (mySigT + c/v -1.0*(sigS + nu * sigF));
+  B = exp(c*t) * mu;
+  D = exp(c*t) * M_PI * xi/ Z;
+ 
+  // Temporary variables to evaluate whole MMS term
+  double term1,term2,term3,term4,term5;
+  double rad1,rad2,rad3,rad4;
+  double sinUp,sinDown,cosUp,cosDown;
+
+  // Counter to index return variable 
+  int count = 0; 
+
+  // Loop over each corner and calculate source
+  for (int iAx = 0; iAx < 2; ++iAx){
+    for (int iRad = 0; iRad < 2; ++iRad){
+    
+      // Evaluate sine and cosine terms
+      sinUp = sin(M_PI*z(iAx,1)/Z);
+      sinDown = sin(M_PI*z(iAx,0)/Z);
+      cosUp = cos(M_PI*z(iAx,1)/Z);
+      cosDown = cos(M_PI*z(iAx,0)/Z);
+      
+      // Evaluate constituent terms
+      rad1 = (pow(r(iRad,1),3)/3.0)- (pow(r(iRad,0),3)/3.0);
+      term1 = -(A*Z/M_PI)*(cosUp-cosDown)*rad1;
+
+      rad2 = ((pow(R,2)*pow(r(iRad,1),2)/2.0)-(pow(r(iRad,1),4)/4.0))\
+        - ((pow(R,2)*pow(r(iRad,0),2)/2.0)-(pow(r(iRad,0),4)/4.0));
+      term2 = (B*Z/M_PI)*(sinUp-sinDown)*rad2;
+
+      rad3=rad2;
+      term3 = -(D*Z/M_PI)*(cosUp-cosDown)*rad3;
+
+
+      // Evaluate constituent terms
+ //     rad1 = ((pow(R,2)*r(iRad,1)-pow(r(iRad,1),3))\
+  //      -(pow(R,2)*r(iRad,0) - pow(r(iRad,0),3)));
+  //    term1 = -(A*Z/M_PI)*(cosUp-cosDown)*rad1;
+
+    //  rad2 = ((pow(R,2)*pow(r(iRad,1),2)/2.0-pow(r(iRad,1),4)/4.0)
+    //    -(pow(R,2)*pow(r(iRad,0),2)/2.0 - pow(r(iRad,0),4)/4.0));
+    //  term2 = (B*Z/M_PI)*(sinUp-sinDown)*rad2;
+
+     // rad3 = ((pow(R,2)*r(iRad,1)-pow(r(iRad,1),3)/3.0)\
+     //   -(pow(R,2)*r(iRad,0)-pow(r(iRad,0),3)/3.0));
+     // term3 = -(D*Z/M_PI)*(cosUp-cosDown)*rad3;
+
+     // rad4 = ((pow(R,2)*pow(r(iRad,1),2)/2.0-pow(r(iRad,1),4)/4.0)\
+     //   -(pow(R,2)*pow(r(iRad,0),2)/2.0-pow(r(iRad,0),4)/4.0));
+    //  term4 = -(F*Z/M_PI)*(cosUp-cosDown)*rad4;
+
+      // define angular independent mms
+      rad1 = ((pow(R,2)*pow(r(iRad,1),2)/2.0-pow(r(iRad,1),4)/4.0)
+        -(pow(R,2)*pow(r(iRad,0),2)/2.0 - pow(r(iRad,0),4)/4.0));
+      term1 = -(A*Z/M_PI)*(cosUp-cosDown)*rad1;
+
+      rad2 = ((pow(R,2)*r(iRad,1)-pow(r(iRad,1),3)/3.0)\
+        -(pow(R,2)*r(iRad,0)-pow(r(iRad,0),3)/3.0));
+      term2 = (B*Z/M_PI)*(cosUp-cosDown)*rad2;
+
+      rad3 = ((pow(R,2)*r(iRad,1)-pow(r(iRad,1),3))\
+        -(pow(R,2)*r(iRad,0) - pow(r(iRad,0),3)));
+      term3 = -(B*Z/M_PI)*(cosUp-cosDown)*rad3;
+
+      rad4 = ((pow(R,2)*pow(r(iRad,1),2)/2.0-pow(r(iRad,1),4)/4.0)\
+        -(pow(R,2)*pow(r(iRad,0),2)/2.0-pow(r(iRad,0),4)/4.0));
+      term4 = (D*Z/M_PI)*(sinUp-sinDown)*rad4;
+
+      term5 = mySigT*subCellVol(count);
+     // mmsSource(count) = -8.0 * M_PI * (term1 - term2 + term3 + term4);
+    //  mmsSource(count) = 4.0 * (term1 + term2 + term3 + term4);
+    //  ++count;
+
+
+      mmsSource(count) = 4.0* (term1 + term2 + term3 + term4 + term5);
+//      mmsSource(count) = 4.0* (term1 + term2 + term3 + term4) * \
+        subCellVol(count)/subCellVol.sum() + 4.0*term5;
+      ++count;
+    }
+  }
+  
+        
+  return mmsSource;
+}
+//==============================================================================
+
+

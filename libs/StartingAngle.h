@@ -30,6 +30,8 @@ class StartingAngle
   Eigen::MatrixXd calct1(double myGamma);
   Eigen::MatrixXd calct2(double myGamma);
   Eigen::VectorXd calcSubCellVol(int myiZ, int myiR);
+  Eigen::VectorXd calcMMSSource(int myiZ,int myiR,\
+    int energyGroup,int iXi,double sigT, Eigen::VectorXd subCellVol);
 
   private:
   // private functions

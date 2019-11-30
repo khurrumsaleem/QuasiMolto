@@ -31,6 +31,9 @@ class SimpleCornerBalance
   Eigen::MatrixXd calct(double myGamma);
   Eigen::MatrixXd calcR(double myGamma);
   Eigen::VectorXd calcSubCellVol(int myiZ, int myiR);
+  Eigen::VectorXd calcMMSSource(int myiZ,int myiR,int energyGroup,\
+    int iXi, int iMu, double sigT, Eigen::VectorXd subCellVol);
+
 
   private:
   // private functions
