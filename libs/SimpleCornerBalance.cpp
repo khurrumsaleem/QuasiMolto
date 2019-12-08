@@ -110,13 +110,13 @@ void SimpleCornerBalance::solve(cube * aFlux,\
   const int xiIndex=0,muIndex=1,etaIndex=2,weightIndex=3;
 
   // Temporary variables used for looping though quad set
-  double xi,sigT,mu,alphaMinusOneHalf,alphaPlusOneHalf,weight,\
+  double xi,sigTEff,mu,alphaMinusOneHalf,alphaPlusOneHalf,weight,\
     tau,gamma,angRedistCoeff = 0,sigTEps=1E-4;
   
   // Get neutron velocity in energyGroup 
   double v = materials->neutV(energyGroup);
   int numPs,numQs,reflectedP,reflectedQ,reflectedAngIdx,zStart,rStart,\
-    zEnd,zInc,borderCellZ,borderCellR,angIdx;
+    zEnd,zInc,borderCellZ,borderCellR,angIdx,zStartCell,rStartCell;
 
   // Number of rows and columns for simple corner balance
   int rows = 4,cols = 4;
@@ -125,6 +125,10 @@ void SimpleCornerBalance::solve(cube * aFlux,\
   // downstream values depending on the ordinated  
   vector<int> withinUpstreamR(2),outUpstreamR(2),withinUpstreamZ(2),\
     outUpstreamZ(2);
+
+  // Offsets to access each corner
+  Eigen::MatrixXi cornerOffset(4,2);
+  Eigen::MatrixXd sigT(rows,cols);
 
   // Within cell leakage matrices in R and Z directions
   double kRCoeff,kZCoeff;
@@ -194,15 +198,18 @@ void SimpleCornerBalance::solve(cube * aFlux,\
       
       // This is the index [aFlux(:,:,angIdx)] that contains the angular 
       // flux for this ordinate
-      angIdx= mesh->quadrature[iXi].ordIdx[iMu];
+      angIdx=mesh->quadrature[iXi].ordIdx[iMu];
+    
+      // Reset corner offset
+      cornerOffset.setZero();
 
-      cout << "mu < 0" << endl;
       // Do cases where mu < 0 first, as those solutions are needed to 
       // to define the reflecting boundary condition at Z=0 
       if (mu < 0 ){
         
         // Define parameters for marching from the outer radius inward
-        rStart = mesh->drs.size()-1;
+        rStart = mesh->drsCorner.size()-1;
+        rStartCell = mesh->drs.size()-1;
         borderCellR = 1;
         
         // Corners whose radial boundaries are defined by values 
@@ -216,15 +223,19 @@ void SimpleCornerBalance::solve(cube * aFlux,\
         // Set dirichlet boundary condition
         rBC = outerBC[energyGroup];
 
+        // Set corner offset values defined when mu < 0
+        cornerOffset(0,0) = -1;
+        cornerOffset(3,0) = -1;
+
         // Depending on xi, define parameters for marching across the
         // axial domain	
         if (xi > 0) {
  
           // Marching from the bottom to the top
-          zStart = mesh->dzs.size()-1;
-          zEnd = 0;
-          zInc = -1;
-          borderCellZ = 1;
+          zStart = 0;
+          zStartCell = 0;
+          zInc = 2;
+          borderCellZ = -1;
           
           // Corners whose axial boundaries are defined by values
           // within the cell 
@@ -236,14 +247,18 @@ void SimpleCornerBalance::solve(cube * aFlux,\
           
           // Set dirichlet bc
           zBC = lowerBC[energyGroup];
+        
+          // Set corner offset values defined when xi > 0
+          cornerOffset(2,1) = 1;
+          cornerOffset(3,1) = 1;
         }
         else {			
 
           // Marching from the top to the bottom
-          zStart = 0;
-          zEnd = mesh->dzs.size();
-          zInc = 1;
-          borderCellZ = -1;
+          zStart = mesh->dzsCorner.size()-1;
+          zStartCell = mesh->dzs.size()-1;
+          zInc = -2;
+          borderCellZ = 1;
         
           // Corners whose axial boundaries are defined by values
           // within the cell 
@@ -255,58 +270,100 @@ void SimpleCornerBalance::solve(cube * aFlux,\
 
           // Set dirichlet bc
           zBC = upperBC[energyGroup];
+
+          // Set corner offset values defined when xi > 0
+          cornerOffset(0,1) = -1;
+          cornerOffset(1,1) = -1;
         }
 
-        for (int iR = rStart, countR = 0; countR < mesh->drs.size();\
-          --iR, ++countR){
+       // cout << endl;
+       // cout << "cornerOffset: " << endl;
+       // cout << cornerOffset << endl;
+       // cout << endl;
+        for (int iR = rStart, iCellR = rStartCell, countR = 0;\
+          countR < mesh->drsCorner.size();\
+          iR = iR - 2, --iCellR,countR = countR + 2){
           
-          cout << "iR: " << endl;
-          cout << iR << endl;
-
-          for (int iZ = zStart, countZ = 0; \
-            countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
+          //cout << "Radial cell range iCellR: "<< iCellR <<endl;
+          //cout << mesh->rEdge(iCellR) << endl;
+          //cout << mesh->rEdge(iCellR+1) << endl;
+          //cout << "Radial corner range" << endl;
+          //cout << mesh->rCornerEdge(iR-1) << endl;
+          //cout << mesh->rCornerEdge(iR+1) << endl;
+          for (int iZ = zStart, iCellZ = zStartCell,countZ = 0;\
+            countZ < mesh->dzsCorner.size();\
+            iZ = iZ + zInc,iCellZ = iCellZ + zInc/2,countZ = countZ + 2){
+            
+          //  cout << "Axial cell range iCellZ: "<< iCellZ <<endl;
+            //cout << mesh->zEdge(iCellZ) << endl;
+           // cout << mesh->zEdge(iCellZ+1) << endl;
+           // cout << "Axial corner range" << endl;
+           // cout << mesh->zCornerEdge(iZ) << endl;
+           // cout << mesh->zCornerEdge(iZ+2) << endl;
+           // cout << endl;
             
             // Calculate source in each corner
             q.setOnes();
             q = (*source)(iZ,iR)*q;
 
-            // Get the total cross section in this cell
-            sigT = materials->sigT(iZ,iR,energyGroup)+(*alpha)(iZ,iR)/v;
-            if (sigT < sigTEps){
-              sigT = sigTEps;
+            // Set source in each corner
+            for (int iCorner = 0; iCorner < 4; ++iCorner){
+              q(iCorner) = (*source)(iZ+cornerOffset(iCorner,1),\
+              iR+cornerOffset(iCorner,0));
             }
+
+            // Get the total cross section in this cell
+           // sigT = materials->sigT(iZ,iR,energyGroup)+(*alpha)(iZ,iR)/v;
+           // if (sigT < sigTEps){
+           //   sigT = sigTEps;
+           // }
+            
+            for (int iSig = 0; iSig < sigT.cols(); ++iSig){
+              sigTEff = materials->sigT(iZ+cornerOffset(iSig,1),\
+                iR+cornerOffset(iSig,0),energyGroup)\
+                +(*alpha)(iZ+cornerOffset(iSig,1),iR+cornerOffset(iSig,0))/v; 
+
+              if (sigTEff > sigTEps)
+                sigT(iSig,iSig) = sigTEff;
+              else
+                sigT(iSig,iSig) = sigTEps;
+            }
+
 
             // Calculate the the ratio of the inner to outer radius
             // for this cell
-            gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
+            gamma = mesh->rEdge(iCellR)/mesh->rEdge(iCellR+1);
             
             // Calculate radial within cell leakage matrix
-            kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
+            kRCoeff = mesh->dzs(iCellZ)*mesh->rEdge(iCellR+1)/8.0;
             kR=calckR(gamma);
             kR=kRCoeff*kR;
             
             // Calculate axial within cell leakage matrix
-            kZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/16.0;
+            kZCoeff = mesh->drs(iCellR)*mesh->rEdge(iCellR+1)/16.0;
             kZ=calckZ(gamma);
             kZ=kZCoeff*kZ;
             
             // Calculate radial out of cell leakage matrix
-            lRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/2.0;
+            lRCoeff = mesh->dzs(iCellZ)*mesh->rEdge(iCellR+1)/2.0;
             lR=calclR(gamma);
             lR=lRCoeff*lR;
                                     
             // Calculate axial out of cell leakage matrix
-            lZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/8.0;
+            lZCoeff = mesh->drs(iCellR)*mesh->rEdge(iCellR+1)/8.0;
+           // cout << "lZCoeff" << endl;
+           // cout << lZCoeff << endl;
             lZ=calclZ(gamma);
             lZ=lZCoeff*lZ;
             
             // Calculate first collision matrix
-            tCoeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(iR+1)/16.0;
+            tCoeff = mesh->drs(iCellR)*mesh->dzs(iCellZ)\
+              *mesh->rEdge(iCellR+1)/16.0;
             t=calct(gamma);
             t=tCoeff*t;
                                     
             // Calculate angular redistribution matrix
-            RCoeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
+            RCoeff = mesh->drs(iCellR)*mesh->dzs(iCellZ)/4.0;
             R=calcR(gamma);
             R=RCoeff*R;
             angRedistCoeff = alphaPlusOneHalf/(weight*tau); 
@@ -314,6 +371,9 @@ void SimpleCornerBalance::solve(cube * aFlux,\
             // Calculate A considering within cell leakage, collision,
             // and angular redistribution
             A = mu*kR+xi*kZ+sigT*t+angRedistCoeff*R;
+            cout << "Before boundaries" << endl;
+            cout << A << endl;
+            cout << A(3,0) << endl;
 
             // Consider radial boundary values defined in this cell
             mask.setIdentity();
@@ -333,6 +393,8 @@ void SimpleCornerBalance::solve(cube * aFlux,\
 
             // Form b matrix
             b = t*q;
+            cout << "Before boundaries" << endl;
+            cout << b << endl;
 
             // Consider contribution of angular redistribution term
             // calculated with known values
@@ -340,36 +402,90 @@ void SimpleCornerBalance::solve(cube * aFlux,\
               - alphaMinusOneHalf)/weight;
             cellHalfAFlux.setOnes();
             cellHalfAFlux=(*halfAFlux)(iZ,iR,iXi)*cellHalfAFlux;
+            
+            // Read corner half angle fluxes into a vector
+            for (int iCorner = 0; iCorner < 4; ++iCorner){
+              cellHalfAFlux(iCorner) = (*halfAFlux)(iZ+cornerOffset(iCorner,1),\
+              iR+cornerOffset(iCorner,0),iXi);
+            }
+  
             b = b - angRedistCoeff*R*cellHalfAFlux;
+            cout << "Ang redist" << endl;
+            cout << b << endl;
 
             // Consider radial boundary values defined in other cells 
             // or by BCs
             if (iR!=rStart){
-              upstream = mu*(*aFlux)(iZ,iR+borderCellR,angIdx)\
+              //upstream = mu*(*aFlux)(iZ,iR+borderCellR,angIdx)\
               *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+
+              upstream =\
+              mu*(*aFlux)(iZ+cornerOffset(outUpstreamR[0],1),\
+              iR+borderCellR,angIdx)*lR.col(outUpstreamR[0])+\
+              mu*(*aFlux)(iZ+cornerOffset(outUpstreamR[1],1),\
+              iR+borderCellR,angIdx)*lR.col(outUpstreamR[1]); 
+    
               b = b - upstream;
+
+              cout << "R BCSs" << endl;
+              cout << "Border flux for corner " << outUpstreamR[0] << ":"\
+              <<(*aFlux)(iZ+cornerOffset(outUpstreamR[0],1),iR+borderCellR,\
+              angIdx) << endl;
+              cout << endl;
+              cout << "Border flux for corner " << outUpstreamR[1] << ":"\
+              <<(*aFlux)(iZ+cornerOffset(outUpstreamR[1],1),iR+borderCellR,\
+              angIdx) << endl;
+              cout << endl;
             } else {
               upstream = mu*rBC\
               *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
               b = b - upstream;
             }
+            cout << "r bound" << endl;
+            cout << b << endl;
 
             // Consider axial boundary values defined in other cells 
             // or by BCs
             if (iZ!=zStart){
-              upstream = xi*(*aFlux)(iZ+borderCellZ,iR,angIdx)\
+             // upstream = xi*(*aFlux)(iZ+borderCellZ,iR,angIdx)\
               *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
+
+              upstream =\
+              xi*(*aFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[0],0),\
+              angIdx)*lZ.col(outUpstreamZ[0])+\
+              xi*(*aFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[1],0),\
+              angIdx)*lZ.col(outUpstreamZ[1]);
+
+              cout << "Z BCSs" << endl;
+              cout << "Border flux for corner " << outUpstreamZ[0] << ":"\
+              <<(*aFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[0],0),\
+              angIdx) << endl;
+              cout << endl;
+              cout << "Border flux for corner " << outUpstreamZ[1] << ":"\
+              <<(*aFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[1],0),\
+              angIdx) << endl;
+              cout << endl;
+
               b = b - upstream;
             } else{
               upstream = xi*zBC\
               *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
               b = b - upstream;
+              cout << "z boundary params" << endl;
+              cout << zBC << endl;
+              cout << xi << endl;
+              cout << lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1])<<endl; 
             }
+            cout << "z bound" << endl;
+            cout << b << endl;
             
             
-            subCellVol = calcSubCellVol(iZ,iR);	
-            mmsQ=calcMMSSource(iZ,iR,energyGroup,iXi,iMu,sigT,subCellVol);
-            b = b + 0.25*mmsQ;
+            subCellVol = calcSubCellVol(iCellZ,iCellR);	
+            mmsQ=calcMMSSource(iCellZ,iCellR,energyGroup,iXi,iMu,sigT,subCellVol);
+            b = b + 0.25*t*mmsQ;
+            cout << "mms contribution to b" << endl;
+            cout << 0.25*t*mmsQ << endl;
+            cout << endl;
 
             // Solve for angular fluxes in each corner 
 
@@ -378,20 +494,62 @@ void SimpleCornerBalance::solve(cube * aFlux,\
 
             // Take average of corner values to get angular flux 
             // for this cell
-            subCellVol = calcSubCellVol(iZ,iR);	
-            cout << "x: " << x << endl;	
-            (*aFlux)(iZ,iR,angIdx) = x.dot(subCellVol)/subCellVol.sum();
- 
-            (*aFlux)(iZ,iR,angIdx) = x.sum()/4.0;            
+            subCellVol = calcSubCellVol(iCellZ,iCellR);	
+            cout << "iR: " << iR << ", iZ: " << iZ << endl;
+            cout << endl;
+            cout << "A=" << endl;
+            cout << A << endl;
+            cout << "b=" << endl;
+            cout << b << endl;
+            cout << endl; 
+            cout << "x= " << endl;
+            cout << x << endl;	
+            cout << endl; 
+            
+            for (int iCorner = 0; iCorner < 4; ++iCorner){
+              (*aFlux)(iZ+cornerOffset(iCorner,1),\
+              iR+cornerOffset(iCorner,0),angIdx) = x(iCorner); 
+            }      
             // Use weighted diamond difference to calculate next half
             // angle flux used for next value of mu in this quadrature 
             // level
-            (*halfAFlux)(iZ,iR,iXi) = ((*aFlux)(iZ,iR,angIdx)\
-            +(tau-1.0)*(*halfAFlux)(iZ,iR,iXi))/tau; 
+            for (int iCorner = 0; iCorner < 4; ++iCorner){
+              (*halfAFlux)(iZ+cornerOffset(iCorner,1),\
+              iR+cornerOffset(iCorner,0),iXi) = ((*aFlux)\
+              (iZ+cornerOffset(iCorner,1),iR+cornerOffset(iCorner,0),angIdx)\
+              +(tau-1.0)*(*halfAFlux)(iZ+cornerOffset(iCorner,1),\
+              iR+cornerOffset(iCorner,0),iXi))/tau; 
+            }      
 
           } //iR
         } //iZ
+        //cout << "Angular flux for angIdx:" << angIdx << endl;
+        //cout << (*aFlux) << endl; 
       } // if mu < 0
+      
+      // DEBUG early print for debugging
+      // otherwise I have to wait 168 times longer
+      if (iMu == 0 and iXi == 0) {
+        
+        ofstream fluxFile;
+        string fileName;
+        
+        // parse file name
+        fileName = "angular-flux-group-" + to_string(energyGroup) + ".csv";
+
+        // open file
+        fluxFile.open(fileName);
+
+        // write flux values to .csv
+        for (int iZ = 0; iZ < mesh->dzsCorner.size(); ++iZ) {
+          fluxFile << (*aFlux)(iZ,0,0);
+          for (int iR = 1; iR < mesh->drsCorner.size(); ++iR) {
+            fluxFile <<","<< (*aFlux)(iZ,iR,0);
+          }
+          fluxFile << endl;
+        }
+        fluxFile.close();
+      }
     } //iMu
   } //iXi
   
@@ -400,6 +558,7 @@ void SimpleCornerBalance::solve(cube * aFlux,\
 
     // Get xi for this quadrature level
     xi = mesh->quadrature[iXi].quad[0][xiIndex];
+
 
     for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu){
     
@@ -416,14 +575,18 @@ void SimpleCornerBalance::solve(cube * aFlux,\
       // This is the index [aFlux(:,:,angIdx)] that contains the angular
       // flux for this ordinate
       angIdx= mesh->quadrature[iXi].ordIdx[iMu];
+    
+      // Reset corner offset
+      cornerOffset.setZero();
       
-      cout << "mu > 0" << endl;
+     // cout << "mu > 0" << endl;
 
       // Do cases where mu > 0, as the boundary values are defined now
       if (mu > 0 ){
 
         // Define parameters for marching from the outer radius inward
         rStart = 0;
+        rStartCell = 0;
         borderCellR = -1;
 
         // Corners whose radial boundaries are defined by values
@@ -434,14 +597,19 @@ void SimpleCornerBalance::solve(cube * aFlux,\
         // outside the cell
         outUpstreamR = {0,3};
 
+        // Set corner offset values defined when mu < 0
+        cornerOffset(1,0) = 1;
+        cornerOffset(2,0) = 1;
+
         // Depending on xi, define parameters for marching across the
         // axial domain
         if (xi > 0) {
 
           // Marching from the bottom to the top
-          zStart = mesh->dzs.size()-1;
+          zStart = 0;
+          zStartCell = 0;
           zEnd = 0;
-          zInc = -1;
+          zInc = 2;
           borderCellZ = 1;
 
           // Corners whose axial boundaries are defined by values
@@ -454,13 +622,17 @@ void SimpleCornerBalance::solve(cube * aFlux,\
         
           // Set dirichlet boundary condition
           zBC = lowerBC[energyGroup];
+
+          // Set corner offset values defined when xi > 0
+          cornerOffset(2,1) = 1;
+          cornerOffset(3,1) = 1;
         }
         else {			
 
           // Marching from the top to the bottom
-          zStart = 0;
-          zEnd = mesh->dzs.size();
-          zInc = 1;
+          zStart = mesh->dzsCorner.size()-1;
+          zStartCell = mesh->dzs.size()-1;
+          zInc = -2;
           borderCellZ = -1;
           
           // Corners whose axial boundaries are defined by values
@@ -473,57 +645,81 @@ void SimpleCornerBalance::solve(cube * aFlux,\
           
           // Set dirichlet boundary condition
           zBC = upperBC[energyGroup];
+
+          // Set corner offset values defined when xi < 0
+          cornerOffset(0,1) = -1;
+          cornerOffset(1,1) = -1;
         }
-        for (int iR = rStart, countR = 0; countR < mesh->drs.size();\
-           ++iR, ++countR){
+
+        for (int iR = rStart, iCellR = rStartCell, countR = 0;\
+          countR < mesh->drsCorner.size();\
+          iR = iR + 2, ++iCellR, countR = countR + 2){
          
-          cout << "iR: " << endl;
-          cout << iR << endl;
            
-          for (int iZ = zStart, countZ = 0; \
-            countZ < mesh->dzs.size(); iZ = iZ + zInc, ++countZ){
+          for (int iZ = zStart, iCellZ = zStartCell,countZ = 0;\
+            countZ < mesh->dzsCorner.size();\
+            iZ = iZ + zInc, iCellZ = iCellZ + zInc/2,countZ = countZ + 2){
 
             // Calculate source in each corner
             q.setOnes();
             q = (*source)(iZ,iR)*q;
 
+            // Set source in each corner
+            for (int iCorner = 0; iCorner < 4; ++iCorner){
+              q(iCorner) = (*source)(iZ+cornerOffset(iCorner,1),\
+              iR+cornerOffset(iCorner,0));
+            }
+
             // Get the total cross section in this cell
-            sigT = materials->sigT(iZ,iR,energyGroup)+(*alpha)(iZ,iR)/v;
-            if (sigT < sigTEps){
-              sigT = sigTEps;
+//            sigT = materials->sigT(iZ,iR,energyGroup)+(*alpha)(iZ,iR)/v;
+//            if (sigT < sigTEps){
+//              sigT = sigTEps;
+//            }
+            
+            
+            for (int iSig = 0; iSig < sigT.cols(); ++iSig){
+              sigTEff = materials->sigT(iZ+cornerOffset(iSig,1),\
+                iR+cornerOffset(iSig,0),energyGroup)\
+                +(*alpha)(iZ+cornerOffset(iSig,1),iR+cornerOffset(iSig,0))/v; 
+
+              if (sigTEff > sigTEps)
+                sigT(iSig,iSig) = sigTEff;
+              else
+                sigT(iSig,iSig) = sigTEps;
             }
 
             // Calculate the the ratio of the inner to outer radius
             // for this cell
-            gamma = mesh->rEdge(iR)/mesh->rEdge(iR+1);
+            gamma = mesh->rEdge(iCellR)/mesh->rEdge(iCellR+1);
             
             // Calculate radial within cell leakage matrix
-            kRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/8.0;
+            kRCoeff = mesh->dzs(iCellZ)*mesh->rEdge(iCellR+1)/8.0;
             kR=calckR(gamma);
             kR=kRCoeff*kR;
             
             // Calculate axial within cell leakage matrix
-            kZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/16.0;
+            kZCoeff = mesh->drs(iCellR)*mesh->rEdge(iCellR+1)/16.0;
             kZ=calckZ(gamma);
             kZ=kZCoeff*kZ;
             
             // Calculate radial out of cell leakage matrix
-            lRCoeff = mesh->dzs(iZ)*mesh->rEdge(iR+1)/2.0;
+            lRCoeff = mesh->dzs(iCellZ)*mesh->rEdge(iCellR+1)/2.0;
             lR=calclR(gamma);
             lR=lRCoeff*lR;
                                     
             // Calculate axial out of cell leakage matrix
-            lZCoeff = mesh->drs(iR)*mesh->rEdge(iR+1)/8.0;
+            lZCoeff = mesh->drs(iCellR)*mesh->rEdge(iCellR+1)/8.0;
             lZ=calclZ(gamma);
             lZ=lZCoeff*lZ;
             
             // Calculate first collision matrix
-            tCoeff = mesh->drs(iR)*mesh->dzs(iZ)*mesh->rEdge(iR+1)/16.0;
+            tCoeff = mesh->drs(iCellR)*mesh->dzs(iCellZ)\
+              *mesh->rEdge(iCellR+1)/16.0;
             t=calct(gamma);
             t=tCoeff*t;
                                     
             // Calculate second collision matrix
-            RCoeff = mesh->drs(iR)*mesh->dzs(iZ)/4.0;
+            RCoeff = mesh->drs(iCellR)*mesh->dzs(iCellZ)/4.0;
             R=calcR(gamma);
             R=RCoeff*R;
             angRedistCoeff = alphaPlusOneHalf/(weight*tau); 
@@ -557,6 +753,13 @@ void SimpleCornerBalance::solve(cube * aFlux,\
               - alphaMinusOneHalf)/weight;
             cellHalfAFlux.setOnes();
             cellHalfAFlux=(*halfAFlux)(iZ,iR,iXi)*cellHalfAFlux;
+
+            // Read corner half angle fluxes into a vector
+            for (int iCorner = 0; iCorner < 4; ++iCorner){
+              cellHalfAFlux(iCorner) = (*halfAFlux)(iZ+cornerOffset(iCorner,1),\
+              iR+cornerOffset(iCorner,0),iXi);
+            }
+
             b = b - angRedistCoeff*R*cellHalfAFlux;
 
             // Consider radial boundary values in other cells or BCs
@@ -568,31 +771,48 @@ void SimpleCornerBalance::solve(cube * aFlux,\
               numQs = mesh->quadrature[iXi].nOrd;
               reflectedP= numPs-iXi-1;
               reflectedQ= numQs-iMu-1;
-              cout << "iXi: " << iXi << ", iMu: " << iMu << endl;    
-              cout << "Reflected iXi: " << reflectedP << ", iMu: " << reflectedQ << endl;    
-              cout << endl; 
+             // cout << "iXi: " << iXi << ", iMu: " << iMu << endl;    
+             // cout << "Reflected iXi: " << reflectedP << ", iMu: " << reflectedQ << endl;    
+             // cout << endl; 
               // Get angular index of reflect flux
               reflectedAngIdx = mesh->quadrature[iXi].ordIdx[reflectedQ]; 
               
               // Account for reflected flux at boundary
-              upstream = mu*(*aFlux)(iZ,iR,reflectedAngIdx)\
+              //upstream = mu*(*aFlux)(iZ,iR,reflectedAngIdx)\
               *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+              
+              upstream =\
+              mu*(*aFlux)(iZ+cornerOffset(outUpstreamR[0],1),\
+              iR,reflectedAngIdx)*lR.col(outUpstreamR[0])+
+              mu*(*aFlux)(iZ+cornerOffset(outUpstreamR[1],1),\
+              iR,reflectedAngIdx)*lR.col(outUpstreamR[1]);
+
               b = b - upstream;
             }
 
             // Consider radial boundary values defined in other cells
             // or by BCs
             else if (iR!=rStart){
-              upstream = mu*(*aFlux)(iZ,iR+borderCellR,angIdx)\
+              //upstream = mu*(*aFlux)(iZ,iR+borderCellR,angIdx)\
               *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+              upstream =\
+              mu*(*aFlux)(iZ+cornerOffset(outUpstreamR[0],1),\
+              iR+borderCellR,angIdx)*lR.col(outUpstreamR[0])+
+              mu*(*aFlux)(iZ+cornerOffset(outUpstreamR[1],1),\
+              iR+borderCellR,angIdx)*lR.col(outUpstreamR[1]);
               b = b - upstream;
             }
 
             // Consider axial boundary values defined in other cells
             // or by BCs
             if (iZ!=zStart){
-              upstream = xi*(*aFlux)(iZ+borderCellZ,iR,angIdx)\
+              //upstream = xi*(*aFlux)(iZ+borderCellZ,iR,angIdx)\
               *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
+              upstream =\
+              xi*(*aFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[0],0),\
+              angIdx)*lZ.col(outUpstreamZ[0])+\
+              xi*(*aFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[1],0),\
+              angIdx)*lZ.col(outUpstreamZ[1]);
               b = b - upstream;
             } else{
               upstream = xi*zBC\
@@ -600,25 +820,44 @@ void SimpleCornerBalance::solve(cube * aFlux,\
               b = b - upstream;
             }
                         
-            subCellVol = calcSubCellVol(iZ,iR);	
-            mmsQ=calcMMSSource(iZ,iR,energyGroup,iXi,iMu,sigT,subCellVol);
-            b = b + 0.25*mmsQ;
+            subCellVol = calcSubCellVol(iCellZ,iCellR);	
+            mmsQ=calcMMSSource(iCellZ,iCellR,energyGroup,iXi,iMu,sigT,subCellVol);
+            b = b + 0.25*t*mmsQ;
 
             // Solve for angular fluxes in each corner 
             x = A.partialPivLu().solve(b);
 
             // Take average of corner values to get angular flux
             // for this cell
-            subCellVol = calcSubCellVol(iZ,iR);
-            cout << "x: " << x << endl;	
-            (*aFlux)(iZ,iR,angIdx) = x.dot(subCellVol)/subCellVol.sum();
-            
-            (*aFlux)(iZ,iR,angIdx) = x.sum()/4.0;            
+            subCellVol = calcSubCellVol(iCellZ,iCellR);
+            //cout << "x: " << x << endl;	
+           // cout << "iR: " << iR << ", iZ: " << iZ << endl;
+           // cout << endl;
+           // cout << "A=" << endl;
+           // cout << A << endl;
+           // cout << "b=" << endl;
+           // cout << b << endl;
+           // cout << endl; 
+           // cout << "x= " << endl;
+           // cout << x << endl;	
+           // cout << endl; 
+
+
+            for (int iCorner = 0; iCorner < 4; ++iCorner){
+              (*aFlux)(iZ+cornerOffset(iCorner,1),\
+              iR+cornerOffset(iCorner,0),angIdx) = x(iCorner); 
+            }      
+          
             // Use weighted diamond difference to calculate next half
             // angle flux used for next nvalue of mu in this quadrature 
             // level
-            (*halfAFlux)(iZ,iR,iXi) = ((*aFlux)(iZ,iR,angIdx)\
-            +(tau-1.0)*(*halfAFlux)(iZ,iR,iXi))/tau; 
+            for (int iCorner = 0; iCorner < 4; ++iCorner){
+              (*halfAFlux)(iZ+cornerOffset(iCorner,1),\
+              iR+cornerOffset(iCorner,0),iXi) = ((*aFlux)\
+              (iZ+cornerOffset(iCorner,1),iR+cornerOffset(iCorner,0),angIdx)\
+              +(tau-1.0)*(*halfAFlux)(iZ+cornerOffset(iCorner,1),\
+              iR+cornerOffset(iCorner,0),iXi))/tau; 
+            }      
 
           } //iR
         } //iZ
@@ -772,7 +1011,7 @@ Eigen::VectorXd SimpleCornerBalance::calcSubCellVol(int myiZ, int myiR){
 ///
 /// @param [out]  mmsSource Contains the mmsSource in each cell
 Eigen::VectorXd SimpleCornerBalance::calcMMSSource(int myiZ,int myiR,\
-  int energyGroup, int iXi, int iMu, double sigT, Eigen::VectorXd subCellVol){
+  int energyGroup, int iXi, int iMu, Eigen::MatrixXd sigT, Eigen::VectorXd subCellVol){
  
   // Define material parameters
   double sigS = materials->sigS(myiZ,myiR,energyGroup,energyGroup);
@@ -789,17 +1028,27 @@ Eigen::VectorXd SimpleCornerBalance::calcMMSSource(int myiZ,int myiR,\
   
   // Define bounds corners are integrated over
   Eigen::MatrixXd z = Eigen::MatrixXd::Zero(2,2);
-  z << mesh->zEdge(myiZ),mesh->zCent(myiZ),\
+  z << mesh->zCent(myiZ), mesh->zEdge(myiZ+1),\
+    mesh->zEdge(myiZ),mesh->zCent(myiZ);
+  z << mesh->zEdge(myiZ),mesh->zCent(myiZ),
     mesh->zCent(myiZ), mesh->zEdge(myiZ+1);
-  Eigen::MatrixXd r = Eigen::MatrixXd::Zero(2,2);
+  Eigen::MatrixXd r = Eigen::MatrixXd::Zero(4,2);
   r << mesh->rEdge(myiR),mesh->rCent(myiR),\
-    mesh->rCent(myiR), mesh->rEdge(myiR+1);
+    mesh->rCent(myiR), mesh->rEdge(myiR+1),\
+    mesh->rCent(myiR), mesh->rEdge(myiR+1),\
+    mesh->rEdge(myiR),mesh->rCent(myiR);
   //z << mesh->zEdge(myiZ),mesh->zEdge(myiZ+1),\
     mesh->zEdge(myiZ), mesh->zEdge(myiZ+1);
   //r << mesh->rEdge(myiR),mesh->rEdge(myiR+1),\
     mesh->rEdge(myiR), mesh->rEdge(myiR+1);
   // Get maximum radius and axial height
   double R = mesh->R,Z = mesh->Z;
+  //cout << "MMS boundaries" << endl;
+  //cout << "r: " << endl;
+  //cout << r << endl;
+  //cout << "z: " << endl;
+  //cout << z << endl;
+  //cout << endl;
  
   // Set coefficient in exponential
   double c = 1.0; 
@@ -815,14 +1064,14 @@ Eigen::VectorXd SimpleCornerBalance::calcMMSSource(int myiZ,int myiR,\
   A = exp(c*t) * (mySigT + c/v -1.0*(sigS + nu * sigF)); 
   B = exp(c*t) * mu;
   D = exp(c*t) * M_PI * xi/ Z;
-  cout << "xi: " << xi << endl; 
-  cout << "mu: " << mu << endl; 
-  cout << "eta: " << eta << endl; 
-  cout << endl; 
-  cout << "A: " << A << endl; 
-  cout << "B: " << B << endl; 
-  cout << "D: " << D << endl; 
-  cout << "F: " << F << endl; 
+  //cout << "xi: " << xi << endl; 
+  //cout << "mu: " << mu << endl; 
+  //cout << "eta: " << eta << endl; 
+  //cout << endl; 
+  //cout << "A: " << A << endl; 
+  //cout << "B: " << B << endl; 
+  //cout << "D: " << D << endl; 
+  //cout << "F: " << F << endl; 
    
   // Temporary variables to evaluate whole MMS term
   double term1,term2,term3,term4,term5;
@@ -836,6 +1085,12 @@ Eigen::VectorXd SimpleCornerBalance::calcMMSSource(int myiZ,int myiR,\
   for (int iAx = 0; iAx < 2; ++iAx){
     for (int iRad = 0; iRad < 2; ++iRad){
     
+      cout << "Corner:" << count+1 << endl;
+      cout << "Axial bounds:" << endl;
+      cout << z(iAx,0) << " " << z(iAx,1) << endl;
+      cout << "Radial bounds:" << endl;
+      cout << r(count,0) << " " << r(count,1) << endl;
+      cout << endl;
       // Evaluate sine and cosine terms
       sinUp = sin(M_PI*z(iAx,1)/Z);
       sinDown = sin(M_PI*z(iAx,0)/Z);
@@ -860,23 +1115,24 @@ Eigen::VectorXd SimpleCornerBalance::calcMMSSource(int myiZ,int myiR,\
       term4 = -(F*Z/M_PI)*(cosUp-cosDown)*rad4;
 
       // define angular independent mms
-      rad1 = ((pow(R,2)*pow(r(iRad,1),2)/2.0-pow(r(iRad,1),4)/4.0)
-        -(pow(R,2)*pow(r(iRad,0),2)/2.0 - pow(r(iRad,0),4)/4.0));
+      rad1 = ((pow(R,2)*pow(r(count,1),2)/2.0-pow(r(count,1),4)/4.0)
+        -(pow(R,2)*pow(r(count,0),2)/2.0 - pow(r(count,0),4)/4.0));
       term1 = -(A*Z/M_PI)*(cosUp-cosDown)*rad1;
       
-      rad2 = ((pow(R,2)*r(iRad,1)-pow(r(iRad,1),3)/3.0)\
-        -(pow(R,2)*r(iRad,0)-pow(r(iRad,0),3)/3.0));
+      rad2 = ((pow(R,2)*r(count,1)-pow(r(count,1),3)/3.0)\
+        -(pow(R,2)*r(count,0)-pow(r(count,0),3)/3.0));
       term2 = (B*Z/M_PI)*(cosUp-cosDown)*rad2;
       
-      rad3 = ((pow(R,2)*r(iRad,1)-pow(r(iRad,1),3))\
-        -(pow(R,2)*r(iRad,0) - pow(r(iRad,0),3)));
+      rad3 = ((pow(R,2)*r(count,1)-pow(r(count,1),3))\
+        -(pow(R,2)*r(count,0) - pow(r(count,0),3)));
       term3 = -(B*Z/M_PI)*(cosUp-cosDown)*rad3;
 
-      rad4 = ((pow(R,2)*pow(r(iRad,1),2)/2.0-pow(r(iRad,1),4)/4.0)\
-        -(pow(R,2)*pow(r(iRad,0),2)/2.0-pow(r(iRad,0),4)/4.0));
+      rad4 = ((pow(R,2)*pow(r(count,1),2)/2.0-pow(r(count,1),4)/4.0)\
+        -(pow(R,2)*pow(r(count,0),2)/2.0-pow(r(count,0),4)/4.0));
       term4 = (D*Z/M_PI)*(sinUp-sinDown)*rad4;
       
       term5 = mySigT*subCellVol(count);
+      term5 = 0.0;
       
   //    cout <<  "rad1: " << rad1 << endl;
   //    cout <<  "rad2: " << rad2 << endl;
@@ -888,7 +1144,8 @@ Eigen::VectorXd SimpleCornerBalance::calcMMSSource(int myiZ,int myiR,\
   //    cout << "term3: " << term3 << endl; 
 //      cout << "term4: " << term4 << endl; 
    //   cout << endl;
-      mmsSource(count) = 4.0*(term1 + term2 + term3 + term4 + term5);
+      mmsSource(count) = 4.0*(term1 + term2 + term3 + term4 + term5)/subCellVol(count);
+//      mmsSource(count) = 1.0/subCellVol(count);
 //      mmsSource(count) = 4.0* (term1 + term2 + term3 + term4) * \
         subCellVol(count)/subCellVol.sum()+ 4.0*term5;
       ++count;
@@ -896,11 +1153,11 @@ Eigen::VectorXd SimpleCornerBalance::calcMMSSource(int myiZ,int myiR,\
   }
   cout << "MMS Source: " << endl;
   cout << mmsSource << endl;
-  cout <<  "rad1: " << rad1 << endl;
-  cout <<  "rad2: " << rad2 << endl;
-  cout <<  "rad3: " << rad3 << endl;
-  cout <<  "rad4: " << rad4 << endl;
-  cout << endl;
+ // cout <<  "rad1: " << rad1 << endl;
+ // cout <<  "rad2: " << rad2 << endl;
+ // cout <<  "rad3: " << rad3 << endl;
+ // cout <<  "rad4: " << rad4 << endl;
+ // cout << endl;
         
   return mmsSource;
 }
