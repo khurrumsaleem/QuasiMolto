@@ -21,6 +21,21 @@ class SimpleCornerBalance
     Eigen::MatrixXd * source,\
     Eigen::MatrixXd * alpha,\
     int energyGroup);
+  void solveAngularFlux(cube * aFlux,\
+    cube * halfAFlux,\
+    Eigen::MatrixXd * source,\
+    Eigen::MatrixXd * alpha,\
+    int energyGroup,int iXi,int iMu);
+  void solveAngularFluxNegMu(cube * aFlux,\
+    cube * halfAFlux,\
+    Eigen::MatrixXd * source,\
+    Eigen::MatrixXd * alpha,\
+    int energyGroup,int iXi,int iMu);
+  void solveAngularFluxPosMu(cube * aFlux,\
+    cube * halfAFlux,\
+    Eigen::MatrixXd * source,\
+    Eigen::MatrixXd * alpha,\
+    int energyGroup,int iXi,int iMu);
   
   // default boundary conditions; homogeneous
   vector<double> upperBC,lowerBC,outerBC;
@@ -32,7 +47,7 @@ class SimpleCornerBalance
   Eigen::MatrixXd calcR(double myGamma);
   Eigen::VectorXd calcSubCellVol(int myiZ, int myiR);
   Eigen::VectorXd calcMMSSource(int myiZ,int myiR,int energyGroup,\
-    int iXi, int iMu, double sigT, Eigen::VectorXd subCellVol);
+    int iXi, int iMu, Eigen::MatrixXd sigT, Eigen::VectorXd subCellVol);
 
 
   private:
