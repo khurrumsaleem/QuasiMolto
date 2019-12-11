@@ -20,6 +20,11 @@ class StartingAngle
     Eigen::MatrixXd * source,\
     Eigen::MatrixXd * alpha,\
     int energyGroup);
+  void solveAngularFlux(cube * halfAFlux,\
+    Eigen::MatrixXd * source,\
+    Eigen::MatrixXd * alpha,\
+    int energyGroup,\
+    int iXi);
   
   // default boundary conditions; homogeneous
   vector<double> upperBC,lowerBC,outerBC;
@@ -31,7 +36,7 @@ class StartingAngle
   Eigen::MatrixXd calct2(double myGamma);
   Eigen::VectorXd calcSubCellVol(int myiZ, int myiR);
   Eigen::VectorXd calcMMSSource(int myiZ,int myiR,\
-    int energyGroup,int iXi,double sigT, Eigen::VectorXd subCellVol);
+    int energyGroup,int iXi,Eigen::MatrixXd sigT, Eigen::VectorXd subCellVol);
 
   private:
   // private functions

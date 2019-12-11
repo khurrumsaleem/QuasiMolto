@@ -105,7 +105,6 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
   Eigen::MatrixXd * alpha,\
   int energyGroup)
 {
-  //cout << "Entered StartingAngle solve" << endl; 
 
   // Index xi value is stored in in quadLevel
   const int xiIndex = 0;
@@ -120,7 +119,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
   vector<int> withinUpstreamZ(2);
   vector<int> outUpstreamZ(2);
   Eigen::MatrixXi cornerOffset(4,2);
-  Eigen::MatrixXd sigT(rows,cols);
+  Eigen::MatrixXd sigT = Eigen::MatrixXd::Zero(rows,cols);
   double gamma;
 
   // Within cell leakage matrices in R and Z directions
@@ -159,13 +158,16 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
   Eigen::VectorXd x = Eigen::VectorXd::Zero(rows);
 
   // Source 
-  Eigen::VectorXd q = Eigen::VectorXd::Ones(rows);
+  Eigen::VectorXd q = Eigen::VectorXd::Zero(rows);
 
   // Dirichlet boundary condition
   double rBC,zBC;
 
   // MMS source 
   Eigen::VectorXd mmsQ = Eigen::VectorXd::Zero(rows);
+
+   // reset half angle flux
+  (*halfAFlux).zeros();
   
   for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
 
@@ -232,11 +234,6 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
           q(iCorner) = (*source)(iZ+cornerOffset(iCorner,1),\
           iR+cornerOffset(iCorner,0));
         }
-
-      //  sigT = materials->sigT(iZ,iR,energyGroup) + (*alpha)(iZ,iR)/v;
-      //  if (sigT < sigTEps){
-      //    sigT = sigTEps;
-      //  }
 
         for (int iSig = 0; iSig < sigT.cols(); ++iSig){
           sigTEff = materials->sigT(iZ+cornerOffset(iSig,1),\
@@ -316,6 +313,15 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
           sqrtXi*(*halfAFlux)(iZ+cornerOffset(outUpstreamR[1],1),\
           iR+borderCellR,iXi)*lR.col(outUpstreamR[1]);
           b = b - upstream;
+          //b = b - upstream/2.0;
+
+         //mask.setZero();
+         // mask(outUpstreamR[0],outUpstreamR[0]) = 1.0;
+         // mask(outUpstreamR[1],outUpstreamR[1]) = 1.0;
+
+         // A = A + sqrtXi*lR*mask/2.0;
+
+
         } else {
           upstream = sqrtXi*rBC\
           *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
@@ -328,6 +334,14 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
           xi*(*halfAFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[1],0),\
           iXi)*lZ.col(outUpstreamZ[1]);
           b = b - upstream;
+         // b = b - upstream/2.0;
+
+         // mask.setZero();
+         // mask(outUpstreamZ[0],outUpstreamZ[0]) = 1.0;
+         // mask(outUpstreamZ[1],outUpstreamZ[1]) = 1.0;
+
+         // A = A + xi*lZ*mask/2.0;
+
         }else{
           upstream = xi*zBC\
           *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
@@ -338,7 +352,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
         b = b + 0.25*t1*mmsQ;
 
         x = A.partialPivLu().solve(b);
-        
+
         // Take average of half angle fluxes in corners
         //(*halfAFlux)(iZ,iR,iXi) = x.dot(subCellVol)/subCellVol.sum();
         //(*halfAFlux)(iZ,iR,iXi) = x.sum()/4.0;
@@ -350,10 +364,262 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
       }
     }
   }
-  cout << "half angle angular flux" << endl;
-  cout << (*halfAFlux) << endl;	
 };
 //==============================================================================
+
+//==============================================================================
+/// Calculate the starting half angle angular flux
+///
+/// Solves using simple corner balance on a simplified neutron transport equation 
+/// in RZ geometry. The simplification comes about by substituting quadrature 
+/// values that correspond to the starting half angle, and results in the 
+/// elimination of the angular redistribution term. 
+void StartingAngle::solveAngularFlux(cube * halfAFlux,\
+  Eigen::MatrixXd * source,\
+  Eigen::MatrixXd * alpha,\
+  int energyGroup,int iXi)
+{
+  
+  
+  // Index xi value is stored in in quadLevel
+  const int xiIndex = 0;
+
+
+  // Temporary variable used for looping though quad set
+  double xi,sqrtXi,sigTEff,sigTEps=1E-4;
+  
+  xi = mesh->quadrature[iXi].quad[0][xiIndex];
+  int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR,zStartCell,rStartCell;
+  int rows = 4,cols = 4;
+  double v = materials->neutV(energyGroup);
+  vector<int> withinUpstreamR(2);
+  vector<int> outUpstreamR(2);
+  vector<int> withinUpstreamZ(2);
+  vector<int> outUpstreamZ(2);
+  Eigen::MatrixXi cornerOffset(4,2);
+  Eigen::MatrixXd sigT = Eigen::MatrixXd::Zero(rows,cols);
+  double gamma;
+
+  // Within cell leakage matrices in R and Z directions
+  double kRCoeff;
+  double kZCoeff;
+  Eigen::MatrixXd kR = Eigen::MatrixXd::Zero(rows,cols);
+  Eigen::MatrixXd kZ = Eigen::MatrixXd::Zero(rows,cols);
+
+  // Out of cell leakage matrices in R and Z directions
+  double lRCoeff;
+  double lZCoeff;
+  Eigen::MatrixXd lR = Eigen::MatrixXd::Zero(rows,cols);
+  Eigen::MatrixXd lZ = Eigen::MatrixXd::Zero(rows,cols);
+
+  // Reaction matrices
+  double t1Coeff;
+  double t2Coeff;
+  Eigen::MatrixXd t1 = Eigen::MatrixXd::Zero(rows,cols);
+  Eigen::MatrixXd t2 = Eigen::MatrixXd::Zero(rows,cols);
+
+  // A matrix of linear system Ax=b
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(rows,cols);
+  Eigen::MatrixXd mask = Eigen::MatrixXd::Zero(rows,cols);
+  Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(rows);
+
+  // Downstream values
+  Eigen::MatrixXd downstream = Eigen::MatrixXd::Zero(rows,cols);
+
+  // Downstream values
+  Eigen::VectorXd upstream = Eigen::VectorXd::Zero(rows);
+
+  // Right-hand side
+  Eigen::VectorXd b = Eigen::VectorXd::Zero(rows);
+
+  // Solution vector 
+  Eigen::VectorXd x = Eigen::VectorXd::Zero(rows);
+
+  // Source 
+  Eigen::VectorXd q = Eigen::VectorXd::Zero(rows);
+
+  // Dirichlet boundary condition
+  double rBC,zBC;
+
+  // MMS source 
+  Eigen::VectorXd mmsQ = Eigen::VectorXd::Zero(rows);
+
+   // reset half angle flux
+  (*halfAFlux).zeros();
+  
+  // Get xi for this quadrature level
+  sqrtXi = pow(1-pow(xi,2),0.5); 
+  rStart = mesh->drsCorner.size()-1;
+  rStartCell = mesh->drs.size()-1;
+  borderCellR = 1;
+  withinUpstreamR = {0,3};
+  outUpstreamR = {1,2};
+
+  // Set dirichlet bc
+  rBC=outerBC[energyGroup];
+
+  // Depending on xi, define loop constants	
+  if (xi > 0) {
+    // Marching from bottom to top
+    zStart = 0;
+    zStartCell = 0;
+    zInc = 2;
+    zEnd = 0;
+    borderCellZ = -1;
+    withinUpstreamZ = {2,3};
+    outUpstreamZ = {0,1};
+    cornerOffset << -1,0,\
+      0,0,\
+      0,1,\
+      -1,1;
+    
+    // Set dirichlet bc
+    zBC = lowerBC[energyGroup];
+          
+  }
+  else {			
+    
+    // Marching from the top to the bottom  
+    zStart = mesh->dzsCorner.size()-1;
+    zStartCell = mesh->dzs.size()-1;
+    zEnd = mesh->dzs.size();
+    zInc = -2;
+    borderCellZ = 1;
+    withinUpstreamZ = {0,1};
+    outUpstreamZ = {2,3};
+    cornerOffset << -1,-1,\
+      0,-1,\
+      0,0,\
+      -1,0;
+
+    // Set dirichlet bc
+    zBC = upperBC[energyGroup];
+  }
+  for (int iR = rStart,iCellR = rStartCell,countR = 0;\
+    countR < mesh->drsCorner.size(); 
+    iR = iR - 2,--iCellR,countR = countR + 2){
+
+    for (int iZ = zStart, iCellZ = zStartCell,countZ = 0; \
+      countZ < mesh->dzsCorner.size();\
+      iZ = iZ + zInc, iCellZ = iCellZ + zInc/2,countZ = countZ + 2){
+      
+      // Set source in each corner
+      for (int iCorner = 0; iCorner < 4; ++iCorner){
+        q(iCorner) = (*source)(iZ+cornerOffset(iCorner,1),\
+        iR+cornerOffset(iCorner,0));
+      }
+
+      for (int iSig = 0; iSig < sigT.cols(); ++iSig){
+        sigTEff = materials->sigT(iZ+cornerOffset(iSig,1),\
+          iR+cornerOffset(iSig,0),energyGroup)\
+          +(*alpha)(iZ+cornerOffset(iSig,1),iR+cornerOffset(iSig,0))/v;
+
+        if (sigTEff > sigTEps)
+          sigT(iSig,iSig) = sigTEff;
+        else
+          sigT(iSig,iSig) = sigTEps;
+      }
+
+      gamma = mesh->rEdge(iCellR)/mesh->rEdge(iCellR+1);
+      
+      // Calculate radial within cell leakage matrix
+      kRCoeff = mesh->dzs(iCellZ)*mesh->rEdge(iCellR+1)/8.0;
+      kR=calckR(gamma);
+      kR=kRCoeff*kR;
+      
+      // Calculate axial within cell leakage matrix
+      kZCoeff = mesh->drs(iCellR)*mesh->rEdge(iCellR+1)/16.0;
+      kZ=calckZ(gamma);
+      kZ=kZCoeff*kZ;
+      
+      // Calculate radial out of cell leakage matrix
+      lRCoeff = mesh->dzs(iCellZ)*mesh->rEdge(iCellR+1)/2.0;
+      lR=calclR(gamma);
+      lR=lRCoeff*lR;
+      
+      // Calculate axial out of cell leakage matrix
+      lZCoeff = mesh->drs(iCellR)*mesh->rEdge(iCellR+1)/8.0;
+      lZ=calclZ(gamma);
+      lZ=lZCoeff*lZ;
+      
+      // Calculate first collision matrix
+      t1Coeff = mesh->drs(iCellR)*mesh->dzs(iCellZ)*mesh->rEdge(iCellR+1)/16.0;
+      t1=calct1(gamma);
+      t1=t1Coeff*t1;
+      
+      // Calculate second collision matrix
+      t2Coeff = mesh->drs(iCellR)*mesh->dzs(iCellZ)/4.0;
+      t2=calct2(gamma);
+      t2=t2Coeff*t2;
+
+      // Calculate corner volumes
+      subCellVol = calcSubCellVol(iCellZ,iCellR);	
+
+      // Calculate A considering within cell leakage and 
+      // collision matrices
+      A = sqrtXi*kR+xi*kZ+sigT*t1+sqrtXi*t2;
+
+      // Consider radial downstream values defined in this cell
+      mask.setIdentity();
+      for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
+        mask(outUpstreamR[iCol],outUpstreamR[iCol])=0;
+      }
+      downstream = sqrtXi*lR*mask;	
+      
+      // Consider axial downstream values defined in this cell
+      mask.setIdentity();
+      for (int iCol = 0; iCol < outUpstreamZ.size(); ++iCol){
+        mask(outUpstreamZ[iCol],outUpstreamZ[iCol])=0;
+      }
+      downstream = downstream + xi*lZ*mask;	
+      
+      A = A + downstream;
+      
+      // Form b matrix
+      b = t1*q;
+      // Consider upstream values in other cells or BCs
+      if (iR!=rStart){
+        upstream =\
+        sqrtXi*(*halfAFlux)(iZ+cornerOffset(outUpstreamR[0],1),\
+        iR+borderCellR,iXi)*lR.col(outUpstreamR[0])+\
+        sqrtXi*(*halfAFlux)(iZ+cornerOffset(outUpstreamR[1],1),\
+        iR+borderCellR,iXi)*lR.col(outUpstreamR[1]);
+        b = b - upstream;
+
+      } else {
+        upstream = sqrtXi*rBC\
+        *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+        b = b - upstream;
+      }
+      if (iZ!=zStart){
+        upstream =\
+        xi*(*halfAFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[0],0),\
+        iXi)*lZ.col(outUpstreamZ[0])+\
+        xi*(*halfAFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[1],0),\
+        iXi)*lZ.col(outUpstreamZ[1]);
+        b = b - upstream;
+
+      }else{
+        upstream = xi*zBC\
+        *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
+        b = b - upstream;
+      }
+     
+      mmsQ = calcMMSSource(iCellZ,iCellR,energyGroup,iXi,sigT,subCellVol);
+      b = b + 0.25*t1*mmsQ;
+
+      x = A.partialPivLu().solve(b);
+
+      (*halfAFlux)(iZ+cornerOffset(0,1),iR+cornerOffset(0,0),iXi) = x(0);
+      (*halfAFlux)(iZ+cornerOffset(1,1),iR+cornerOffset(1,0),iXi) = x(1);
+      (*halfAFlux)(iZ+cornerOffset(2,1),iR+cornerOffset(2,0),iXi) = x(2);
+      (*halfAFlux)(iZ+cornerOffset(3,1),iR+cornerOffset(3,0),iXi) = x(3);
+    }
+  }
+};
+//==============================================================================
+
+
 
 //==============================================================================
 /// Calculate within cell radial leakage matrix
@@ -505,7 +771,7 @@ Eigen::VectorXd StartingAngle::calcMMSSource(int myiZ,int myiR,\
   double xi = mesh->quadrature[iXi].quad[0][0]; 
   double mu = -1.0*sin(acos(xi)); 
   double eta = 0.0; 
-  double t = 0.0001;
+  double t = 0.0002;
   double gamma = sin(acos(xi));
  
   // Return variable
@@ -530,7 +796,7 @@ Eigen::VectorXd StartingAngle::calcMMSSource(int myiZ,int myiR,\
   double R = mesh->R,Z = mesh->Z;
   
   // Set coefficient in exponential
-  double c = 1.0;
+  double c = 1000.0;
   double v = 1.0;
 
   // Define some temporary variables to clean things up
