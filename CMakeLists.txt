@@ -32,6 +32,7 @@ add_executable(QuasiMolto
 	       ${PROJECT_SOURCE_DIR}/libs/MultiGroupTransport.cpp 
 	       ${PROJECT_SOURCE_DIR}/libs/SingleGroupTransport.cpp 
 	       ${PROJECT_SOURCE_DIR}/libs/SimpleCornerBalance.cpp 
+	       ${PROJECT_SOURCE_DIR}/libs/MMS.cpp 
 	       ${PROJECT_SOURCE_DIR}/libs/Material.cpp)
 
 target_link_libraries(
