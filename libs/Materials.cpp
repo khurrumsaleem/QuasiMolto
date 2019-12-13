@@ -32,7 +32,7 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
   input = myInput;
   
   // Initialize material map
-  matMap.setZero(mesh->zCent.size(),mesh->rCent.size());
+  matMap.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
 
   // Read materials from input
   readMats();
@@ -184,10 +184,10 @@ void Materials::readMats()
 /// @param [in] zUp Upper axial boundary
 void Materials::setMatRegion(int myIndex,double rIn,double rOut,double zLow,double zUp)
 {
-  for (int iZ = 0; iZ < mesh->zCent.size(); iZ++){
-    if (mesh->zCent(iZ)>zLow && mesh->zCent(iZ)<zUp){
-      for (int iR = 0; iR < mesh->rCent.size(); iR++){
-        if (mesh->rCent(iR)>rIn && mesh->rCent(iR)<rOut){
+  for (int iZ = 0; iZ < mesh->zCornerCent.size(); iZ++){
+    if (mesh->zCornerCent(iZ)>zLow && mesh->zCornerCent(iZ)<zUp){
+      for (int iR = 0; iR < mesh->rCornerCent.size(); iR++){
+        if (mesh->rCornerCent(iR)>rIn && mesh->rCornerCent(iR)<rOut){
                 
           matMap(iZ,iR) = myIndex;
         
