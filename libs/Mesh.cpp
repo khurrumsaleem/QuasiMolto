@@ -335,28 +335,40 @@ void Mesh::calcTau(){
 
 void Mesh::calcSpatialMesh(){
 
-  int nCellsZ;
-  int nCellsR;
+  int nCellsZ,nCornersZ;
+  int nCellsR,nCornersR;
+  dzCorner = dz/2;
+  drCorner = dr/2;
 
   // Calculate number of cells
   nCellsZ= Z/dz;
   nCellsR = R/dr;
+  nCornersZ = Z/dzCorner;
+  nCornersR = R/drCorner;
 
   // Resize vectors storing dimensions of each cell
-  dzs.zeros(2*nCellsZ);
-  dzs.fill(dz/2.0);
-  drs.zeros(2*nCellsR);
-  drs.fill(dr/2.0);
+  dzs.zeros(nCellsZ);
+  dzs.fill(dz);
+  drs.zeros(nCellsR);
+  drs.fill(dr);
+  dzsCorner.zeros(nCornersZ);
+  dzsCorner.fill(dzCorner);
+  drsCorner.zeros(nCornersR);
+  drsCorner.fill(drCorner);
 
   // Resize vector holding boundaries in each dimension
   rEdge.zeros(nCellsR+1);
   zEdge.zeros(nCellsZ+1);
+  rCornerEdge.zeros(nCornersR+1);
+  zCornerEdge.zeros(nCornersZ+1);
   
   // Resize cell center location in each dimension
   rCent.zeros(nCellsR);
   zCent.zeros(nCellsZ);
+  rCornerCent.zeros(nCornersR);
+  zCornerCent.zeros(nCornersZ);
 
-  // Populate vectors holding boundaries in each dimension
+  // Populate vectors holding cell boundaries in each dimension
   for (int iEdge = 1; iEdge < rEdge.n_elem; ++iEdge){
     rEdge(iEdge) = rEdge(iEdge-1) + drs(iEdge-1);
   }
@@ -372,6 +384,24 @@ void Mesh::calcSpatialMesh(){
   
   for (int iCent = 0; iCent < zCent.n_elem; ++iCent){
     zCent(iCent) = (zEdge(iCent)+zEdge(iCent+1))/2.0;
+  }
+  
+  // Populate vectors holding corner boundaries in each dimension
+  for (int iEdge = 1; iEdge < rCornerEdge.n_elem; ++iEdge){
+    rCornerEdge(iEdge) = rCornerEdge(iEdge-1) + drsCorner(iEdge-1);
+  }
+  
+  for (int iEdge = 1; iEdge < zCornerEdge.n_elem; ++iEdge){
+    zCornerEdge(iEdge) = zCornerEdge(iEdge-1) + dzsCorner(iEdge-1);
+  }
+  
+  // Populate vectors holding corner center location in each dimension
+  for (int iCent = 0; iCent < rCornerCent.n_elem; ++iCent){
+    rCornerCent(iCent) = (rCornerEdge(iCent)+rCornerEdge(iCent+1))/2.0;
+  }
+  
+  for (int iCent = 0; iCent < zCornerCent.n_elem; ++iCent){
+    zCornerCent(iCent) = (zCornerEdge(iCent)+zCornerEdge(iCent+1))/2.0;
   }
 
   // Calculate cell volume

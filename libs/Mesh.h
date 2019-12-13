@@ -35,18 +35,22 @@ class Mesh
 	public:
 	Mesh(YAML::Node * myInput);  	
   	int n,nAngles;		
-	double dz,dr,Z,R,dt,totalWeight; 
+	double dz,dr,drCorner,dzCorner,Z,R,dt,totalWeight; 
   	vector< vector<double> > quadSet;
   	vector< vector<double> > alpha;
         vector< vector<double> > tau;
         vector< vector<double> > cellVol;
         vector< vector<double> > cellVSA;
-        rowvec dzs;
-        rowvec drs;
+        rowvec dzs,dzsCorner;
+        rowvec drs,drsCorner;
 	rowvec rEdge;
 	rowvec zEdge;
         rowvec rCent;
         rowvec zCent;
+	rowvec rCornerEdge;
+	rowvec zCornerEdge;
+        rowvec rCornerCent;
+        rowvec zCornerCent;
         vector<quadLevel> quadrature;
   	void calcQuadSet();
 	void printQuadSet();
