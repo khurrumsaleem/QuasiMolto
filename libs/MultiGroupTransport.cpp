@@ -12,6 +12,7 @@
 #include "MultiGroupTransport.h"
 #include "StartingAngle.h"
 #include "SimpleCornerBalance.h"
+#include "MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
@@ -61,8 +62,6 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
     epsAlpha=(*input)["parameters"]["powerMaxIter"].as<double>();
   }
   
-  // Call source/power iteration solver
-  solveTransportOnly();
 };
 
 //==============================================================================
@@ -158,9 +157,6 @@ bool MultiGroupTransport::calcSources(string calcType)
   Eigen::VectorXd residuals(SGTs.size());
   residuals.setZero();
 
-  // Criteria for source convergence 
-  double epsilon = 1E-5;
-  
   // Boolean indicating whether all sources are converged
   bool allConverged=true;
 
@@ -195,9 +191,6 @@ bool MultiGroupTransport::calcAlphas(string printResidual)
 
   // Vector containing the alpha residuals in each SGT
   Eigen::VectorXd residuals(SGTs.size());
-
-  // Criteria for alpha convergence 
-  double epsilon = 1E-3;
 
   // Boolean indicating whether all alphas are converged
   bool allConverged=true;
@@ -332,11 +325,12 @@ bool MultiGroupTransport::powerIteration()
   // globally converged
   bool alphaConverged=false,fissionConverged=false,allConverged=false; 
 
+
   // Calculate alphas in each SGT
-  alphaConverged=calcAlphas("print");
+  alphaConverged = calcAlphas("print"); 
 
   // Calculate fission source in SGT
-  fissionConverged=calcFissionSources("print"); 
+  fissionConverged=calcFissionSources("print");
 
   allConverged = (alphaConverged and fissionConverged);
 
