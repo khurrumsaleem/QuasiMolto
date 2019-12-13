@@ -11,11 +11,14 @@
 #include "../libs/MultiGroupTransport.h"
 #include "../libs/SingleGroupTransport.h"
 #include "../libs/SimpleCornerBalance.h"
+#include "../libs/MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
 
 int main(int argc, char** argv) {
+
+  string solveType;
 
   // get input file
   YAML::Node * input;
@@ -42,6 +45,22 @@ int main(int argc, char** argv) {
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
+
+  MMS * myMMS;
+  myMMS = new MMS(myMGT,myMesh,myMaterials,input);
+
+  if ((*input)["parameters"]["solve type"]){
+
+    solveType=(*input)["parameters"]["solve type"].as<string>();
+
+    cout << solveType << endl;
+  
+    if (solveType == "MMS" or solveType == "mms")    
+      myMMS->timeDependent();
+    else 
+      myMGT->solveTransportOnly();
+
+  }
 
 return(0);
 }
