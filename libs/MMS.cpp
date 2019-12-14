@@ -49,7 +49,7 @@ Eigen::MatrixXd MMS::isotropicTransportSourceMMS(double xi, double mu, double t)
   
       A = exp(c*t) * (materials->sigT(iZ,iR,0)\
       + c/materials->neutV(0) -1.0*(materials->sigS(iZ,iR,0,0)\
-      + materials->nu(iZ,iR) * materials->sigF(iZ,iR,0)));
+      + materials->nu(iZ,iR) * materials->sigF(iZ,iR,0))/4.0);
       
       zDown = mesh->zCornerEdge(iZ);
       zUp = mesh->zCornerEdge(iZ+1);
@@ -103,7 +103,7 @@ void MMS::timeDependent(){
   isoSource = MGT->SGTs[0]->q;
   
   // loop over angles 
-  for (int idt = 0; idt < 5; ++idt){
+  for (int idt = 0; idt < 1; ++idt){
     t = idt*mesh->dt+mesh->dt;    
 
     for (int sourceIter = 0; sourceIter < 100; ++sourceIter){
@@ -121,6 +121,8 @@ void MMS::timeDependent(){
             // calculate source at t1 for each angle
             MGT->SGTs[0]->q = isoSource + isotropicTransportSourceMMS(xi,mu,t);
             
+            cout << MGT->SGTs[0]->q << endl;
+ 
             // call solver for each angle
             MGT->startAngleSolve->solveAngularFlux(&(MGT->SGTs[0]->aHalfFlux),\
             &(MGT->SGTs[0]->q),\

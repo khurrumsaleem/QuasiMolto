@@ -410,7 +410,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
         mu*(*aFlux)(iZ+cornerOffset(outUpstreamR[1],1),\
         iR+borderCellR,angIdx)*lR.col(outUpstreamR[1]); 
 
-          b = b - upstream;
+        b = b - upstream;
 
       } else {
         upstream = mu*rBC\
