@@ -189,9 +189,6 @@ void StartingAngle::solveAngularFlux(cube * halfAFlux,\
   // MMS source 
   Eigen::VectorXd mmsQ = Eigen::VectorXd::Zero(rows);
 
-   // reset half angle flux
-  (*halfAFlux).zeros();
-  
   // Get xi for this quadrature level
   sqrtXi = pow(1-pow(xi,2),0.5); 
   rStart = mesh->drsCorner.size()-1;
