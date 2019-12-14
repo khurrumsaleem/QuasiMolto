@@ -110,26 +110,30 @@ void MMS::timeDependent(){
 
       for (int scatterIter = 0; scatterIter < 1000; ++scatterIter){
 
-        isoSource = MGT->SGTs[0]->q;
+        // first solve for all starting angles 
+        for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
+          xi = mesh->quadrature[iXi].quad[0][0];
+          mu = -sin(acos(xi));
+          MGT->SGTs[0]->q = isoSource + isotropicTransportSourceMMS(xi,mu,t);
+
+          // call solver for each angle
+          MGT->startAngleSolve->solveAngularFlux(&(MGT->SGTs[0]->aHalfFlux),\
+          &(MGT->SGTs[0]->q),\
+          &(MGT->SGTs[0]->alpha),\
+          0,\
+          iXi);
+
+        }
  
         for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
           xi = mesh->quadrature[iXi].quad[0][0];
-
+            
           for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu){
             mu = mesh->quadrature[iXi].quad[iMu][1];
      
             // calculate source at t1 for each angle
             MGT->SGTs[0]->q = isoSource + isotropicTransportSourceMMS(xi,mu,t);
             
-            cout << MGT->SGTs[0]->q << endl;
- 
-            // call solver for each angle
-            MGT->startAngleSolve->solveAngularFlux(&(MGT->SGTs[0]->aHalfFlux),\
-            &(MGT->SGTs[0]->q),\
-            &(MGT->SGTs[0]->alpha),\
-            0,\
-            iXi);
-
             // call solver for each angle
             MGT->SCBSolve->solveAngularFlux(&(MGT->SGTs[0]->aFlux),\
             &(MGT->SGTs[0]->aHalfFlux),\
@@ -182,6 +186,10 @@ void MMS::timeDependent(){
   } //idt
 
   MGT->SGTs[0]->writeFlux();
+
+  cout << "angular fluxes: " << endl;
+
+  cout << MGT->SGTs[0]->aFlux << endl;
     
   // loop over angles  
 
