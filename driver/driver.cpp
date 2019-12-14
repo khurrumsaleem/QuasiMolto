@@ -61,6 +61,8 @@ int main(int argc, char** argv) {
       myMGT->solveTransportOnly();
 
   }
+  else
+    myMGT->solveTransportOnly();
 
 return(0);
 }
