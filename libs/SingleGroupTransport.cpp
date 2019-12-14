@@ -374,9 +374,9 @@ void SingleGroupTransport::writeFlux()
 
   // write flux values to .csv
   for (int iZ = 0; iZ < sFlux.rows(); ++iZ) {
-    fluxFile << aFlux(iZ,0,81);
+    fluxFile << aFlux(iZ,0,0);
     for (int iR = 1; iR < sFlux.cols(); ++iR) {
-      fluxFile <<","<< aFlux(iZ,iR,81);
+      fluxFile <<","<< aFlux(iZ,iR,0);
     }
     fluxFile << endl;
   }
