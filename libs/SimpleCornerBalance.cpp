@@ -152,7 +152,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
   
   xi = mesh->quadrature[iXi].quad[0][xiIndex];
   mu = mesh->quadrature[iXi].quad[iMu][muIndex];
-  
+
   // Get neutron velocity in energyGroup 
   double v = materials->neutV(energyGroup);
   int zStart,rStart,zInc,borderCellZ,borderCellR,angIdx,zStartCell,\
@@ -365,7 +365,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       // Calculate A considering within cell leakage, collision,
       // and angular redistribution
       A = mu*kR+xi*kZ+sigT*t+angRedistCoeff*R;
-
+      
       // Consider radial boundary values defined in this cell
       mask.setIdentity();
       for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
@@ -381,7 +381,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       downstream = downstream + xi*lZ*mask;	
       
       A = A + downstream;
-
+      
       // Form b matrix
       b = t*q;
 
@@ -399,7 +399,6 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       }
 
       b = b - angRedistCoeff*R*cellHalfAFlux;
-
       // Consider radial boundary values defined in other cells 
       // or by BCs
       if (iR!=rStart){
@@ -417,7 +416,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
         *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
         b = b - upstream;
       }
-
+      
       // Consider axial boundary values defined in other cells 
       // or by BCs
       if (iZ!=zStart){
@@ -435,7 +434,6 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
         *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
         b = b - upstream;
       }
-      
       
       subCellVol = calcSubCellVol(iCellZ,iCellR);	
 
@@ -482,7 +480,7 @@ void SimpleCornerBalance::solveAngularFluxPosMu(cube * aFlux,\
   
   xi = mesh->quadrature[iXi].quad[0][xiIndex];
   mu = mesh->quadrature[iXi].quad[iMu][muIndex];
-  
+
   // Get neutron velocity in energyGroup 
   double v = materials->neutV(energyGroup);
   int numPs,numQs,reflectedP,reflectedQ,reflectedAngIdx,zStart,rStart,\
