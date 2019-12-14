@@ -187,15 +187,5 @@ void MMS::timeDependent(){
 
   MGT->SGTs[0]->writeFlux();
 
-  cout << "angular fluxes: " << endl;
-
-  cout << MGT->SGTs[0]->aFlux << endl;
-    
-  // loop over angles  
-
-  // calculate source at t2 for each angle
-
-  // call solver for each angle
-
 }
 
