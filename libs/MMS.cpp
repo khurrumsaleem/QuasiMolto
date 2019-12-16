@@ -49,7 +49,7 @@ Eigen::MatrixXd MMS::isotropicTransportSourceMMS(double xi, double mu, double t)
   
       A = exp(c*t) * (materials->sigT(iZ,iR,0)\
       + c/materials->neutV(0) -1.0*(materials->sigS(iZ,iR,0,0)\
-      + materials->nu(iZ,iR) * materials->sigF(iZ,iR,0))/4.0);
+      + materials->nu(iZ,iR) * materials->sigF(iZ,iR,0)));
       
       zDown = mesh->zCornerEdge(iZ);
       zUp = mesh->zCornerEdge(iZ+1);
@@ -152,12 +152,18 @@ void MMS::timeDependent(){
 
         // calculate scatter source
         MGT->SGTs[0]->calcSource("s");
+  
+        // store new scattering source
+        isoSource = MGT->SGTs[0]->q;
         
         if (fluxResidual < MGT->epsFlux)
           break;
       }
       
       fissionResidual = MGT->SGTs[0]->calcSource();
+        
+      // store new source
+      isoSource = MGT->SGTs[0]->q;
         
       cout << "Fission residual: " << endl;
       cout << fissionResidual << endl;
