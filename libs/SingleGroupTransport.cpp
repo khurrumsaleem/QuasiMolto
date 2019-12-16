@@ -351,7 +351,8 @@ void SingleGroupTransport::writeFlux()
   string fileName;
   
   // parse file name 
-  fileName = "scalar-flux-group-" + to_string(energyGroup) + ".csv";
+  fileName = "scalar-flux-group-" + to_string(energyGroup)\
+    +"-" + to_string(mesh->dz)+ ".csv";
 
   // open file
   fluxFile.open(fileName);
@@ -367,7 +368,8 @@ void SingleGroupTransport::writeFlux()
   fluxFile.close();
 
   // parse file name 
-  fileName = "angular-flux-group-" + to_string(energyGroup) + ".csv";
+  fileName = "angular-flux-group-" + to_string(energyGroup)\
+    +"-" + to_string(mesh->dz) + ".csv";
 
   // open file
   fluxFile.open(fileName);
