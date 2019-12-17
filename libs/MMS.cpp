@@ -86,6 +86,71 @@ Eigen::MatrixXd MMS::isotropicTransportSourceMMS(double xi, double mu, double t)
   return mmsSource;
 }
 
+Eigen::MatrixXd MMS::anisotropicTransportSourceMMS(double xi, double mu, double t) {
+
+  Eigen::MatrixXd mmsSource = Eigen::MatrixXd::Zero(mesh->dzsCorner.size(),\
+    mesh->drsCorner.size());
+
+  double eta = sqrt(1.0-pow(xi,2)-pow(mu,2));
+
+  double zLim = mesh->Z,rLim = mesh->R;
+  double zDown,zUp,rDown,rUp,vol;
+  double rad1,rad2,rad3,rad4;
+  double term1,term2,term3,term4;
+  double sinUp,sinDown,cosUp,cosDown;
+
+  double A = exp(c*t) * pow(mu,3);
+  double B = exp(c*t) * M_PI * xi * pow(mu,2) / zLim;
+  double D = -exp(c*t) * mu * ( pow(sin(acos(xi)),2) - 3*pow(eta,2));
+  double F;
+
+  for (int iZ = 0; iZ < mmsSource.rows(); ++iZ){
+    for (int iR = 0; iR < mmsSource.cols(); ++iR){
+      
+      F = exp(c*t) * ( pow(mu,2) * (materials->sigT(iZ,iR,0)\
+      + c/materials->neutV(0)) - (1.0/3.0)\
+      *(materials->sigS(iZ,iR,0,0)
+      +materials->nu(iZ,iR) * materials->sigF(iZ,iR,0)));
+      
+      zDown = mesh->zCornerEdge(iZ);
+      zUp = mesh->zCornerEdge(iZ+1);
+      rDown = mesh->rCornerEdge(iR);
+      rUp = mesh->rCornerEdge(iR+1);
+
+      sinUp = sin(M_PI*zUp/zLim); 
+      sinDown = sin(M_PI*zDown/zLim); 
+      cosUp = cos(M_PI*zUp/zLim); 
+      cosDown = cos(M_PI*zDown/zLim); 
+
+      rad1 = ((pow(rLim,2)*rUp-pow(rUp,3))\
+        -(pow(rLim,2)*rDown - pow(rDown,3)));
+      term1 = -(A*zLim/M_PI)*(cosUp-cosDown)*rad1;
+
+      rad2 = ((pow(rLim,2)*pow(rUp,2)/2.0-pow(rUp,4)/4.0)
+        -(pow(rLim,2)*pow(rDown,2)/2.0 - pow(rDown,4)/4.0));
+      term2 = (B*zLim/M_PI)*(sinUp-sinDown)*rad2;
+
+      rad3 = ((pow(rLim,2)*rUp-pow(rUp,3)/3.0)\
+        -(pow(rLim,2)*rDown-pow(rDown,3)/3.0));
+      term3 = -(D*zLim/M_PI)*(cosUp-cosDown)*rad3;
+
+      rad4 = ((pow(rLim,2)*pow(rUp,2)/2.0-pow(rUp,4)/4.0)\
+        -(pow(rLim,2)*pow(rDown,2)/2.0-pow(rDown,4)/4.0));
+      term4 = -(F*zLim/M_PI)*(cosUp-cosDown)*rad4;
+
+      vol = (zUp - zDown) * (pow(rUp,2)-pow(rDown,2))/2.0; 
+
+      mmsSource(iZ,iR) = (term1 + term2 + term3 + term4)/vol;      
+    }
+  }
+
+  cout << "mms source" << endl;
+  cout << mmsSource << endl;
+  cout << endl;
+  return mmsSource;
+}
+
+
 void MMS::timeDependent(){
 
   Eigen::MatrixXd isoSource;
@@ -114,7 +179,7 @@ void MMS::timeDependent(){
         for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
           xi = mesh->quadrature[iXi].quad[0][0];
           mu = -sin(acos(xi));
-          MGT->SGTs[0]->q = isoSource + isotropicTransportSourceMMS(xi,mu,t);
+          MGT->SGTs[0]->q = isoSource + anisotropicTransportSourceMMS(xi,mu,t);
 
           // call solver for each angle
           MGT->startAngleSolve->solveAngularFlux(&(MGT->SGTs[0]->aHalfFlux),\
@@ -132,7 +197,7 @@ void MMS::timeDependent(){
             mu = mesh->quadrature[iXi].quad[iMu][1];
      
             // calculate source at t1 for each angle
-            MGT->SGTs[0]->q = isoSource + isotropicTransportSourceMMS(xi,mu,t);
+            MGT->SGTs[0]->q = isoSource + anisotropicTransportSourceMMS(xi,mu,t);
             
             // call solver for each angle
             MGT->SCBSolve->solveAngularFlux(&(MGT->SGTs[0]->aFlux),\

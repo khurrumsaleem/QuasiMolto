@@ -21,6 +21,9 @@ class MMS
   Eigen::MatrixXd isotropicTransportSourceMMS(double xi,\
     double mu,\
     double t);
+  Eigen::MatrixXd anisotropicTransportSourceMMS(double xi,\
+    double mu,\
+    double t);
   void timeDependent();
   double c = 1.0;
 
