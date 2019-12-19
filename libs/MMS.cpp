@@ -91,7 +91,21 @@ Eigen::MatrixXd MMS::anisotropicTransportSourceMMS(double xi, double mu, double 
   Eigen::MatrixXd mmsSource = Eigen::MatrixXd::Zero(mesh->dzsCorner.size(),\
     mesh->drsCorner.size());
 
-  double eta = sqrt(1.0-pow(xi,2)-pow(mu,2));
+  double eta,etaSquared = 1.0-pow(xi,2)-pow(mu,2);
+  
+  if (etaSquared < 1E-5){
+    eta = 0.0;
+  } else {
+    eta = sqrt(etaSquared);
+  } 
+
+  cout << "xi: " << endl;
+  cout << xi << endl;
+  cout << "mu: " << endl;
+  cout << mu << endl;
+  cout << "eta: " << endl;
+  cout << eta << endl;
+  cout << endl;
 
   double zLim = mesh->Z,rLim = mesh->R;
   double zDown,zUp,rDown,rUp,vol;
@@ -104,6 +118,10 @@ Eigen::MatrixXd MMS::anisotropicTransportSourceMMS(double xi, double mu, double 
   double D = -exp(c*t) * mu * ( pow(sin(acos(xi)),2) - 3*pow(eta,2));
   double F;
 
+  cout << "A: " << A << endl;
+  cout << "B: " << B << endl;
+  cout << "D: " << D << endl;
+
   for (int iZ = 0; iZ < mmsSource.rows(); ++iZ){
     for (int iR = 0; iR < mmsSource.cols(); ++iR){
       
@@ -111,7 +129,9 @@ Eigen::MatrixXd MMS::anisotropicTransportSourceMMS(double xi, double mu, double 
       + c/materials->neutV(0)) - (1.0/3.0)\
       *(materials->sigS(iZ,iR,0,0)
       +materials->nu(iZ,iR) * materials->sigF(iZ,iR,0)));
-      
+  
+      cout << "F: " << F << endl;
+  
       zDown = mesh->zCornerEdge(iZ);
       zUp = mesh->zCornerEdge(iZ+1);
       rDown = mesh->rCornerEdge(iR);
@@ -174,7 +194,8 @@ void MMS::timeDependent(){
     for (int sourceIter = 0; sourceIter < 100; ++sourceIter){
 
       for (int scatterIter = 0; scatterIter < 1000; ++scatterIter){
-
+        
+        cout << "Half angle solves" << endl;
         // first solve for all starting angles 
         for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
           xi = mesh->quadrature[iXi].quad[0][0];
@@ -189,6 +210,11 @@ void MMS::timeDependent(){
           iXi);
 
         }
+
+        cout << "Half angle fluxes" << endl;
+        cout << (MGT->SGTs[0]->aHalfFlux) << endl;
+        cout << endl;  
+        cout << "Full angle solves" << endl;
  
         for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
           xi = mesh->quadrature[iXi].quad[0][0];

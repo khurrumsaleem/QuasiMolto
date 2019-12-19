@@ -324,7 +324,7 @@ void Mesh::calcTau(){
       tau[i][rowLength[i]-iTau-1] = \
       (quadSet[quad_index(i,rowLength[i]-1-iTau)][1]-halfMu[iTau])\
       /(halfMu[iTau+1]-halfMu[iTau]);
-      
+
     }
   }
 }
