@@ -365,6 +365,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
 
       cout << "initial A: " << endl;   
       cout << A << endl; 
+      cout << endl;
 
       // Calculate A considering within cell leakage, collision,
       // and angular redistribution
@@ -372,6 +373,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
   
       cout << "A: " << endl;   
       cout << A << endl; 
+      cout << endl;
       
       // Consider radial boundary values defined in this cell
       mask.setIdentity();
@@ -391,15 +393,18 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       
       cout << "boundary values A: " << endl;   
       cout << A << endl; 
+      cout << endl;
       
       cout << "initial b: " << endl;   
       cout << b << endl; 
+      cout << endl;
       
       // Form b matrix
       b = t*q;
       
       cout << "source b: " << endl;   
       cout << b << endl; 
+      cout << endl;
 
 
       // Consider contribution of angular redistribution term
@@ -419,6 +424,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       
       cout << "ang redist b: " << endl;   
       cout << b << endl; 
+      cout << endl;
       
       // Consider radial boundary values defined in other cells 
       // or by BCs
@@ -440,6 +446,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       
       cout << "radial boundary b: " << endl;   
       cout << b << endl; 
+      cout << endl;
       
       // Consider axial boundary values defined in other cells 
       // or by BCs
@@ -461,6 +468,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       
       cout << "axial boundary b: " << endl;   
       cout << b << endl; 
+      cout << endl;
       
       subCellVol = calcSubCellVol(iCellZ,iCellR);	
 
@@ -469,6 +477,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
 
       cout <<"x: "<< endl;
       cout << x << endl;
+      cout << endl;
 
       // Take average of corner values to get angular flux 
       // for this cell
