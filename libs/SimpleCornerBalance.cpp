@@ -223,7 +223,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
   alphaMinusOneHalf = mesh->quadrature[iXi].alpha[iMu];
   weight = mesh->quadrature[iXi].quad[iMu][weightIndex]; 
   tau = mesh->quadrature[iXi].tau[iMu];
-  
+
   // This is the index [aFlux(:,:,angIdx)] that contains the angular 
   // flux for this ordinate
   angIdx=mesh->quadrature[iXi].ordIdx[iMu];
@@ -361,10 +361,17 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       R=calcR(gamma);
       R=RCoeff*R;
       angRedistCoeff = alphaPlusOneHalf/(weight*tau); 
+      
+
+      cout << "initial A: " << endl;   
+      cout << A << endl; 
 
       // Calculate A considering within cell leakage, collision,
       // and angular redistribution
       A = mu*kR+xi*kZ+sigT*t+angRedistCoeff*R;
+  
+      cout << "A: " << endl;   
+      cout << A << endl; 
       
       // Consider radial boundary values defined in this cell
       mask.setIdentity();
@@ -382,8 +389,18 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       
       A = A + downstream;
       
+      cout << "boundary values A: " << endl;   
+      cout << A << endl; 
+      
+      cout << "initial b: " << endl;   
+      cout << b << endl; 
+      
       // Form b matrix
       b = t*q;
+      
+      cout << "source b: " << endl;   
+      cout << b << endl; 
+
 
       // Consider contribution of angular redistribution term
       // calculated with known values
@@ -399,6 +416,10 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       }
 
       b = b - angRedistCoeff*R*cellHalfAFlux;
+      
+      cout << "ang redist b: " << endl;   
+      cout << b << endl; 
+      
       // Consider radial boundary values defined in other cells 
       // or by BCs
       if (iR!=rStart){
@@ -416,6 +437,9 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
         *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
         b = b - upstream;
       }
+      
+      cout << "radial boundary b: " << endl;   
+      cout << b << endl; 
       
       // Consider axial boundary values defined in other cells 
       // or by BCs
@@ -435,10 +459,16 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
         b = b - upstream;
       }
       
+      cout << "axial boundary b: " << endl;   
+      cout << b << endl; 
+      
       subCellVol = calcSubCellVol(iCellZ,iCellR);	
 
       // Solve for angular fluxes in each corner
       x = A.partialPivLu().solve(b);
+
+      cout <<"x: "<< endl;
+      cout << x << endl;
 
       // Take average of corner values to get angular flux 
       // for this cell
