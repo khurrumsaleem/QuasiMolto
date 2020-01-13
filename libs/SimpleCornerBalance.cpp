@@ -361,20 +361,11 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       R=calcR(gamma);
       R=RCoeff*R;
       angRedistCoeff = alphaPlusOneHalf/(weight*tau); 
-      
-
-      cout << "initial A: " << endl;   
-      cout << A << endl; 
-      cout << endl;
 
       // Calculate A considering within cell leakage, collision,
       // and angular redistribution
       A = mu*kR+xi*kZ+sigT*t+angRedistCoeff*R;
   
-      cout << "A: " << endl;   
-      cout << A << endl; 
-      cout << endl;
-      
       // Consider radial boundary values defined in this cell
       mask.setIdentity();
       for (int iCol = 0; iCol < outUpstreamR.size(); ++iCol){
@@ -391,22 +382,9 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       
       A = A + downstream;
       
-      cout << "boundary values A: " << endl;   
-      cout << A << endl; 
-      cout << endl;
-      
-      cout << "initial b: " << endl;   
-      cout << b << endl; 
-      cout << endl;
-      
       // Form b matrix
       b = t*q;
       
-      cout << "source b: " << endl;   
-      cout << b << endl; 
-      cout << endl;
-
-
       // Consider contribution of angular redistribution term
       // calculated with known values
       angRedistCoeff = ((alphaPlusOneHalf/tau)*(tau - 1.0)\
@@ -421,10 +399,6 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       }
 
       b = b - angRedistCoeff*R*cellHalfAFlux;
-      
-      cout << "ang redist b: " << endl;   
-      cout << b << endl; 
-      cout << endl;
       
       // Consider radial boundary values defined in other cells 
       // or by BCs
@@ -444,10 +418,6 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
         b = b - upstream;
       }
       
-      cout << "radial boundary b: " << endl;   
-      cout << b << endl; 
-      cout << endl;
-      
       // Consider axial boundary values defined in other cells 
       // or by BCs
       if (iZ!=zStart){
@@ -466,18 +436,10 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
         b = b - upstream;
       }
       
-      cout << "axial boundary b: " << endl;   
-      cout << b << endl; 
-      cout << endl;
-      
       subCellVol = calcSubCellVol(iCellZ,iCellR);	
 
       // Solve for angular fluxes in each corner
       x = A.partialPivLu().solve(b);
-
-      cout <<"x: "<< endl;
-      cout << x << endl;
-      cout << endl;
 
       // Take average of corner values to get angular flux 
       // for this cell

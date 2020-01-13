@@ -317,7 +317,7 @@ void Mesh::calcTau(){
       *cos(halfOmega[iHalfMu]);
 
     }
-    
+  
     // Calculate tau on this level
     for (int iTau = 0; iTau < rowLength[i]; ++iTau){
          
@@ -326,6 +326,7 @@ void Mesh::calcTau(){
       /(halfMu[iTau+1]-halfMu[iTau]);
 
     }
+      
   }
 }
 //==============================================================================

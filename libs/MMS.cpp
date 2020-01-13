@@ -93,34 +93,22 @@ Eigen::MatrixXd MMS::anisotropicTransportSourceMMS(double xi, double mu, double 
 
   double eta,etaSquared = 1.0-pow(xi,2)-pow(mu,2);
   
-  if (etaSquared < 1E-5){
+  if (etaSquared < 1E-2){
     eta = 0.0;
   } else {
     eta = sqrt(etaSquared);
   } 
 
-  cout << "xi: " << endl;
-  cout << xi << endl;
-  cout << "mu: " << endl;
-  cout << mu << endl;
-  cout << "eta: " << endl;
-  cout << eta << endl;
-  cout << endl;
-
   double zLim = mesh->Z,rLim = mesh->R;
   double zDown,zUp,rDown,rUp,vol;
   double rad1,rad2,rad3,rad4;
-  double term1,term2,term3,term4;
+  double term1,term2,term3,term4,term5;
   double sinUp,sinDown,cosUp,cosDown;
 
   double A = exp(c*t) * pow(mu,3);
   double B = exp(c*t) * M_PI * xi * pow(mu,2) / zLim;
-  double D = -exp(c*t) * mu * ( pow(sin(acos(xi)),2) - 3*pow(eta,2));
-  double F;
-
-  cout << "A: " << A << endl;
-  cout << "B: " << B << endl;
-  cout << "D: " << D << endl;
+  double D = -exp(c*t) * (pow(mu,3)-2*pow(eta,2)*mu);
+  double F,relUp,relDown;
 
   for (int iZ = 0; iZ < mmsSource.rows(); ++iZ){
     for (int iR = 0; iR < mmsSource.cols(); ++iR){
@@ -129,8 +117,6 @@ Eigen::MatrixXd MMS::anisotropicTransportSourceMMS(double xi, double mu, double 
       + c/materials->neutV(0)) - (1.0/3.0)\
       *(materials->sigS(iZ,iR,0,0)
       +materials->nu(iZ,iR) * materials->sigF(iZ,iR,0)));
-  
-      cout << "F: " << F << endl;
   
       zDown = mesh->zCornerEdge(iZ);
       zUp = mesh->zCornerEdge(iZ+1);
@@ -142,31 +128,72 @@ Eigen::MatrixXd MMS::anisotropicTransportSourceMMS(double xi, double mu, double 
       cosUp = cos(M_PI*zUp/zLim); 
       cosDown = cos(M_PI*zDown/zLim); 
 
-      rad1 = ((pow(rLim,2)*rUp-pow(rUp,3))\
-        -(pow(rLim,2)*rDown - pow(rDown,3)));
+//      rad1 = ((pow(rLim,2)*rUp-pow(rUp,3))\
+//        -(pow(rLim,2)*rDown - pow(rDown,3)));
+//      term1 = -(A*zLim/M_PI)*(cosUp-cosDown)*rad1;
+
+//      rad2 = ((pow(rLim,2)*pow(rUp,2)/2.0-pow(rUp,4)/4.0)
+//        -(pow(rLim,2)*pow(rDown,2)/2.0 - pow(rDown,4)/4.0));
+//      term2 = (B*zLim/M_PI)*(sinUp-sinDown)*rad2;
+
+//      rad3 = ((pow(rLim,2)*rUp-pow(rUp,3)/3.0)\
+        -(pow(rLim,2)*rDown-pow(rDown,3)/3.0));
+//      term3 = -(D*zLim/M_PI)*(cosUp-cosDown)*rad3;
+
+//      rad4 = ((pow(rLim,2)*pow(rUp,2)/2.0-pow(rUp,4)/4.0)\
+        -(pow(rLim,2)*pow(rDown,2)/2.0-pow(rDown,4)/4.0));
+//      term4 = -(F*zLim/M_PI)*(cosUp-cosDown)*rad4;
+
+//      rad1 = ((pow(rUp,3)) - (pow(rDown,3)));
+//      term1 = -(A*zLim/M_PI)*(cosUp-cosDown)*rad1;
+
+//      rad2 = ((pow(rUp,4)/4.0) - (pow(rDown,4)/4.0));
+//      term2 = (B*zLim/M_PI)*(sinUp-sinDown)*rad2;
+
+//      rad3 = (pow(rUp,3)/3.0) - (pow(rDown,3)/3.0);
+//      term3 = -(D*zLim/M_PI)*(cosUp-cosDown)*rad3;
+
+//      rad4 = ((pow(rUp,4)/4.0) - (pow(rDown,4)/4.0));
+//      term4 = -(F*zLim/M_PI)*(cosUp-cosDown)*rad4;
+/////////////////////////////////////////////////
+//      rad1 = (rUp*sin(M_PI*rUp/rLim)-rDown*sin(M_PI*rDown/rLim));
+//      term1 = -(A*zLim/M_PI)*(cosUp-cosDown)*rad1;
+//
+//      rad2 = (pow(rLim,2)*sin(M_PI*rUp/rLim)/pow(M_PI,2)\
+//      - rUp*cos(M_PI*rUp/rLim)*rLim/M_PI)\
+//     -(pow(rLim,2)*sin(M_PI*rDown/rLim)/pow(M_PI,2)\
+      - rDown*cos(M_PI*rDown/rLim)*rLim/M_PI);
+//      term2 = (B*zLim/M_PI)*(sinUp-sinDown)*rad2;
+
+//      rad3 = (rLim*cos(M_PI*rDown/rLim)/M_PI)-(rLim*cos(M_PI*rUp/rLim)/M_PI);
+//      term3 = -(D*zLim/M_PI)*(cosUp-cosDown)*rad3;
+
+//      term4 = -(F*zLim/M_PI)*(cosUp-cosDown)*rad2;
+//////////////////////////////////////////////////////////////
+      relUp = 2.0*M_PI*rUp/rLim;
+      relDown = 2.0*M_PI*rDown/rLim;
+
+      rad1 = rUp*(1.0-cos(relUp))-rDown*(1.0-cos(relDown));
       term1 = -(A*zLim/M_PI)*(cosUp-cosDown)*rad1;
 
-      rad2 = ((pow(rLim,2)*pow(rUp,2)/2.0-pow(rUp,4)/4.0)
-        -(pow(rLim,2)*pow(rDown,2)/2.0 - pow(rDown,4)/4.0));
+      rad2 = pow(rUp,2.0)/2.0\
+      - rLim*(rLim*cos(relUp)+2.0*M_PI*rUp*sin(relUp))/(4.0*pow(M_PI,2.0))\
+      - (pow(rDown,2.0)/2.0\
+      - rLim*(rLim*cos(relDown)+2.0*M_PI*rDown*sin(relDown))/(4.0*pow(M_PI,2.0)));
       term2 = (B*zLim/M_PI)*(sinUp-sinDown)*rad2;
 
-      rad3 = ((pow(rLim,2)*rUp-pow(rUp,3)/3.0)\
-        -(pow(rLim,2)*rDown-pow(rDown,3)/3.0));
+      rad3 = rUp - rLim*sin(relUp)/(2.0*M_PI)\
+      - (rDown - rLim*sin(relDown)/(2.0*M_PI));
       term3 = -(D*zLim/M_PI)*(cosUp-cosDown)*rad3;
 
-      rad4 = ((pow(rLim,2)*pow(rUp,2)/2.0-pow(rUp,4)/4.0)\
-        -(pow(rLim,2)*pow(rDown,2)/2.0-pow(rDown,4)/4.0));
-      term4 = -(F*zLim/M_PI)*(cosUp-cosDown)*rad4;
+      term4 = -(F*zLim/M_PI)*(cosUp-cosDown)*rad2;
 
-      vol = (zUp - zDown) * (pow(rUp,2)-pow(rDown,2))/2.0; 
-
+      vol = (zUp - zDown) * (pow(rUp,2.0)-pow(rDown,2))/2.0; 
+      
       mmsSource(iZ,iR) = (term1 + term2 + term3 + term4)/vol;      
     }
   }
 
-  cout << "mms source" << endl;
-  cout << mmsSource << endl;
-  cout << endl;
   return mmsSource;
 }
 
@@ -195,7 +222,6 @@ void MMS::timeDependent(){
 
       for (int scatterIter = 0; scatterIter < 1000; ++scatterIter){
         
-        cout << "Half angle solves" << endl;
         // first solve for all starting angles 
         for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
           xi = mesh->quadrature[iXi].quad[0][0];
@@ -211,11 +237,6 @@ void MMS::timeDependent(){
 
         }
 
-        cout << "Half angle fluxes" << endl;
-        cout << (MGT->SGTs[0]->aHalfFlux) << endl;
-        cout << endl;  
-        cout << "Full angle solves" << endl;
- 
         for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
           xi = mesh->quadrature[iXi].quad[0][0];
             
