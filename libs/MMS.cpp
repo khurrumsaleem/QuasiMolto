@@ -128,48 +128,6 @@ Eigen::MatrixXd MMS::anisotropicTransportSourceMMS(double xi, double mu, double 
       cosUp = cos(M_PI*zUp/zLim); 
       cosDown = cos(M_PI*zDown/zLim); 
 
-//      rad1 = ((pow(rLim,2)*rUp-pow(rUp,3))\
-//        -(pow(rLim,2)*rDown - pow(rDown,3)));
-//      term1 = -(A*zLim/M_PI)*(cosUp-cosDown)*rad1;
-
-//      rad2 = ((pow(rLim,2)*pow(rUp,2)/2.0-pow(rUp,4)/4.0)
-//        -(pow(rLim,2)*pow(rDown,2)/2.0 - pow(rDown,4)/4.0));
-//      term2 = (B*zLim/M_PI)*(sinUp-sinDown)*rad2;
-
-//      rad3 = ((pow(rLim,2)*rUp-pow(rUp,3)/3.0)\
-        -(pow(rLim,2)*rDown-pow(rDown,3)/3.0));
-//      term3 = -(D*zLim/M_PI)*(cosUp-cosDown)*rad3;
-
-//      rad4 = ((pow(rLim,2)*pow(rUp,2)/2.0-pow(rUp,4)/4.0)\
-        -(pow(rLim,2)*pow(rDown,2)/2.0-pow(rDown,4)/4.0));
-//      term4 = -(F*zLim/M_PI)*(cosUp-cosDown)*rad4;
-
-//      rad1 = ((pow(rUp,3)) - (pow(rDown,3)));
-//      term1 = -(A*zLim/M_PI)*(cosUp-cosDown)*rad1;
-
-//      rad2 = ((pow(rUp,4)/4.0) - (pow(rDown,4)/4.0));
-//      term2 = (B*zLim/M_PI)*(sinUp-sinDown)*rad2;
-
-//      rad3 = (pow(rUp,3)/3.0) - (pow(rDown,3)/3.0);
-//      term3 = -(D*zLim/M_PI)*(cosUp-cosDown)*rad3;
-
-//      rad4 = ((pow(rUp,4)/4.0) - (pow(rDown,4)/4.0));
-//      term4 = -(F*zLim/M_PI)*(cosUp-cosDown)*rad4;
-/////////////////////////////////////////////////
-//      rad1 = (rUp*sin(M_PI*rUp/rLim)-rDown*sin(M_PI*rDown/rLim));
-//      term1 = -(A*zLim/M_PI)*(cosUp-cosDown)*rad1;
-//
-//      rad2 = (pow(rLim,2)*sin(M_PI*rUp/rLim)/pow(M_PI,2)\
-//      - rUp*cos(M_PI*rUp/rLim)*rLim/M_PI)\
-//     -(pow(rLim,2)*sin(M_PI*rDown/rLim)/pow(M_PI,2)\
-      - rDown*cos(M_PI*rDown/rLim)*rLim/M_PI);
-//      term2 = (B*zLim/M_PI)*(sinUp-sinDown)*rad2;
-
-//      rad3 = (rLim*cos(M_PI*rDown/rLim)/M_PI)-(rLim*cos(M_PI*rUp/rLim)/M_PI);
-//      term3 = -(D*zLim/M_PI)*(cosUp-cosDown)*rad3;
-
-//      term4 = -(F*zLim/M_PI)*(cosUp-cosDown)*rad2;
-//////////////////////////////////////////////////////////////
       relUp = 2.0*M_PI*rUp/rLim;
       relDown = 2.0*M_PI*rDown/rLim;
 
