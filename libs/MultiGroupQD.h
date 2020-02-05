@@ -2,7 +2,38 @@
 #define MULTIGROUPQD_H
 
 #include <iostream>
+#include <vector>
+#include <iomanip>
+#include <armadillo>
+#include "Mesh.h"
+#include "Materials.h"
+#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
+#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
-void printMultiGroupQD();
+using namespace std;
+using namespace arma;
+
+class SingleGroupQD; // forward declaration
+
+//==============================================================================
+//! MultGroupTransport class that holds multigroup transport information
+
+class MultiGroupQD
+{
+  public:
+  vector< shared_ptr<SingleGroupQD> > SGQDs;
+  // public functions
+  MultiGroupQD(Materials * myMaterials,\
+    Mesh * myMesh,\
+    YAML::Node * myInput);
+
+  private:
+  YAML::Node * input;
+  Mesh * mesh;
+  Materials * materials;
+
+};
+
+//==============================================================================
 
 #endif

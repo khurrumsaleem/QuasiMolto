@@ -29,10 +29,6 @@ int main(int argc, char** argv) {
     *input = YAML::LoadFile("input.yaml");
   }
        
-  printMultiGroupQD();
-  printSingleGroupQD();
-  printTransport();
-
   // initialize mesh object
   Mesh * myMesh; 
   myMesh = new Mesh(input);
