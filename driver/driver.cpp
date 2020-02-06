@@ -42,6 +42,10 @@ int main(int argc, char** argv) {
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
+  
+  // initialize multigroup quasidiffusion object
+  MultiGroupQD * myMGQD; 
+  myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
 
   MMS * myMMS;
   myMMS = new MMS(myMGT,myMesh,myMaterials,input);
