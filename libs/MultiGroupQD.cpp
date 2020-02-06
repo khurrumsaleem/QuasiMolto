@@ -10,6 +10,7 @@
 #include "Materials.h"
 #include "SingleGroupQD.h"
 #include "MultiGroupQD.h"
+#include "QuasidiffusionSolver.h"
 #include "MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
@@ -38,6 +39,8 @@ MultiGroupQD::MultiGroupQD(Materials * myMaterials,\
       this,materials,mesh,input));
     SGQDs.push_back(std::move(newSGQD));
   }
+
+  QDSolve = std::make_shared<QDSolver>(mesh,materials,input);
 
 };
 

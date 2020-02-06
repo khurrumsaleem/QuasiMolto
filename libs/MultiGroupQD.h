@@ -14,13 +14,14 @@ using namespace std;
 using namespace arma;
 
 class SingleGroupQD; // forward declaration
-
+class QDSolver; // forward declaration
 //==============================================================================
 //! MultGroupTransport class that holds multigroup transport information
 
 class MultiGroupQD
 {
   public:
+  shared_ptr<QDSolver> QDSolve;
   vector< shared_ptr<SingleGroupQD> > SGQDs;
   // public functions
   MultiGroupQD(Materials * myMaterials,\

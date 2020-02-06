@@ -8,5 +8,6 @@ add_library(libs
         MultiGroupTransport.cpp
         SingleGroupTransport.cpp
 	SimpleCornerBalance.cpp
+        QuasidiffusionSolver.cpp
 	MMS.cpp
         Material.cpp)
