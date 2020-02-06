@@ -18,6 +18,8 @@ class QDSolver
     Materials * myMaterials,\
     YAML::Node * myInput);
   void formLinearSystem(SingleGroupQD * SGQD);
+  Eigen::SparseMatrix<double> A;
+  int energyGroups;
 
   private:
   // private functions

@@ -33,6 +33,18 @@ QDSolver::QDSolver(Mesh * myMesh,\
   input = myInput;
   materials = myMaterials;
 
+  // temporary variables for initialization
+  int nUnknowns;
+
+  // calculate number of unknowns  
+  energyGroups = materials->nGroups;
+  nUnknowns = energyGroups*(5*(mesh->zCornerCent.size()\
+    *mesh->rCornerCent.size()) + 2*mesh->zCornerCent.size()\
+    + 2*mesh->rCornerCent.size());
+
+  // initialize size of linear system
+  A.resize(nUnknowns,nUnknowns);
+
 };
 
 //==============================================================================
