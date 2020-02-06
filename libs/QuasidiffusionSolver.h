@@ -18,16 +18,18 @@ class QDSolver
     Materials * myMaterials,\
     YAML::Node * myInput);
   void formLinearSystem(SingleGroupQD * SGQD);
-  int CFluxIndex(int iR, int iZ, int energyGroup);
-  int WFluxIndex(int iR, int iZ, int energyGroup);
-  int EFluxIndex(int iR, int iZ, int energyGroup);
-  int NFluxIndex(int iR, int iZ, int energyGroup);
-  int SFluxIndex(int iR, int iZ, int energyGroup);
-  int WCurrentIndex(int iR, int iZ, int energyGroup);
-  int ECurrentIndex(int iR, int iZ, int energyGroup);
-  int NCurrentIndex(int iR, int iZ, int energyGroup);
-  int SCurrentIndex(int iR, int iZ, int energyGroup);
-  vector<int> indices(int iR, int iZ, int energyGroup);
+  int CFluxIndex(int iR,int iZ,int energyGroup);
+  int WFluxIndex(int iR,int iZ,int energyGroup);
+  int EFluxIndex(int iR,int iZ,int energyGroup);
+  int NFluxIndex(int iR,int iZ,int energyGroup);
+  int SFluxIndex(int iR,int iZ,int energyGroup);
+  int WCurrentIndex(int iR,int iZ,int energyGroup);
+  int ECurrentIndex(int iR,int iZ,int energyGroup);
+  int NCurrentIndex(int iR,int iZ,int energyGroup);
+  int SCurrentIndex(int iR,int iZ,int energyGroup);
+  double calcVolAvgR(double rDown,double rUp);
+  vector<int> indices(int iR,int iZ,int energyGroup);
+  vector<double> calcGeoParams(int iR,int iZ);
   
   // public variables
   Eigen::SparseMatrix<double> A;

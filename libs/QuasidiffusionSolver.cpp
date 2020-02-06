@@ -222,6 +222,55 @@ vector<int> QDSolver::indices(int iR,int iZ,int energyGroup)
 //==============================================================================
 
 
+//==============================================================================
+/// Return geometry parameters for the cell located at (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [out] gParams vector containing volume and surfaces areas of the 
+///   west, east, north, and south faces, in that order.
+vector<double> QDSolver::calcGeoParams(int iR,int iZ)
+{
+  vector<double> gParams;
+  double rDown,rUp,zDown,zUp,volume,wFaceSA,eFaceSA,nFaceSA,sFaceSA;
+  
+  // get boundaries of this cell
+  rDown = mesh->rEdge(iR); rUp = mesh->rEdge(iR+1);
+  zDown = mesh->zEdge(iR); zUp = mesh->zEdge(iR+1);
+
+  // calculate geometry parameters
+  volume = M_PI*(rUp*rUp-rDown*rDown)*(zUp-zDown);
+  nFaceSA = M_PI*(rUp*rUp-rDown*rDown); 
+  sFaceSA = nFaceSA;
+  eFaceSA = 2*M_PI*rUp*(zUp-zDown);
+  wFaceSA = 2*M_PI*rDown*(zUp-zDown);
+
+  // add parameters to the vector and return it
+  gParams.push_back(volume);
+  gParams.push_back(wFaceSA);
+  gParams.push_back(eFaceSA);
+  gParams.push_back(nFaceSA);
+  gParams.push_back(sFaceSA);
+
+  return gParams;
+};
+//==============================================================================
+
+//==============================================================================
+/// Return volume-averaged radial coordinate for cell with boundaries rDown and
+///   rUp
+/// @param [in] rDown location of left cell edge
+/// @param [in] rUp location of right cell edge
+/// @param [out] volAvgR volume-averaged radial coordinate 
+double QDSolver::calcVolAvgR(double rDown,double rUp)
+{
+  // calculate volume-averaged radius
+  double volAvgR = (2/3)*(pow(rUp,3) - pow(rDown,3))/(pow(rUp,2)-pow(rDown,2));
+
+  return volAvgR;
+};
+//==============================================================================
+
+
 
 
 
