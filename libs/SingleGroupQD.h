@@ -35,6 +35,7 @@ class SingleGroupQD
     Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * myInput);
+  void formContributionToLinearSystem();
 
   private:
   MultiGroupQD * MGQD;

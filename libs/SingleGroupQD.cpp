@@ -11,6 +11,7 @@
 #include "Materials.h"
 #include "MultiGroupQD.h"
 #include "SingleGroupQD.h"
+#include "QuasidiffusionSolver.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
@@ -42,6 +43,11 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   input = myInput;
 
 };
-
 //==============================================================================
 
+//==============================================================================
+void SingleGroupQD::formContributionToLinearSystem()
+{
+  MGQD->QDSolve->formLinearSystem(this);
+}
+//==============================================================================

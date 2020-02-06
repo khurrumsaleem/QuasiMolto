@@ -2,6 +2,7 @@
 #include "Mesh.h"
 #include "Materials.h"
 #include "Material.h"
+#include "SingleGroupQD.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
@@ -16,6 +17,7 @@ class QDSolver
   QDSolver(Mesh * myMesh,\
     Materials * myMaterials,\
     YAML::Node * myInput);
+  void formLinearSystem(SingleGroupQD * SGQD);
 
   private:
   // private functions

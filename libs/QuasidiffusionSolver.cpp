@@ -37,3 +37,16 @@ QDSolver::QDSolver(Mesh * myMesh,\
 
 //==============================================================================
 
+//==============================================================================
+/// Form a portion of the linear system that belongs to SGQD 
+///
+void QDSolver::formLinearSystem(SingleGroupQD * SGQD)	      
+{
+
+  cout << "linear system formed" << endl;
+
+};
+
+//==============================================================================
+
+
