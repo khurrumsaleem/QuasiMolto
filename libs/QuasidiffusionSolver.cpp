@@ -59,11 +59,89 @@ QDSolver::QDSolver(Mesh * myMesh,\
 ///   for
 void QDSolver::formLinearSystem(SingleGroupQD * SGQD)	      
 {
-  A.setZero();
-  cout << "linear system formed" << endl;
+  int iEq = 0;
 
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+
+      // apply zeroth moment equation
+      assertZerothMoment(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      iEq = iEq + 1;
+
+      // north face
+      if (iZ == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertNFluxBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+        assertNCurrentBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on north face
+        assertFirstMomentNorth(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      }
+
+      // south face
+      if (iZ == mesh->dzsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSFluxBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+        assertSCurrentBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on south face
+        assertFirstMomentSouth(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      }
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertWFluxBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+        assertWCurrentBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on west face
+        assertFirstMomentWest(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      }
+
+      // east face
+      if (iR == mesh->drsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertEFluxBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+        assertECurrentBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on north face
+        assertFirstMomentEast(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      }
+    }
+  }
 };
 
+//==============================================================================
+
+//==============================================================================
+/// Compute the solution, x, to Ax = b.
+void QDSolver::solve()
+{
+  x = A.partialPivLu().solve(b);
+}
 //==============================================================================
 
 //==============================================================================
@@ -99,9 +177,175 @@ void QDSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
   A.insert(iEq,indices[iNC]) = -geoParams[iNF];
   A.insert(iEq,indices[iSC]) = geoParams[iSF];
   
-  // formulat RHS entry
+  // formulate RHS entry
   b(iEq) = geoParams[iCF]*\
     ( (xPast(indices[iCF])/(v*deltaT)) + SGQD->q(iZ,iR));
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the first moment equation on the south face of cell (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+void QDSolver::assertFirstMomentSouth(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutV(energyGroup);
+  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rCent,zCent,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zCent = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zUp-zAvg;
+
+  // get local Eddington factors
+  ErrL = SGQD->Err(iZ,iR);
+  EzzL = SGQD->Ezz(iZ,iR);
+  ErzL = SGQD->Erz(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+  A.insert(iEq,indices[iSC]) = ((1/(v*deltaT)) + sigT);
+  A.insert(iEq,indices[iSF]) = EzzL/deltaZ;
+  A.insert(iEq,indices[iCF]) = -EzzL/deltaZ;
+  A.insert(iEq,indices[iWF]) = -(rDown*ErzL/(rAvg*deltaR));
+  A.insert(iEq,indices[iEF]) = rUp*ErzL/(rAvg*deltaR);
+  
+  // formulate RHS entry
+  b(iEq) =(xPast(indices[iSC])/(v*deltaT)) + SGQD->q(iZ,iR);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the first moment equation on the north face of cell (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+void QDSolver::assertFirstMomentNorth(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutV(energyGroup);
+  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rCent,zCent,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zCent = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zAvg-zDown;
+
+  // get local Eddington factors
+  ErrL = SGQD->Err(iZ,iR);
+  EzzL = SGQD->Ezz(iZ,iR);
+  ErzL = SGQD->Erz(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+  A.insert(iEq,indices[iNC]) = ((1/(v*deltaT)) + sigT);
+  A.insert(iEq,indices[iNF]) = -EzzL/deltaZ;
+  A.insert(iEq,indices[iCF]) = EzzL/deltaZ;
+  A.insert(iEq,indices[iWF]) = -(rDown*ErzL/(rAvg*deltaR));
+  A.insert(iEq,indices[iEF]) = rUp*ErzL/(rAvg*deltaR);
+  
+  // formulate RHS entry
+  b(iEq) =(xPast(indices[iNC])/(v*deltaT)) + SGQD->q(iZ,iR);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the first moment equation on the west face of cell (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+void QDSolver::assertFirstMomentWest(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutV(energyGroup);
+  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rCent,zCent,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double hCent,hDown;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zCent = (zUp + zDown)/2;
+  deltaR = rAvg-rDown; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
+
+  // get local Eddington factors
+  ErrL = SGQD->Err(iZ,iR);
+  EzzL = SGQD->Ezz(iZ,iR);
+  ErzL = SGQD->Erz(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+  A.insert(iEq,indices[iWC]) = ((1/(v*deltaT)) + sigT);
+  A.insert(iEq,indices[iSF]) = ErzL/deltaZ;
+  A.insert(iEq,indices[iNF]) = -ErzL/deltaZ;
+  A.insert(iEq,indices[iCF]) = hCent*ErrL/(hDown*deltaR);
+  A.insert(iEq,indices[iWF]) = -hDown*ErrL/(hDown*deltaR);
+  
+  // formulate RHS entry
+  b(iEq) =(xPast(indices[iWC])/(v*deltaT)) + SGQD->q(iZ,iR);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the first moment equation on the west face of cell (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+void QDSolver::assertFirstMomentEast(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutV(energyGroup);
+  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rCent,zCent,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double hCent,hUp;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zCent = (zUp + zDown)/2;
+  deltaR = rAvg-rDown; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
+
+  // get local Eddington factors
+  ErrL = SGQD->Err(iZ,iR);
+  EzzL = SGQD->Ezz(iZ,iR);
+  ErzL = SGQD->Erz(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+  A.insert(iEq,indices[iEC]) = ((1/(v*deltaT)) + sigT);
+  A.insert(iEq,indices[iSF]) = ErzL/deltaZ;
+  A.insert(iEq,indices[iNF]) = -ErzL/deltaZ;
+  A.insert(iEq,indices[iCF]) = -hCent*ErrL/(hUp*deltaR);
+  A.insert(iEq,indices[iEF]) = hUp*ErrL/(hUp*deltaR);
+  
+  // formulate RHS entry
+  b(iEq) =(xPast(indices[iEC])/(v*deltaT)) + SGQD->q(iZ,iR);
 };
 //==============================================================================
 
@@ -273,7 +517,7 @@ double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
   G = 1 + (ErrL+EzzL-1)/ErrL;
 
   // get boundaries of cell and calculate volume average 
-  rUp = mesh->rEdge(iR+1); rDown = mesh->rEdge(iR);
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
   rAvg = calcVolAvgR(rDown,rUp);
 
   if (iR == 0){
@@ -468,8 +712,8 @@ vector<double> QDSolver::calcGeoParams(int iR,int iZ)
   double rDown,rUp,zDown,zUp,volume,wFaceSA,eFaceSA,nFaceSA,sFaceSA;
   
   // get boundaries of this cell
-  rDown = mesh->rEdge(iR); rUp = mesh->rEdge(iR+1);
-  zDown = mesh->zEdge(iR); zUp = mesh->zEdge(iR+1);
+  rDown = mesh->rCornerEdge(iR); rUp = mesh->rCornerEdge(iR+1);
+  zDown = mesh->zCornerEdge(iR); zUp = mesh->zCornerEdge(iR+1);
 
   // calculate geometry parameters
   volume = M_PI*(rUp*rUp-rDown*rDown)*(zUp-zDown);

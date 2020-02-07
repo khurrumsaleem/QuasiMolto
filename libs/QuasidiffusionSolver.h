@@ -38,6 +38,14 @@ class QDSolver
   // functions to enforce governing equations
   void assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
+  void assertFirstMomentSouth(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertFirstMomentNorth(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertFirstMomentWest(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertFirstMomentEast(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
   void assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
   void assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
@@ -58,6 +66,10 @@ class QDSolver
     int fromEnergyGroup);
   double calcIntegratingFactor(int iR,int iZ,double rEval,SingleGroupQD * SGQD);
   
+  // function to solve linear system
+  void solve();
+
+  
   // public variables
   Eigen::SparseMatrix<double> A;
   Eigen::VectorXd x;
@@ -70,7 +82,7 @@ class QDSolver
   YAML::Node * input;
   Mesh * mesh;
   Materials * materials;
-  // indices for accessing index vector
+  // indices for accessing index and geometry parameters vectors
   int iCF = 0;
   int iWF = 1, iEF = 2, iNF = 3, iSF = 4;
   int iWC = 5, iEC = 6, iNC = 7, iSC = 8;
