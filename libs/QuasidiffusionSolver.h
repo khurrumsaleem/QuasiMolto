@@ -30,6 +30,7 @@ class QDSolver
   double calcVolAvgR(double rDown,double rUp);
   vector<int> indices(int iR,int iZ,int energyGroup);
   vector<double> calcGeoParams(int iR,int iZ);
+  double calcIntegratingFactor(int iR,int iZ,double rEval,SingleGroupQD * SGQD);
   
   // public variables
   Eigen::SparseMatrix<double> A;

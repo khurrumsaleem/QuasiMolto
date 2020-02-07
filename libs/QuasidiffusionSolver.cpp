@@ -52,13 +52,56 @@ QDSolver::QDSolver(Mesh * myMesh,\
 
 //==============================================================================
 /// Form a portion of the linear system that belongs to SGQD 
-///
 /// @param [in] SGQD quasidiffusion energy group to build portion of linear 
 ///   for
 void QDSolver::formLinearSystem(SingleGroupQD * SGQD)	      
 {
 
   cout << "linear system formed" << endl;
+
+};
+
+//==============================================================================
+
+//==============================================================================
+/// Form a portion of the linear system that belongs to SGQD 
+/// @param [in] SGQD quasidiffusion energy group to build portion of linear 
+///   for
+double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
+  SingleGroupQD * SGQD)	      
+{
+  double EzzL,ErrL,ErzL,G,rUp,rDown,rAvg,g0,g1,ratio,hEval;
+  int p;
+  
+  // get local Eddington factors 
+  ErrL = SGQD->Err(iZ,iR);
+  EzzL = SGQD->Ezz(iZ,iR);
+  ErzL = SGQD->Erz(iZ,iR);
+
+  // evaluate G
+  G = 1 + (ErrL+EzzL-1)/ErrL;
+
+  // get boundaries of cell and calculate volume average 
+  rUp = mesh->rEdge(iR+1); rDown = mesh->rEdge(iR);
+  rAvg = calcVolAvgR(rDown,rUp);
+
+  if (iR == 0){
+
+    // use a special expression for cells that share a boundary with
+    // the z-axis
+    p = 2;
+    ratio = (pow(rUp,p+1)-pow(rAvg,p+1))/(pow(rAvg,p)-pow(rUp,p));
+    g1 = G/(pow(rAvg,p) * (rAvg + ratio));
+    g0 = g1 * ratio;
+
+    hEval = exp((g0*pow(rEval,p)/p)+g1*(pow(rEval,p+1))/(p+1));
+
+  } else {
+
+    // use the typical expression
+    hEval = pow(rEval,G);
+
+  }
 
 };
 
