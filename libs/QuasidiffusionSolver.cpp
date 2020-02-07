@@ -45,6 +45,8 @@ QDSolver::QDSolver(Mesh * myMesh,\
 
   // initialize size of linear system
   A.resize(nUnknowns,nUnknowns);
+  x.resize(nUnknowns);
+  b.resize(nUnknowns);
 
 };
 
@@ -62,6 +64,135 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
 };
 
 //==============================================================================
+
+//==============================================================================
+/// Assert the flux boundary condition on the north face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertNFluxBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  int nIndex = NFluxIndex(iR,iZ,energyGroup);
+  
+  A.insert(iEq,nIndex) = 1.0;
+  b(iEq) = SGQD->nFluxBC(iR);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the flux boundary condition on the south face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertSFluxBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  int sIndex = SFluxIndex(iR,iZ,energyGroup);
+  
+  A.insert(iEq,sIndex) = 1.0;
+  b(iEq) = SGQD->sFluxBC(iR);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the flux boundary condition on the west face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  int wIndex = WFluxIndex(iR,iZ,energyGroup);
+  
+  A.insert(iEq,wIndex) = 1.0;
+  b(iEq) = SGQD->wFluxBC(iZ);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the flux boundary condition on the east face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  int eIndex = EFluxIndex(iR,iZ,energyGroup);
+  
+  A.insert(iEq,eIndex) = 1.0;
+  b(iEq) = SGQD->eFluxBC(iZ);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the current boundary condition on the north face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  int nIndex = NCurrentIndex(iR,iZ,energyGroup);
+  
+  A.insert(iEq,nIndex) = 1.0;
+  b(iEq) = SGQD->nCurrentZBC(iR);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the current boundary condition on the south face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  int sIndex = SCurrentIndex(iR,iZ,energyGroup);
+  
+  A.insert(iEq,sIndex) = 1.0;
+  b(iEq) = SGQD->sCurrentZBC(iR);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the current boundary condition on the west face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  int wIndex = WCurrentIndex(iR,iZ,energyGroup);
+  
+  A.insert(iEq,wIndex) = 1.0;
+  b(iEq) = SGQD->wCurrentRBC(iZ);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the current boundary condition on the east face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  int eIndex = ECurrentIndex(iR,iZ,energyGroup);
+  
+  A.insert(iEq,eIndex) = 1.0;
+  b(iEq) = SGQD->eCurrentRBC(iZ);
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Form a portion of the linear system that belongs to SGQD 

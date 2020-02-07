@@ -18,6 +18,8 @@ class QDSolver
     Materials * myMaterials,\
     YAML::Node * myInput);
   void formLinearSystem(SingleGroupQD * SGQD);
+  
+  // functions to map grid indices to global index
   int CFluxIndex(int iR,int iZ,int energyGroup);
   int WFluxIndex(int iR,int iZ,int energyGroup);
   int EFluxIndex(int iR,int iZ,int energyGroup);
@@ -27,13 +29,35 @@ class QDSolver
   int ECurrentIndex(int iR,int iZ,int energyGroup);
   int NCurrentIndex(int iR,int iZ,int energyGroup);
   int SCurrentIndex(int iR,int iZ,int energyGroup);
-  double calcVolAvgR(double rDown,double rUp);
   vector<int> indices(int iR,int iZ,int energyGroup);
+  
+  // functions to calculate geometry parameters
+  double calcVolAvgR(double rDown,double rUp);
   vector<double> calcGeoParams(int iR,int iZ);
+  
+  // functions to enforce governing equations
+  void assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertNFluxBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertSFluxBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
   double calcIntegratingFactor(int iR,int iZ,double rEval,SingleGroupQD * SGQD);
   
   // public variables
   Eigen::SparseMatrix<double> A;
+  Eigen::VectorXd x;
+  Eigen::VectorXd b;
   int energyGroups,nR,nZ,nGroupUnknowns;
 
   private:
