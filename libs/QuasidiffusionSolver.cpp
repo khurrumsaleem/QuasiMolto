@@ -140,7 +140,9 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
 /// Compute the solution, x, to Ax = b.
 void QDSolver::solve()
 {
-  x = A.partialPivLu().solve(b);
+  Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
+  solver.compute(A);
+  x = solver.solve(b);
 }
 //==============================================================================
 
