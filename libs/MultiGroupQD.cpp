@@ -43,5 +43,14 @@ MultiGroupQD::MultiGroupQD(Materials * myMaterials,\
   QDSolve = std::make_shared<QDSolver>(mesh,materials,input);
 
 };
+//==============================================================================
 
+//==============================================================================
+void MultiGroupQD::buildLinearSystem()
+{
+  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+  {
+    SGQDs[iGroup]->formContributionToLinearSystem();
+  }
+}
 //==============================================================================
