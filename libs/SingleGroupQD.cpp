@@ -42,6 +42,13 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   mesh = myMesh;
   input = myInput;
 
+  // initialize Eddington factors to diffusion physics
+  Err.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+  Err = (1/3)*Err;
+  Ezz.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+  Ezz = (1/3)*Ezz;
+  Erz.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+
 };
 //==============================================================================
 

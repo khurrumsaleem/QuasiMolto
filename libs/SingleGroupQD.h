@@ -29,6 +29,24 @@ class SingleGroupQD
   Eigen::MatrixXd q;
   Eigen::MatrixXd fissionSource;
   Eigen::MatrixXd scatterSource;
+  
+  // Eddington factors
+  Eigen::MatrixXd Err;
+  Eigen::MatrixXd Ezz;
+  Eigen::MatrixXd Erz;
+
+  // flux boundary conditions  
+  Eigen::VectorXd wFluxBC;
+  Eigen::VectorXd eFluxBC;
+  Eigen::VectorXd nFluxBC;
+  Eigen::VectorXd sFluxBC;
+  
+  // current boundary conditions
+  Eigen::VectorXd wCurrentRBC;
+  Eigen::VectorXd eCurrentRBC;
+  Eigen::VectorXd nCurrentZBC;
+  Eigen::VectorXd sCurrentZBC;
+
   // public functions
   SingleGroupQD(int myEnergyGroup,\
     MultiGroupQD * myMGQD,\
