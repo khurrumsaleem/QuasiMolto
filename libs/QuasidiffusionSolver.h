@@ -29,13 +29,15 @@ class QDSolver
   int ECurrentIndex(int iR,int iZ,int energyGroup);
   int NCurrentIndex(int iR,int iZ,int energyGroup);
   int SCurrentIndex(int iR,int iZ,int energyGroup);
-  vector<int> indices(int iR,int iZ,int energyGroup);
+  vector<int> getIndices(int iR,int iZ,int energyGroup);
   
   // functions to calculate geometry parameters
   double calcVolAvgR(double rDown,double rUp);
   vector<double> calcGeoParams(int iR,int iZ);
   
   // functions to enforce governing equations
+  void assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
   void assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
   void assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
@@ -52,11 +54,14 @@ class QDSolver
     SingleGroupQD * SGQD);
   void assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
+  double calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
+    int fromEnergyGroup);
   double calcIntegratingFactor(int iR,int iZ,double rEval,SingleGroupQD * SGQD);
   
   // public variables
   Eigen::SparseMatrix<double> A;
   Eigen::VectorXd x;
+  Eigen::VectorXd xPast;
   Eigen::VectorXd b;
   int energyGroups,nR,nZ,nGroupUnknowns;
 

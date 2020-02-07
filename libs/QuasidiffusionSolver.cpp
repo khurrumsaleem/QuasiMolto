@@ -46,6 +46,7 @@ QDSolver::QDSolver(Mesh * myMesh,\
   // initialize size of linear system
   A.resize(nUnknowns,nUnknowns);
   x.resize(nUnknowns);
+  xPast.resize(nUnknowns);
   b.resize(nUnknowns);
 
 };
@@ -58,11 +59,50 @@ QDSolver::QDSolver(Mesh * myMesh,\
 ///   for
 void QDSolver::formLinearSystem(SingleGroupQD * SGQD)	      
 {
-
+  A.setZero();
   cout << "linear system formed" << endl;
 
 };
 
+//==============================================================================
+
+//==============================================================================
+/// Assert the zeroth moment equation for cell (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+void QDSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutV(energyGroup);
+  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double groupSourceCoeff;
+
+  // populate entries representing sources from scattering and fission in 
+  // this and other energy groups
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup)
+  {
+    indices = getIndices(iR,iZ,iGroup);
+    groupSourceCoeff = calcScatterAndFissionCoeff(iZ,iR,energyGroup,iGroup);
+    A.insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
+  }
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+  A.coeffRef(iEq,indices[iCF]) += geoParams[iCF] * ((1/(v*deltaT)) + sigT);
+  A.insert(iEq,indices[iWC]) = -geoParams[iWF];
+  A.insert(iEq,indices[iEC]) = geoParams[iEF];
+  A.insert(iEq,indices[iNC]) = -geoParams[iNF];
+  A.insert(iEq,indices[iSC]) = geoParams[iSF];
+  
+  // formulat RHS entry
+  b(iEq) = geoParams[iCF]*\
+    ( (xPast(indices[iCF])/(v*deltaT)) + SGQD->q(iZ,iR));
+};
 //==============================================================================
 
 //==============================================================================
@@ -193,6 +233,26 @@ void QDSolver::assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 };
 //==============================================================================
 
+//==============================================================================
+/// Calculate multigroup source coefficient for cell at (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] energyGroup energy group of sourcing group
+double QDSolver::calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
+  int fromEnergyGroup)
+{
+
+  double localSigF,localNu,localChiP,localSigS,sourceCoefficient;
+
+  localSigF = materials->sigF(iZ,iR,fromEnergyGroup);
+  localNu = materials->nu(iZ,iR);
+  localChiP = materials->chiP(iZ,iR,toEnergyGroup);
+  localSigS = materials->sigS(iZ,iR,fromEnergyGroup,toEnergyGroup);
+  sourceCoefficient = localSigS + localChiP * localNu * localSigF;
+
+  return sourceCoefficient;
+};
+//==============================================================================
 
 //==============================================================================
 /// Form a portion of the linear system that belongs to SGQD 
@@ -377,7 +437,7 @@ int QDSolver::SCurrentIndex(int iR,int iZ,int energyGroup)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [out] index global index for south face current in cell at (iR,iZ)
-vector<int> QDSolver::indices(int iR,int iZ,int energyGroup)
+vector<int> QDSolver::getIndices(int iR,int iZ,int energyGroup)
 {
   vector<int> indices;
   indices.push_back(CFluxIndex(iR,iZ,energyGroup));
