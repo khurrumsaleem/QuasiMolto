@@ -552,7 +552,7 @@ double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
 int QDSolver::CFluxIndex(int iR,int iZ,int energyGroup)
 {
   int offset = energyGroup*nGroupUnknowns;
-  int index = iR + nR * (iZ);
+  int index = offset + iR + nR * (iZ);
   return index;
 };
 
