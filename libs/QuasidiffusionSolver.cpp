@@ -59,7 +59,7 @@ QDSolver::QDSolver(Mesh * myMesh,\
 ///   for
 void QDSolver::formLinearSystem(SingleGroupQD * SGQD)	      
 {
-  int iEq = 0;
+  int iEq = SGQD->energyGroup*nGroupUnknowns;
 
   // loop over spatial mesh
   for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
