@@ -58,6 +58,8 @@ int main(int argc, char** argv) {
   
     if (solveType == "MMS" or solveType == "mms")    
       myMMS->timeDependent();
+    else if (solveType == "MGQD" or solveType == "mgqd") 
+      myMGQD->buildLinearSystem();
     else 
       myMGT->solveTransportOnly();
 
