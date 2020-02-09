@@ -28,6 +28,7 @@ class MultiGroupQD
     Mesh * myMesh,\
     YAML::Node * myInput);
   void buildLinearSystem();
+  void solveLinearSystem();
 
   private:
   YAML::Node * input;
