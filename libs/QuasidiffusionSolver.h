@@ -69,6 +69,8 @@ class QDSolver
   // function to solve linear system
   void solve();
 
+  // function to parse solution vector
+  void getFlux(SingleGroupQD * SGQD);
   
   // public variables
   Eigen::SparseMatrix<double> A;

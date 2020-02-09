@@ -751,6 +751,30 @@ double QDSolver::calcVolAvgR(double rDown,double rUp)
 };
 //==============================================================================
 
+//==============================================================================
+/// Extract cell average values from solution vector and store
+/// @param [in] SGQD single group quasidiffusion object to get flux for
+void QDSolver::getFlux(SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+      indices = getIndices(iR,iZ,SGQD->energyGroup);
+      SGQD->sFlux(iZ,iR) = x(indices[iCF]);
+    }
+  }
+
+  
+
+};
+//==============================================================================
+
+
+
 
 
 
