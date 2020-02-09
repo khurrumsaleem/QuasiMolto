@@ -45,6 +45,7 @@ QDSolver::QDSolver(Mesh * myMesh,\
 
   // initialize size of linear system
   A.resize(nUnknowns,nUnknowns);
+  A.reserve(5*nUnknowns+nUnknowns/5);
   x.resize(nUnknowns);
   xPast.resize(nUnknowns);
   b.resize(nUnknowns);
