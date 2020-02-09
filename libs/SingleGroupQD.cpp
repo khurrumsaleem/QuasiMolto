@@ -48,7 +48,9 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   Ezz.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   Ezz = (1/3)*Ezz;
   Erz.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
-
+  
+  // initialize source 
+  q.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
 };
 //==============================================================================
 
