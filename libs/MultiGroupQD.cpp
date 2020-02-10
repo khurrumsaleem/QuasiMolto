@@ -59,5 +59,11 @@ void MultiGroupQD::buildLinearSystem()
 void MultiGroupQD::solveLinearSystem()
 {
   QDSolve->solve();
+  
+  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+  {
+    SGQDs[iGroup]->getFlux();
+    cout << SGQDs[iGroup]->sFlux << endl;
+  }
 }
 //==============================================================================
