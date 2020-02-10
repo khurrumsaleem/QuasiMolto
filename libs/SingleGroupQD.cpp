@@ -44,24 +44,29 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
 
   // initialize Eddington factors to diffusion physics
   Err.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
-  Err = (1/3)*Err;
+  Err = (1.0/3.0)*Err;
   Ezz.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
-  Ezz = (1/3)*Ezz;
+  Ezz = (1.0/3.0)*Ezz;
   Erz.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   
   // initialize source 
-  q.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+  q.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+  q = 100*q;
   sFlux.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   
   // initialize boundary conditions
-  wFluxBC.setZero(mesh->dzsCorner.size());
+  wFluxBC.setOnes(mesh->dzsCorner.size());
+  wFluxBC = 1000*wFluxBC;
   eFluxBC.setZero(mesh->dzsCorner.size());
   nFluxBC.setZero(mesh->drsCorner.size());
   sFluxBC.setZero(mesh->drsCorner.size());
   wCurrentRBC.setZero(mesh->dzsCorner.size());
-  eCurrentRBC.setZero(mesh->dzsCorner.size());
-  nCurrentZBC.setZero(mesh->drsCorner.size());
-  sCurrentZBC.setZero(mesh->drsCorner.size());
+  eCurrentRBC.setOnes(mesh->dzsCorner.size());
+  eCurrentRBC = 1.0*eCurrentRBC;
+  nCurrentZBC.setOnes(mesh->drsCorner.size());
+  nCurrentZBC = -10.0*nCurrentZBC;
+  sCurrentZBC.setOnes(mesh->drsCorner.size());
+  sCurrentZBC = 10.0*sCurrentZBC;
 };
 //==============================================================================
 
@@ -69,5 +74,12 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
 void SingleGroupQD::formContributionToLinearSystem()
 {
   MGQD->QDSolve->formLinearSystem(this);
+}
+//==============================================================================
+
+//==============================================================================
+void SingleGroupQD::getFlux()
+{
+  MGQD->QDSolve->getFlux(this);
 }
 //==============================================================================

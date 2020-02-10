@@ -54,6 +54,7 @@ class SingleGroupQD
     Mesh * myMesh,\
     YAML::Node * myInput);
   void formContributionToLinearSystem();
+  void getFlux();
 
   private:
   MultiGroupQD * MGQD;
