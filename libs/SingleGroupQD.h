@@ -60,6 +60,7 @@ class SingleGroupQD
   void formContributionToLinearSystem();
   void getFlux();
   Eigen::VectorXd getSolutionVector();
+  void checkOptionalParams();
 
   private:
   MultiGroupQD * MGQD;

@@ -33,8 +33,6 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   Mesh * myMesh,\
   YAML::Node * myInput)
 {
-  // vectors for reading in optional parameters
-  vector<double> inpaFlux, inpCurrent;
     
   // Assign energy group for this object 
   energyGroup = myEnergyGroup;
@@ -64,107 +62,17 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   currentZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
   
   // initialize boundary conditions
-  wFluxBC.setOnes(mesh->dzsCorner.size());
-  eFluxBC.setOnes(mesh->dzsCorner.size());
-  nFluxBC.setOnes(mesh->drsCorner.size());
-  sFluxBC.setOnes(mesh->drsCorner.size());
-  wCurrentRBC.setOnes(mesh->dzsCorner.size());
-  eCurrentRBC.setOnes(mesh->dzsCorner.size());
-  nCurrentZBC.setOnes(mesh->drsCorner.size());
-  sCurrentZBC.setOnes(mesh->drsCorner.size());
+  wFluxBC.setZero(mesh->dzsCorner.size());
+  eFluxBC.setZero(mesh->dzsCorner.size());
+  nFluxBC.setZero(mesh->drsCorner.size());
+  sFluxBC.setZero(mesh->drsCorner.size());
+  wCurrentRBC.setZero(mesh->dzsCorner.size());
+  eCurrentRBC.setZero(mesh->dzsCorner.size());
+  nCurrentZBC.setZero(mesh->drsCorner.size());
+  sCurrentZBC.setZero(mesh->drsCorner.size());
 
-  // check for boundary condition specified in input file
-
-  if ((*input)["parameters"]["lowerBC"]){
-
-    inpaFlux=(*input)["parameters"]["lowerBC"]\
-      .as<vector<double> >();
-
-    if (inpaFlux.size() == 1)
-      nFluxBC = 4.0*inpaFlux[0]*nFluxBC;
-    else
-      nFluxBC = 4.0*inpaFlux[energyGroup]*nFluxBC;
-  }
-
-  if ((*input)["parameters"]["upperBC"]){
-
-    inpaFlux=(*input)["parameters"]["upperBC"]\
-      .as<vector<double> >();
-
-    if (inpaFlux.size() == 1)
-      sFluxBC = 4.0*inpaFlux[0]*sFluxBC;
-    else
-      sFluxBC = 4.0*inpaFlux[energyGroup]*sFluxBC;
-  }
-
-  if ((*input)["parameters"]["innerBC"]){
-
-    inpaFlux=(*input)["parameters"]["innerBC"]\
-      .as<vector<double> >();
-
-    if (inpaFlux.size() == 1)
-      wFluxBC = 4.0*inpaFlux[0]*wFluxBC;
-    else
-      wFluxBC = 4.0*inpaFlux[energyGroup]*wFluxBC;
-  }
-
-  if ((*input)["parameters"]["outerBC"]){
-
-    inpaFlux=(*input)["parameters"]["outerBC"]\
-      .as<vector<double> >();
-
-    if (inpaFlux.size() == 1)
-      eFluxBC = 4.0*inpaFlux[0]*eFluxBC;
-    else
-      eFluxBC = 4.0*inpaFlux[energyGroup]*eFluxBC;
-  }
-
-  if ((*input)["parameters"]["lowerCurrentBC"]){
-
-    inpCurrent=(*input)["parameters"]["lowerCurrentBC"]\
-      .as<vector<double> >();
-
-    if (inpaFlux.size() == 1)
-      nCurrentZBC = inpCurrent[0]*nCurrentZBC;
-    else
-      nCurrentZBC = inpCurrent[energyGroup]*nCurrentZBC;
-  }
-
-  if ((*input)["parameters"]["upperCurrentBC"]){
-
-    inpCurrent=(*input)["parameters"]["upperCurrentBC"]\
-      .as<vector<double> >();
-
-    if (inpaFlux.size() == 1)
-      sCurrentZBC = inpCurrent[0]*sCurrentZBC;
-    else
-      sCurrentZBC = inpCurrent[energyGroup]*sCurrentZBC;
-  }
-
-  if ((*input)["parameters"]["innerCurrentBC"]){
-
-    inpCurrent=(*input)["parameters"]["innerCurrentBC"]\
-      .as<vector<double> >();
-
-    if (inpaFlux.size() == 1)
-      wCurrentRBC = inpCurrent[0]*wCurrentRBC;
-    else
-      wCurrentRBC = inpCurrent[energyGroup]*wCurrentRBC;
-  }
-
-  if ((*input)["parameters"]["outerCurrentBC"]){
-
-    inpCurrent=(*input)["parameters"]["outerCurrentBC"]\
-      .as<vector<double> >();
-
-    if (inpaFlux.size() == 1)
-      eCurrentRBC = inpCurrent[0]*eCurrentRBC;
-    else
-      eCurrentRBC = inpCurrent[energyGroup]*eCurrentRBC;
-  }
-
-
-
+  // check for optional parameters
+  checkOptionalParams();
 };
 //==============================================================================
 
@@ -188,3 +96,152 @@ Eigen::VectorXd SingleGroupQD::getSolutionVector()
   return MGQD->QDSolve->getSolutionVector(this);
 }
 //==============================================================================
+
+//==============================================================================
+void SingleGroupQD::checkOptionalParams()
+{
+  // vectors for reading in optional parameters
+  vector<double> inpaFlux,inpCurrent,inpSFluxPrev,inpCurrentPrev;
+
+  // check for optional parameters specified in input file
+
+  if ((*input)["parameters"]["lowerBC"]){
+
+    inpaFlux=(*input)["parameters"]["lowerBC"]\
+      .as<vector<double> >();
+    
+    nFluxBC.setOnes();
+    if (inpaFlux.size() == 1)
+      nFluxBC = 4.0*inpaFlux[0]*nFluxBC;
+    else
+      nFluxBC = 4.0*inpaFlux[energyGroup]*nFluxBC;
+  }
+
+  if ((*input)["parameters"]["upperBC"]){
+
+    inpaFlux=(*input)["parameters"]["upperBC"]\
+      .as<vector<double> >();
+
+    sFluxBC.setOnes();
+    if (inpaFlux.size() == 1)
+      sFluxBC = 4.0*inpaFlux[0]*sFluxBC;
+    else
+      sFluxBC = 4.0*inpaFlux[energyGroup]*sFluxBC;
+  }
+
+  if ((*input)["parameters"]["innerBC"]){
+
+    inpaFlux=(*input)["parameters"]["innerBC"]\
+      .as<vector<double> >();
+
+    wFluxBC.setOnes();
+    if (inpaFlux.size() == 1)
+      wFluxBC = 4.0*inpaFlux[0]*wFluxBC;
+    else
+      wFluxBC = 4.0*inpaFlux[energyGroup]*wFluxBC;
+  }
+
+  if ((*input)["parameters"]["outerBC"]){
+
+    inpaFlux=(*input)["parameters"]["outerBC"]\
+      .as<vector<double> >();
+
+    eFluxBC.setOnes();
+    if (inpaFlux.size() == 1)
+      eFluxBC = 4.0*inpaFlux[0]*eFluxBC;
+    else
+      eFluxBC = 4.0*inpaFlux[energyGroup]*eFluxBC;
+  }
+
+  if ((*input)["parameters"]["lowerCurrentBC"]){
+
+    inpCurrent=(*input)["parameters"]["lowerCurrentBC"]\
+      .as<vector<double> >();
+
+    nCurrentZBC.setOnes();
+    if (inpaFlux.size() == 1)
+      nCurrentZBC = inpCurrent[0]*nCurrentZBC;
+    else
+      nCurrentZBC = inpCurrent[energyGroup]*nCurrentZBC;
+  }
+
+  if ((*input)["parameters"]["upperCurrentBC"]){
+
+    inpCurrent=(*input)["parameters"]["upperCurrentBC"]\
+      .as<vector<double> >();
+
+    sCurrentZBC.setOnes();
+    if (inpaFlux.size() == 1)
+      sCurrentZBC = inpCurrent[0]*sCurrentZBC;
+    else
+      sCurrentZBC = inpCurrent[energyGroup]*sCurrentZBC;
+  }
+
+  if ((*input)["parameters"]["innerCurrentBC"]){
+
+    inpCurrent=(*input)["parameters"]["innerCurrentBC"]\
+      .as<vector<double> >();
+
+    wCurrentRBC.setOnes();
+    if (inpaFlux.size() == 1)
+      wCurrentRBC = inpCurrent[0]*wCurrentRBC;
+    else
+      wCurrentRBC = inpCurrent[energyGroup]*wCurrentRBC;
+  }
+
+  if ((*input)["parameters"]["outerCurrentBC"]){
+
+    inpCurrent=(*input)["parameters"]["outerCurrentBC"]\
+      .as<vector<double> >();
+
+    eCurrentRBC.setOnes();
+    if (inpaFlux.size() == 1)
+      eCurrentRBC = inpCurrent[0]*eCurrentRBC;
+    else
+      eCurrentRBC = inpCurrent[energyGroup]*eCurrentRBC;
+  }
+
+  if ((*input)["parameters"]["initial previous flux"]){
+
+    inpSFluxPrev=(*input)["parameters"]["initial previous flux"]\
+      .as<vector<double> >();
+
+    sFlux.setOnes();
+    sFluxR.setOnes();
+    sFluxZ.setOnes();
+    if (inpSFluxPrev.size() == 1)
+    {
+      sFlux = inpSFluxPrev[0]*sFlux;
+      sFluxR = inpSFluxPrev[0]*sFluxR;
+      sFluxZ = inpSFluxPrev[0]*sFluxZ;
+    }
+    else
+    {
+      sFlux = inpSFluxPrev[energyGroup]*sFlux;
+      sFluxR = inpSFluxPrev[energyGroup]*sFluxR;
+      sFluxZ = inpSFluxPrev[energyGroup]*sFluxZ;
+    }
+  }
+
+  if ((*input)["parameters"]["initial previous current"]){
+
+    inpCurrentPrev=(*input)["parameters"]["initial previous current"]\
+      .as<vector<double> >();
+
+    currentR.setOnes();
+    currentZ.setOnes();
+    if (inpSFluxPrev.size() == 1)
+    {
+      currentR = inpCurrentPrev[0]*sFluxR;
+      currentZ = inpCurrentPrev[0]*sFluxZ;
+    }
+    else
+    {
+      currentR = inpCurrentPrev[energyGroup]*sFluxR;
+      currentZ = inpCurrentPrev[energyGroup]*sFluxZ;
+    }
+  }
+
+}
+//==============================================================================
+
