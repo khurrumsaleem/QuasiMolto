@@ -46,9 +46,9 @@ QDSolver::QDSolver(Mesh * myMesh,\
   // initialize size of linear system
   A.resize(nUnknowns,nUnknowns);
   A.reserve(5*nUnknowns+nUnknowns/5);
-  x.resize(nUnknowns);
-  xPast.resize(nUnknowns);
-  b.resize(nUnknowns);
+  x.setZero(nUnknowns);
+  xPast.setZero(nUnknowns);
+  b.setZero(nUnknowns);
 
 };
 
@@ -141,9 +141,16 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
 /// Compute the solution, x, to Ax = b.
 void QDSolver::solve()
 {
-  Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
-  solver.compute(A);
-  x = solver.solve(b);
+//  Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
+//  solver.compute(A);
+//  x = solver.solve(b);
+//  cout << b << endl;
+  
+  Eigen::SparseQR<Eigen::SparseMatrix<double>,\
+    Eigen::COLAMDOrdering<int> > solverLU;
+  A.makeCompressed();
+  solverLU.compute(A);
+  x = solverLU.solve(b);
 }
 //==============================================================================
 
@@ -174,12 +181,17 @@ void QDSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
+
   A.coeffRef(iEq,indices[iCF]) += geoParams[iCF] * ((1/(v*deltaT)) + sigT);
+
   A.insert(iEq,indices[iWC]) = -geoParams[iWF];
+
   A.insert(iEq,indices[iEC]) = geoParams[iEF];
+
   A.insert(iEq,indices[iNC]) = -geoParams[iNF];
+
   A.insert(iEq,indices[iSC]) = geoParams[iSF];
-  
+
   // formulate RHS entry
   b(iEq) = geoParams[iCF]*\
     ( (xPast(indices[iCF])/(v*deltaT)) + SGQD->q(iZ,iR));
@@ -200,12 +212,12 @@ void QDSolver::assertFirstMomentSouth(int iR,int iZ,int iEq,int energyGroup,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rCent,zCent,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
-  rAvg = calcVolAvgR(rDown,rUp); zCent = (zUp + zDown)/2;
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rDown; deltaZ = zUp-zAvg;
 
   // get local Eddington factors
@@ -216,13 +228,17 @@ void QDSolver::assertFirstMomentSouth(int iR,int iZ,int iEq,int energyGroup,\
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
   A.insert(iEq,indices[iSC]) = ((1/(v*deltaT)) + sigT);
+
   A.insert(iEq,indices[iSF]) = EzzL/deltaZ;
+
   A.insert(iEq,indices[iCF]) = -EzzL/deltaZ;
+
   A.insert(iEq,indices[iWF]) = -(rDown*ErzL/(rAvg*deltaR));
+
   A.insert(iEq,indices[iEF]) = rUp*ErzL/(rAvg*deltaR);
   
   // formulate RHS entry
-  b(iEq) =(xPast(indices[iSC])/(v*deltaT)) + SGQD->q(iZ,iR);
+  b(iEq) =(xPast(indices[iSC])/(v*deltaT));
 };
 //==============================================================================
 
@@ -240,12 +256,12 @@ void QDSolver::assertFirstMomentNorth(int iR,int iZ,int iEq,int energyGroup,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rCent,zCent,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
-  rAvg = calcVolAvgR(rDown,rUp); zCent = (zUp + zDown)/2;
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rDown; deltaZ = zAvg-zDown;
 
   // get local Eddington factors
@@ -255,14 +271,20 @@ void QDSolver::assertFirstMomentNorth(int iR,int iZ,int iEq,int energyGroup,\
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
+
+
   A.insert(iEq,indices[iNC]) = ((1/(v*deltaT)) + sigT);
+
   A.insert(iEq,indices[iNF]) = -EzzL/deltaZ;
+
   A.insert(iEq,indices[iCF]) = EzzL/deltaZ;
+
   A.insert(iEq,indices[iWF]) = -(rDown*ErzL/(rAvg*deltaR));
+
   A.insert(iEq,indices[iEF]) = rUp*ErzL/(rAvg*deltaR);
-  
+
   // formulate RHS entry
-  b(iEq) =(xPast(indices[iNC])/(v*deltaT)) + SGQD->q(iZ,iR);
+  b(iEq) =(xPast(indices[iNC])/(v*deltaT));
 };
 //==============================================================================
 
@@ -280,13 +302,13 @@ void QDSolver::assertFirstMomentWest(int iR,int iZ,int iEq,int energyGroup,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rCent,zCent,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
   double hCent,hDown;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
-  rAvg = calcVolAvgR(rDown,rUp); zCent = (zUp + zDown)/2;
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
   hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
   hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
@@ -295,17 +317,21 @@ void QDSolver::assertFirstMomentWest(int iR,int iZ,int iEq,int energyGroup,\
   ErrL = SGQD->Err(iZ,iR);
   EzzL = SGQD->Ezz(iZ,iR);
   ErzL = SGQD->Erz(iZ,iR);
-
+  
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
   A.insert(iEq,indices[iWC]) = ((1/(v*deltaT)) + sigT);
+
   A.insert(iEq,indices[iSF]) = ErzL/deltaZ;
+
   A.insert(iEq,indices[iNF]) = -ErzL/deltaZ;
+
   A.insert(iEq,indices[iCF]) = hCent*ErrL/(hDown*deltaR);
+
   A.insert(iEq,indices[iWF]) = -hDown*ErrL/(hDown*deltaR);
-  
+
   // formulate RHS entry
-  b(iEq) =(xPast(indices[iWC])/(v*deltaT)) + SGQD->q(iZ,iR);
+  b(iEq) =(xPast(indices[iWC])/(v*deltaT));
 };
 //==============================================================================
 
@@ -323,14 +349,14 @@ void QDSolver::assertFirstMomentEast(int iR,int iZ,int iEq,int energyGroup,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rCent,zCent,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
   double hCent,hUp;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
-  rAvg = calcVolAvgR(rDown,rUp); zCent = (zUp + zDown)/2;
-  deltaR = rAvg-rDown; deltaZ = zUp-zDown;
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rAvg; deltaZ = zUp-zDown;
   hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
   hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
 
@@ -342,13 +368,17 @@ void QDSolver::assertFirstMomentEast(int iR,int iZ,int iEq,int energyGroup,\
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
   A.insert(iEq,indices[iEC]) = ((1/(v*deltaT)) + sigT);
+
   A.insert(iEq,indices[iSF]) = ErzL/deltaZ;
+
   A.insert(iEq,indices[iNF]) = -ErzL/deltaZ;
+
   A.insert(iEq,indices[iCF]) = -hCent*ErrL/(hUp*deltaR);
+
   A.insert(iEq,indices[iEF]) = hUp*ErrL/(hUp*deltaR);
   
   // formulate RHS entry
-  b(iEq) =(xPast(indices[iEC])/(v*deltaT)) + SGQD->q(iZ,iR);
+  b(iEq) =(xPast(indices[iEC])/(v*deltaT));
 };
 //==============================================================================
 
@@ -745,7 +775,7 @@ vector<double> QDSolver::calcGeoParams(int iR,int iZ)
 double QDSolver::calcVolAvgR(double rDown,double rUp)
 {
   // calculate volume-averaged radius
-  double volAvgR = (2/3)*(pow(rUp,3) - pow(rDown,3))/(pow(rUp,2)-pow(rDown,2));
+  double volAvgR = (2.0/3.0)*(pow(rUp,3) - pow(rDown,3))/(pow(rUp,2)-pow(rDown,2));
 
   return volAvgR;
 };
