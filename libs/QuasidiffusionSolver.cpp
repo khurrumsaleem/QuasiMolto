@@ -796,12 +796,44 @@ void QDSolver::getFlux(SingleGroupQD * SGQD)
       indices = getIndices(iR,iZ,SGQD->energyGroup);
       SGQD->sFlux(iZ,iR) = x(indices[iCF]);
     }
-  }
-
-  
+  }  
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Extract cell average values from solution vector and store
+/// @param [in] SGQD single group quasidiffusion object to get flux for
+Eigen::VectorXd QDSolver::getSolutionVector(SingleGroupQD * SGQD)
+{
+  Eigen::VectorXd solVector(energyGroups*nGroupUnknowns);
+  solVector.setZero();
+  vector<int> indices;
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+      indices = getIndices(iR,iZ,SGQD->energyGroup);
+      x(indices[iCF]) = SGQD->sFlux(iZ,iR);
+
+      x(indices[iWF]) = SGQD->sFluxR(iZ,iR);
+      x(indices[iEF]) = SGQD->sFluxR(iZ,iR+1);
+      x(indices[iNF]) = SGQD->sFluxZ(iZ,iR);
+      x(indices[iSF]) = SGQD->sFluxZ(iZ+1,iR);
+
+      x(indices[iWC]) = SGQD->currentR(iZ,iR);
+      x(indices[iEC]) = SGQD->currentR(iZ,iR+1);
+      x(indices[iNC]) = SGQD->currentZ(iZ,iR);
+      x(indices[iSC]) = SGQD->currentZ(iZ+1,iR);
+    }
+  }  
+
+  return solVector;
+};
+//==============================================================================
+
 
 
 

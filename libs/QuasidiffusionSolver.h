@@ -71,6 +71,7 @@ class QDSolver
 
   // function to parse solution vector
   void getFlux(SingleGroupQD * SGQD);
+  Eigen::VectorXd getSolutionVector(SingleGroupQD * SGQD);
   
   // public variables
   Eigen::SparseMatrix<double> A;

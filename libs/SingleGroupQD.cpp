@@ -33,6 +33,9 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   Mesh * myMesh,\
   YAML::Node * myInput)
 {
+  // vectors for reading in optional parameters
+  vector<double> inpaFlux, inpCurrent;
+    
   // Assign energy group for this object 
   energyGroup = myEnergyGroup;
   
@@ -51,22 +54,117 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   
   // initialize source 
   q.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
-  q = 100*q;
+  q = 0.0*q;
+
+  // initialize flux and current matrices
   sFlux.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+  sFluxR.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size()+1);
+  sFluxZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
+  currentR.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size()+1);
+  currentZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
   
   // initialize boundary conditions
   wFluxBC.setOnes(mesh->dzsCorner.size());
-  wFluxBC = 1000*wFluxBC;
-  eFluxBC.setZero(mesh->dzsCorner.size());
-  nFluxBC.setZero(mesh->drsCorner.size());
-  sFluxBC.setZero(mesh->drsCorner.size());
-  wCurrentRBC.setZero(mesh->dzsCorner.size());
+  eFluxBC.setOnes(mesh->dzsCorner.size());
+  nFluxBC.setOnes(mesh->drsCorner.size());
+  sFluxBC.setOnes(mesh->drsCorner.size());
+  wCurrentRBC.setOnes(mesh->dzsCorner.size());
   eCurrentRBC.setOnes(mesh->dzsCorner.size());
-  eCurrentRBC = 1.0*eCurrentRBC;
   nCurrentZBC.setOnes(mesh->drsCorner.size());
-  nCurrentZBC = -10.0*nCurrentZBC;
   sCurrentZBC.setOnes(mesh->drsCorner.size());
-  sCurrentZBC = 10.0*sCurrentZBC;
+
+  // check for boundary condition specified in input file
+
+  if ((*input)["parameters"]["lowerBC"]){
+
+    inpaFlux=(*input)["parameters"]["lowerBC"]\
+      .as<vector<double> >();
+
+    if (inpaFlux.size() == 1)
+      nFluxBC = 4.0*inpaFlux[0]*nFluxBC;
+    else
+      nFluxBC = 4.0*inpaFlux[energyGroup]*nFluxBC;
+  }
+
+  if ((*input)["parameters"]["upperBC"]){
+
+    inpaFlux=(*input)["parameters"]["upperBC"]\
+      .as<vector<double> >();
+
+    if (inpaFlux.size() == 1)
+      sFluxBC = 4.0*inpaFlux[0]*sFluxBC;
+    else
+      sFluxBC = 4.0*inpaFlux[energyGroup]*sFluxBC;
+  }
+
+  if ((*input)["parameters"]["innerBC"]){
+
+    inpaFlux=(*input)["parameters"]["innerBC"]\
+      .as<vector<double> >();
+
+    if (inpaFlux.size() == 1)
+      wFluxBC = 4.0*inpaFlux[0]*wFluxBC;
+    else
+      wFluxBC = 4.0*inpaFlux[energyGroup]*wFluxBC;
+  }
+
+  if ((*input)["parameters"]["outerBC"]){
+
+    inpaFlux=(*input)["parameters"]["outerBC"]\
+      .as<vector<double> >();
+
+    if (inpaFlux.size() == 1)
+      eFluxBC = 4.0*inpaFlux[0]*eFluxBC;
+    else
+      eFluxBC = 4.0*inpaFlux[energyGroup]*eFluxBC;
+  }
+
+  if ((*input)["parameters"]["lowerCurrentBC"]){
+
+    inpCurrent=(*input)["parameters"]["lowerCurrentBC"]\
+      .as<vector<double> >();
+
+    if (inpaFlux.size() == 1)
+      nCurrentZBC = inpCurrent[0]*nCurrentZBC;
+    else
+      nCurrentZBC = inpCurrent[energyGroup]*nCurrentZBC;
+  }
+
+  if ((*input)["parameters"]["upperCurrentBC"]){
+
+    inpCurrent=(*input)["parameters"]["upperCurrentBC"]\
+      .as<vector<double> >();
+
+    if (inpaFlux.size() == 1)
+      sCurrentZBC = inpCurrent[0]*sCurrentZBC;
+    else
+      sCurrentZBC = inpCurrent[energyGroup]*sCurrentZBC;
+  }
+
+  if ((*input)["parameters"]["innerCurrentBC"]){
+
+    inpCurrent=(*input)["parameters"]["innerCurrentBC"]\
+      .as<vector<double> >();
+
+    if (inpaFlux.size() == 1)
+      wCurrentRBC = inpCurrent[0]*wCurrentRBC;
+    else
+      wCurrentRBC = inpCurrent[energyGroup]*wCurrentRBC;
+  }
+
+  if ((*input)["parameters"]["outerCurrentBC"]){
+
+    inpCurrent=(*input)["parameters"]["outerCurrentBC"]\
+      .as<vector<double> >();
+
+    if (inpaFlux.size() == 1)
+      eCurrentRBC = inpCurrent[0]*eCurrentRBC;
+    else
+      eCurrentRBC = inpCurrent[energyGroup]*eCurrentRBC;
+  }
+
+
+
 };
 //==============================================================================
 
@@ -81,5 +179,12 @@ void SingleGroupQD::formContributionToLinearSystem()
 void SingleGroupQD::getFlux()
 {
   MGQD->QDSolve->getFlux(this);
+}
+//==============================================================================
+
+//==============================================================================
+Eigen::VectorXd SingleGroupQD::getSolutionVector()
+{
+  return MGQD->QDSolve->getSolutionVector(this);
 }
 //==============================================================================

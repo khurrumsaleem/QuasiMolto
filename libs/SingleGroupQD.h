@@ -25,6 +25,10 @@ class SingleGroupQD
   public:
   int energyGroup;
   Eigen::MatrixXd sFlux;
+  Eigen::MatrixXd sFluxR;
+  Eigen::MatrixXd sFluxZ;
+  Eigen::MatrixXd currentR;
+  Eigen::MatrixXd currentZ;
   Eigen::MatrixXd sFluxPrev;
   Eigen::MatrixXd q;
   Eigen::MatrixXd fissionSource;
@@ -55,6 +59,7 @@ class SingleGroupQD
     YAML::Node * myInput);
   void formContributionToLinearSystem();
   void getFlux();
+  Eigen::VectorXd getSolutionVector();
 
   private:
   MultiGroupQD * MGQD;

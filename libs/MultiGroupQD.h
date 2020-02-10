@@ -29,6 +29,7 @@ class MultiGroupQD
     YAML::Node * myInput);
   void buildLinearSystem();
   void solveLinearSystem();
+  void setInitialCondition();
 
   private:
   YAML::Node * input;
