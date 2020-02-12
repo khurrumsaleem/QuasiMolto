@@ -60,9 +60,7 @@ int main(int argc, char** argv) {
       myMMS->timeDependent();
     else if (solveType == "MGQD" or solveType == "mgqd") 
     {
-      myMGQD->setInitialCondition();
-      myMGQD->buildLinearSystem();
-      myMGQD->solveLinearSystem();
+      myMGQD->solveMGQDOnly();
     }
     else 
       myMGT->solveTransportOnly();
