@@ -48,6 +48,7 @@ MultiGroupQD::MultiGroupQD(Materials * myMaterials,\
 //==============================================================================
 void MultiGroupQD::buildLinearSystem()
 {
+  QDSolve->A.setZero();
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
     SGQDs[iGroup]->formContributionToLinearSystem();
@@ -83,3 +84,32 @@ void MultiGroupQD::setInitialCondition()
   QDSolve->xPast = initialCondition;
 }
 //==============================================================================
+
+//==============================================================================
+
+void MultiGroupQD::solveMGQDOnly()
+{
+  setInitialCondition();
+  for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
+  {
+    buildLinearSystem();
+    cout << "time: " <<mesh->ts[iTime+1] << endl;
+    solveLinearSystem();
+    QDSolve->xPast = QDSolve->x;
+  }
+  writeFluxes();
+}
+//==============================================================================
+
+//==============================================================================
+/// Wrapper over SGTs to write flux present in each
+
+void MultiGroupQD::writeFluxes()
+{
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    SGQDs[iGroup]->writeFlux();
+  }
+};
+
+//==============================================================================
+

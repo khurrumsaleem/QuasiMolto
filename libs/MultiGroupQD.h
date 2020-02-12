@@ -30,6 +30,8 @@ class MultiGroupQD
   void buildLinearSystem();
   void solveLinearSystem();
   void setInitialCondition();
+  void solveMGQDOnly();
+  void writeFluxes();
 
   private:
   YAML::Node * input;
