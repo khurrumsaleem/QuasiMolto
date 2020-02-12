@@ -70,10 +70,13 @@ Mesh::Mesh(YAML::Node * myInput){
   R = (*input)["mesh"]["R"].as<double>();
   dt = (*input)["mesh"]["dt"].as<double>();
   
+
+  
   // Set up the mesh and quadrature set
   calcSpatialMesh();
   calcQuadSet();
   calcNumAnglesTotalWeight();
+  calcTimeMesh();
 
 }
 //==============================================================================
@@ -526,6 +529,30 @@ void Mesh::calcNumAnglesTotalWeight(){
   }
 }
 //==============================================================================
+
+//==============================================================================
+/// Calculate time mesh
+
+void Mesh::calcTimeMesh(){        
+
+  // Set up vectors holding time steps 
+  if ((*input)["mesh"]["T"])
+  {
+    T = (*input)["mesh"]["T"].as<double>();
+      
+    double timeAccum = 0;
+    int nT = round(T/dt);
+    ts.push_back(0.0);
+    for (int iTime = 0; iTime < nT; iTime ++)
+    {
+      timeAccum = timeAccum + dt;
+      ts.push_back(timeAccum);
+      dts.push_back(dt);
+    }
+  }
+}
+//==============================================================================
+
 
 //==============================================================================
 /// Calculates the ordinate index based on the p and q indices provided

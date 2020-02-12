@@ -35,12 +35,14 @@ class Mesh
 	public:
 	Mesh(YAML::Node * myInput);  	
   	int n,nAngles;		
-	double dz,dr,drCorner,dzCorner,Z,R,dt,totalWeight; 
+	double dz,dr,drCorner,dzCorner,Z,R,dt,T,totalWeight; 
   	vector< vector<double> > quadSet;
   	vector< vector<double> > alpha;
         vector< vector<double> > tau;
         vector< vector<double> > cellVol;
         vector< vector<double> > cellVSA;
+        vector<double> dts;
+        vector<double> ts;
         rowvec dzs,dzsCorner;
         rowvec drs,drsCorner;
 	rowvec rEdge;
@@ -64,6 +66,7 @@ class Mesh
         void calcSpatialMesh();
         void addLevels();
  	void calcNumAnglesTotalWeight();
+ 	void calcTimeMesh();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
 	YAML::Node * input;
