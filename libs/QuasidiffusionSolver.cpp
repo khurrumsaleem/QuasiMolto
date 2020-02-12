@@ -141,12 +141,12 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
 /// Compute the solution, x, to Ax = b.
 void QDSolver::solve()
 {
-//  Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
-//  solver.compute(A);
-//  x = solver.solve(b);
-//  cout << b << endl;
+ // Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
+ // solver.preconditioner().setDroptol(0.001);
+ // solver.compute(A);
+ // x = solver.solve(b);
   
-  Eigen::SparseQR<Eigen::SparseMatrix<double>,\
+  Eigen::SparseLU<Eigen::SparseMatrix<double>,\
     Eigen::COLAMDOrdering<int> > solverLU;
   A.makeCompressed();
   solverLU.compute(A);
