@@ -245,3 +245,55 @@ void SingleGroupQD::checkOptionalParams()
 }
 //==============================================================================
 
+//==============================================================================
+/// Write the flux in this energy group to a CVS
+
+void SingleGroupQD::writeFlux()
+{
+
+  ofstream fluxFile;
+  string fileName;
+
+  // parse file name
+  fileName = "scalar-flux-group-" + to_string(energyGroup)\
+    +"-" + to_string(mesh->dz)+ ".csv";
+
+  // open file
+  fluxFile.open(fileName);
+
+  // write flux values to .csv
+  for (int iZ = 0; iZ < sFlux.rows(); ++iZ) {
+    fluxFile << sFlux(iZ,0);
+    for (int iR = 1; iR < sFlux.cols(); ++iR) {
+      fluxFile <<","<< sFlux(iZ,iR);
+    }
+    fluxFile << endl;
+  }
+  fluxFile.close();
+
+  // if this is the first energy group, write mesh too
+  if (energyGroup==0){
+    // write radial mesh to .csv
+    fileName = "r-mesh.csv";
+    fluxFile.open(fileName);
+    fluxFile << mesh->rCornerCent(0);
+    for (int iR = 1; iR < mesh->rCornerCent.size(); ++iR) {
+      fluxFile << "," << mesh->rCornerCent(iR);
+    }
+    fluxFile << endl;
+    fluxFile.close();
+
+    // write axial mesh to .csv
+    fileName = "z-mesh.csv";
+    fluxFile.open(fileName);
+    fluxFile << mesh->zCornerCent(0);
+    for (int iZ = 1; iZ < mesh->zCornerCent.size(); ++iZ) {
+      fluxFile << "," << mesh->zCornerCent(iZ);
+    }
+    fluxFile << endl;
+    fluxFile.close();
+  }
+};
+
+//==============================================================================
+

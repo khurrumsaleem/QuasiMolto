@@ -61,6 +61,7 @@ class SingleGroupQD
   void getFlux();
   Eigen::VectorXd getSolutionVector();
   void checkOptionalParams();
+  void writeFlux();
 
   private:
   MultiGroupQD * MGQD;
