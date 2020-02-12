@@ -33,6 +33,7 @@ add_executable(QuasiMolto
 	       ${PROJECT_SOURCE_DIR}/libs/SingleGroupTransport.cpp 
 	       ${PROJECT_SOURCE_DIR}/libs/SimpleCornerBalance.cpp 
 	       ${PROJECT_SOURCE_DIR}/libs/QuasidiffusionSolver.cpp 
+	       ${PROJECT_SOURCE_DIR}/libs/TransportToQDCoupling.cpp 
 	       ${PROJECT_SOURCE_DIR}/libs/MMS.cpp 
 	       ${PROJECT_SOURCE_DIR}/libs/Material.cpp)
 

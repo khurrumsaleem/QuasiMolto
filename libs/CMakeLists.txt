@@ -1,5 +1,6 @@
 add_library(libs 
-	Materials.cpp 
+	Materials.cpp
+        TransportToQDCoupling.cpp 
 	MultiGroupQD.cpp 
 	SingleGroupQD.cpp 
 	Transport.cpp

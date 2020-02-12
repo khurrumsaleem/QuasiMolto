@@ -12,6 +12,7 @@
 #include "../libs/SingleGroupTransport.h"
 #include "../libs/SimpleCornerBalance.h"
 #include "../libs/QuasidiffusionSolver.h"
+#include "../libs/TransportToQDCoupling.h"
 #include "../libs/MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
