@@ -47,6 +47,10 @@ int main(int argc, char** argv) {
   // initialize multigroup quasidiffusion object
   MultiGroupQD * myMGQD; 
   myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
+  
+  // initialize T2QD coupling object
+  TransportToQDCoupling * myT2QD; 
+  myT2QD = new TransportToQDCoupling(myMaterials,myMesh,input,myMGT,myMGQD);
 
   MMS * myMMS;
   myMMS = new MMS(myMGT,myMesh,myMaterials,input);
@@ -60,15 +64,17 @@ int main(int argc, char** argv) {
     if (solveType == "MMS" or solveType == "mms")    
       myMMS->timeDependent();
     else if (solveType == "MGQD" or solveType == "mgqd") 
-    {
       myMGQD->solveMGQDOnly();
-    }
-    else 
+    else
+    { 
       myMGT->solveTransportOnly();
-
+      myT2QD->calcEddingtonFactors();
+    }
   }
   else
+  {
     myMGT->solveTransportOnly();
-
+    myT2QD->calcEddingtonFactors();
+  }
 return(0);
 }
