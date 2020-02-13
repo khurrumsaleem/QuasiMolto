@@ -49,7 +49,7 @@ void TransportToQDCoupling::calcEddingtonFactors()
 {
   int rows = MGT->SGTs[0]->sFlux.rows();
   int cols = MGT->SGTs[0]->sFlux.cols();
-  int angIdx,muIdx = 0,etaIdx = 1,xiIdx = 2,weightIdx = 3;  
+  int angIdx,xiIdx=0,muIdx=1,etaIdx=2,weightIdx = 3;  
   double angFlux,mu,xi,weight,EzzCoef,ErrCoef,ErzCoef;
   double numeratorEzz,numeratorErr,numeratorErz,denominator; 
   
@@ -96,6 +96,13 @@ void TransportToQDCoupling::calcEddingtonFactors()
 
       } //iZ
     } //iR
+    cout << "iGroup: " << iGroup << endl;
+    cout << "Ezz: " << endl;
+    cout << MGQD->SGQDs[iGroup]->Ezz << endl;
+    cout << "Err: " << endl;
+    cout << MGQD->SGQDs[iGroup]->Err << endl;
+    cout << "Erz: " << endl;
+    cout << MGQD->SGQDs[iGroup]->Erz << endl;
   } //iGroup
 }
 //==============================================================================
