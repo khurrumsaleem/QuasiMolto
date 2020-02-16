@@ -10,6 +10,17 @@
 using namespace std;
 using namespace arma;
 
+class qdCell
+{
+
+	public:
+	qdCell();  	
+	//number of ordinates on this quadrature level
+  	int cIndex=0,nIndex=0,sIndex=0,eIndex=0,wIndex=0;		
+	
+};
+
+
 class quadLevel
 {
 	public:
@@ -54,6 +65,8 @@ class Mesh
         rowvec rCornerCent;
         rowvec zCornerCent;
         vector<quadLevel> quadrature;
+	vector<qdCell> qdCells; 
+  	vector<int> getQDCellIndices(int iR, int iZ);
   	void calcQuadSet();
 	void printQuadSet();
 	
@@ -64,11 +77,13 @@ class Mesh
 	void calcAlpha();
         void calcTau();
         void calcSpatialMesh();
+        void calcQDCellIndices(int nCornersR,int nCornersZ);
         void addLevels();
  	void calcNumAnglesTotalWeight();
  	void calcTimeMesh();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
+	int getQDCellIndex(int iR,int iZ);
 	YAML::Node * input;
 };
 

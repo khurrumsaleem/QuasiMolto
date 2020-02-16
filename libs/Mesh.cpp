@@ -16,6 +16,13 @@ using namespace std;
 using namespace arma;
 
 //==============================================================================
+/// Constructor for qdCell object.
+///
+qdCell::qdCell(){}
+//==============================================================================
+
+
+//==============================================================================
 /// Constructor for quadLevel object.
 ///
 /// @param [in] myQuad Contains ordinates on a single quadrature level 
@@ -431,6 +438,73 @@ void Mesh::calcSpatialMesh(){
     }
   }
 
+  // Initialize qdCells vector
+  for (int iZ = 0; iZ < nCornersZ; ++iZ){
+    for (int iR = 0; iR < nCornersR; ++iR){
+
+      qdCells.push_back(qdCell());
+
+    }
+  }
+
+  calcQDCellIndices(nCornersR,nCornersZ);
+  
+}
+//==============================================================================
+
+//==============================================================================
+void Mesh::calcQDCellIndices(int nCornersR,int nCornersZ)
+{
+  int myIdx,eIdx,sIdx,count = 0;
+
+  // Initialize qdCells vector
+  for (int iR = 0; iR < nCornersR; ++iR)
+  {  
+    for (int iZ = 0; iZ < nCornersZ; ++iZ)
+    {
+      myIdx = getQDCellIndex(iR,iZ);
+
+      qdCells[myIdx].cIndex = count;
+      count = count + 1;
+
+      qdCells[myIdx].sIndex = count;
+      if (iZ != nCornersZ-1)
+      {
+        sIdx = getQDCellIndex(iR,iZ+1);
+        qdCells[sIdx].nIndex = count;
+      } 
+      count = count + 1;
+      
+      qdCells[myIdx].eIndex = count; 
+      if (iR != nCornersR-1)
+      {
+        eIdx = getQDCellIndex(iR+1,iZ);
+        qdCells[eIdx].wIndex = count;
+      } 
+      count = count + 1;
+
+      if (iZ == 0)
+      {
+        qdCells[myIdx].nIndex = count;
+        count = count + 1;
+      }
+
+      if (iR == 0)
+      {
+        qdCells[myIdx].wIndex = count;
+        count = count + 1;
+      }
+    
+      cout << "Indices for cell at iR = " << iR << ", iZ = " << iZ << endl;     
+      cout<< "cIdx:" << qdCells[myIdx].cIndex << endl; 
+      cout<< "sIdx:" << qdCells[myIdx].sIndex << endl; 
+      cout<< "eIdx:" << qdCells[myIdx].eIndex << endl; 
+      cout<< "nIdx:" << qdCells[myIdx].nIndex << endl; 
+      cout<< "wIdx:" << qdCells[myIdx].wIndex << endl;
+      cout << endl; 
+    }
+  }
+
 }
 //==============================================================================
 
@@ -553,6 +627,25 @@ void Mesh::calcTimeMesh(){
 }
 //==============================================================================
 
+//==============================================================================
+/// Calculate time mesh
+
+vector<int> Mesh::getQDCellIndices(int iR,int iZ)
+{        
+
+  vector<int> qdCellIndices;
+  int qdCellIndex = getQDCellIndex(iR,iZ);
+
+  qdCellIndices.push_back(qdCells[qdCellIndex].cIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].wIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].eIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].nIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].sIndex);
+
+  return qdCellIndices;
+
+}
+//==============================================================================
 
 //==============================================================================
 /// Calculates the ordinate index based on the p and q indices provided
@@ -591,6 +684,21 @@ int Mesh::low_quad_index(int p, int q){
 
 }
 //==============================================================================
+
+//=============================================================================
+/// Returns the QD cell index for the cell at (iR, iZ) 
+///
+/// @param [in] iR the radial index
+/// @param [in] iZ the axial index
+/// @param [out] index The ordinate index 
+int Mesh::getQDCellIndex(int iR, int iZ){
+
+  int index = iZ + dzsCorner.size()*iR;
+  return index;
+
+}
+//==============================================================================
+
 
 //==============================================================================
 /// Prints out quadrature set, differencing coefficients, and tau coefficients
