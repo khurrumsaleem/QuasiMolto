@@ -28,6 +28,7 @@ class TransportToQDCoupling
     MultiGroupTransport * myMGT,\
     MultiGroupQD * myMGQD);
   void calcEddingtonFactors();
+  void calcBCs();
 
 
   private:
