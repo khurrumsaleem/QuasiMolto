@@ -106,3 +106,88 @@ void TransportToQDCoupling::calcEddingtonFactors()
   } //iGroup
 }
 //==============================================================================
+
+//==============================================================================
+/// Calculate Eddington factors using angular fluxes from transport objects
+void TransportToQDCoupling::calcBCs()
+{
+  int rows = MGT->SGTs[0]->sFlux.rows();
+  int cols = MGT->SGTs[0]->sFlux.cols();
+  int eIdx = rows - 1,sIdx = cols - 1;
+  int angIdx,xiIdx=0,muIdx=1,etaIdx=2,weightIdx = 3;  
+  double angFlux,angFluxN,angFluxS,mu,xi,weight;
+  double Jr,JzN,JzS;
+  
+  for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
+  {
+      for (int iZ = 0; iZ < cols; iZ++)
+      {
+
+        // reset accumulators
+        Jr = 0.0;
+
+        // loop over quadrature
+        for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
+        {
+          xi = mesh->quadrature[iXi].quad[0][xiIdx];
+          for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu)
+          {
+            angIdx=mesh->quadrature[iXi].ordIdx[iMu];
+            mu = mesh->quadrature[iXi].quad[iMu][muIdx]; 
+            weight = mesh->quadrature[iXi].quad[iMu][weightIdx];
+ 
+            angFlux = MGT->SGTs[iGroup]->aFlux(iZ,eIdx,angIdx);
+            
+            Jr = Jr + mu*angFlux*weight;
+          
+          } //iMu
+        } //iXi 
+
+        // set radial BCs 
+        MGQD->SGQDs[iGroup]->eCurrentRBC(iZ) = Jr;
+        MGQD->SGQDs[iGroup]->wCurrentRBC(iZ) = 0.0;
+        
+        MGQD->SGQDs[iGroup]->eFluxBC(iZ) \
+          = MGT->SGTs[iGroup]->sFlux(iZ,eIdx);
+        MGQD->SGQDs[iGroup]->wFluxBC(iZ) \
+          = MGT->SGTs[iGroup]->sFlux(iZ,0);
+
+      } //iZ
+      for (int iR = 0; iR < cols; iR++)
+      {
+        // reset accumulators
+        JzN = 0.0;
+        JzS = 0.0;
+
+        // loop over quadrature
+        for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
+        {
+          xi = mesh->quadrature[iXi].quad[0][xiIdx];
+          for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu)
+          {
+            angIdx=mesh->quadrature[iXi].ordIdx[iMu];
+            mu = mesh->quadrature[iXi].quad[iMu][muIdx]; 
+            weight = mesh->quadrature[iXi].quad[iMu][weightIdx];
+ 
+            angFluxN = MGT->SGTs[iGroup]->aFlux(0,iR,angIdx);
+            angFluxS = MGT->SGTs[iGroup]->aFlux(sIdx,iR,angIdx);
+            
+            JzN = JzN + xi*angFluxN*weight;
+            JzS = JzS + xi*angFluxS*weight;
+          
+          } //iMu
+        } //iXi 
+
+        // set axial BCs 
+        MGQD->SGQDs[iGroup]->nCurrentZBC(iR) = JzN;
+        MGQD->SGQDs[iGroup]->sCurrentZBC(iR) = JzS;
+        
+        MGQD->SGQDs[iGroup]->nFluxBC(iR) \
+          = MGT->SGTs[iGroup]->sFlux(0,iR);
+        MGQD->SGQDs[iGroup]->sFluxBC(iR) \
+          = MGT->SGTs[iGroup]->sFlux(sIdx,iR);
+
+      } //iR
+  } //iGroup
+}
+//==============================================================================
