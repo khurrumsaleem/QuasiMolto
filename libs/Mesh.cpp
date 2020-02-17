@@ -455,7 +455,7 @@ void Mesh::calcSpatialMesh(){
 //==============================================================================
 void Mesh::calcQDCellIndices(int nCornersR,int nCornersZ)
 {
-  int myIdx,eIdx,sIdx,count = 0;
+  int myIdx,eIdx,sIdx,countF=0,countC=0;
 
   // Initialize qdCells vector
   for (int iR = 0; iR < nCornersR; ++iR)
@@ -464,43 +464,60 @@ void Mesh::calcQDCellIndices(int nCornersR,int nCornersZ)
     {
       myIdx = getQDCellIndex(iR,iZ);
 
-      qdCells[myIdx].cIndex = count;
-      count = count + 1;
+      // set center flux index
+      qdCells[myIdx].cFIndex = countF;
+      ++countF;
 
-      qdCells[myIdx].sIndex = count;
+      // set south indices of this cell and, if applicable, the
+      // north indices of the cell below 
+      qdCells[myIdx].sFIndex = countF;
+      qdCells[myIdx].sCIndex = countC;
       if (iZ != nCornersZ-1)
       {
         sIdx = getQDCellIndex(iR,iZ+1);
-        qdCells[sIdx].nIndex = count;
+        qdCells[sIdx].nFIndex = countF;
+        qdCells[sIdx].nCIndex = countC;
       } 
-      count = count + 1;
+      ++countF; ++countC;
       
-      qdCells[myIdx].eIndex = count; 
+      // set east indices of this cell and, if applicable, the west
+      // indices of the cell to the right
+      qdCells[myIdx].eFIndex = countF; 
+      qdCells[myIdx].eCIndex = countC; 
       if (iR != nCornersR-1)
       {
         eIdx = getQDCellIndex(iR+1,iZ);
-        qdCells[eIdx].wIndex = count;
+        qdCells[eIdx].wFIndex = countF;
+        qdCells[eIdx].wCIndex = countC;
       } 
-      count = count + 1;
+      ++countF; ++countC;
 
+      // set north indices if at iZ = 0
       if (iZ == 0)
       {
-        qdCells[myIdx].nIndex = count;
-        count = count + 1;
+        qdCells[myIdx].nFIndex = countF;
+        qdCells[myIdx].nCIndex = countC;
+        ++countF; ++countC;
       }
 
+      // set west indices if at iR = 0
       if (iR == 0)
       {
-        qdCells[myIdx].wIndex = count;
-        count = count + 1;
+        qdCells[myIdx].wFIndex = countF;
+        qdCells[myIdx].wCIndex = countC;
+        ++countF; ++countC;
       }
     
       cout << "Indices for cell at iR = " << iR << ", iZ = " << iZ << endl;     
-      cout<< "cIdx:" << qdCells[myIdx].cIndex << endl; 
-      cout<< "sIdx:" << qdCells[myIdx].sIndex << endl; 
-      cout<< "eIdx:" << qdCells[myIdx].eIndex << endl; 
-      cout<< "nIdx:" << qdCells[myIdx].nIndex << endl; 
-      cout<< "wIdx:" << qdCells[myIdx].wIndex << endl;
+      cout<< "cFIdx:" << qdCells[myIdx].cFIndex << endl; 
+      cout<< "sFIdx:" << qdCells[myIdx].sFIndex << endl; 
+      cout<< "eFIdx:" << qdCells[myIdx].eFIndex << endl; 
+      cout<< "nFIdx:" << qdCells[myIdx].nFIndex << endl; 
+      cout<< "wFIdx:" << qdCells[myIdx].wFIndex << endl;
+      cout<< "sCIdx:" << qdCells[myIdx].sCIndex << endl; 
+      cout<< "eCIdx:" << qdCells[myIdx].eCIndex << endl; 
+      cout<< "nCIdx:" << qdCells[myIdx].nCIndex << endl; 
+      cout<< "wCIdx:" << qdCells[myIdx].wCIndex << endl;
       cout << endl; 
     }
   }
@@ -636,11 +653,15 @@ vector<int> Mesh::getQDCellIndices(int iR,int iZ)
   vector<int> qdCellIndices;
   int qdCellIndex = getQDCellIndex(iR,iZ);
 
-  qdCellIndices.push_back(qdCells[qdCellIndex].cIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].wIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].eIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].nIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].sIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].cFIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].wFIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].eFIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].nFIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].sFIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].wCIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].eCIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].nCIndex);
+  qdCellIndices.push_back(qdCells[qdCellIndex].sCIndex);
 
   return qdCellIndices;
 

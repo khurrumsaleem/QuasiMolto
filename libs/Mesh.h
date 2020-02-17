@@ -16,8 +16,9 @@ class qdCell
 	public:
 	qdCell();  	
 	//number of ordinates on this quadrature level
-  	int cIndex=0,nIndex=0,sIndex=0,eIndex=0,wIndex=0;		
-	
+  	int cFIndex=0,nFIndex=0,sFIndex=0,eFIndex=0,wFIndex=0;
+        int nCIndex=0,sCIndex=0,eCIndex=0,wCIndex=0;
+
 };
 
 
