@@ -38,13 +38,17 @@ class QDSolver
   // functions to enforce governing equations
   void assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
-  void assertFirstMomentSouth(int iR,int iZ,int iEq,int energyGroup,\
+  void applyRadialBoundary(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
-  void assertFirstMomentNorth(int iR,int iZ,int iEq,int energyGroup,\
+  void applyAxialBoundary(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
-  void assertFirstMomentWest(int iR,int iZ,int iEq,int energyGroup,\
+  void southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
-  void assertFirstMomentEast(int iR,int iZ,int iEq,int energyGroup,\
+  void northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
   void assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
@@ -53,14 +57,6 @@ class QDSolver
   void assertNFluxBC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
   void assertSFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
   double calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
     int fromEnergyGroup);
@@ -71,14 +67,15 @@ class QDSolver
 
   // function to parse solution vector
   void getFlux(SingleGroupQD * SGQD);
-  Eigen::VectorXd getSolutionVector(SingleGroupQD * SGQD);
+  Eigen::VectorXd getFluxSolutionVector(SingleGroupQD * SGQD);
+  Eigen::VectorXd getCurrentSolutionVector(SingleGroupQD * SGQD);
   
   // public variables
   Eigen::SparseMatrix<double> A;
   Eigen::VectorXd x;
-  Eigen::VectorXd xPast;
+  Eigen::VectorXd xPast,currPast;
   Eigen::VectorXd b;
-  int energyGroups,nR,nZ,nGroupUnknowns;
+  int energyGroups,nR,nZ,nGroupUnknowns,nGroupCurrentUnknowns;
 
   private:
   // private variables

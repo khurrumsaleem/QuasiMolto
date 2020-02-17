@@ -72,16 +72,26 @@ void MultiGroupQD::solveLinearSystem()
 //==============================================================================
 void MultiGroupQD::setInitialCondition()
 {
-  Eigen::VectorXd initialCondition(QDSolve->energyGroups*\
+  // Initialize vectors
+  Eigen::VectorXd initialFluxCondition(QDSolve->energyGroups*\
     QDSolve->nGroupUnknowns);
-  initialCondition.setZero(); 
- 
+  Eigen::VectorXd initialCurrentCondition(QDSolve->energyGroups*\
+    QDSolve->nGroupCurrentUnknowns);
+  initialFluxCondition.setZero();   
+  initialCurrentCondition.setZero(); 
+
+  // Populate initial vectors with values from each energy group  
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
-    initialCondition = initialCondition + SGQDs[iGroup]->getSolutionVector();
+    initialFluxCondition = initialFluxCondition\
+      + SGQDs[iGroup]->getFluxSolutionVector();
+    initialCurrentCondition = initialCurrentCondition\
+      + SGQDs[iGroup]->getCurrentSolutionVector();
   }
 
-  QDSolve->xPast = initialCondition;
+  // Set initial conditions in QDSolver object
+  QDSolve->xPast = initialFluxCondition;
+  QDSolve->currPast = initialCurrentCondition;
 }
 //==============================================================================
 

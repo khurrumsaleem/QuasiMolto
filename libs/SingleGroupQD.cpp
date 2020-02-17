@@ -91,11 +91,19 @@ void SingleGroupQD::getFlux()
 //==============================================================================
 
 //==============================================================================
-Eigen::VectorXd SingleGroupQD::getSolutionVector()
+Eigen::VectorXd SingleGroupQD::getFluxSolutionVector()
 {
-  return MGQD->QDSolve->getSolutionVector(this);
+  return MGQD->QDSolve->getFluxSolutionVector(this);
 }
 //==============================================================================
+
+//==============================================================================
+Eigen::VectorXd SingleGroupQD::getCurrentSolutionVector()
+{
+  return MGQD->QDSolve->getCurrentSolutionVector(this);
+}
+//==============================================================================
+
 
 //==============================================================================
 void SingleGroupQD::checkOptionalParams()

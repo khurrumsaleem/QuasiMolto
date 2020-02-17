@@ -59,7 +59,8 @@ class SingleGroupQD
     YAML::Node * myInput);
   void formContributionToLinearSystem();
   void getFlux();
-  Eigen::VectorXd getSolutionVector();
+  Eigen::VectorXd getFluxSolutionVector();
+  Eigen::VectorXd getCurrentSolutionVector();
   void checkOptionalParams();
   void writeFlux();
 
