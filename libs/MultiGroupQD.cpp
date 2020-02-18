@@ -49,6 +49,7 @@ MultiGroupQD::MultiGroupQD(Materials * myMaterials,\
 void MultiGroupQD::buildLinearSystem()
 {
   QDSolve->A.setZero();
+  QDSolve->b.setZero();
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
     SGQDs[iGroup]->formContributionToLinearSystem();
