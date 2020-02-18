@@ -52,6 +52,7 @@ QDSolver::QDSolver(Mesh * myMesh,\
   currPast.setZero(energyGroups*nGroupCurrentUnknowns);
   b.setZero(nUnknowns);
 
+  checkOptionalParams();
 };
 
 //==============================================================================
@@ -78,7 +79,7 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
       if (iZ == 0)
       {
         // if on the boundary, assert boundary conditions
-        assertNFluxBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        assertNBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
         iEq = iEq + 1;
       } 
 
@@ -86,7 +87,7 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
       if (iZ == mesh->dzsCorner.size()-1)
       {
         // if on the boundary, assert boundary conditions
-        assertSFluxBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        assertSBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
         iEq = iEq + 1;
       } else
       {
@@ -99,7 +100,7 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
       if (iR == 0)
       {
         // if on the boundary, assert boundary conditions
-        assertWFluxBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        assertWBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
         iEq = iEq + 1;
       } 
 
@@ -107,7 +108,7 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
       if (iR == mesh->drsCorner.size()-1)
       {
         // if on the boundary, assert boundary conditions
-        assertEFluxBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        assertEBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
         iEq = iEq + 1;
       } else
       {
@@ -135,6 +136,8 @@ void QDSolver::solve()
   A.makeCompressed();
   solverLU.compute(A);
   x = solverLU.solve(b);
+ // cout << A << endl;
+ // cout << b << endl;
 }
 //==============================================================================
 
@@ -313,13 +316,13 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-  A.coeffRef(iEq,indices[iSF]) -= ErzL/deltaZ;
+  A.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
 
-  A.coeffRef(iEq,indices[iNF]) += ErzL/deltaZ;
+  A.coeffRef(iEq,indices[iNF]) += coeff*ErzL/deltaZ;
 
-  A.coeffRef(iEq,indices[iCF]) -= hCent*ErrL/(hDown*deltaR);
+  A.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrL/(hDown*deltaR);
 
-  A.coeffRef(iEq,indices[iWF]) += hDown*ErrL/(hDown*deltaR);
+  A.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrL/(hDown*deltaR);
 
   // formulate RHS entry
   b(iEq) = b(iEq) - coeff*(currPast(indices[iWC])/(v*deltaT));
@@ -435,6 +438,122 @@ void QDSolver::assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 //==============================================================================
 
 //==============================================================================
+/// Assert the flux boundary condition on the north face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  northCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the flux boundary condition on the south face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  southCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the flux boundary condition on the west face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  westCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the flux boundary condition on the east face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  eastCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert boundary condition on the north face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertNBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  if (reflectingBCs)
+    assertNCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
+  else
+    assertNFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert boundary condition on the south face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  if (reflectingBCs)
+    assertSCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
+  else
+    assertSFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert boundary condition on the west face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertWBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  if (reflectingBCs)
+    assertWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
+  else
+    assertWFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert boundary condition on the east face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertEBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  if (reflectingBCs)
+    assertECurrentBC(iR,iZ,iEq,energyGroup,SGQD);
+  else
+    assertEFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
 /// Calculate multigroup source coefficient for cell at (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
@@ -495,140 +614,6 @@ double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
 
   }
 
-};
-
-//==============================================================================
-
-//==============================================================================
-/// Return global index of average flux at indices iR and iZ 
-/// @param [in] iR radial index of cell
-/// @param [in] iZ axial index of cell
-/// @param [out] index global index for average flux in cell at (iR,iZ)
-int QDSolver::CFluxIndex(int iR,int iZ,int energyGroup)
-{
-  int offset = energyGroup*nGroupUnknowns;
-  int index = offset + iR + nR * (iZ);
-  return index;
-};
-
-//==============================================================================
-
-//==============================================================================
-/// Return global index of west face flux at indices iR and iZ 
-/// @param [in] iR radial index of cell
-/// @param [in] iZ axial index of cell
-/// @param [out] index global index for west face flux in cell at (iR,iZ)
-int QDSolver::WFluxIndex(int iR,int iZ,int energyGroup)
-{
-  int offset = energyGroup*nGroupUnknowns + nR*nZ;
-  int westIndex = offset + (iR) + (nR + 1) * iZ;
-
-  return westIndex;
-};
-
-//==============================================================================
-
-//==============================================================================
-/// Return global index of east face flux at indices iR and iZ 
-/// @param [in] iR radial index of cell
-/// @param [in] iZ axial index of cell
-/// @param [out] index global index for east face flux in cell at (iR,iZ)
-int QDSolver::EFluxIndex(int iR,int iZ,int energyGroup)
-{
-  int offset = energyGroup*nGroupUnknowns + nR*nZ;
-  int eastIndex = offset + (iR + 1) + (nR + 1) * iZ;
-
-  return eastIndex;
-};
-
-//==============================================================================
-
-//==============================================================================
-/// Return global index of north face flux at indices iR and iZ 
-/// @param [in] iR radial index of cell
-/// @param [in] iZ axial index of cell
-/// @param [out] index global index for north face flux in cell at (iR,iZ)
-int QDSolver::NFluxIndex(int iR,int iZ,int energyGroup)
-{
-  int offset = energyGroup*nGroupUnknowns + nR*nZ + (nR+1)*nZ;
-  int northIndex = offset + (iZ) + (nZ + 1) * iR;
-
-  return northIndex;
-};
-
-//==============================================================================
-
-//==============================================================================
-/// Return global index of south face flux at indices iR and iZ 
-/// @param [in] iR radial index of cell
-/// @param [in] iZ axial index of cell
-/// @param [out] index global index for south face flux in cell at (iR,iZ)
-int QDSolver::SFluxIndex(int iR,int iZ,int energyGroup)
-{
-  int offset = energyGroup*nGroupUnknowns + nR*nZ + (nR+1)*nZ;
-  int southIndex = offset + (iZ + 1) + (nZ + 1) * iR;
-
-  return southIndex;
-};
-
-//==============================================================================
-
-//==============================================================================
-/// Return global index of west face current at indices iR and iZ 
-/// @param [in] iR radial index of cell
-/// @param [in] iZ axial index of cell
-/// @param [out] index global index for west face current in cell at (iR,iZ)
-int QDSolver::WCurrentIndex(int iR,int iZ,int energyGroup)
-{
-  int offset = energyGroup*nGroupUnknowns + nR*nZ + (nR+1)*nZ + (nZ+1)*nR;
-  int westIndex = offset + (iR) + (nR + 1) * iZ;
-
-  return westIndex;
-};
-
-//==============================================================================
-
-//==============================================================================
-/// Return global index of east face current at indices iR and iZ 
-/// @param [in] iR radial index of cell
-/// @param [in] iZ axial index of cell
-/// @param [out] index global index for east face current in cell at (iR,iZ)
-int QDSolver::ECurrentIndex(int iR,int iZ,int energyGroup)
-{
-  int offset = energyGroup*nGroupUnknowns + nR*nZ + (nR+1)*nZ + (nZ+1)*nR;
-  int eastIndex = offset + (iR + 1) + (nR + 1) * iZ;
-
-  return eastIndex;
-};
-
-//==============================================================================
-
-//==============================================================================
-/// Return global index of north face current at indices iR and iZ 
-/// @param [in] iR radial index of cell
-/// @param [in] iZ axial index of cell
-/// @param [out] index global index for north face current in cell at (iR,iZ)
-int QDSolver::NCurrentIndex(int iR,int iZ,int energyGroup)
-{
-  int offset = energyGroup*nGroupUnknowns + nR*nZ + 2*(nR+1)*nZ + (nZ+1)*nR;
-  int northIndex = offset + (iZ) + (nZ + 1) * iR;
-
-  return northIndex;
-};
-
-//==============================================================================
-
-//==============================================================================
-/// Return global index of south face current at indices iR and iZ 
-/// @param [in] iR radial index of cell
-/// @param [in] iZ axial index of cell
-/// @param [out] index global index for south face current in cell at (iR,iZ)
-int QDSolver::SCurrentIndex(int iR,int iZ,int energyGroup)
-{
-  int offset = energyGroup*nGroupUnknowns + nR*nZ + 2*(nR+1)*nZ + (nZ+1)*nR;
-  int southIndex = offset + (iZ + 1) + (nZ + 1) * iR;
-
-  return southIndex;
 };
 
 //==============================================================================
@@ -757,10 +742,6 @@ Eigen::VectorXd QDSolver::getFluxSolutionVector(SingleGroupQD * SGQD)
       solVector(indices[iNF]) = SGQD->sFluxZ(iZ,iR);
       solVector(indices[iSF]) = SGQD->sFluxZ(iZ+1,iR);
 
-      solVector(indices[iWC]) = SGQD->currentR(iZ,iR);
-      solVector(indices[iEC]) = SGQD->currentR(iZ,iR+1);
-      solVector(indices[iNC]) = SGQD->currentZ(iZ,iR);
-      solVector(indices[iSC]) = SGQD->currentZ(iZ+1,iR);
     }
   }  
 
@@ -774,7 +755,7 @@ Eigen::VectorXd QDSolver::getFluxSolutionVector(SingleGroupQD * SGQD)
 /// @param [in] SGQD single group quasidiffusion object to get current for
 Eigen::VectorXd QDSolver::getCurrentSolutionVector(SingleGroupQD * SGQD)
 {
-  Eigen::VectorXd solVector(energyGroups*nGroupUnknowns);
+  Eigen::VectorXd solVector(energyGroups*nGroupCurrentUnknowns);
   solVector.setZero();
   vector<int> indices;
 
@@ -796,3 +777,15 @@ Eigen::VectorXd QDSolver::getCurrentSolutionVector(SingleGroupQD * SGQD)
 };
 //==============================================================================
 
+void QDSolver::checkOptionalParams()
+{
+
+  // check for optional parameters specified in input file
+
+  if ((*input)["parameters"]["mgqd-reflective"]){
+
+    reflectingBCs=(*input)["parameters"]["mgqd-reflective"]\
+      .as<bool>();
+
+  }
+}
