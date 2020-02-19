@@ -715,6 +715,67 @@ void QDSolver::assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 //==============================================================================
 
 //==============================================================================
+/// Assert Gol'din's boundary condition on the north face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  vector<int> indices = getIndices(iR,iZ,energyGroup);
+  double ratio = SGQD->nOutwardCurrToFluxRatioBC(iR);
+  double inwardCurrent = SGQD->nInwardCurrentBC(iR);
+  double inwardFlux = SGQD->nInwardFluxBC(iR)
+
+  northCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+  A.recoeff(iEq,indices[iNF]) -= ratio;
+  b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's boundary condition on the south face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  vector<int> indices = getIndices(iR,iZ,energyGroup);
+  double ratio = SGQD->sOutwardCurrToFluxRatioBC(iR);
+  double inwardCurrent = SGQD->sInwardCurrentBC(iR);
+  double inwardFlux = SGQD->sInwardFluxBC(iR)
+
+  southCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+  A.recoeff(iEq,indices[iSF]) -= ratio;
+  b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's boundary condition on the east face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+void QDSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
+  SingleGroupQD * SGQD)
+{
+  vector<int> indices = getIndices(iR,iZ,energyGroup);
+  double ratio = SGQD->eOutwardCurrToFluxRatioBC(iR);
+  double inwardCurrent = SGQD->eInwardCurrentBC(iR);
+  double inwardFlux = SGQD->eInwardFluxBC(iR)
+
+  eastCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+  A.recoeff(iEq,indices[iEF]) -= ratio;
+  b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
+};
+//==============================================================================
+
+
+//==============================================================================
 /// Assert boundary condition on the north face at location (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell

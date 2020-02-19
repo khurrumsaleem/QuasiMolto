@@ -74,6 +74,14 @@ class QDSolver
     SingleGroupQD * SGQD);
   void assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
+  
+  // functions to assert Gol'din BCs
+  void assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
 
   // wrapper to assert either a flux or current BC
   void assertWBC(int iR,int iZ,int iEq,int energyGroup,\
