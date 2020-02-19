@@ -108,7 +108,7 @@ void TransportToQDCoupling::calcEddingtonFactors()
 //==============================================================================
 
 //==============================================================================
-/// Calculate Eddington factors using angular fluxes from transport objects
+/// Calculate boundary conditions for scalar flux 
 void TransportToQDCoupling::calcBCs()
 {
   int rows = MGT->SGTs[0]->sFlux.rows();
@@ -116,7 +116,10 @@ void TransportToQDCoupling::calcBCs()
   int eIdx = rows - 1,sIdx = cols - 1;
   int angIdx,xiIdx=0,muIdx=1,etaIdx=2,weightIdx = 3;  
   double angFlux,angFluxN,angFluxS,mu,xi,weight;
-  double Jr,JzN,JzS;
+  double inwardJrE,inwardJzN,inwardJzS;
+  double inwardFluxE,inwardFluxN,inwardFluxS;
+  double outwardJrE,outwardJzN,outwardJzS;
+  double outwardFluxE,outwardFluxN,outwardFluxS;
   
   for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
   {
@@ -124,7 +127,10 @@ void TransportToQDCoupling::calcBCs()
       {
 
         // reset accumulators
-        Jr = 0.0;
+        inwardJrE = 0.0;
+        inwardFluxE = 0.0;
+        outwardJrE = 0.0;
+        outwardFluxE = 0.0;
 
         // loop over quadrature
         for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
@@ -138,26 +144,36 @@ void TransportToQDCoupling::calcBCs()
  
             angFlux = MGT->SGTs[iGroup]->aFlux(iZ,eIdx,angIdx);
             
-            Jr = Jr + mu*angFlux*weight;
-          
+            if (mu < 0) 
+            {
+              inwardJrE = inwardJrE + mu*angFlux*weight;
+              inwardFluxE = inwardFluxE + angFlux*weight;
+            } else
+            {
+              outwardJrE = outwardJrE + mu*angFlux*weight;
+              outwardFluxE = outwardFluxE + angFlux*weight;
+            }
           } //iMu
         } //iXi 
 
-        // set radial BCs 
-        MGQD->SGQDs[iGroup]->eCurrentRBC(iZ) = Jr;
-        MGQD->SGQDs[iGroup]->wCurrentRBC(iZ) = 0.0;
-        
-        MGQD->SGQDs[iGroup]->eFluxBC(iZ) \
-          = MGT->SGTs[iGroup]->sFlux(iZ,eIdx);
-        MGQD->SGQDs[iGroup]->wFluxBC(iZ) \
-          = MGT->SGTs[iGroup]->sFlux(iZ,0);
+        // set inward current in SGQD object 
+        MGQD->SGQDs[iGroup]->eInwardCurrentBC(iZ) = inwardJrE;
+
+        // set inward flux in SGQD object 
+        MGQD->SGQDs[iGroup]->eInwardFluxBC(iZ) = inwardFluxE;
+
+        // set outward current to flux ratio in SGQD object 
+        MGQD->SGQDs[iGroup]->eOutwardCurrToFluxRatioBC(iZ)\
+          = outwardJrE/outwardFluxE;
 
       } //iZ
       for (int iR = 0; iR < cols; iR++)
       {
         // reset accumulators
-        JzN = 0.0;
-        JzS = 0.0;
+        inwardJzN = 0.0;
+        inwardJzS = 0.0;
+        inwardFluxN = 0.0;
+        inwardFluxS = 0.0;
 
         // loop over quadrature
         for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
@@ -171,21 +187,41 @@ void TransportToQDCoupling::calcBCs()
  
             angFluxN = MGT->SGTs[iGroup]->aFlux(0,iR,angIdx);
             angFluxS = MGT->SGTs[iGroup]->aFlux(sIdx,iR,angIdx);
-            
-            JzN = JzN + xi*angFluxN*weight;
-            JzS = JzS + xi*angFluxS*weight;
+            if (xi > 0) 
+            {
+              inwardJzN = inwardJzN + xi*angFluxN*weight;
+              inwardFluxN = inwardFluxN + angFlux*weight;
+            } else
+            {
+              outwardJzN = outwardJzN + xi*angFluxN*weight;
+              outwardFluxN = outwardFluxN + angFlux*weight;
+            }
+            if (xi < 0)
+            {
+              inwardJzS = inwardJzS + xi*angFluxS*weight;
+              inwardFluxS = inwardFluxS + angFluxS*weight;
+            } else
+            {
+              outwardJzS = outwardJzS + xi*angFluxS*weight;
+              outwardFluxS = outwardFluxS + angFluxS*weight;
+            }
           
           } //iMu
         } //iXi 
 
-        // set axial BCs 
-        MGQD->SGQDs[iGroup]->nCurrentZBC(iR) = JzN;
-        MGQD->SGQDs[iGroup]->sCurrentZBC(iR) = JzS;
+        // set inward current in SGQD object 
+        MGQD->SGQDs[iGroup]->nInwardCurrentBC(iR) = inwardJzN;
+        MGQD->SGQDs[iGroup]->sInwardCurrentBC(iR) = inwardJzS;
         
-        MGQD->SGQDs[iGroup]->nFluxBC(iR) \
-          = MGT->SGTs[iGroup]->sFlux(0,iR);
-        MGQD->SGQDs[iGroup]->sFluxBC(iR) \
-          = MGT->SGTs[iGroup]->sFlux(sIdx,iR);
+        // set inward flux in SGQD object 
+        MGQD->SGQDs[iGroup]->nInwardFluxBC(iR) = inwardFluxN;
+        MGQD->SGQDs[iGroup]->sInwardFluxBC(iR) = inwardFluxS;
+  
+        // set outward current to flux ratio in SGQD object
+        MGQD->SGQDs[iGroup]->nOutwardCurrToFluxRatioBC(iR)\
+          = outwardJzN/outwardFluxN;
+        MGQD->SGQDs[iGroup]->sOutwardCurrToFluxRatioBC(iR)\
+          = outwardJzS/outwardFluxS;
 
       } //iR
   } //iGroup
