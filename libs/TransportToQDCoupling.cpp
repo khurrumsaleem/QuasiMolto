@@ -143,7 +143,9 @@ void TransportToQDCoupling::calcBCs()
             weight = mesh->quadrature[iXi].quad[iMu][weightIdx];
  
             angFlux = MGT->SGTs[iGroup]->aFlux(iZ,eIdx,angIdx);
-            
+
+            // only accumulate inward facing angular fluxes on the the 
+            // outside radial (east) boundary 
             if (mu < 0) 
             {
               inwardJrE = inwardJrE + mu*angFlux*weight;
@@ -187,6 +189,9 @@ void TransportToQDCoupling::calcBCs()
  
             angFluxN = MGT->SGTs[iGroup]->aFlux(0,iR,angIdx);
             angFluxS = MGT->SGTs[iGroup]->aFlux(sIdx,iR,angIdx);
+  
+            // accumulate outward and inward angular fluxes in separate
+            // variables on the north face
             if (xi > 0) 
             {
               inwardJzN = inwardJzN + xi*angFluxN*weight;
@@ -196,6 +201,8 @@ void TransportToQDCoupling::calcBCs()
               outwardJzN = outwardJzN + xi*angFluxN*weight;
               outwardFluxN = outwardFluxN + angFlux*weight;
             }
+            // accumulate outward and inward angular fluxes in separate
+            // variables on the south face
             if (xi < 0)
             {
               inwardJzS = inwardJzS + xi*angFluxS*weight;
