@@ -29,6 +29,8 @@ class MultiGroupQD
     YAML::Node * myInput);
   void buildLinearSystem();
   void solveLinearSystem();
+  void buildBackCalcSystem();
+  void backCalculateCurrent();
   void setInitialCondition();
   void solveMGQDOnly();
   void writeFluxes();

@@ -62,13 +62,39 @@ void MultiGroupQD::solveLinearSystem()
 {
   QDSolve->solve();
   
+//  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+//  {
+//    SGQDs[iGroup]->getFlux();
+//    cout << SGQDs[iGroup]->sFlux << endl;
+//  }
+}
+//==============================================================================
+
+//==============================================================================
+void MultiGroupQD::buildBackCalcSystem()
+{
+  QDSolve->C.setZero();
+  QDSolve->d.setZero();
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
-    SGQDs[iGroup]->getFlux();
-    cout << SGQDs[iGroup]->sFlux << endl;
+    SGQDs[iGroup]->formContributionToBackCalcSystem();
   }
 }
 //==============================================================================
+
+//==============================================================================
+void MultiGroupQD::backCalculateCurrent()
+{
+  QDSolve->backCalculateCurrent();
+  
+//  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+//  {
+//    SGQDs[iGroup]->getFlux();
+//    cout << SGQDs[iGroup]->sFlux << endl;
+//  }
+}
+//==============================================================================
+
 
 //==============================================================================
 void MultiGroupQD::setInitialCondition()
@@ -107,6 +133,8 @@ void MultiGroupQD::solveMGQDOnly()
     cout << "time: " <<mesh->ts[iTime+1] << endl;
     solveLinearSystem();
     QDSolve->xPast = QDSolve->x;
+    buildBackCalcSystem();
+    backCalculateCurrent();
   }
   writeFluxes();
 }
