@@ -507,18 +507,6 @@ void Mesh::calcQDCellIndices(int nCornersR,int nCornersZ)
         qdCells[myIdx].wCIndex = countC;
         ++countF; ++countC;
       }
-    
-      cout << "Indices for cell at iR = " << iR << ", iZ = " << iZ << endl;     
-      cout<< "cFIdx:" << qdCells[myIdx].cFIndex << endl; 
-      cout<< "sFIdx:" << qdCells[myIdx].sFIndex << endl; 
-      cout<< "eFIdx:" << qdCells[myIdx].eFIndex << endl; 
-      cout<< "nFIdx:" << qdCells[myIdx].nFIndex << endl; 
-      cout<< "wFIdx:" << qdCells[myIdx].wFIndex << endl;
-      cout<< "sCIdx:" << qdCells[myIdx].sCIndex << endl; 
-      cout<< "eCIdx:" << qdCells[myIdx].eCIndex << endl; 
-      cout<< "nCIdx:" << qdCells[myIdx].nCIndex << endl; 
-      cout<< "wCIdx:" << qdCells[myIdx].wCIndex << endl;
-      cout << endl; 
     }
   }
 
