@@ -65,16 +65,17 @@ int main(int argc, char** argv) {
       myMMS->timeDependent();
     else if (solveType == "MGQD" or solveType == "mgqd") 
       myMGQD->solveMGQDOnly();
-    else
+    else if (solveType == "TQD" or solveType == "TQD")
     { 
       myMGT->solveTransportOnly();
       myT2QD->calcEddingtonFactors();
     }
+    else
+      myMGT->solveTransportOnly();
   }
   else
   {
     myMGT->solveTransportOnly();
-    myT2QD->calcEddingtonFactors();
   }
 return(0);
 }
