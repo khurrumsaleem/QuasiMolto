@@ -48,7 +48,8 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   Err = (1.0/3.0)*Err;
   Ezz.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   Ezz = (1.0/3.0)*Ezz;
-  Erz.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+  Erz.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+  Erz = 0.0*Erz;
   
   // initialize source 
   q.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
@@ -80,6 +81,13 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
 void SingleGroupQD::formContributionToLinearSystem()
 {
   MGQD->QDSolve->formLinearSystem(this);
+}
+//==============================================================================
+
+//==============================================================================
+void SingleGroupQD::formContributionToBackCalcSystem()
+{
+  MGQD->QDSolve->formBackCalcSystem(this);
 }
 //==============================================================================
 
