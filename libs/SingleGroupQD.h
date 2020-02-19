@@ -50,6 +50,19 @@ class SingleGroupQD
   Eigen::VectorXd eCurrentRBC;
   Eigen::VectorXd nCurrentZBC;
   Eigen::VectorXd sCurrentZBC;
+    
+  // vectors for robin boundary conditions
+  Eigen::VectorXd eInwardCurrentBC;
+  Eigen::VectorXd nInwardCurrentBC;
+  Eigen::VectorXd sInwardCurrentBC;
+  
+  Eigen::VectorXd eInwardFluxBC;
+  Eigen::VectorXd nInwardFluxBC;
+  Eigen::VectorXd sInwardFluxBC;
+  
+  Eigen::VectorXd eOutwardCurrToFluxRatioBC;
+  Eigen::VectorXd nOutwardCurrToFluxRatioBC;
+  Eigen::VectorXd sOutwardCurrToFluxRatioBC;
 
   // public functions
   SingleGroupQD(int myEnergyGroup,\

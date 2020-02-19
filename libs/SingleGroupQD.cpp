@@ -71,6 +71,15 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   eCurrentRBC.setZero(mesh->dzsCorner.size());
   nCurrentZBC.setZero(mesh->drsCorner.size());
   sCurrentZBC.setZero(mesh->drsCorner.size());
+  eInwardFluxBC.setZero(mesh->dzsCorner.size());
+  nInwardFluxBC.setZero(mesh->drsCorner.size());
+  sInwardFluxBC.setZero(mesh->drsCorner.size());
+  eInwardCurrentBC.setZero(mesh->dzsCorner.size());
+  nInwardCurrentBC.setZero(mesh->drsCorner.size());
+  sInwardCurrentBC.setZero(mesh->drsCorner.size());
+  eOutwardCurrToFluxRatioBC.setZero(mesh->dzsCorner.size());
+  nOutwardCurrToFluxRatioBC.setZero(mesh->drsCorner.size());
+  sOutwardCurrToFluxRatioBC.setZero(mesh->drsCorner.size());
 
   // check for optional parameters
   checkOptionalParams();
