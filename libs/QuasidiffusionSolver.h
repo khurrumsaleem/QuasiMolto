@@ -116,6 +116,7 @@ class QDSolver
   Eigen::VectorXd b,d;
   int energyGroups,nR,nZ,nGroupUnknowns,nGroupCurrentUnknowns;
   bool reflectingBCs = false;
+  bool goldinBCs = false;
   
   private:
   // private variables

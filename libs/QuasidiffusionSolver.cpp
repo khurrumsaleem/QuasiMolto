@@ -726,10 +726,10 @@ void QDSolver::assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
   vector<int> indices = getIndices(iR,iZ,energyGroup);
   double ratio = SGQD->nOutwardCurrToFluxRatioBC(iR);
   double inwardCurrent = SGQD->nInwardCurrentBC(iR);
-  double inwardFlux = SGQD->nInwardFluxBC(iR)
+  double inwardFlux = SGQD->nInwardFluxBC(iR);
 
   northCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
-  A.recoeff(iEq,indices[iNF]) -= ratio;
+  A.coeffRef(iEq,indices[iNF]) -= ratio;
   b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
 };
 //==============================================================================
@@ -746,10 +746,10 @@ void QDSolver::assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
   vector<int> indices = getIndices(iR,iZ,energyGroup);
   double ratio = SGQD->sOutwardCurrToFluxRatioBC(iR);
   double inwardCurrent = SGQD->sInwardCurrentBC(iR);
-  double inwardFlux = SGQD->sInwardFluxBC(iR)
+  double inwardFlux = SGQD->sInwardFluxBC(iR);
 
   southCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
-  A.recoeff(iEq,indices[iSF]) -= ratio;
+  A.coeffRef(iEq,indices[iSF]) -= ratio;
   b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
 };
 //==============================================================================
@@ -766,10 +766,10 @@ void QDSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
   vector<int> indices = getIndices(iR,iZ,energyGroup);
   double ratio = SGQD->eOutwardCurrToFluxRatioBC(iR);
   double inwardCurrent = SGQD->eInwardCurrentBC(iR);
-  double inwardFlux = SGQD->eInwardFluxBC(iR)
+  double inwardFlux = SGQD->eInwardFluxBC(iR);
 
   eastCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
-  A.recoeff(iEq,indices[iEF]) -= ratio;
+  A.coeffRef(iEq,indices[iEF]) -= ratio;
   b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
 };
 //==============================================================================
@@ -786,6 +786,8 @@ void QDSolver::assertNBC(int iR,int iZ,int iEq,int energyGroup,\
 {
   if (reflectingBCs)
     assertNCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
+  else if (reflectingBCs)
+    assertNGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertNFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -802,6 +804,8 @@ void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
 {
   if (reflectingBCs)
     assertSCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
+  else if (goldinBCs)
+    assertSGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertSFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -816,7 +820,7 @@ void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
 void QDSolver::assertWBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
-  if (reflectingBCs)
+  if (reflectingBCs or goldinBCs)
     assertWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertWFluxBC(iR,iZ,iEq,energyGroup,SGQD);
@@ -834,6 +838,8 @@ void QDSolver::assertEBC(int iR,int iZ,int iEq,int energyGroup,\
 {
   if (reflectingBCs)
     assertECurrentBC(iR,iZ,iEq,energyGroup,SGQD);
+  if (goldinBCs)
+    assertEGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertEFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -1065,13 +1071,28 @@ Eigen::VectorXd QDSolver::getCurrentSolutionVector(SingleGroupQD * SGQD)
 
 void QDSolver::checkOptionalParams()
 {
+  string boundaryType;
 
   // check for optional parameters specified in input file
 
-  if ((*input)["parameters"]["mgqd-reflective"]){
+  if ((*input)["parameters"]["solve type"])
+  {
 
-    reflectingBCs=(*input)["parameters"]["mgqd-reflective"]\
-      .as<bool>();
+    boundaryType=(*input)["parameters"]["solve type"].as<string>();
+    if (boundaryType == "TQD") goldinBCs = true;
 
+  }
+  else if ((*input)["parameters"]["mgqd-bcs"])
+  {
+
+    boundaryType=(*input)["parameters"]["mgqd-bcs"].as<string>();
+
+    if (boundaryType == "reflective" or boundaryType == "REFLECTIVE"\
+      or boundaryType == "Reflective")
+      reflectingBCs = true;
+    else if (boundaryType == "goldin" or boundaryType == "GOLDIN" \
+      or boundaryType == "Goldin")
+      goldinBCs = true;
+    
   }
 }
