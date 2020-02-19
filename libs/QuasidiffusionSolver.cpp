@@ -34,7 +34,7 @@ QDSolver::QDSolver(Mesh * myMesh,\
   materials = myMaterials;
 
   // temporary variables for initialization
-  int nUnknowns;
+  int nUnknowns,nCurrentUnknowns;
 
   // calculate number of unknowns  
   energyGroups = materials->nGroups;
@@ -43,14 +43,18 @@ QDSolver::QDSolver(Mesh * myMesh,\
   nGroupUnknowns = 3*(nZ*nR) + nZ + nR;
   nGroupCurrentUnknowns = 2*(nZ*nR) + nZ + nR;
   nUnknowns = energyGroups*nGroupUnknowns;
+  nCurrentUnknowns = energyGroups*nGroupCurrentUnknowns;
 
   // initialize size of linear system
   A.resize(nUnknowns,nUnknowns);
   A.reserve(3*nUnknowns+nUnknowns/5);
+  C.resize(nCurrentUnknowns,nUnknowns);
+  C.reserve(4*nCurrentUnknowns);
   x.setZero(nUnknowns);
   xPast.setZero(nUnknowns);
   currPast.setZero(energyGroups*nGroupCurrentUnknowns);
   b.setZero(nUnknowns);
+  d.setZero(nCurrentUnknowns);
 
   checkOptionalParams();
 };
@@ -136,10 +140,17 @@ void QDSolver::solve()
   A.makeCompressed();
   solverLU.compute(A);
   x = solverLU.solve(b);
- // cout << A << endl;
- // cout << b << endl;
 }
 //==============================================================================
+
+//==============================================================================
+/// Compute currents
+void QDSolver::backCalculateCurrent()
+{
+  currPast = d + C*x; 
+}
+//==============================================================================
+
 
 //==============================================================================
 /// Assert the zeroth moment equation for cell (iR,iZ)
@@ -369,7 +380,221 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   A.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrL/(hUp*deltaR);
   
   // formulate RHS entry
-  b(iEq) = b(iEq) - (currPast(indices[iEC])/(v*deltaT));
+  b(iEq) = b(iEq) - coeff*(currPast(indices[iEC])/(v*deltaT));
+};
+//==============================================================================
+
+//==============================================================================
+/// Form a portion of the current back calc linear system that belongs to SGQD 
+/// @param [in] SGQD quasidiffusion energy group to build portion of linear 
+///   for
+void QDSolver::formBackCalcSystem(SingleGroupQD * SGQD)	      
+{
+  int iEq = SGQD->energyGroup*nGroupCurrentUnknowns;
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+      
+      // south face
+      calcSouthCurrent(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      iEq = iEq + 1;
+
+      // east face
+      calcEastCurrent(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      iEq = iEq + 1;
+
+      // north face
+      if (iZ == 0)
+      {
+        calcNorthCurrent(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        calcWestCurrent(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
+    }
+  }
+};
+
+//==============================================================================
+
+
+//==============================================================================
+/// Enforce coefficients to calculate current on south face
+void QDSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
+  int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutV(energyGroup);
+  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zUp-zAvg;
+
+  // get local Eddington factors
+  ErrL = SGQD->Err(iZ,iR);
+  EzzL = SGQD->Ezz(iZ,iR);
+  ErzL = SGQD->Erz(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+
+  coeff = 1/((1/(v*deltaT))+sigT); 
+
+  C.coeffRef(iEq,indices[iSF]) -= coeff*EzzL/deltaZ;
+
+  C.coeffRef(iEq,indices[iCF]) += coeff*EzzL/deltaZ;
+
+  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
+
+  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+  
+  // formulate RHS entry
+  d(iEq) = coeff*(currPast(indices[iSC])/(v*deltaT));
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate current on north face 
+void QDSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
+  int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutV(energyGroup);
+  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zAvg-zDown;
+
+  // get local Eddington factors
+  ErrL = SGQD->Err(iZ,iR);
+  EzzL = SGQD->Ezz(iZ,iR);
+  ErzL = SGQD->Erz(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+  
+  coeff = 1/((1/(v*deltaT))+sigT); 
+
+  C.coeffRef(iEq,indices[iNF]) += coeff*EzzL/deltaZ;
+
+  C.coeffRef(iEq,indices[iCF]) -= coeff*EzzL/deltaZ;
+
+  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
+
+  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+
+  // formulate RHS entry
+  d(iEq) = coeff*(currPast(indices[iNC])/(v*deltaT));
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate current on west face
+void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
+  int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutV(energyGroup);
+  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
+  double hCent,hDown;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rAvg-rDown; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
+
+  // get local Eddington factors
+  ErrL = SGQD->Err(iZ,iR);
+  EzzL = SGQD->Ezz(iZ,iR);
+  ErzL = SGQD->Erz(iZ,iR);
+  
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+  
+  coeff = 1/((1/(v*deltaT))+sigT); 
+
+  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
+
+  C.coeffRef(iEq,indices[iNF]) += coeff*ErzL/deltaZ;
+
+  C.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrL/(hDown*deltaR);
+
+  C.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrL/(hDown*deltaR);
+
+  // formulate RHS entry
+  d(iEq) = coeff*(currPast(indices[iWC])/(v*deltaT));
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate current on east face
+void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
+  int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutV(energyGroup);
+  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
+  double hCent,hUp;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rAvg; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
+
+  // get local Eddington factors
+  ErrL = SGQD->Err(iZ,iR);
+  EzzL = SGQD->Ezz(iZ,iR);
+  ErzL = SGQD->Erz(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+  
+  coeff = 1/((1/(v*deltaT))+sigT); 
+
+  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
+
+  C.coeffRef(iEq,indices[iNF]) += coeff*ErzL/deltaZ;
+
+  C.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrL/(hUp*deltaR);
+
+  C.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrL/(hUp*deltaR);
+  
+  // formulate RHS entry
+  d(iEq) = coeff*(currPast(indices[iEC])/(v*deltaT));
 };
 //==============================================================================
 

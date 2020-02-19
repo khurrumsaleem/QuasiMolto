@@ -18,6 +18,7 @@ class QDSolver
     Materials * myMaterials,\
     YAML::Node * myInput);
   void formLinearSystem(SingleGroupQD * SGQD);
+  void formBackCalcSystem(SingleGroupQD * SGQD);
   
   // functions to map grid indices to global index
   vector<int> getIndices(int iR,int iZ,int energyGroup);
@@ -42,6 +43,16 @@ class QDSolver
   void westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
   void eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+
+  // functions to enforce coefficients for calculation of facial currents
+  void calcSouthCurrent(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void calcNorthCurrent(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void calcWestCurrent(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD);
+  void calcEastCurrent(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD);
 
   // functions to assert flux BCs
@@ -80,6 +91,7 @@ class QDSolver
   
   // function to solve linear system
   void solve();
+  void backCalculateCurrent();
 
   // function to parse solution vector
   void getFlux(SingleGroupQD * SGQD);
@@ -90,10 +102,10 @@ class QDSolver
   void checkOptionalParams();
   
   // public variables
-  Eigen::SparseMatrix<double> A;
+  Eigen::SparseMatrix<double> A,C;
   Eigen::VectorXd x;
   Eigen::VectorXd xPast,currPast;
-  Eigen::VectorXd b;
+  Eigen::VectorXd b,d;
   int energyGroups,nR,nZ,nGroupUnknowns,nGroupCurrentUnknowns;
   bool reflectingBCs = false;
   
