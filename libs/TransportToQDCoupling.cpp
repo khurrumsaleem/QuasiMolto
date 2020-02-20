@@ -176,6 +176,10 @@ void TransportToQDCoupling::calcBCs()
         inwardJzS = 0.0;
         inwardFluxN = 0.0;
         inwardFluxS = 0.0;
+        outwardJzN = 0.0;
+        outwardJzS = 0.0;
+        outwardFluxN = 0.0;
+        outwardFluxS = 0.0;
 
         // loop over quadrature
         for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
@@ -195,11 +199,11 @@ void TransportToQDCoupling::calcBCs()
             if (xi > 0) 
             {
               inwardJzN = inwardJzN + xi*angFluxN*weight;
-              inwardFluxN = inwardFluxN + angFlux*weight;
+              inwardFluxN = inwardFluxN + angFluxN*weight;
             } else
             {
               outwardJzN = outwardJzN + xi*angFluxN*weight;
-              outwardFluxN = outwardFluxN + angFlux*weight;
+              outwardFluxN = outwardFluxN + angFluxN*weight;
             }
             // accumulate outward and inward angular fluxes in separate
             // variables on the south face
@@ -230,7 +234,34 @@ void TransportToQDCoupling::calcBCs()
         MGQD->SGQDs[iGroup]->sOutwardCurrToFluxRatioBC(iR)\
           = outwardJzS/outwardFluxS;
 
-      } //iR
+      } //iR  
+  
+  cout << "NORTH BCS" << endl;
+  cout << "CURRENT" << endl;
+  cout << MGQD->SGQDs[iGroup]->nInwardCurrentBC << endl;
+  cout << "FLUX" << endl;
+  cout << MGQD->SGQDs[iGroup]->nInwardFluxBC << endl;
+  cout << "Ratio" << endl;
+  cout << MGQD->SGQDs[iGroup]->nOutwardCurrToFluxRatioBC << endl;
+  cout << endl;
+  cout << "SOUTH BCS" << endl;
+  cout << "CURRENT" << endl;
+  cout << MGQD->SGQDs[iGroup]->sInwardCurrentBC << endl;
+  cout << "FLUX" << endl;
+  cout << MGQD->SGQDs[iGroup]->sInwardFluxBC << endl;
+  cout << "Ratio" << endl;
+  cout << MGQD->SGQDs[iGroup]->sOutwardCurrToFluxRatioBC << endl;
+  cout << endl;
+  cout << "EAST BCS" << endl;
+  cout << "CURRENT" << endl;
+  cout << MGQD->SGQDs[iGroup]->eInwardCurrentBC << endl;
+  cout << "FLUX" << endl;
+  cout << MGQD->SGQDs[iGroup]->eInwardFluxBC << endl;
+  cout << "Ratio" << endl;
+  cout << MGQD->SGQDs[iGroup]->eOutwardCurrToFluxRatioBC << endl;
+  cout << endl;
+
   } //iGroup
+
 }
 //==============================================================================
