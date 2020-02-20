@@ -236,31 +236,6 @@ void TransportToQDCoupling::calcBCs()
 
       } //iR  
   
-  cout << "NORTH BCS" << endl;
-  cout << "CURRENT" << endl;
-  cout << MGQD->SGQDs[iGroup]->nInwardCurrentBC << endl;
-  cout << "FLUX" << endl;
-  cout << MGQD->SGQDs[iGroup]->nInwardFluxBC << endl;
-  cout << "Ratio" << endl;
-  cout << MGQD->SGQDs[iGroup]->nOutwardCurrToFluxRatioBC << endl;
-  cout << endl;
-  cout << "SOUTH BCS" << endl;
-  cout << "CURRENT" << endl;
-  cout << MGQD->SGQDs[iGroup]->sInwardCurrentBC << endl;
-  cout << "FLUX" << endl;
-  cout << MGQD->SGQDs[iGroup]->sInwardFluxBC << endl;
-  cout << "Ratio" << endl;
-  cout << MGQD->SGQDs[iGroup]->sOutwardCurrToFluxRatioBC << endl;
-  cout << endl;
-  cout << "EAST BCS" << endl;
-  cout << "CURRENT" << endl;
-  cout << MGQD->SGQDs[iGroup]->eInwardCurrentBC << endl;
-  cout << "FLUX" << endl;
-  cout << MGQD->SGQDs[iGroup]->eInwardFluxBC << endl;
-  cout << "Ratio" << endl;
-  cout << MGQD->SGQDs[iGroup]->eOutwardCurrToFluxRatioBC << endl;
-  cout << endl;
-
   } //iGroup
 
 }
