@@ -69,6 +69,8 @@ int main(int argc, char** argv) {
     { 
       myMGT->solveTransportOnly();
       myT2QD->calcEddingtonFactors();
+      myT2QD->calcBCs();
+      myMGQD->solveMGQDOnly();
     }
     else
       myMGT->solveTransportOnly();
