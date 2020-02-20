@@ -280,7 +280,7 @@ void SingleGroupQD::writeFlux()
   string fileName;
 
   // parse file name
-  fileName = "scalar-flux-group-" + to_string(energyGroup)\
+  fileName = "qd-scalar-flux-group-" + to_string(energyGroup)\
     +"-" + to_string(mesh->dz)+ ".csv";
 
   // open file
