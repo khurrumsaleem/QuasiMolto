@@ -1,20 +1,15 @@
 #ifndef MULTIGROUPQD_H
 #define MULTIGROUPQD_H
 
-#include <iostream>
-#include <vector>
 #include <iomanip>
-#include <armadillo>
 #include "Mesh.h"
-#include "Materials.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
+#include "SingleGroupQD.h"
+#include "QuasidiffusionSolver.h"
 
 using namespace std;
-using namespace arma;
 
-class SingleGroupQD; // forward declaration
-class QDSolver; // forward declaration
+//class SingleGroupQD; // forward declaration
+//class QDSolver; // forward declaration
 //==============================================================================
 //! MultGroupTransport class that holds multigroup transport information
 

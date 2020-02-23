@@ -2,21 +2,9 @@
 // Purpose: define a class that manipulates each single group quasidiffusion object
 // Date: February 05, 2020
 
-#include <iostream>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
-#include "Mesh.h"
-#include "Materials.h"
-#include "SingleGroupQD.h"
 #include "MultiGroupQD.h"
-#include "QuasidiffusionSolver.h"
-#include "MMS.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std;
-using namespace arma;
 
 //==============================================================================
 /// MultiGroupQD class object constructor
