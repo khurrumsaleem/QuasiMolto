@@ -26,18 +26,19 @@ using namespace arma;
 /// @param [in] myMaterials Materials object for the simulation
 /// @param [in] myMesh Mesh object for the simulation
 /// @param [in] myInput YAML input object for the simulation
+/// @param [in] myMGT Multigroup transport object for the simulation
+/// @param [in] myMGQD Multigroup quasidiffusion object for the simulation
 TransportToQDCoupling::TransportToQDCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * myInput,\
   MultiGroupTransport * myMGT,\
   MultiGroupQD * myMGQD)
 {
-  // Assign pointers for materials, mesh, and input objects
+  // Assign pointers for materials, mesh, input objects, multigroup transport
+  // and quasidiffusion objects
   materials = myMaterials;
   mesh = myMesh;
   input = myInput;
-
-  // Assign pointers for multigroup transport and quasidiffusion objects
   MGT = myMGT;
   MGQD = myMGQD;
   
@@ -49,6 +50,8 @@ TransportToQDCoupling::TransportToQDCoupling(Materials * myMaterials,\
 
 //==============================================================================
 /// Calculate Eddington factors using angular fluxes from transport objects
+/// @param [out] allConverged boolean indicating if the residual on the 
+/// Eddington factors passes the convergence criteria
 bool TransportToQDCoupling::calcEddingtonFactors()
 {
   int rows = MGT->SGTs[0]->sFlux.rows();
@@ -107,7 +110,8 @@ bool TransportToQDCoupling::calcEddingtonFactors()
 
       } //iZ
     } //iR
-    
+   
+    // measure the residual for each Eddington factors 
     residualZz = ((MGQD->SGQDs[iGroup]->Ezz - MGQD->SGQDs[iGroup]->EzzPrev)\
       .cwiseQuotient(MGQD->SGQDs[iGroup]->Ezz)).norm();
     residualRr = ((MGQD->SGQDs[iGroup]->Err - MGQD->SGQDs[iGroup]->ErrPrev)\
@@ -131,7 +135,8 @@ bool TransportToQDCoupling::calcEddingtonFactors()
 //==============================================================================
 
 //==============================================================================
-/// Calculate boundary conditions for scalar flux 
+/// Calculate a number a parameters used for forming the boundary conditions of
+/// low order problem 
 void TransportToQDCoupling::calcBCs()
 {
   int rows = MGT->SGTs[0]->sFlux.rows();
@@ -148,7 +153,6 @@ void TransportToQDCoupling::calcBCs()
   {
       for (int iZ = 0; iZ < cols; iZ++)
       {
-
         // reset accumulators
         inwardJrE = 0.0;
         inwardFluxE = 0.0;
@@ -282,20 +286,29 @@ void TransportToQDCoupling::calcBCs()
 //==============================================================================
 
 //==============================================================================
+/// Use a multigroup transport solve to form the BCs and Eddington factors,
+/// which are then used in a multigroup quasidiffusion solve. The solution of 
+/// the MGQD system is used to update the sources in the transport problem. This
+/// process repeats until the eddington factors, sources and alphas are 
+/// converged.
 void TransportToQDCoupling::solveTransportWithQDAcceleration()
 {
 
   bool alphaConverged=false,eddingtonConverged=false,sourcesConverged=false;
 
   MGQD->setInitialCondition();
+  
+  // loop over time steps
   for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
   { 
     MGQD->buildLinearSystem();
     MGQD->solveLinearSystem();
     updateTransportFluxes();
     MGT->calcSources("fs");
-    //iterate until eddington and alpha are converged
-    for (int iSteps = 0; iSteps < 100; iSteps++)
+
+    // iterate until eddington and alpha are converged. Max iterations set
+    // to 1000 for now. ToDo: make maxIters and input.
+    for (int iSteps = 0; iSteps < 1000; iSteps++)
     {
       MGT->solveStartAngles();
       MGT->solveSCBs();
@@ -309,6 +322,7 @@ void TransportToQDCoupling::solveTransportWithQDAcceleration()
       sourcesConverged = MGT->calcSources("fs");
       if (alphaConverged and eddingtonConverged and sourcesConverged) break;
     }
+  
     MGQD->writeFluxes();
     MGT->calcFluxes();
     MGT->writeFluxes();
@@ -322,6 +336,7 @@ void TransportToQDCoupling::solveTransportWithQDAcceleration()
 //==============================================================================
 
 //==============================================================================
+/// Update the transport fluxes with those in the quasidiffusion objects
 void TransportToQDCoupling::updateTransportFluxes()
 {
   for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
@@ -332,6 +347,8 @@ void TransportToQDCoupling::updateTransportFluxes()
 //=============================================================================
 
 //==============================================================================
+/// Update transport fluxes at the previous time step with the fluxes currently
+/// on the quasidiffusion objects
 void TransportToQDCoupling::updateTransportPrevFluxes()
 {
   for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
@@ -342,6 +359,7 @@ void TransportToQDCoupling::updateTransportPrevFluxes()
 //=============================================================================
 
 //==============================================================================
+/// Check for optional input parameters of relevance to this object
 void TransportToQDCoupling::checkOptionalParams()
 {
   if ((*input)["parameters"]["epsEddington"])
