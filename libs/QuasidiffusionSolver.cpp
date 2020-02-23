@@ -725,12 +725,24 @@ void QDSolver::assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 {
   vector<int> indices = getIndices(iR,iZ,energyGroup);
   double ratio = SGQD->nOutwardCurrToFluxRatioBC(iR);
+  double absCurrent = SGQD->nAbsCurrentBC(iR);
   double inwardCurrent = SGQD->nInwardCurrentBC(iR);
   double inwardFlux = SGQD->nInwardFluxBC(iR);
 
-  northCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+  northCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
   A.coeffRef(iEq,indices[iNF]) -= ratio;
   b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
+  
+  //northCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  //A.coeffRef(iEq,indices[iNF]) -= absCurrent/SGQD->nFluxBC(iR);
+  //b(iEq) = b(iEq) + (2*inwardCurrent);
+  
+  //northCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
+  //southCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
+  //b(iEq) = b(iEq) + SGQD->nCurrentZBC(iR);
+  
+  //A.coeffRef(iEq,indices[iNF]) = 1.0;
+  //b(iEq) = SGQD->nFluxBC(iR); 
 };
 //==============================================================================
 
@@ -745,12 +757,24 @@ void QDSolver::assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 {
   vector<int> indices = getIndices(iR,iZ,energyGroup);
   double ratio = SGQD->sOutwardCurrToFluxRatioBC(iR);
+  double absCurrent = SGQD->sAbsCurrentBC(iR);
   double inwardCurrent = SGQD->sInwardCurrentBC(iR);
   double inwardFlux = SGQD->sInwardFluxBC(iR);
 
-  southCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+  southCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
   A.coeffRef(iEq,indices[iSF]) -= ratio;
   b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
+
+  //southCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  //A.coeffRef(iEq,indices[iSF]) -= absCurrent/SGQD->sFluxBC(iR);
+  //b(iEq) = b(iEq) + (2*inwardCurrent);
+  
+  //southCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
+  //northCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
+  //b(iEq) = b(iEq) + SGQD->sCurrentZBC(iR);
+
+  //A.coeffRef(iEq,indices[iSF]) = 1.0;
+  //b(iEq) = SGQD->sFluxBC(iR); 
 };
 //==============================================================================
 
@@ -765,12 +789,24 @@ void QDSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 {
   vector<int> indices = getIndices(iR,iZ,energyGroup);
   double ratio = SGQD->eOutwardCurrToFluxRatioBC(iZ);
+  double absCurrent = SGQD->eAbsCurrentBC(iZ);
   double inwardCurrent = SGQD->eInwardCurrentBC(iZ);
   double inwardFlux = SGQD->eInwardFluxBC(iZ);
 
-  eastCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+  eastCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
   A.coeffRef(iEq,indices[iEF]) -= ratio;
   b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
+  
+  //eastCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  //A.coeffRef(iEq,indices[iEF]) -= absCurrent/SGQD->eFluxBC(iZ);
+  //b(iEq) = b(iEq) + (2*inwardCurrent);
+  
+  //eastCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
+  //westCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
+  //b(iEq) = b(iEq) + SGQD->eCurrentRBC(iZ);
+  
+  //A.coeffRef(iEq,indices[iEF]) = 1.0;
+  //b(iEq) = SGQD->eFluxBC(iZ); 
 };
 //==============================================================================
 
