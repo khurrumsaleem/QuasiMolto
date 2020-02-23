@@ -353,36 +353,47 @@ void MultiGroupTransport::solveTransportOnly()
 
   // Calculate initial source
   calcSources(); 
+  
+  for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
+  {
+    cout << "Flux residuals: " << endl;
+    for (int iter = 0; iter < powerMaxIter; ++iter){
 
-  cout << "Flux residuals: " << endl;
-  for (int iter = 0; iter < powerMaxIter; ++iter){
+      // Perform source iteration
+      fluxConverged=sourceIteration();
 
-    // Perform source iteration
-    fluxConverged=sourceIteration();
+      if (fluxConverged){
 
-    if (fluxConverged){
+        cout << endl; 
 
-      cout << endl; 
+        // Perform power iteration
+        printDividers();
+        fissionSourceConverged=powerIteration(); 
+        printDividers(); 
 
-      // Perform power iteration
-      printDividers();
-      fissionSourceConverged=powerIteration(); 
-      printDividers(); 
-
-      // Problem is fully converged 
-      if (fissionSourceConverged){
-        cout << "Solution converged!" << endl;
+        // Problem is fully converged 
+        if (fissionSourceConverged)
+        {
+          cout << "Solution converged!" << endl;
+          break;
+        } else
+        {
+          cout << "Flux residuals: " << endl;
+        }
+      
+      } else 
+      {
+        cout << "Source iteration non-convergent." << endl;
         break;
-      } else{
-        cout << "Flux residuals: " << endl;
       }
-    
-    } else {
-      cout << "Source iteration non-convergent." << endl;
-      break;
     }
-  } 
 
+    // set previous fluxes in each group
+    for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup)
+    {
+      SGTs[iGroup]->sFluxPrev = SGTs[iGroup]->sFlux;
+    }
+  }
   writeFluxes(); 
 };
 
