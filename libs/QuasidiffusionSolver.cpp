@@ -127,7 +127,8 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
 //==============================================================================
 
 //==============================================================================
-/// Compute the solution, x, to Ax = b.
+/// Compute the solution, x, to Ax = b. x contains the fluxes that solve the 
+/// low order quasidiffusion system
 void QDSolver::solve()
 {
  // Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
@@ -144,7 +145,7 @@ void QDSolver::solve()
 //==============================================================================
 
 //==============================================================================
-/// Compute currents
+/// Compute currents from flux values in x
 void QDSolver::backCalculateCurrent()
 {
   currPast = d + C*x; 
@@ -158,6 +159,9 @@ void QDSolver::backCalculateCurrent()
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+// ToDo: eliminate energyGroup input, as it can just be defined from the SGQD
+// object. Same with a lot of functions in this class
 void QDSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -197,6 +201,12 @@ void QDSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
 //==============================================================================
 
 //==============================================================================
+/// Apply radial boundary for cell (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::applyRadialBoundary(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -206,6 +216,12 @@ void QDSolver::applyRadialBoundary(int iR,int iZ,int iEq,int energyGroup,\
 //==============================================================================
 
 //==============================================================================
+/// Apply axial boundary for cell (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::applyAxialBoundary(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -216,6 +232,11 @@ void QDSolver::applyAxialBoundary(int iR,int iZ,int iEq,int energyGroup,\
 
 //==============================================================================
 /// Enforce coefficients for current on south face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -257,6 +278,11 @@ void QDSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 
 //==============================================================================
 /// Enforce coefficients for current on north face 
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -298,6 +324,11 @@ void QDSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 
 //==============================================================================
 /// Enforce coefficients for current on west face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -342,6 +373,11 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 
 //==============================================================================
 /// Enforce coefficients for current on east face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -430,6 +466,11 @@ void QDSolver::formBackCalcSystem(SingleGroupQD * SGQD)
 
 //==============================================================================
 /// Enforce coefficients to calculate current on south face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
   int energyGroup,SingleGroupQD * SGQD)
 {
@@ -471,6 +512,11 @@ void QDSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
 
 //==============================================================================
 /// Enforce coefficients to calculate current on north face 
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
   int energyGroup,SingleGroupQD * SGQD)
 {
@@ -512,6 +558,11 @@ void QDSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
 
 //==============================================================================
 /// Enforce coefficients to calculate current on west face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
   int energyGroup,SingleGroupQD * SGQD)
 {
@@ -556,6 +607,11 @@ void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
 
 //==============================================================================
 /// Enforce coefficients to calculate current on east face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
   int energyGroup,SingleGroupQD * SGQD)
 {
@@ -604,6 +660,7 @@ void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertNFluxBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -620,6 +677,7 @@ void QDSolver::assertNFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertSFluxBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -636,6 +694,7 @@ void QDSolver::assertSFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -652,6 +711,7 @@ void QDSolver::assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -668,6 +728,7 @@ void QDSolver::assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -681,6 +742,7 @@ void QDSolver::assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -694,6 +756,7 @@ void QDSolver::assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -707,6 +770,7 @@ void QDSolver::assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -720,6 +784,7 @@ void QDSolver::assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -752,6 +817,7 @@ void QDSolver::assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -784,6 +850,7 @@ void QDSolver::assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -817,6 +884,7 @@ void QDSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertNBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -835,6 +903,7 @@ void QDSolver::assertNBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -853,6 +922,7 @@ void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertWBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -869,6 +939,7 @@ void QDSolver::assertWBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
 void QDSolver::assertEBC(int iR,int iZ,int iEq,int energyGroup,\
   SingleGroupQD * SGQD)
 {
@@ -885,7 +956,8 @@ void QDSolver::assertEBC(int iR,int iZ,int iEq,int energyGroup,\
 /// Calculate multigroup source coefficient for cell at (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
-/// @param [in] energyGroup energy group of sourcing group
+/// @param [in] toEnergyGroup energy group of sourcing group
+/// @param [in] fromEnergyGroup energy group of source group
 double QDSolver::calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
   int fromEnergyGroup)
 {
@@ -904,8 +976,10 @@ double QDSolver::calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
 
 //==============================================================================
 /// Form a portion of the linear system that belongs to SGQD 
-/// @param [in] SGQD quasidiffusion energy group to build portion of linear 
-///   for
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] rEval radial location to evaluate integrating factor at
+/// @param [in] SGQD of this energyGroup
 double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
   SingleGroupQD * SGQD)	      
 {
@@ -950,6 +1024,7 @@ double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
 /// Return global index of south face current at indices iR and iZ 
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
+/// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [out] index global index for south face current in cell at (iR,iZ)
 vector<int> QDSolver::getIndices(int iR,int iZ,int energyGroup)
 {
@@ -1051,6 +1126,7 @@ void QDSolver::getFlux(SingleGroupQD * SGQD)
 //==============================================================================
 /// Extract flux values from SGQD object, store to solution vector, and return 
 /// @param [in] SGQD single group quasidiffusion object to get flux for
+/// @param [out] solVector flux values mapped to the 1D vector
 Eigen::VectorXd QDSolver::getFluxSolutionVector(SingleGroupQD * SGQD)
 {
   Eigen::VectorXd solVector(energyGroups*nGroupUnknowns);
@@ -1081,6 +1157,7 @@ Eigen::VectorXd QDSolver::getFluxSolutionVector(SingleGroupQD * SGQD)
 /// Extract current values from SGQD object, store to solution vector, and 
 /// return 
 /// @param [in] SGQD single group quasidiffusion object to get current for
+/// @param [out] solVector current values mapped to the 1D vector
 Eigen::VectorXd QDSolver::getCurrentSolutionVector(SingleGroupQD * SGQD)
 {
   Eigen::VectorXd solVector(energyGroups*nGroupCurrentUnknowns);
@@ -1105,6 +1182,8 @@ Eigen::VectorXd QDSolver::getCurrentSolutionVector(SingleGroupQD * SGQD)
 };
 //==============================================================================
 
+//==============================================================================
+/// Check for optional inputs of relevance to this object
 void QDSolver::checkOptionalParams()
 {
   string boundaryType;
@@ -1133,3 +1212,4 @@ void QDSolver::checkOptionalParams()
     
   }
 }
+//==============================================================================
