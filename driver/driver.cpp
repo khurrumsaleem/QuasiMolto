@@ -67,10 +67,11 @@ int main(int argc, char** argv) {
       myMGQD->solveMGQDOnly();
     else if (solveType == "TQD" or solveType == "TQD")
     { 
-      myMGT->solveTransportOnly();
-      myT2QD->calcEddingtonFactors();
-      myT2QD->calcBCs();
-      myMGQD->solveMGQDOnly();
+     // myMGT->solveTransportOnly();
+     // myT2QD->calcEddingtonFactors();
+     // myT2QD->calcBCs();
+     // myMGQD->solveMGQDOnly();
+     myT2QD->solveTransportWithQDAcceleration();
     }
     else
       myMGT->solveTransportOnly();
