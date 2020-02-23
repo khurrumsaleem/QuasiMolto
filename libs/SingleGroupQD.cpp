@@ -95,6 +95,7 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
 //==============================================================================
 
 //==============================================================================
+/// Build the portion of low order QD linear system belonging to this object
 void SingleGroupQD::formContributionToLinearSystem()
 {
   MGQD->QDSolve->formLinearSystem(this);
@@ -102,6 +103,8 @@ void SingleGroupQD::formContributionToLinearSystem()
 //==============================================================================
 
 //==============================================================================
+/// Build the portion of linear system, used to calculate currents, belonging 
+/// to this object
 void SingleGroupQD::formContributionToBackCalcSystem()
 {
   MGQD->QDSolve->formBackCalcSystem(this);
@@ -109,6 +112,7 @@ void SingleGroupQD::formContributionToBackCalcSystem()
 //==============================================================================
 
 //==============================================================================
+/// Get the flux for this object
 void SingleGroupQD::getFlux()
 {
   MGQD->QDSolve->getFlux(this);
@@ -116,6 +120,7 @@ void SingleGroupQD::getFlux()
 //==============================================================================
 
 //==============================================================================
+/// Map the fluxes of this object into a 1D solution vector
 Eigen::VectorXd SingleGroupQD::getFluxSolutionVector()
 {
   return MGQD->QDSolve->getFluxSolutionVector(this);
@@ -123,6 +128,7 @@ Eigen::VectorXd SingleGroupQD::getFluxSolutionVector()
 //==============================================================================
 
 //==============================================================================
+/// Map the current of this object into a 1D solution vector
 Eigen::VectorXd SingleGroupQD::getCurrentSolutionVector()
 {
   return MGQD->QDSolve->getCurrentSolutionVector(this);
@@ -131,6 +137,7 @@ Eigen::VectorXd SingleGroupQD::getCurrentSolutionVector()
 
 
 //==============================================================================
+// Check for optional input parameters relevant to this object
 void SingleGroupQD::checkOptionalParams()
 {
   // vectors for reading in optional parameters
