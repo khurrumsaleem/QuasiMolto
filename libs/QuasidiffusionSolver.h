@@ -1,9 +1,11 @@
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
+#ifndef QUASIDIFFUSIONSOLVER_H
+#define QUASIDIFFUSIONSOLVER_H
+
+#include <cmath>
+#include <iomanip>
 #include "Mesh.h"
 #include "Materials.h"
-#include "Material.h"
 #include "SingleGroupQD.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 
@@ -130,3 +132,5 @@ class QDSolver
 };
 
 //==============================================================================
+
+#endif
