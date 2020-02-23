@@ -46,6 +46,8 @@ MultiGroupQD::MultiGroupQD(Materials * myMaterials,\
 //==============================================================================
 
 //==============================================================================
+/// Loops over energy groups and builds the linear system to solve the 
+/// multigroup quasidiffusion equations
 void MultiGroupQD::buildLinearSystem()
 {
   QDSolve->A.setZero();
@@ -58,6 +60,7 @@ void MultiGroupQD::buildLinearSystem()
 //==============================================================================
 
 //==============================================================================
+/// Solves the linear system formed by the muligroup quasidiffusion equations
 void MultiGroupQD::solveLinearSystem()
 {
   QDSolve->solve();
@@ -65,12 +68,15 @@ void MultiGroupQD::solveLinearSystem()
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
     SGQDs[iGroup]->getFlux();
-    cout << SGQDs[iGroup]->sFlux << endl;
+   // cout << SGQDs[iGroup]->sFlux << endl;
   }
 }
 //==============================================================================
 
 //==============================================================================
+/// Loops over energy groups and builds linear system to calculate the net 
+/// neutron currents from the flux values currrently held in x, the solution
+/// vector
 void MultiGroupQD::buildBackCalcSystem()
 {
   QDSolve->C.setZero();
@@ -83,6 +89,8 @@ void MultiGroupQD::buildBackCalcSystem()
 //==============================================================================
 
 //==============================================================================
+/// Solve the linear system which calculates net currents from the current flux
+/// values
 void MultiGroupQD::backCalculateCurrent()
 {
   QDSolve->backCalculateCurrent();
@@ -97,6 +105,8 @@ void MultiGroupQD::backCalculateCurrent()
 
 
 //==============================================================================
+/// Set the initial previous solution vectors to the values currently held in 
+/// the flux and current matrices
 void MultiGroupQD::setInitialCondition()
 {
   // Initialize vectors
@@ -123,7 +133,8 @@ void MultiGroupQD::setInitialCondition()
 //==============================================================================
 
 //==============================================================================
-
+/// Solve a transient problem without any transport coupling using diffusion
+/// values for the Eddington factors
 void MultiGroupQD::solveMGQDOnly()
 {
   setInitialCondition();
@@ -141,14 +152,12 @@ void MultiGroupQD::solveMGQDOnly()
 //==============================================================================
 
 //==============================================================================
-/// Wrapper over SGTs to write flux present in each
-
+/// Wrapper over SGQDs to write flux present in each
 void MultiGroupQD::writeFluxes()
 {
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     SGQDs[iGroup]->writeFlux();
   }
-};
-
+}
 //==============================================================================
 
