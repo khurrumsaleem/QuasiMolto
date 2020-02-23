@@ -27,8 +27,13 @@ class TransportToQDCoupling
     YAML::Node * myInput,\
     MultiGroupTransport * myMGT,\
     MultiGroupQD * myMGQD);
-  void calcEddingtonFactors();
+  bool calcEddingtonFactors();
   void calcBCs();
+  void solveTransportWithQDAcceleration();
+  void updateTransportFluxes();
+  void updateTransportPrevFluxes();
+  void checkOptionalParams();
+  double epsEddington = 1.0E-5;
 
 
   private:
