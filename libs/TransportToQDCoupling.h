@@ -1,18 +1,15 @@
 #ifndef TRANSPORTTOQDCOUPLING_H
 #define TRANSPORTTOQDCOUPLING_H
 
-#include <iostream>
-#include <vector>
-#include <armadillo>
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
+#include "Mesh.h"
+#include "MultiGroupQD.h"
+#include "MultiGroupTransport.h"
+#include "SingleGroupQD.h"
+#include "SingleGroupTransport.h"
+#include "QuasidiffusionSolver.h"
 
 using namespace std;
-using namespace arma;
 
-
-class MultiGroupTransport; // forward declaration
-class MultiGroupQD; // forward declaration
 //==============================================================================
 //! TransportToQDCoupling class that handles communication between transport and 
 ///   quasidiffusion objects   

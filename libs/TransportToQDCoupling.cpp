@@ -2,23 +2,9 @@
 // Purpose: handle communication between transport and quasidiffusion objects
 // Date: February 12, 2020
 
-#include <iostream>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
-#include "Mesh.h"
-#include "Materials.h"
-#include "MultiGroupQD.h"
-#include "MultiGroupTransport.h"
-#include "SingleGroupQD.h"
-#include "SingleGroupTransport.h"
 #include "TransportToQDCoupling.h"
-#include "QuasidiffusionSolver.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std;
-using namespace arma;
 
 //==============================================================================
 /// TransportToQDCoupling class object constructor
