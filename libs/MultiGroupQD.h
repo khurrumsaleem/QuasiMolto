@@ -8,8 +8,6 @@
 
 using namespace std;
 
-//class SingleGroupQD; // forward declaration
-//class QDSolver; // forward declaration
 //==============================================================================
 //! MultGroupTransport class that holds multigroup transport information
 
