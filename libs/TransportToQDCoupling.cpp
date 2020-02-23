@@ -13,6 +13,7 @@
 #include "SingleGroupQD.h"
 #include "SingleGroupTransport.h"
 #include "TransportToQDCoupling.h"
+#include "QuasidiffusionSolver.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
@@ -39,22 +40,32 @@ TransportToQDCoupling::TransportToQDCoupling(Materials * myMaterials,\
   // Assign pointers for multigroup transport and quasidiffusion objects
   MGT = myMGT;
   MGQD = myMGQD;
+  
+  // Check for optional parameters
+  checkOptionalParams(); 
 
 };
 //==============================================================================
 
 //==============================================================================
 /// Calculate Eddington factors using angular fluxes from transport objects
-void TransportToQDCoupling::calcEddingtonFactors()
+bool TransportToQDCoupling::calcEddingtonFactors()
 {
   int rows = MGT->SGTs[0]->sFlux.rows();
   int cols = MGT->SGTs[0]->sFlux.cols();
   int angIdx,xiIdx=0,muIdx=1,etaIdx=2,weightIdx = 3;  
   double angFlux,mu,xi,weight,EzzCoef,ErrCoef,ErzCoef;
-  double numeratorEzz,numeratorErr,numeratorErz,denominator; 
+  double numeratorEzz,numeratorErr,numeratorErz,denominator;
+  double residualZz,residualRr,residualRz;
+  bool allConverged=true;
   
   for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
   {
+    // store past eddington factors
+    MGQD->SGQDs[iGroup]->EzzPrev = MGQD->SGQDs[iGroup]->Ezz;
+    MGQD->SGQDs[iGroup]->ErrPrev = MGQD->SGQDs[iGroup]->Err;
+    MGQD->SGQDs[iGroup]->ErzPrev = MGQD->SGQDs[iGroup]->Erz;
+
     for (int iR = 0; iR < rows; iR++)
     {
       for (int iZ = 0; iZ < cols; iZ++)
@@ -96,14 +107,26 @@ void TransportToQDCoupling::calcEddingtonFactors()
 
       } //iZ
     } //iR
-    cout << "iGroup: " << iGroup << endl;
-    cout << "Ezz: " << endl;
-    cout << MGQD->SGQDs[iGroup]->Ezz << endl;
-    cout << "Err: " << endl;
-    cout << MGQD->SGQDs[iGroup]->Err << endl;
-    cout << "Erz: " << endl;
-    cout << MGQD->SGQDs[iGroup]->Erz << endl;
+    
+    residualZz = ((MGQD->SGQDs[iGroup]->Ezz - MGQD->SGQDs[iGroup]->EzzPrev)\
+      .cwiseQuotient(MGQD->SGQDs[iGroup]->Ezz)).norm();
+    residualRr = ((MGQD->SGQDs[iGroup]->Err - MGQD->SGQDs[iGroup]->ErrPrev)\
+      .cwiseQuotient(MGQD->SGQDs[iGroup]->Err)).norm();
+    residualRz = ((MGQD->SGQDs[iGroup]->Erz - MGQD->SGQDs[iGroup]->ErzPrev)\
+      .cwiseQuotient(MGQD->SGQDs[iGroup]->Erz)).norm();
+    cout << "eddington residual" << endl; 
+    cout << residualZz << endl;
+    cout << residualRr << endl;
+    cout << residualRz << endl;
+    
+    if (residualZz < epsEddington and residualRr < epsEddington and 
+      residualRz < epsEddington)
+      allConverged = allConverged and true;
+    else
+      allConverged = allConverged and false;
   } //iGroup
+
+  return allConverged;
 }
 //==============================================================================
 
@@ -168,7 +191,14 @@ void TransportToQDCoupling::calcBCs()
         MGQD->SGQDs[iGroup]->eOutwardCurrToFluxRatioBC(iZ)\
           = outwardJrE/outwardFluxE;
 
-      } //iZ
+        // set eastern flux bc
+        MGQD->SGQDs[iGroup]->eFluxBC(iZ) = MGT->SGTs[iGroup]->sFlux(iZ,eIdx);
+        MGQD->SGQDs[iGroup]->eCurrentRBC(iZ) = outwardJrE+inwardJrE;
+
+        // set absolute current
+        MGQD->SGQDs[iGroup]->eAbsCurrentBC(iZ) = outwardJrE - inwardJrE;
+      
+        } //iZ
       for (int iR = 0; iR < cols; iR++)
       {
         // reset accumulators
@@ -233,10 +263,90 @@ void TransportToQDCoupling::calcBCs()
           = outwardJzN/outwardFluxN;
         MGQD->SGQDs[iGroup]->sOutwardCurrToFluxRatioBC(iR)\
           = outwardJzS/outwardFluxS;
+        
+        // set flux BCs
+        MGQD->SGQDs[iGroup]->nFluxBC(iR) = MGT->SGTs[iGroup]->sFlux(0,iR);
+        MGQD->SGQDs[iGroup]->sFluxBC(iR) = MGT->SGTs[iGroup]->sFlux(sIdx,iR);
+        MGQD->SGQDs[iGroup]->nCurrentZBC(iR) = outwardJzN+inwardJzN;
+        MGQD->SGQDs[iGroup]->sCurrentZBC(iR) = outwardJzS+inwardJzS;
+        
+        // set absolute currents
+        MGQD->SGQDs[iGroup]->nAbsCurrentBC(iR) = outwardJzN - inwardJzN;
+        MGQD->SGQDs[iGroup]->sAbsCurrentBC(iR) = outwardJzS - inwardJzS;
 
-      } //iR  
+      } //iR 
   
   } //iGroup
 
+}
+//==============================================================================
+
+//==============================================================================
+void TransportToQDCoupling::solveTransportWithQDAcceleration()
+{
+
+  bool alphaConverged=false,eddingtonConverged=false,sourcesConverged=false;
+
+  MGQD->setInitialCondition();
+  for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
+  { 
+    MGQD->buildLinearSystem();
+    MGQD->solveLinearSystem();
+    updateTransportFluxes();
+    MGT->calcSources("fs");
+    //iterate until eddington and alpha are converged
+    for (int iSteps = 0; iSteps < 100; iSteps++)
+    {
+      MGT->solveStartAngles();
+      MGT->solveSCBs();
+      MGT->calcFluxes();
+      eddingtonConverged = calcEddingtonFactors();
+      calcBCs();
+      MGQD->buildLinearSystem();
+      MGQD->solveLinearSystem();
+      updateTransportFluxes();
+      alphaConverged = MGT->calcAlphas("print");
+      sourcesConverged = MGT->calcSources("fs");
+      if (alphaConverged and eddingtonConverged and sourcesConverged) break;
+    }
+    MGQD->writeFluxes();
+    MGT->calcFluxes();
+    MGT->writeFluxes();
+    MGQD->QDSolve->xPast = MGQD->QDSolve->x;
+    MGQD->buildBackCalcSystem();
+    MGQD->backCalculateCurrent();
+    updateTransportPrevFluxes();
+    alphaConverged = false;
+  }
+}
+//==============================================================================
+
+//==============================================================================
+void TransportToQDCoupling::updateTransportFluxes()
+{
+  for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
+  {
+    MGT->SGTs[iGroup]->sFlux = MGQD->SGQDs[iGroup]->sFlux;
+  }
+}
+//=============================================================================
+
+//==============================================================================
+void TransportToQDCoupling::updateTransportPrevFluxes()
+{
+  for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
+  {
+    MGT->SGTs[iGroup]->sFluxPrev = MGQD->SGQDs[iGroup]->sFlux;
+  }
+}
+//=============================================================================
+
+//==============================================================================
+void TransportToQDCoupling::checkOptionalParams()
+{
+  if ((*input)["parameters"]["epsEddington"])
+  {
+    epsEddington=(*input)["parameters"]["epsEddington"].as<double>();
+  }
 }
 //==============================================================================
