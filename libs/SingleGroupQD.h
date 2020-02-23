@@ -35,9 +35,9 @@ class SingleGroupQD
   Eigen::MatrixXd scatterSource;
   
   // Eddington factors
-  Eigen::MatrixXd Err;
-  Eigen::MatrixXd Ezz;
-  Eigen::MatrixXd Erz;
+  Eigen::MatrixXd Err,ErrPrev;
+  Eigen::MatrixXd Ezz,EzzPrev;
+  Eigen::MatrixXd Erz,ErzPrev;
 
   // flux boundary conditions  
   Eigen::VectorXd wFluxBC;
@@ -63,6 +63,10 @@ class SingleGroupQD
   Eigen::VectorXd eOutwardCurrToFluxRatioBC;
   Eigen::VectorXd nOutwardCurrToFluxRatioBC;
   Eigen::VectorXd sOutwardCurrToFluxRatioBC;
+  
+  Eigen::VectorXd eAbsCurrentBC;
+  Eigen::VectorXd nAbsCurrentBC;
+  Eigen::VectorXd sAbsCurrentBC;
 
   // public functions
   SingleGroupQD(int myEnergyGroup,\

@@ -51,6 +51,11 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   Erz.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   Erz = 0.0*Erz;
   
+  // initialize previous Eddington factors
+  ErrPrev = Err;
+  EzzPrev = Ezz;
+  ErzPrev = Erz;
+  
   // initialize source 
   q.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   q = 0.0*q;
@@ -63,10 +68,10 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   currentZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
   
   // initialize boundary conditions
-  wFluxBC.setZero(mesh->dzsCorner.size());
-  eFluxBC.setZero(mesh->dzsCorner.size());
-  nFluxBC.setZero(mesh->drsCorner.size());
-  sFluxBC.setZero(mesh->drsCorner.size());
+  wFluxBC.setOnes(mesh->dzsCorner.size());
+  eFluxBC.setOnes(mesh->dzsCorner.size());
+  nFluxBC.setOnes(mesh->drsCorner.size());
+  sFluxBC.setOnes(mesh->drsCorner.size());
   wCurrentRBC.setZero(mesh->dzsCorner.size());
   eCurrentRBC.setZero(mesh->dzsCorner.size());
   nCurrentZBC.setZero(mesh->drsCorner.size());
@@ -80,6 +85,9 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   eOutwardCurrToFluxRatioBC.setZero(mesh->dzsCorner.size());
   nOutwardCurrToFluxRatioBC.setZero(mesh->drsCorner.size());
   sOutwardCurrToFluxRatioBC.setZero(mesh->drsCorner.size());
+  eAbsCurrentBC.setZero(mesh->dzsCorner.size());
+  nAbsCurrentBC.setZero(mesh->drsCorner.size());
+  sAbsCurrentBC.setZero(mesh->drsCorner.size());
 
   // check for optional parameters
   checkOptionalParams();
@@ -279,10 +287,10 @@ void SingleGroupQD::writeFlux()
   ofstream fluxFile;
   string fileName;
 
-  // parse file name
   fileName = "qd-scalar-flux-group-" + to_string(energyGroup)\
-    +"-" + to_string(mesh->dz)+ ".csv";
-
+    +"-dz-" + to_string(mesh->dz)+ "-dt-"+to_string(mesh->dt)\
+    + "-T-" + to_string(mesh->T) + ".csv";
+  
   // open file
   fluxFile.open(fileName);
 
