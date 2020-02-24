@@ -1,10 +1,14 @@
 #ifndef MULTIGROUPQD_H
 #define MULTIGROUPQD_H
 
-#include <iomanip>
 #include "Mesh.h"
-#include "SingleGroupQD.h"
 #include "QuasidiffusionSolver.h"
+
+// ToDo: this class should only refer to POINTERS of the forward declared type,
+// but that is not the case. To work around in, the SingleGroupQD.h is included
+// in the MultiGroupQD.cpp. Need to clean this up. Similar kluges are present
+// in QuasidiffusionSolver, MultiGroupTransport, and SimpleCornerBalance.
+class SingleGroupQD; // forward declaration
 
 using namespace std;
 

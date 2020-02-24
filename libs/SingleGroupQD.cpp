@@ -2,21 +2,9 @@
 // Purpose: define a single group quasidiffusion object
 // Date: February 5, 2020
 
-#include <iostream>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
-#include "Mesh.h"
-#include "Material.h"
-#include "Materials.h"
-#include "MultiGroupQD.h"
 #include "SingleGroupQD.h"
-#include "QuasidiffusionSolver.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
-using namespace arma;
 
 //==============================================================================
 /// Class object constructor

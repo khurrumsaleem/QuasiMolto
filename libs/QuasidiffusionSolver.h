@@ -1,11 +1,10 @@
 #ifndef QUASIDIFFUSIONSOLVER_H
 #define QUASIDIFFUSIONSOLVER_H
 
-#include <cmath>
-#include <iomanip>
 #include "Mesh.h"
 #include "Materials.h"
-#include "SingleGroupQD.h"
+
+class SingleGroupQD;
 
 using namespace std; 
 

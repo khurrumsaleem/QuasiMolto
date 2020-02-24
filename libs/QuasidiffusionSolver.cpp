@@ -3,6 +3,7 @@
 // Date: February 05, 2020
 
 #include "QuasidiffusionSolver.h"
+#include "SingleGroupQD.h"
 
 using namespace std; 
 

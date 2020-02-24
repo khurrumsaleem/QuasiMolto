@@ -3,6 +3,7 @@
 // Date: February 05, 2020
 
 #include "MultiGroupQD.h"
+#include "SingleGroupQD.h"
 
 using namespace std;
 

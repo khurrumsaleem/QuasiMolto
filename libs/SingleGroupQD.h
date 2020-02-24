@@ -1,21 +1,13 @@
 #ifndef SINGLEGROUPQD_H 
 #define SINGLEGROUPQD_H
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
 #include "Mesh.h"
-#include "Material.h"
 #include "Materials.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
+#include "MultiGroupQD.h"
+#include "QuasidiffusionSolver.h"
 
 using namespace std;
 using namespace arma;
-
-class MultiGroupQD; // forward declaration
 
 //==============================================================================
 //! SingleGroupQD class that holds quasidiffusion information
