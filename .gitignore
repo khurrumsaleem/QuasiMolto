@@ -2,3 +2,12 @@
 /build
 /driver/build
 /libs/build
+tests/exes
+Testing
+CMakeFiles
+Makefile
+CMakeCache.txt
+*/*.cmake
+*.cmake
+*/CMakeFiles
+*/Makefile
