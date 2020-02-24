@@ -27,5 +27,6 @@ script:
   - make
   - sudo make install
   - cd ../../
-  - cmake -H. -Bbuild 
-  - cmake --build build -- -j3
+  - cmake . 
+  - make all
+  - make test
