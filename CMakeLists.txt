@@ -1,23 +1,29 @@
 # Specify the minimum version for CMake
-
 cmake_minimum_required(VERSION 2.8)
 
 # Project's name
-
 project(QuasiMolto)
-# Set the output folder where your program will be created
+
+# Set the output folders where your program will be created
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
+# Set links for various folders
+set(TEST_DIR ${CMAKE_SOURCE_DIR}/tests)
+set(DRIVER_DIR ${CMAKE_SOURCE_DIR}/driver)
+set(TPLS_DIR ${CMAKE_SOURCE_DIR}/TPLS)
+set(LIBS_DIR ${CMAKE_SOURCE_DIR}/libs)
+
 # The following folder will be included
 include_directories("${PROJECT_SOURCE_DIR}")
-include_directories(
-   TPLs/yaml-cpp/include
-)
-add_subdirectory(driver)
-add_subdirectory(libs)
-add_subdirectory(TPLs/yaml-cpp)
+include_directories(TPLs/yaml-cpp/include)
+
+# Add subdirectories
+add_subdirectory(${DRIVER_DIR})
+add_subdirectory(${LIBS_DIR})
+add_subdirectory(${TPLS_DIR}/yaml-cpp)
+
 find_package(Armadillo REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
@@ -45,3 +51,7 @@ target_link_libraries(
     yaml-cpp  # This is the "target" exposed by 
               # yaml-cpp's CMakeLists.txt file
 )
+
+ENABLE_TESTING()
+add_subdirectory(tests)
+
