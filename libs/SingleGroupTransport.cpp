@@ -2,19 +2,10 @@
 // Purpose: define a single group transport object
 // Date: October 28, 2019
 
-#include <iostream>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
-#include "Mesh.h"
-#include "Material.h"
-#include "Materials.h"
-#include "MultiGroupTransport.h"
 #include "SingleGroupTransport.h"
+#include "MultiGroupTransport.h"
 #include "StartingAngle.h"
 #include "SimpleCornerBalance.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;

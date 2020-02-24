@@ -1,15 +1,8 @@
 #ifndef MATERIALS_H
 #define MATERIALS_H
 
-#include <iostream>
-#include <cmath>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "Mesh.h"
 #include "Material.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;

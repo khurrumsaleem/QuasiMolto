@@ -1,24 +1,17 @@
 #ifndef MULTIGROUPTRANSPORT_H
 #define MULTIGROUPTRANSPORT_H
 
-#include <iostream>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
 #include "Mesh.h"
 #include "Materials.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
-using namespace arma;
 
 class SingleGroupTransport; // forward declaration
 class StartingAngle; // forward declaration
 class SimpleCornerBalance; // forward declaration
 
 //==============================================================================
-//! MultGroupTransport class that holds multigroup transport information
+//! MultiGroupTransport class that holds multigroup transport information
 
 class MultiGroupTransport
 {

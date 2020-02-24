@@ -1,16 +1,8 @@
 #ifndef SINGLEGROUPTRANSPORT_H
 #define SINGLEGROUPTRANSPORT_H
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
 #include "Mesh.h"
-#include "Material.h"
 #include "Materials.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;

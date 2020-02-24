@@ -2,16 +2,7 @@
 // Purpose: contain material characteristics and geometry for a simulation
 // Date: October 28, 2019
 
-#include <iostream>
-#include <cmath>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "Mesh.h"
-#include "Material.h"
 #include "Materials.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;

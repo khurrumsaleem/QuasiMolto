@@ -1,8 +1,8 @@
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
+#ifndef STARTINGANGLE_H
+#define STARTINGANGLE_H
+
 #include "Mesh.h"
 #include "Materials.h"
-#include "Material.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 
@@ -46,3 +46,5 @@ class StartingAngle
 };
 
 //==============================================================================
+
+#endif

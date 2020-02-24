@@ -1,12 +1,7 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include <iostream>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
+#include "Mesh.h"
 
 using namespace std; 
 using namespace arma;

@@ -1,8 +1,8 @@
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
+#ifndef SIMPLECORNERBALANCE_H
+#define SIMPLECORNERBALANCE_H
+
 #include "Mesh.h"
 #include "Materials.h"
-#include "Material.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 
@@ -58,3 +58,5 @@ class SimpleCornerBalance
 };
 
 //==============================================================================
+
+#endif

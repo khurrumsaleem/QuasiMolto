@@ -2,18 +2,7 @@
 // Purpose: Solve RZ neutron transport equation using simple corner balance 
 // Date: October 28, 2019
 
-#include <iostream>
-#include <cmath>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
-#include "Mesh.h"
-#include "Materials.h"
-#include "Material.h"
-#include "MMS.h"
 #include "SimpleCornerBalance.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;

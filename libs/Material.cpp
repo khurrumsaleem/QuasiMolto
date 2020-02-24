@@ -2,13 +2,7 @@
 // Purpose: define a class that holds information for each material
 // Date: October 28, 2019
 
-#include <iostream>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
 #include "Material.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;

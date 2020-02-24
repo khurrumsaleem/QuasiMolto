@@ -4,17 +4,7 @@
 // neutron transport equation in RZ geometry
 // Date: October 28, 2019
 
-#include <iostream>
-#include <cmath>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
-#include "Mesh.h"
-#include "Materials.h"
-#include "Material.h"
 #include "StartingAngle.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std; 
 using namespace arma;
@@ -41,6 +31,7 @@ StartingAngle::StartingAngle(Mesh * myMesh,\
   
   vector<double> inpUpperBC,inpLowerBC,inpOuterBC;
 
+  // ToDo: make function to read in optional arguments
   // Check for optional inputs
   if ((*input)["parameters"]["upperBC"]){
     inpUpperBC=(*input)["parameters"]["upperBC"].as<vector<double>>();

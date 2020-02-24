@@ -1,15 +1,4 @@
-#include <iostream>
-#include <cmath>
-#include "Mesh.h"
-#include "Materials.h"
-#include "Material.h"
 #include "MMS.h"
-#include "MultiGroupTransport.h"
-#include "SingleGroupTransport.h"
-#include "SimpleCornerBalance.h"
-#include "StartingAngle.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 
 using namespace std;
 

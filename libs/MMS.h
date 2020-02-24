@@ -1,9 +1,12 @@
+#ifndef MMS_H
+#define MMS_H
+
 #include "Mesh.h"
-#include "Materials.h"
-#include "Material.h"
 #include "MultiGroupTransport.h"
-#include "../TPLs/eigen-git-mirror/Eigen/Eigen"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
+#include "MultiGroupTransport.h"
+#include "SingleGroupTransport.h"
+#include "SimpleCornerBalance.h"
+#include "StartingAngle.h"
 
 using namespace std; 
 
@@ -36,3 +39,5 @@ class MMS
 };
 
 //==============================================================================
+
+#endif
