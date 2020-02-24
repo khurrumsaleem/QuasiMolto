@@ -2,6 +2,8 @@
 #define MESH_H
 
 #include <iostream>
+#include <iomanip>
+#include <cmath>
 #include <vector>
 #include <armadillo>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
