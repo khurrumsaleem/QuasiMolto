@@ -12,7 +12,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 # Set links for various folders
 set(TEST_DIR ${CMAKE_SOURCE_DIR}/tests)
 set(DRIVER_DIR ${CMAKE_SOURCE_DIR}/driver)
-set(TPLS_DIR ${CMAKE_SOURCE_DIR}/TPLS)
+set(TPLS_DIR ${CMAKE_SOURCE_DIR}/TPLs)
 set(LIBS_DIR ${CMAKE_SOURCE_DIR}/libs)
 
 # The following folder will be included
