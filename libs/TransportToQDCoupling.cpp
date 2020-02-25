@@ -109,13 +109,6 @@ bool TransportToQDCoupling::calcEddingtonFactors()
     cout << residualZz << endl;
     cout << residualRr << endl;
     cout << residualRz << endl;
-    //cout << "eddington factors" << endl;
-    //cout << "Err" << endl;
-    //cout << MGQD->SGQDs[iGroup]->Err << endl;
-    //cout << "Ezz" << endl;
-    //cout << MGQD->SGQDs[iGroup]->Ezz << endl;
-    //cout << "Erz" << endl;
-    //cout << MGQD->SGQDs[iGroup]->Erz << endl;
     
     if (residualZz < epsEddington and residualRr < epsEddington and 
       residualRz < epsEddington)
@@ -295,14 +288,6 @@ void TransportToQDCoupling::solveTransportWithQDAcceleration()
   // loop over time steps
   for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
   {
-    for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup)
-    {
-      MGT->SCBSolve->upperBC[0] = exp(0.5*mesh->ts[iTime+1])/4.0;
-      MGT->SCBSolve->lowerBC[0] = exp(0.5*mesh->ts[iTime+1])/4.0;
-      MGT->SCBSolve->outerBC[0] = exp(0.5*mesh->ts[iTime+1])/4.0;
-      cout << "BC: " << endl;
-      cout << exp(0.5*mesh->ts[iTime+1])/4.0 << endl;
-    }
  
     MGQD->buildLinearSystem();
     MGQD->solveLinearSystem();
