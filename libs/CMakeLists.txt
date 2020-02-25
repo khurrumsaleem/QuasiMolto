@@ -3,7 +3,6 @@ add_library(libs
         TransportToQDCoupling.cpp 
 	MultiGroupQD.cpp 
 	SingleGroupQD.cpp 
-	Transport.cpp
 	Mesh.cpp
         StartingAngle.cpp
         MultiGroupTransport.cpp
