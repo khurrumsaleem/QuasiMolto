@@ -11,4 +11,5 @@ add_library(libs
         QuasidiffusionSolver.cpp
 	MMS.cpp
         Material.cpp
-        SingleGroupPrecursor.cpp)
+        SingleGroupPrecursor.cpp
+        MultiGroupPrecursor.cpp)
