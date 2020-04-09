@@ -4,7 +4,7 @@
 using namespace std;
 
 //==============================================================================
-//! Contains information for a precursor group
+//! Contains information and builds linear system for a single precursor group
 
 class SingleGroupPrecursor
 {

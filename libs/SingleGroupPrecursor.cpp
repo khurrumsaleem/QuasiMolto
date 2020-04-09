@@ -1,5 +1,5 @@
 // File: SingleGroupPrecursor.cpp     
-// Purpose: Contains information for a precursor group
+// Purpose: Contains information and builds linear system for a precursor group
 // Date: April 9, 2020
 
 #include "SingleGroupPrecursor.h"
