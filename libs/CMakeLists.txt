@@ -10,4 +10,5 @@ add_library(libs
 	SimpleCornerBalance.cpp
         QuasidiffusionSolver.cpp
 	MMS.cpp
-        Material.cpp)
+        Material.cpp
+        SingleGroupPrecursor.cpp)
