@@ -1,6 +1,8 @@
 #ifndef SingleGroupPrecursor_H
 #define SingleGroupPrecursor_H
 
+#include "Mesh.h"
+
 using namespace std;
 
 //==============================================================================
