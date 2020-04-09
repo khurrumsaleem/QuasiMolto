@@ -712,7 +712,7 @@ void QDSolver::assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 //==============================================================================
 
 //==============================================================================
-/// Assert the flux boundary condition on the north face at location (iR,iZ)
+/// Assert the current boundary condition on the north face at location (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -726,7 +726,7 @@ void QDSolver::assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 //==============================================================================
 
 //==============================================================================
-/// Assert the flux boundary condition on the south face at location (iR,iZ)
+/// Assert the current boundary condition on the south face at location (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -740,7 +740,7 @@ void QDSolver::assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 //==============================================================================
 
 //==============================================================================
-/// Assert the flux boundary condition on the west face at location (iR,iZ)
+/// Assert the current boundary condition on the west face at location (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -754,7 +754,7 @@ void QDSolver::assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 //==============================================================================
 
 //==============================================================================
-/// Assert the flux boundary condition on the east face at location (iR,iZ)
+/// Assert the current boundary condition on the east face at location (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
