@@ -45,7 +45,8 @@ add_executable(QuasiMolto
                ${PROJECT_SOURCE_DIR}/libs/MultiGroupPrecursor.cpp
                ${PROJECT_SOURCE_DIR}/libs/MultiGroupQDToMultiPhysicsQDCoupling.cpp
                ${PROJECT_SOURCE_DIR}/libs/GreyGroupQD.cpp
-               ${PROJECT_SOURCE_DIR}/libs/MultiPhysicsCoupledQD.cpp)
+               ${PROJECT_SOURCE_DIR}/libs/MultiPhysicsCoupledQD.cpp
+               ${PROJECT_SOURCE_DIR}/libs/HeatTransfer.cpp)
 
 target_link_libraries(
     QuasiMolto

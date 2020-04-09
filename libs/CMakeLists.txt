@@ -15,4 +15,5 @@ add_library(libs
         MultiGroupPrecursor.cpp
         MultiGroupQDToMultiPhysicsQDCoupling.cpp
         GreyGroupQD.cpp
-        MultiPhysicsCoupledQD.cpp)
+        MultiPhysicsCoupledQD.cpp
+        HeatTransfer.cpp)
