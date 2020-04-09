@@ -14,4 +14,5 @@ add_library(libs
         SingleGroupPrecursor.cpp
         MultiGroupPrecursor.cpp
         MultiGroupQDToMultiPhysicsQDCoupling.cpp
-        GreyGroupQD.cpp)
+        GreyGroupQD.cpp
+        MultiPhysicsCoupledQD.cpp)
