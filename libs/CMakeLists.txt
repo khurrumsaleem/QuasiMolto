@@ -13,4 +13,5 @@ add_library(libs
         Material.cpp
         SingleGroupPrecursor.cpp
         MultiGroupPrecursor.cpp
-        MultiGroupQDToMultiPhysicsQDCoupling.cpp)
+        MultiGroupQDToMultiPhysicsQDCoupling.cpp
+        GreyGroupQD.cpp)
