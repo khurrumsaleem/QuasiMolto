@@ -26,7 +26,12 @@ Material::Material(int myMatID,\
   Eigen::VectorXd mySigF,\
   Eigen::VectorXd myChiP,\
   Eigen::VectorXd myChiD,\
-  double myNu)
+  double myNu,\
+  double myDensity,\
+  double myGamma,\
+  double myK,\
+  double mycP,\
+  double myOmega)
 {
   // Assign inputs to their member variables
   matID = myMatID;
@@ -37,6 +42,12 @@ Material::Material(int myMatID,\
   chiP = myChiP;
   chiD = myChiD;
   nu = myNu;
+  density = myDensity;
+  gamma = myGamma;
+  k = myK;
+  cP = mycP;
+  omega = myOmega;
+
 };
 //==============================================================================
 
