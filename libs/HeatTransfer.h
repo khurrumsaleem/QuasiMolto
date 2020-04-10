@@ -2,6 +2,8 @@
 #define HeatTransfer_H 
 
 #include "Mesh.h"
+#include "Materials.h"
+#include "MultiPhysicsCoupledQD.h"
 
 using namespace std;
 
@@ -11,7 +13,16 @@ using namespace std;
 class HeatTransfer
 {
   public:
-  HeatTransfer();
+  HeatTransfer(MultiPhysicsCoupledQD * myQD,\
+    Materials * myMaterials,\
+    Mesh * myMesh,\
+    YAML::Node * myInput);
+  
+  private:
+  Materials * mats;
+  Mesh * mesh;
+  YAML::Node * input;
+  MultiPhysicsCoupledQD * qd;
 };
 
 //==============================================================================
