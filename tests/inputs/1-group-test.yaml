@@ -17,6 +17,11 @@ materials:
     nu: 2.0
     chiP: [1.0]
     chiD: [1.0]
+    density: 1.0
+    k: 1.0
+    cP: 1.0
+    omega: 200.0
+    gamma: 0.001
 
 parameters:
   epsAlpha: 1E-3
