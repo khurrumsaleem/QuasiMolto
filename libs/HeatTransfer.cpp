@@ -9,7 +9,10 @@ using namespace std;
 //==============================================================================
 /// HeatTransfer class object constructor
 ///
-/// @param [in] blankType blank for this material
+/// @param [in] myMaterials materials object for the simulation
+/// @param [in] myMesh mesh object for the simulation
+/// @param [in] myInput input object for the simulation
+/// @param [in] myQD multiphysics coupled QD object for the simulation
 HeatTransfer::HeatTransfer(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * myInput,\
