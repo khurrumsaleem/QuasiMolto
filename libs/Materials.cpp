@@ -114,7 +114,7 @@ void Materials::readMats()
   Eigen::VectorXd sigT,sigF,chiP,chiD; 
   Eigen::MatrixXd sigS;
   int ID,size;
-  double nu;
+  double nu,density,gamma,k,cP,omega;
   
   int iCount=0;
   for (YAML::const_iterator it=mats.begin(); it!=mats.end(); ++it){
@@ -130,6 +130,11 @@ void Materials::readMats()
     chiPInp = it->second["chiP"].as<vector<double>>();
     chiDInp = it->second["chiD"].as<vector<double>>();
     nu = it->second["nu"].as<double>();
+    density = it->second["density"].as<double>();
+    gamma = it->second["gamma"].as<double>();
+    k = it->second["k"].as<double>();
+    cP = it->second["cP"].as<double>();
+    omega = it->second["omega"].as<double>();
 
     // Set size of Eigen vectors
     size = sigTInp.size();
@@ -154,7 +159,7 @@ void Materials::readMats()
 
     // Add material to bank
     shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,\
-      sigF,chiP,chiD,nu));
+      sigF,chiP,chiD,nu,density,gamma,k,cP,omega));
     matBank.push_back(std::move(newMat));
     ++iCount;
   }
