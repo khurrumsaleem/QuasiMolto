@@ -10,10 +10,10 @@ using namespace std;
 /// HeatTransfer class object constructor
 ///
 /// @param [in] blankType blank for this material
-HeatTransfer::HeatTransfer(MultiPhysicsCoupledQD * myQD,\
-  Materials * myMaterials,\
+HeatTransfer::HeatTransfer(Materials * myMaterials,\
   Mesh * myMesh,\
-  YAML::Node * myInput)
+  YAML::Node * myInput,\
+  MultiPhysicsCoupledQD * myQD)
 {
   // Assign inputs to their member variables
   mats = myMaterials;

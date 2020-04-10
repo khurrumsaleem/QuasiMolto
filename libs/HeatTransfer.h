@@ -13,10 +13,10 @@ using namespace std;
 class HeatTransfer
 {
   public:
-  HeatTransfer(MultiPhysicsCoupledQD * myQD,\
-    Materials * myMaterials,\
+  HeatTransfer(Materials * myMaterials,\
     Mesh * myMesh,\
-    YAML::Node * myInput);
+    YAML::Node * myInput,\
+    MultiPhysicsCoupledQD * myQD);
   
   private:
   Materials * mats;
