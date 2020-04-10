@@ -21,6 +21,16 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   input = myInput;
   qd = myQD;
 
+  // Check for optional inputs 
+  if ((*input)["parameters"]["wallTemp"]){
+    wallT=(*input)["parameters"]["wallTemp"].as<double>();
+  } 
+  if ((*input)["parameters"]["inletTemp"]){
+    inletT=(*input)["parameters"]["inletTemp"].as<double>();
+  } 
+
   cout << "Initialized HeatTransfer object." << endl;
+  cout << "wallTemp: " << wallT << endl;
+  cout << "inletTemp: " << inletT << endl; 
 };
 //==============================================================================

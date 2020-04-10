@@ -17,6 +17,10 @@ class HeatTransfer
     Mesh * myMesh,\
     YAML::Node * myInput,\
     MultiPhysicsCoupledQD * myQD);
+
+  // Default temperatures taken from "Introduction to Moltres:..." [2018]
+  double wallT = 922.0;
+  double inletT = 922.0;
   
   private:
   Materials * mats;
