@@ -21,6 +21,6 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   input = myInput;
   qd = myQD;
 
-  cout << "Initialized HeatTransfer object."
+  cout << "Initialized HeatTransfer object." << endl;
 };
 //==============================================================================
