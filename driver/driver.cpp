@@ -12,10 +12,13 @@
 #include "../libs/SimpleCornerBalance.h"
 #include "../libs/QuasidiffusionSolver.h"
 #include "../libs/TransportToQDCoupling.h"
+#include "../libs/HeatTransfer.h"
+#include "../libs/MultiPhysicsCoupledQD.h"
 #include "../libs/MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
+void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input);
 
 int main(int argc, char** argv) {
 
@@ -72,6 +75,8 @@ int main(int argc, char** argv) {
      // myMGQD->solveMGQDOnly();
      myT2QD->solveTransportWithQDAcceleration();
     }
+    else if (solveType == "testHeatTransfer")
+      testHeatTransfer(myMaterials,myMesh,input);
     else
       myMGT->solveTransportOnly();
   }
@@ -80,4 +85,13 @@ int main(int argc, char** argv) {
     myMGT->solveTransportOnly();
   }
 return(0);
+}
+
+void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input){
+  
+  MultiPhysicsCoupledQD * myMPQD; 
+  HeatTransfer * myHeat; 
+  myMPQD = new MultiPhysicsCoupledQD();
+  myHeat = new HeatTransfer(myMaterials,myMesh,input,myMPQD);
+  
 }
