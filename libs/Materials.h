@@ -26,6 +26,11 @@ class Materials
 	double chiP(int zIdx,int rIdx,int eIndx);
 	double chiD(int zIdx,int rIdx,int eIndx);
 	double nu(int zIdx,int rIdx);
+	double density(int zIdx,int rIdx);
+	double gamma(int zIdx,int rIdx);
+	double k(int zIdx,int rIdx);
+	double cP(int zIdx,int rIdx);
+	double omega(int zIdx,int rIdx);
         Eigen::VectorXd neutV;
         int nGroups;
         void checkMats();

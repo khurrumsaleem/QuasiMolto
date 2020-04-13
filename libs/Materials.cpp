@@ -295,10 +295,82 @@ double Materials::nu(int zIdx,int rIdx){
 
   double nu = matBank[matMap(zIdx,rIdx)]->nu;
 
-  // Eventually there will need to be some manipulation here that 
-  // extrapolates the cross section based on temperature
-
   return nu;
+};
+//==============================================================================
+
+//==============================================================================
+/// Return density at indexed locaiton
+///
+/// @param [in] zIdx Z index of location 
+/// @param [in] zIdx R index of location 
+/// @param [in] eIndx Energy index of location 
+/// @param [out] density at inquired location 
+double Materials::density(int zIdx,int rIdx){
+
+  double density = matBank[matMap(zIdx,rIdx)]->density;
+
+  return density;
+};
+//==============================================================================
+
+//==============================================================================
+/// Return gamma at indexed locaiton
+///
+/// @param [in] zIdx Z index of location 
+/// @param [in] zIdx R index of location 
+/// @param [in] eIndx Energy index of location 
+/// @param [out] gamma at inquired location 
+double Materials::gamma(int zIdx,int rIdx){
+
+  double gamma = matBank[matMap(zIdx,rIdx)]->gamma;
+
+  return gamma;
+};
+//==============================================================================
+
+//==============================================================================
+/// Return k at indexed locaiton
+///
+/// @param [in] zIdx Z index of location 
+/// @param [in] zIdx R index of location 
+/// @param [in] eIndx Energy index of location 
+/// @param [out] k at inquired location 
+double Materials::k(int zIdx,int rIdx){
+
+  double k = matBank[matMap(zIdx,rIdx)]->k;
+
+  return k;
+};
+//==============================================================================
+
+//==============================================================================
+/// Return cP at indexed locaiton
+///
+/// @param [in] zIdx Z index of location 
+/// @param [in] zIdx R index of location 
+/// @param [in] eIndx Energy index of location 
+/// @param [out] cP at inquired location 
+double Materials::cP(int zIdx,int rIdx){
+
+  double cP = matBank[matMap(zIdx,rIdx)]->cP;
+
+  return cP;
+};
+//==============================================================================
+
+//==============================================================================
+/// Return omega at indexed locaiton
+///
+/// @param [in] zIdx Z index of location 
+/// @param [in] zIdx R index of location 
+/// @param [in] eIndx Energy index of location 
+/// @param [out] omega at inquired location 
+double Materials::omega(int zIdx,int rIdx){
+
+  double omega = matBank[matMap(zIdx,rIdx)]->omega;
+
+  return omega;
 };
 //==============================================================================
 
