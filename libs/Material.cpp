@@ -31,7 +31,8 @@ Material::Material(int myMatID,\
   double myGamma,\
   double myK,\
   double mycP,\
-  double myOmega)
+  double myOmega,\
+  double myStationary)
 {
   // Assign inputs to their member variables
   matID = myMatID;
@@ -47,6 +48,7 @@ Material::Material(int myMatID,\
   k = myK;
   cP = mycP;
   omega = myOmega;
+  stationary = myStationary;
 
 };
 //==============================================================================

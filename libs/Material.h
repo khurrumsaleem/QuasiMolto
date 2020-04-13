@@ -22,6 +22,7 @@ class Material
         double k; // thermal conductivity
         double cP; // specific heat
         double omega; // energy release per fission	
+        bool stationary = false; // is the material stationary
         
         // public functions
 	Material(int myMatID,\
