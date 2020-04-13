@@ -147,6 +147,18 @@ void Material::edit()
   cout << "chiD:"<< endl;
   cout << chiD.transpose() << endl;
   cout << endl;
+  cout << "density: "<< density << endl;
+  cout << endl;
+  cout << "k: "<< k << endl;
+  cout << endl;
+  cout << "cP: "<< cP << endl;
+  cout << endl;
+  cout << "gamma: "<< gamma << endl;
+  cout << endl;
+  cout << "omega: "<< omega << endl;
+  cout << endl;
+  cout << "stationary: "<< stationary << endl;
+  cout << endl;
   cout << "==========================================="<< endl;
   cout << endl;
 };
