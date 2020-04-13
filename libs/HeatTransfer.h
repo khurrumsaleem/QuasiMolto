@@ -21,6 +21,8 @@ class HeatTransfer
   // Default temperatures taken from "Introduction to Moltres:..." [2018]
   double wallT = 922.0;
   double inletT = 922.0;
+  int indexOffset = 0; 
+  int getIndex(int iZ,int iR);
   
   private:
   Materials * mats;

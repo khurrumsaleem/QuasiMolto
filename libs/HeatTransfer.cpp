@@ -34,6 +34,25 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
 
   cout << "Initialized HeatTransfer object." << endl;
   cout << "wallTemp: " << wallT << endl;
-  cout << "inletTemp: " << inletT << endl; 
+  cout << "inletTemp: " << inletT << endl;
+  cout << getIndex(4,4) << endl; 
+};
+//==============================================================================
+
+//==============================================================================
+/// Map 2D coordinates to index of temperature in the 1D solution vector
+///
+/// @param [in] iZ axial location
+/// @param [in] iR radial location
+/// @param [out] index the index for temperature in the 1D solution vector
+int HeatTransfer::getIndex(int iZ, int iR)
+{
+
+  int index,nR = mesh->drsCorner.size();
+
+  index = indexOffset + iR + nR*iZ;
+
+  return index;
+  
 };
 //==============================================================================
