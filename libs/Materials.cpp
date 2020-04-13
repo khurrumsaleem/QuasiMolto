@@ -115,6 +115,7 @@ void Materials::readMats()
   Eigen::MatrixXd sigS;
   int ID,size;
   double nu,density,gamma,k,cP,omega;
+  bool stationary = true;
   
   int iCount=0;
   for (YAML::const_iterator it=mats.begin(); it!=mats.end(); ++it){
@@ -135,6 +136,8 @@ void Materials::readMats()
     k = it->second["k"].as<double>();
     cP = it->second["cP"].as<double>();
     omega = it->second["omega"].as<double>();
+    if (it->second["stationary"]) 
+      stationary = it->second["stationary"].as<bool>();
 
     // Set size of Eigen vectors
     size = sigTInp.size();
@@ -159,7 +162,7 @@ void Materials::readMats()
 
     // Add material to bank
     shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,\
-      sigF,chiP,chiD,nu,density,gamma,k,cP,omega));
+      sigF,chiP,chiD,nu,density,gamma,k,cP,omega,stationary));
     matBank.push_back(std::move(newMat));
     ++iCount;
   }
