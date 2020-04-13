@@ -14,10 +14,12 @@ class Materials
 {
         public:
 	Eigen::MatrixXi matMap; //resized later
+	Eigen::MatrixXd flowVelocity; 
         // public functions
         Materials(Mesh * myMesh,YAML::Node * myInput);
 	void readMats();
 	void readGeom();
+	void readFlowVelocity();
         void setMatRegion(int myIndex,double rIn,double rOut,\
 		double zUp,double zLow);
 	double sigT(int zIdx,int rIdx,int eIndx);

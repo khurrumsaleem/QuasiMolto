@@ -24,12 +24,18 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
   
   // Initialize material map
   matMap.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+  
+  // Initialize flow velocity matrix
+  flowVelocity.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
 
   // Read materials from input
   readMats();
 
   // Read geometry information from input
   readGeom();
+
+  // Read flow velocity information from input
+  readFlowVelocity();
 
   // Print information on materials and geometry, and check to see if nuclear 
   // data is sensible
@@ -115,10 +121,13 @@ void Materials::readMats()
   Eigen::MatrixXd sigS;
   int ID,size;
   double nu,density,gamma,k,cP,omega;
-  bool stationary = true;
+  bool stationary;
   
   int iCount=0;
   for (YAML::const_iterator it=mats.begin(); it!=mats.end(); ++it){
+
+    // reset boolean
+    stationary = true;
 
     // Add material to material to index map  
     mat2idx.insert(pair<string,int>(it->first.as<string>(),iCount));
@@ -169,6 +178,36 @@ void Materials::readMats()
   
   // Set number of energy groups for the simulation	
   nGroups = size;
+};
+//==============================================================================
+
+//==============================================================================
+/// Build matrix describing flow rate in each cell 
+///
+void Materials::readFlowVelocity()
+{
+
+  double inputFlowVelocity;
+
+  if ((*input)["parameters"]["uniform flow velocity"])
+    inputFlowVelocity = (*input)["parameters"]["uniform flow velocity"]\
+            .as<double>();
+  else
+    inputFlowVelocity = 0.0;
+  
+  for (int iZ = 0; iZ < mesh->zCornerCent.size(); iZ++){
+    for (int iR = 0; iR < mesh->rCornerCent.size(); iR++){
+
+      // If the material here is not stationary, assign the input flow velocity
+      if (!matBank[matMap(iZ,iR)]->stationary){
+                
+        flowVelocity(iZ,iR) = inputFlowVelocity;
+        
+      }
+    }
+  }
+  
+  cout << flowVelocity << endl;
 };
 //==============================================================================
 
