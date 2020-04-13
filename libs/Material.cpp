@@ -32,7 +32,7 @@ Material::Material(int myMatID,\
   double myK,\
   double mycP,\
   double myOmega,\
-  double myStationary)
+  bool myStationary)
 {
   // Assign inputs to their member variables
   matID = myMatID;
