@@ -50,11 +50,39 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
 void HeatTransfer::calcDiracs()
 {
   bool posVelocity = true;
+  double TupwindInterface,Tinterface,theta,phi;
+  Eigen::Vector2d fluxLimiterArg1,fluxLimiterArg2;
+  Eigen::Vector3d fluxLimiterArg3;
 
-  if (posVelocity) {
-    
+  if (posVelocity) 
+  {
+    for (int iR = 0; iR < dirac.cols()-1; iR++)
+    {
+      // Handle iZ=1 case
+
+      // Handle iZ=2 case
+      
+      // Handle all other cases
+      for (int iZ = 2; iZ < dirac.rows()-1; iZ++)
+      {
+
+        TupwindInterface = temp(iZ-1,iR) - temp(iZ-2,iR);
+        Tinterface = temp(iZ,iR) - temp(iZ-1,iR);
+        theta = TupwindInterface/Tinterface;
+        fluxLimiterArg1 << 1,2*theta; 
+        fluxLimiterArg2 << 2,theta; 
+        fluxLimiterArg3 << 0,\
+          fluxLimiterArg1.minCoeff(),\
+          fluxLimiterArg2.minCoeff();
+        phi = fluxLimiterArg3.maxCoeff();
+        dirac(iZ,iR) = phi*Tinterface; 
+        
+      }
+    }
+  } else 
+  {
+
   }
-
   
 };
 //==============================================================================
