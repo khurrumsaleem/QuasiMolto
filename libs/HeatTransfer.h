@@ -26,6 +26,8 @@ class HeatTransfer
   Eigen::MatrixXd flux; 
   Eigen::MatrixXd dirac; 
   int getIndex(int iZ,int iR);
+  void calcDiracs();
+  void calcFluxes();
   void getTemp();
   
   private:

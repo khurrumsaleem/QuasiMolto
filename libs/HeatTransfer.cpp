@@ -45,6 +45,38 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
 //==============================================================================
 
 //==============================================================================
+/// Calculate energy diracs
+///
+void HeatTransfer::calcDiracs()
+{
+  bool posVelocity = true;
+
+  if (posVelocity) {
+    
+  }
+
+  
+};
+//==============================================================================
+
+
+//==============================================================================
+/// Calculate energy flux 
+///
+void HeatTransfer::calcFluxes()
+{
+  bool posVelocity = true;
+
+  if (posVelocity) {
+    
+  }
+
+  
+};
+//==============================================================================
+
+
+//==============================================================================
 /// Map 2D coordinates to index of temperature in the 1D solution vector
 ///
 /// @param [in] iZ axial location
