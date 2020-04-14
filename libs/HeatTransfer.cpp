@@ -24,6 +24,11 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   input = myInput;
   qd = myQD;
 
+  // Initialize size of matrices
+  temp.setZero(mesh->nZ,mesh->nR);
+  flux.setZero(mesh->nZ+1,mesh->nR);
+  dirac.setZero(mesh->nZ+1,mesh->nR);
+
   // Check for optional inputs 
   if ((*input)["parameters"]["wallTemp"]){
     wallT=(*input)["parameters"]["wallTemp"].as<double>();
@@ -53,6 +58,28 @@ int HeatTransfer::getIndex(int iZ, int iR)
   index = indexOffset + iR + nR*iZ;
 
   return index;
+  
+};
+//==============================================================================
+
+//==============================================================================
+/// Map 2D coordinates to index of temperature in the 1D solution vector
+///
+/// @param [in] iZ axial location
+/// @param [in] iR radial location
+/// @param [out] index the index for temperature in the 1D solution vector
+void HeatTransfer::getTemp()
+{
+
+  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
+    { 
+    
+      temp(iZ,iR) = qd->x(getIndex(iZ,iR));   
+    
+    }
+  }
   
 };
 //==============================================================================
