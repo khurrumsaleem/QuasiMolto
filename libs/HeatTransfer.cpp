@@ -28,6 +28,8 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   temp.setZero(mesh->nZ,mesh->nR);
   flux.setZero(mesh->nZ+1,mesh->nR);
   dirac.setZero(mesh->nZ+1,mesh->nR);
+  inletTemp.setZero(2,mesh->nR);
+  outletTemp.setZero(mesh->nR);
 
   // Check for optional inputs 
   if ((*input)["parameters"]["wallTemp"]){

@@ -22,9 +22,8 @@ class HeatTransfer
   double wallT = 922.0;
   double inletT = 922.0;
   int indexOffset = 0; 
-  Eigen::MatrixXd temp; 
-  Eigen::MatrixXd flux; 
-  Eigen::MatrixXd dirac; 
+  Eigen::MatrixXd temp,flux,dirac,inletTemp;
+  Eigen::VectorXd outletTemp;        
   int getIndex(int iZ,int iR);
   void calcDiracs();
   void calcFluxes();
