@@ -14,6 +14,9 @@ class MultiPhysicsCoupledQD
 {
   public:
   MultiPhysicsCoupledQD();
+  
+  Eigen::MatrixXd A;
+  Eigen::VectorXd x,b;
 };
 
 //==============================================================================
