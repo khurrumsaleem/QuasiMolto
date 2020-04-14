@@ -61,19 +61,19 @@ void HeatTransfer::calcDiracs()
   {
     for (int iR = 0; iR < dirac.cols(); iR++)
     {
-      // Handle iZ=1 case
-      TupwindInterface = inletTemp(2,iR) - inletTemp(1,iR);
-      Tinterface = temp(1,iR) - inletTemp(2,iR);
+      // Handle iZ=0 case
+      TupwindInterface = inletTemp(1,iR) - inletTemp(0,iR);
+      Tinterface = temp(0,iR) - inletTemp(1,iR);
       theta = TupwindInterface/Tinterface;
       phi = calcPhi(theta,fluxLimiter); 
-      dirac(1,iR) = phi*Tinterface; 
+      dirac(0,iR) = phi*Tinterface; 
 
-      // Handle iZ=2 case
+      // Handle iZ=1 case
       TupwindInterface = temp(1,iR) - inletTemp(2,iR);
       Tinterface = temp(2,iR) - temp(1,iR);
       theta = TupwindInterface/Tinterface;
       phi = calcPhi(theta,fluxLimiter); 
-      dirac(2,iR) = phi*Tinterface; 
+      dirac(1,iR) = phi*Tinterface; 
 
       
       // Handle all other cases
@@ -100,7 +100,12 @@ void HeatTransfer::calcDiracs()
   {
     for (int iR = 0; iR < dirac.cols(); iR++)
     {
-      // Handle iZ=1 case
+      // Handle iZ=0 case
+      TupwindInterface = temp(1,iR) - temp(0,iR);
+      Tinterface = temp(0,iR) - outletTemp(iR);
+      theta = TupwindInterface/Tinterface;
+      phi = calcPhi(theta,fluxLimiter); 
+      dirac(0,iR) = phi*Tinterface; 
       
       // Handle all other cases
       for (int iZ = 1; iZ < dirac.rows()-2; iZ++)
@@ -115,8 +120,18 @@ void HeatTransfer::calcDiracs()
       }
 
       // Handle iZ = nZ-1 case
+      TupwindInterface = inletTemp(0,iR) - temp(dirac.rows()-1,iR);
+      Tinterface = temp(dirac.rows()-1,iR) - temp(dirac.rows()-2,iR);
+      theta = TupwindInterface/Tinterface;
+      phi = calcPhi(theta,fluxLimiter); 
+      dirac(dirac.rows()-1,iR) = phi*Tinterface; 
 
       // Handle iZ = nZ case
+      TupwindInterface = inletTemp(1,iR) - inletTemp(0,iR);
+      Tinterface = inletTemp(0,iR) - temp(dirac.rows()-1,iR);
+      theta = TupwindInterface/Tinterface;
+      phi = calcPhi(theta,fluxLimiter); 
+      dirac(dirac.rows(),iR) = phi*Tinterface; 
     }
 
   }
