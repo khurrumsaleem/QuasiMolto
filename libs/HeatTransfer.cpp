@@ -54,10 +54,9 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
 ///
 void HeatTransfer::calcDiracs()
 {
-  bool posVelocity = true;
   double TupwindInterface,Tinterface,theta,phi;
 
-  if (posVelocity) 
+  if (mats->posVelocity) 
   {
     for (int iR = 0; iR < dirac.cols(); iR++)
     {
@@ -139,7 +138,6 @@ void HeatTransfer::calcDiracs()
 };
 //==============================================================================
 
-
 //==============================================================================
 /// Calculate energy flux 
 ///
@@ -194,7 +192,23 @@ double HeatTransfer::calcPhi(double theta, string fluxLimiter)
 };
 //==============================================================================
 
-
+//==============================================================================
+/// Assign boundary indices depending on direction of flow velocity
+///
+void HeatTransfer::assignBoundaryIndices()
+{
+  if (mats->posVelocity)
+  { 
+    coreInletIndex = 0;
+    coreOutletIndex = mesh->nZ;
+  } else 
+  {
+    coreInletIndex = mesh->nZ;
+    coreOutletIndex = 0;
+  }
+  
+};
+//==============================================================================
 
 //==============================================================================
 /// Map 2D coordinates to index of temperature in the 1D solution vector
