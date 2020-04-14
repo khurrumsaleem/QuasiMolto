@@ -143,10 +143,53 @@ void HeatTransfer::calcDiracs()
 ///
 void HeatTransfer::calcFluxes()
 {
-  bool posVelocity = true;
 
-  if (posVelocity) {
+  double tdc; // shorthand for temp*density*specific heat 
+ 
+  if (mats->posVelocity) {
+
+    for (int iR = 0; iR < flux.cols(); iR++)
+    {
+      // Handle iZ = 0 case
+      tdc = inletVelocity(iR)*inletDensity(iR)*inletcP(iR);
+      flux(0,iR) = tdc*inletTemp(1,iR)\
+        + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzs(0)))*dirac(0,iR);
+
+      // Handle all other cases
+      for (int iZ = 1; iZ < flux.rows(); iZ++)
+      {
+        tdc = mats->flowVelocity(iZ-1,iR)*mats->density(iZ-1,iR)\
+          *mats->cP(iZ-1,iR);
+        flux(iZ,iR) = tdc*temp(iZ-1,iR)\
+          + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzs(iZ-1)))*dirac(iZ,iR);
+      }
+
+    }
     
+  } else
+  {
+
+    for (int iR = 0; iR < flux.cols(); iR++)
+    {
+
+      // Handle all other cases
+      for (int iZ = 0; iZ < flux.rows()-1; iZ++)
+      {
+        tdc = mats->flowVelocity(iZ,iR)*mats->density(iZ,iR)\
+          *mats->cP(iZ,iR);
+        flux(iZ,iR) = tdc*temp(iZ,iR)\
+          + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzs(iZ)))*dirac(iZ,iR);
+      }
+      
+      // Handle iZ = nZ case
+      tdc = inletVelocity(iR)*inletDensity(iR)*inletcP(iR);
+      flux(flux.rows(),iR) = tdc*inletTemp(0,iR)\
+        + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzs(flux.rows()-1)))\
+        *dirac(flux.rows(),iR);
+
+    }
+
+
   }
 
   
@@ -215,9 +258,13 @@ void HeatTransfer::assignBoundaryIndices()
 ///
 void HeatTransfer::updateBoundaryConditions()
 {
+
+  // Update variables that can set with array splicing
   inletTemp.setConstant(inletTemp.rows(),inletTemp.cols(),inletT);
   outletTemp = temp.row(coreOutletIndex);   
-  inletVelocity = mats->flowVelocity.row(coreInletIndex);   
+  inletVelocity = mats->flowVelocity.row(coreInletIndex);
+
+  // Update variables that require looping to access   
   for (int iR = 0; iR < mesh->nR; iR++)
   {
     inletDensity(iR) = mats->density(coreInletIndex,iR);
