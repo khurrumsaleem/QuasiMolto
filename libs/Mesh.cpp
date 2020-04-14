@@ -415,6 +415,9 @@ void Mesh::calcSpatialMesh(){
     zCornerCent(iCent) = (zCornerEdge(iCent)+zCornerEdge(iCent+1))/2.0;
   }
 
+  // Set number of corners in axial and radial directions
+  nR = rCornerCent.size(); nZ = zCornerCent.size();
+
   // Calculate cell volume
   cellVol.resize(nCellsZ,vector<double>(nCellsR,0.0));
 
@@ -631,6 +634,34 @@ void Mesh::calcTimeMesh(){
   }
 }
 //==============================================================================
+
+//==============================================================================   /// Return geometry parameters for the cell located at (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [out] gParams vector containing volume and surfaces areas of the
+///   west, east, north, and south faces, in that order.
+vector<double> Mesh::getGeoParams(int iR,int iZ)
+{
+  vector<double> gParams;
+  double rDown,rUp,zDown,zUp,volume,wFaceSA,eFaceSA,nFaceSA,sFaceSA;
+  // get boundaries of this cell
+  rDown = rCornerEdge(iR); rUp = rCornerEdge(iR+1);
+  zDown = zCornerEdge(iR); zUp = zCornerEdge(iR+1);
+  // calculate geometry parameters
+  volume = M_PI*(rUp*rUp-rDown*rDown)*(zUp-zDown);
+  nFaceSA = M_PI*(rUp*rUp-rDown*rDown);
+  sFaceSA = nFaceSA;
+  eFaceSA = 2*M_PI*rUp*(zUp-zDown);
+  wFaceSA = 2*M_PI*rDown*(zUp-zDown);
+  // add parameters to the vector and return it
+  gParams.push_back(volume);
+  gParams.push_back(wFaceSA);
+  gParams.push_back(eFaceSA);
+  gParams.push_back(nFaceSA);
+  gParams.push_back(sFaceSA);
+  return gParams;
+};
+//============================================================================== 
 
 //==============================================================================
 /// Calculate time mesh

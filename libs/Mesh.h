@@ -48,7 +48,7 @@ class Mesh
 {
 	public:
 	Mesh(YAML::Node * myInput);  	
-  	int n,nAngles;		
+  	int n,nAngles,nR,nZ;		
 	double dz,dr,drCorner,dzCorner,Z,R,dt,T,totalWeight; 
   	vector< vector<double> > quadSet;
   	vector< vector<double> > alpha;
@@ -70,6 +70,7 @@ class Mesh
         vector<quadLevel> quadrature;
 	vector<qdCell> qdCells; 
   	vector<int> getQDCellIndices(int iR, int iZ);
+  	vector<double> getGeoParams(int iR, int iZ);
   	void calcQuadSet();
 	void printQuadSet();
 	
