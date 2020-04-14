@@ -24,12 +24,13 @@ class HeatTransfer
   int coreInletIndex,coreOutletIndex,indexOffset = 0; 
   string fluxLimiter = "superbee";
   Eigen::MatrixXd temp,flux,dirac,inletTemp;
-  Eigen::VectorXd outletTemp;        
+  Eigen::VectorXd inletDensity,inletVelocity,inletcP,outletTemp;        
   int getIndex(int iZ,int iR);
   void calcDiracs();
   void calcFluxes();
   void getTemp();
   void assignBoundaryIndices();
+  void updateBoundaryConditions();
   double calcPhi(double theta,string fluxLimiter);
   
   private:

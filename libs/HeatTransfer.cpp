@@ -211,6 +211,22 @@ void HeatTransfer::assignBoundaryIndices()
 //==============================================================================
 
 //==============================================================================
+/// Update temperatures and physical parameters at inlet and outlet     
+///
+void HeatTransfer::updateBoundaryConditions()
+{
+  inletTemp.setConstant(inletTemp.rows(),inletTemp.cols(),inletT);
+  outletTemp = temp.row(coreOutletIndex);   
+  inletVelocity = mats->flowVelocity.row(coreInletIndex);   
+  for (int iR = 0; iR < mesh->nR; iR++)
+  {
+    inletDensity(iR) = mats->density(coreInletIndex,iR);
+    inletcP(iR) = mats->cP(coreInletIndex,iR);
+  } 
+};
+//==============================================================================
+
+//==============================================================================
 /// Map 2D coordinates to index of temperature in the 1D solution vector
 ///
 /// @param [in] iZ axial location
