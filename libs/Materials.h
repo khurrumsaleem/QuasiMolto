@@ -15,6 +15,9 @@ class Materials
         public:
 	Eigen::MatrixXi matMap; //resized later
 	Eigen::MatrixXd flowVelocity; 
+        Eigen::VectorXd neutV;
+        int nGroups;
+        bool posVelocity;
         // public functions
         Materials(Mesh * myMesh,YAML::Node * myInput);
 	void readMats();
@@ -33,8 +36,6 @@ class Materials
 	double k(int zIdx,int rIdx);
 	double cP(int zIdx,int rIdx);
 	double omega(int zIdx,int rIdx);
-        Eigen::VectorXd neutV;
-        int nGroups;
         void checkMats();
         void edit();
 

@@ -206,8 +206,13 @@ void Materials::readFlowVelocity()
       }
     }
   }
-  
+ 
+  // Check whether velocities are all positive 
+  posVelocity = -0.1E10 < flowVelocity.minCoeff();
+
   cout << flowVelocity << endl;
+  cout << posVelocity << endl;
+  
 };
 //==============================================================================
 
