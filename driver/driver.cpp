@@ -93,5 +93,8 @@ void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input){
   HeatTransfer * myHeat; 
   myMPQD = new MultiPhysicsCoupledQD();
   myHeat = new HeatTransfer(myMaterials,myMesh,input,myMPQD);
+  myHeat->updateBoundaryConditions();
+  myHeat->calcDiracs();
+  myHeat->calcFluxes();
   
 }
