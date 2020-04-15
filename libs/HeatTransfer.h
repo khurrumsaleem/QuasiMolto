@@ -32,6 +32,7 @@ class HeatTransfer
   void assignBoundaryIndices();
   void updateBoundaryConditions();
   double calcPhi(double theta,string fluxLimiter);
+  double calcTheta(double TupwindInterface,double Tinterface);
   
   private:
   Materials * mats;

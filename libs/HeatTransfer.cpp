@@ -24,13 +24,6 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   input = myInput;
   qd = myQD;
 
-  // Initialize size of matrices
-  temp.setZero(mesh->nZ,mesh->nR);
-  flux.setZero(mesh->nZ+1,mesh->nR);
-  dirac.setZero(mesh->nZ+1,mesh->nR);
-  inletTemp.setZero(2,mesh->nR);
-  outletTemp.setZero(mesh->nR);
-
   // Check for optional inputs 
   if ((*input)["parameters"]["wallTemp"]){
     wallT=(*input)["parameters"]["wallTemp"].as<double>();
@@ -41,6 +34,16 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   if ((*input)["parameters"]["flux limiter"]){
     fluxLimiter=(*input)["parameters"]["flux limiter"].as<string>();
   } 
+
+  // Initialize size of matrices and vectors
+  temp.setConstant(mesh->nZ,mesh->nR,inletT);
+  flux.setZero(mesh->nZ+1,mesh->nR);
+  dirac.setZero(mesh->nZ+1,mesh->nR);
+  inletTemp.setConstant(2,mesh->nR,inletT);
+  outletTemp.setZero(mesh->nR);
+  inletDensity.setZero(mesh->nR);
+  inletVelocity.setZero(mesh->nR);
+  inletcP.setZero(mesh->nR);
 
   cout << "Initialized HeatTransfer object." << endl;
   cout << "wallTemp: " << wallT << endl;
@@ -55,6 +58,7 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
 void HeatTransfer::calcDiracs()
 {
   double TupwindInterface,Tinterface,theta,phi;
+  int lastDiracIndex = dirac.rows()-1;
 
   if (mats->posVelocity) 
   {
@@ -63,17 +67,16 @@ void HeatTransfer::calcDiracs()
       // Handle iZ=0 case
       TupwindInterface = inletTemp(1,iR) - inletTemp(0,iR);
       Tinterface = temp(0,iR) - inletTemp(1,iR);
-      theta = TupwindInterface/Tinterface;
+      theta = calcTheta(TupwindInterface,Tinterface);
       phi = calcPhi(theta,fluxLimiter); 
-      dirac(0,iR) = phi*Tinterface; 
+      dirac(0,iR) = phi*Tinterface;
 
       // Handle iZ=1 case
-      TupwindInterface = temp(1,iR) - inletTemp(2,iR);
-      Tinterface = temp(2,iR) - temp(1,iR);
-      theta = TupwindInterface/Tinterface;
+      TupwindInterface = temp(0,iR) - inletTemp(1,iR);
+      Tinterface = temp(1,iR) - temp(0,iR);
+      theta = calcTheta(TupwindInterface,Tinterface);
       phi = calcPhi(theta,fluxLimiter); 
       dirac(1,iR) = phi*Tinterface; 
-
       
       // Handle all other cases
       for (int iZ = 2; iZ < dirac.rows()-1; iZ++)
@@ -81,18 +84,18 @@ void HeatTransfer::calcDiracs()
 
         TupwindInterface = temp(iZ-1,iR) - temp(iZ-2,iR);
         Tinterface = temp(iZ,iR) - temp(iZ-1,iR);
-        theta = TupwindInterface/Tinterface;
+        theta = calcTheta(TupwindInterface,Tinterface);
         phi = calcPhi(theta,fluxLimiter); 
         dirac(iZ,iR) = phi*Tinterface; 
         
       }
 
       // Handle iZ = nZ case
-      TupwindInterface = temp(dirac.rows()-1,iR) - temp(dirac.rows()-2,iR);
-      Tinterface = outletTemp(iR) - temp(dirac.rows()-1,iR);
-      theta = TupwindInterface/Tinterface;
+      TupwindInterface = temp(lastDiracIndex-1,iR) - temp(lastDiracIndex-2,iR);
+      Tinterface = outletTemp(iR) - temp(lastDiracIndex-1,iR);
+      theta = calcTheta(TupwindInterface,Tinterface);
       phi = calcPhi(theta,fluxLimiter); 
-      dirac(dirac.rows(),iR) = phi*Tinterface; 
+      dirac(lastDiracIndex,iR) = phi*Tinterface; 
 
     }
   } else 
@@ -102,7 +105,7 @@ void HeatTransfer::calcDiracs()
       // Handle iZ=0 case
       TupwindInterface = temp(1,iR) - temp(0,iR);
       Tinterface = temp(0,iR) - outletTemp(iR);
-      theta = TupwindInterface/Tinterface;
+      theta = calcTheta(TupwindInterface,Tinterface);
       phi = calcPhi(theta,fluxLimiter); 
       dirac(0,iR) = phi*Tinterface; 
       
@@ -112,28 +115,31 @@ void HeatTransfer::calcDiracs()
 
         TupwindInterface = temp(iZ+1,iR) - temp(iZ,iR);
         Tinterface = temp(iZ,iR) - temp(iZ-1,iR);
-        theta = TupwindInterface/Tinterface;
+        theta = calcTheta(TupwindInterface,Tinterface);
         phi = calcPhi(theta,fluxLimiter); 
         dirac(iZ,iR) = phi*Tinterface; 
         
       }
 
       // Handle iZ = nZ-1 case
-      TupwindInterface = inletTemp(0,iR) - temp(dirac.rows()-1,iR);
-      Tinterface = temp(dirac.rows()-1,iR) - temp(dirac.rows()-2,iR);
-      theta = TupwindInterface/Tinterface;
+      TupwindInterface = inletTemp(0,iR) - temp(lastDiracIndex-1,iR);
+      Tinterface = temp(lastDiracIndex-1,iR) - temp(lastDiracIndex-2,iR);
+      theta = calcTheta(TupwindInterface,Tinterface);
       phi = calcPhi(theta,fluxLimiter); 
-      dirac(dirac.rows()-1,iR) = phi*Tinterface; 
+      dirac(lastDiracIndex-1,iR) = phi*Tinterface; 
 
       // Handle iZ = nZ case
       TupwindInterface = inletTemp(1,iR) - inletTemp(0,iR);
-      Tinterface = inletTemp(0,iR) - temp(dirac.rows()-1,iR);
-      theta = TupwindInterface/Tinterface;
+      Tinterface = inletTemp(0,iR) - temp(lastDiracIndex-1,iR);
+      theta = calcTheta(TupwindInterface,Tinterface);
       phi = calcPhi(theta,fluxLimiter); 
-      dirac(dirac.rows(),iR) = phi*Tinterface; 
+      dirac(lastDiracIndex,iR) = phi*Tinterface; 
     }
 
   }
+  
+  cout << "calculated diracs" << endl;
+  cout << dirac << endl;
   
 };
 //==============================================================================
@@ -145,6 +151,7 @@ void HeatTransfer::calcFluxes()
 {
 
   double tdc; // shorthand for temp*density*specific heat 
+  int lastFluxIndex = flux.rows()-1;
  
   if (mats->posVelocity) {
 
@@ -153,7 +160,8 @@ void HeatTransfer::calcFluxes()
       // Handle iZ = 0 case
       tdc = inletVelocity(iR)*inletDensity(iR)*inletcP(iR);
       flux(0,iR) = tdc*inletTemp(1,iR)\
-        + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzs(0)))*dirac(0,iR);
+        + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(0)))\
+        *dirac(0,iR);
 
       // Handle all other cases
       for (int iZ = 1; iZ < flux.rows(); iZ++)
@@ -161,7 +169,8 @@ void HeatTransfer::calcFluxes()
         tdc = mats->flowVelocity(iZ-1,iR)*mats->density(iZ-1,iR)\
           *mats->cP(iZ-1,iR);
         flux(iZ,iR) = tdc*temp(iZ-1,iR)\
-          + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzs(iZ-1)))*dirac(iZ,iR);
+          + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(iZ-1)))\
+          *dirac(iZ,iR);
       }
 
     }
@@ -178,23 +187,46 @@ void HeatTransfer::calcFluxes()
         tdc = mats->flowVelocity(iZ,iR)*mats->density(iZ,iR)\
           *mats->cP(iZ,iR);
         flux(iZ,iR) = tdc*temp(iZ,iR)\
-          + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzs(iZ)))*dirac(iZ,iR);
+          + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(iZ)))*dirac(iZ,iR);
       }
       
       // Handle iZ = nZ case
       tdc = inletVelocity(iR)*inletDensity(iR)*inletcP(iR);
-      flux(flux.rows(),iR) = tdc*inletTemp(0,iR)\
-        + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzs(flux.rows()-1)))\
-        *dirac(flux.rows(),iR);
+      flux(lastFluxIndex,iR) = tdc*inletTemp(0,iR)\
+        + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(lastFluxIndex-1)))\
+        *dirac(lastFluxIndex,iR);
 
     }
+  }
+  
+  cout << "calculated fluxes" << endl;
+  cout << flux << endl;
 
+};
+//==============================================================================
 
+//==============================================================================
+/// Calculate theta for use in flux limiting framework 
+///
+/// @param [in] TupwindInterface change in temp at upwind interface
+/// @param [in] Tinterface change in temp at interface
+double HeatTransfer::calcTheta(double TupwindInterface, double Tinterface)
+{
+ 
+  double theta;
+  if (abs(Tinterface) < 1E-10)
+  {
+    theta = 1;
+  } else 
+  {
+    theta = TupwindInterface/Tinterface;
   }
 
+  return theta;
   
 };
 //==============================================================================
+
 
 //==============================================================================
 /// Calculate phi for use in flux limiting framework 
@@ -243,10 +275,10 @@ void HeatTransfer::assignBoundaryIndices()
   if (mats->posVelocity)
   { 
     coreInletIndex = 0;
-    coreOutletIndex = mesh->nZ;
+    coreOutletIndex = mesh->nZ-1;
   } else 
   {
-    coreInletIndex = mesh->nZ;
+    coreInletIndex = mesh->nZ-1;
     coreOutletIndex = 0;
   }
   
@@ -263,13 +295,19 @@ void HeatTransfer::updateBoundaryConditions()
   inletTemp.setConstant(inletTemp.rows(),inletTemp.cols(),inletT);
   outletTemp = temp.row(coreOutletIndex);   
   inletVelocity = mats->flowVelocity.row(coreInletIndex);
-
+  
   // Update variables that require looping to access   
   for (int iR = 0; iR < mesh->nR; iR++)
   {
+    cout << iR << endl;
     inletDensity(iR) = mats->density(coreInletIndex,iR);
     inletcP(iR) = mats->cP(coreInletIndex,iR);
-  } 
+  }
+
+  cout << "inletTemp" << endl;
+  cout << inletTemp << endl;
+  cout << "temp" << endl;
+  cout << temp << endl; 
 };
 //==============================================================================
 
