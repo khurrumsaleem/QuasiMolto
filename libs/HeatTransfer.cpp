@@ -143,7 +143,7 @@ void HeatTransfer::buildLinearSystem()
       b(iEq) += mats->density(iZ,iR)*mats->cP(iZ,iR)*temp(iZ,iR); 
 
       // Flux source term 
-      coeff = mesh->dt*mats->omega(iZ,iR)*mats->sigF(iZ,iR,0);
+      coeff = mesh->dt*mats->omega(iZ,iR)*mats->oneGroupXS->sigF(iZ,iR);
       mpqd->fluxSource(iZ,iR,iEq,coeff);
 
       // Advection term
