@@ -16,4 +16,5 @@ add_library(libs
         MultiGroupQDToMultiPhysicsQDCoupling.cpp
         GreyGroupQD.cpp
         MultiPhysicsCoupledQD.cpp
-        HeatTransfer.cpp)
+        HeatTransfer.cpp
+        CollapsedCrossSections.cpp)
