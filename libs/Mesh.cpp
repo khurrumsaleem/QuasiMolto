@@ -17,7 +17,7 @@ using namespace arma;
 
 //==============================================================================
 /// Constructor for qdCell object.
-/// A dumby constructors
+/// A dumby constructor
 qdCell::qdCell(){}
 //==============================================================================
 
