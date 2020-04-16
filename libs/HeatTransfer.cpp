@@ -57,11 +57,8 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
 ///
 void HeatTransfer::buildLinearSystem()
 {
-  Eigen::SparseMatrix<double> A;
-  Eigen::VectorXd b;
-  int startingIndex;
   
-  int myIndex,sIndex,nIndex,wIndex,eIndex,iEq = startingIndex;
+  int myIndex,sIndex,nIndex,wIndex,eIndex,iEq = indexOffset;
   int nR = temp.cols()-1;
   int nZ = temp.rows()-1;
   double harmonicAvg,coeff;
@@ -79,22 +76,22 @@ void HeatTransfer::buildLinearSystem()
 
       gParams = mesh->getGeoParams(iR,iZ);
       
-      A.coeffRef(iEq,myIndex) = mats->density(iZ,iR)*mats->cP(iZ,iR);
+      mpqd->A.coeffRef(iEq,myIndex) = mats->density(iZ,iR)*mats->cP(iZ,iR);
       
       // East face
       if (iR == nR)
       {
         coeff = -gParams[iEF]*mats->k(iZ,iR)\
         /mesh->drsCorner(iR)/gParams[iVol];
-        A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
-        b(iEq) -= mesh->dt*coeff*wallT;             
+        mpqd->A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+        mpqd->b(iEq) -= mesh->dt*coeff*wallT;             
       } else
       {
         harmonicAvg = pow(mesh->drsCorner(iR)/mats->k(iZ,iR)\
           + mesh->drsCorner(iR+1)/mats->k(iZ,iR+1),-1.0);
         coeff = -2.0*gParams[iEF]*harmonicAvg/gParams[iVol];
-        A.coeffRef(iEq,eIndex) = mesh->dt*coeff;
-        A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+        mpqd->A.coeffRef(iEq,eIndex) = mesh->dt*coeff;
+        mpqd->A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
       }
 
       // West face
@@ -103,8 +100,8 @@ void HeatTransfer::buildLinearSystem()
         harmonicAvg = pow(mesh->drsCorner(iR-1)/mats->k(iZ,iR-1)\
           + mesh->drsCorner(iR)/mats->k(iZ,iR),-1.0);
         coeff = 2.0*gParams[iWF]*harmonicAvg/gParams[iVol];
-        A.coeffRef(iEq,wIndex) = -mesh->dt*coeff;
-        A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
+        mpqd->A.coeffRef(iEq,wIndex) = -mesh->dt*coeff;
+        mpqd->A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
       } 
 
       // North face
@@ -112,15 +109,15 @@ void HeatTransfer::buildLinearSystem()
       {
         coeff = gParams[iNF]*mats->k(iZ,iR)\
         /mesh->dzsCorner(iZ)/gParams[iVol];
-        A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
-        b(iEq) += mesh->dt*coeff*inletTemp(1,iR);             
+        mpqd->A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
+        mpqd->b(iEq) += mesh->dt*coeff*inletTemp(1,iR);             
       } else if (iZ != 0)
       {
         harmonicAvg = pow(mesh->dzsCorner(iZ-1)/mats->k(iZ-1,iR)\
           + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
         coeff = -2.0*gParams[iNF]*harmonicAvg/gParams[iVol];
-        A.coeffRef(iEq,nIndex) = -mesh->dt*coeff;
-        A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
+        mpqd->A.coeffRef(iEq,nIndex) = -mesh->dt*coeff;
+        mpqd->A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
       }
 
       // South face
@@ -128,26 +125,26 @@ void HeatTransfer::buildLinearSystem()
       {
         coeff = -gParams[iSF]*mats->k(iZ,iR)\
         /mesh->dzsCorner(iZ)/gParams[iVol];
-        A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
-        b(iEq) -= mesh->dt*coeff*inletTemp(0,iR);             
+        mpqd->A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+        mpqd->b(iEq) -= mesh->dt*coeff*inletTemp(0,iR);             
       } else if (iZ != nZ)
       {
         harmonicAvg = pow(mesh->dzsCorner(iZ+1)/mats->k(iZ+1,iR)\
           + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
         coeff = -2.0*gParams[iSF]*harmonicAvg/gParams[iVol];
-        A.coeffRef(iEq,sIndex) = mesh->dt*coeff;
-        A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+        mpqd->A.coeffRef(iEq,sIndex) = mesh->dt*coeff;
+        mpqd->A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
       }
 
       // Time term
-      b(iEq) += mats->density(iZ,iR)*mats->cP(iZ,iR)*temp(iZ,iR); 
+      mpqd->b(iEq) += mats->density(iZ,iR)*mats->cP(iZ,iR)*temp(iZ,iR); 
 
       // Flux source term 
       coeff = mesh->dt*mats->omega(iZ,iR)*mats->oneGroupXS->sigF(iZ,iR);
       mpqd->fluxSource(iZ,iR,iEq,coeff);
 
       // Advection term
-      b(iEq) += (mesh->dt/mesh->dzsCorner(iZ))*(flux(iZ,iR)-flux(iZ+1,iR));
+      mpqd->b(iEq) += (mesh->dt/mesh->dzsCorner(iZ))*(flux(iZ,iR)-flux(iZ+1,iR));
 
       // Iterate equation count
       iEq = iEq + 1;
