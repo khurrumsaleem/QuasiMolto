@@ -22,6 +22,9 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
   mesh = myMesh;
   input = myInput;
   
+  // Initialize 1GXS
+  oneGroupXS = new CollapsedCrossSections(mesh->nZ,mesh->nR);
+  
   // Initialize material map
   matMap.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   
@@ -66,6 +69,8 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
     neutV.setOnes(nGroups);
     neutV = 2200.0*neutV;
   }
+
+
 };
 //==============================================================================
 

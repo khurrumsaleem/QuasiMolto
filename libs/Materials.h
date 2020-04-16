@@ -3,6 +3,7 @@
 
 #include "Mesh.h"
 #include "Material.h"
+#include "CollapsedCrossSections.h"
 
 using namespace std; 
 using namespace arma;
@@ -13,6 +14,7 @@ using namespace arma;
 class Materials
 {
         public:
+        CollapsedCrossSections * oneGroupXS;
 	Eigen::MatrixXi matMap; //resized later
 	Eigen::MatrixXd flowVelocity; 
         Eigen::VectorXd neutV;
