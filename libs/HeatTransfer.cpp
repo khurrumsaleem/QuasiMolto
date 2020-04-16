@@ -16,13 +16,13 @@ using namespace std;
 HeatTransfer::HeatTransfer(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * myInput,\
-  MultiPhysicsCoupledQD * myQD)
+  MultiPhysicsCoupledQD * myMPQD)
 {
   // Assign inputs to their member variables
   mats = myMaterials;
   mesh = myMesh;
   input = myInput;
-  qd = myQD;
+  mpqd = myMPQD;
 
   // Check for optional inputs 
   if ((*input)["parameters"]["wallTemp"]){
@@ -51,6 +51,113 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   cout << getIndex(4,4) << endl; 
 };
 //==============================================================================
+
+//==============================================================================
+/// Build linear system to solve heat equation
+///
+void HeatTransfer::buildLinearSystem()
+{
+  Eigen::SparseMatrix<double> A;
+  Eigen::VectorXd b;
+  int startingIndex;
+  
+  int myIndex,sIndex,nIndex,wIndex,eIndex,iEq = startingIndex;
+  int nR = temp.cols()-1;
+  int nZ = temp.rows()-1;
+  double harmonicAvg,coeff;
+  vector<double> gParams;
+  
+  for (int iR = 0; iR < temp.cols(); iR++)
+  {
+    for (int iZ = 0; iZ < temp.rows(); iZ++)
+    {
+      myIndex = getIndex(iZ,iR);     
+      sIndex = getIndex(iZ+1,iR);     
+      nIndex = getIndex(iZ-1,iR);     
+      wIndex = getIndex(iZ,iR-1);     
+      eIndex = getIndex(iZ,iR+1);     
+
+      gParams = mesh->getGeoParams(iR,iZ);
+      
+      A.coeffRef(iEq,myIndex) = mats->density(iZ,iR)*mats->cP(iZ,iR);
+      
+      // East face
+      if (iR == nR)
+      {
+        coeff = -gParams[iEF]*mats->k(iZ,iR)\
+        /mesh->drsCorner(iR)/gParams[iVol];
+        A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+        b(iEq) -= mesh->dt*coeff*wallT;             
+      } else
+      {
+        harmonicAvg = pow(mesh->drsCorner(iR)/mats->k(iZ,iR)\
+          + mesh->drsCorner(iR+1)/mats->k(iZ,iR+1),-1.0);
+        coeff = -2.0*gParams[iEF]*harmonicAvg/gParams[iVol];
+        A.coeffRef(iEq,eIndex) = mesh->dt*coeff;
+        A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+      }
+
+      // West face
+      if (iR != 0)
+      {
+        harmonicAvg = pow(mesh->drsCorner(iR-1)/mats->k(iZ,iR-1)\
+          + mesh->drsCorner(iR)/mats->k(iZ,iR),-1.0);
+        coeff = 2.0*gParams[iWF]*harmonicAvg/gParams[iVol];
+        A.coeffRef(iEq,wIndex) = -mesh->dt*coeff;
+        A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
+      } 
+
+      // North face
+      if (iZ == 0 and mats->posVelocity)
+      {
+        coeff = gParams[iNF]*mats->k(iZ,iR)\
+        /mesh->dzsCorner(iZ)/gParams[iVol];
+        A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
+        b(iEq) += mesh->dt*coeff*inletTemp(1,iR);             
+      } else if (iZ != 0)
+      {
+        harmonicAvg = pow(mesh->dzsCorner(iZ-1)/mats->k(iZ-1,iR)\
+          + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
+        coeff = -2.0*gParams[iNF]*harmonicAvg/gParams[iVol];
+        A.coeffRef(iEq,nIndex) = -mesh->dt*coeff;
+        A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
+      }
+
+      // South face
+      if (iZ == nZ and !(mats->posVelocity))
+      {
+        coeff = -gParams[iSF]*mats->k(iZ,iR)\
+        /mesh->dzsCorner(iZ)/gParams[iVol];
+        A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+        b(iEq) -= mesh->dt*coeff*inletTemp(0,iR);             
+      } else if (iZ != nZ)
+      {
+        harmonicAvg = pow(mesh->dzsCorner(iZ+1)/mats->k(iZ+1,iR)\
+          + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
+        coeff = -2.0*gParams[iSF]*harmonicAvg/gParams[iVol];
+        A.coeffRef(iEq,sIndex) = mesh->dt*coeff;
+        A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+      }
+
+      // Time term
+      b(iEq) += mats->density(iZ,iR)*mats->cP(iZ,iR)*temp(iZ,iR); 
+
+      // Flux source term 
+      coeff = mesh->dt*mats->omega(iZ,iR)*mats->sigF(iZ,iR,0);
+      mpqd->fluxSource(iZ,iR,iEq,coeff);
+
+      // Advection term
+      b(iEq) += (mesh->dt/mesh->dzsCorner(iZ))*(flux(iZ,iR)-flux(iZ+1,iR));
+
+      // Iterate equation count
+      iEq = iEq + 1;
+  
+    }
+  }
+   
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Calculate energy diracs
@@ -343,7 +450,7 @@ void HeatTransfer::getTemp()
     for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
     { 
     
-      temp(iZ,iR) = qd->x(getIndex(iZ,iR));   
+      temp(iZ,iR) = mpqd->x(getIndex(iZ,iR));   
     
     }
   }

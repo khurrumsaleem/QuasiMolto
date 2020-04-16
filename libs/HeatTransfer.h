@@ -26,6 +26,7 @@ class HeatTransfer
   Eigen::MatrixXd temp,flux,dirac,inletTemp;
   Eigen::VectorXd inletDensity,inletVelocity,inletcP,outletTemp;        
   int getIndex(int iZ,int iR);
+  void buildLinearSystem();
   void calcDiracs();
   void calcFluxes();
   void getTemp();
@@ -38,7 +39,7 @@ class HeatTransfer
   Materials * mats;
   Mesh * mesh;
   YAML::Node * input;
-  MultiPhysicsCoupledQD * qd;
+  MultiPhysicsCoupledQD * mpqd;
   // Indices for volume, west face surface area, east face surface area, etc...
   int iVol = 0;
   int iWF = 1, iEF = 2, iNF = 3, iSF = 4;
