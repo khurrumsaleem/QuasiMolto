@@ -17,6 +17,7 @@ class MultiPhysicsCoupledQD
   
   Eigen::MatrixXd A;
   Eigen::VectorXd x,b;
+  void fluxSource(int iZ,int iR,int iEq,double coeff);
 };
 
 //==============================================================================

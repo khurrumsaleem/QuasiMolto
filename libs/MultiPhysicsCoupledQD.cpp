@@ -17,3 +17,16 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD()
   // Assign inputs to their member variables
 };
 //==============================================================================
+
+//==============================================================================
+/// Include a flux source in the linear system
+///
+/// @param [in] iZ axial location 
+/// @param [in] iR radial location
+/// @param [in] iEq equation index
+/// @param [in] coeff coefficient of flux source
+void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
+{
+
+};
+//==============================================================================
