@@ -30,3 +30,18 @@ void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Solve linear system for multiphysics coupled quasidiffusion system
+///
+void MultiPhysicsCoupledQD::solveLinearSystem()
+{
+  cout << "x: " << x << endl;
+  Eigen::SparseLU<Eigen::SparseMatrix<double>,\
+    Eigen::COLAMDOrdering<int> > solverLU;
+  A.makeCompressed();
+  solverLU.compute(A);
+  x = solverLU.solve(b);
+  cout << "x: " << x << endl;
+};
+//==============================================================================

@@ -15,9 +15,10 @@ class MultiPhysicsCoupledQD
   public:
   MultiPhysicsCoupledQD();
   
-  Eigen::MatrixXd A;
+  Eigen::SparseMatrix<double> A;
   Eigen::VectorXd x,b;
   void fluxSource(int iZ,int iR,int iEq,double coeff);
+  void solveLinearSystem();
 };
 
 //==============================================================================
