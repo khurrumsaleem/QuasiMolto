@@ -95,6 +95,26 @@ void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input){
   myHeat = new HeatTransfer(myMaterials,myMesh,input,myMPQD);
   myHeat->updateBoundaryConditions();
   myHeat->calcDiracs();
+  cout << "diracs: " << endl;   
+  cout << myHeat->dirac << endl;
+  cout << "flux: " << endl;   
+  cout << myHeat->flux << endl;
   myHeat->calcFluxes();
+  myMaterials->oneGroupXS->sigF.setOnes(myMesh->nZ,myMesh->nR);
+  myMPQD->A.resize(myMesh->nZ*myMesh->nR,myMesh->nZ*myMesh->nR);
+  cout << "Set size of A." << endl;
+  myMPQD->b.resize(myMesh->nZ*myMesh->nR);
+  myMPQD->x.resize(myMesh->nZ*myMesh->nR);
+  cout << "Set size of b." << endl;
+  myHeat->buildLinearSystem();
+  cout << "A: " << endl;   
+  cout << myMPQD->A << endl;;
+  cout << "b: " << endl;   
+  cout << myMPQD->b << endl;;
+  myMPQD->solveLinearSystem();
+  cout << "x: " << endl;   
+  cout << myMPQD->x << endl;;
+  myHeat->getTemp();
+  cout << myHeat->temp << endl;;
   
 }
