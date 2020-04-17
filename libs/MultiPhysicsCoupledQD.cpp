@@ -5,6 +5,8 @@
 // Date: April 9, 2020
 
 #include "MultiPhysicsCoupledQD.h"
+#include "HeatTransfer.h"
+#include "MultiGroupPrecursor.h"
 
 using namespace std;
 
@@ -12,9 +14,18 @@ using namespace std;
 /// MultiPhysicsCoupledQD class object constructor
 ///
 /// @param [in] blankType blank for this material
-MultiPhysicsCoupledQD::MultiPhysicsCoupledQD()
+MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
+  Mesh * myMesh,\
+  YAML::Node * myInput) 
 {
   // Assign inputs to their member variables
+  mats = myMats;
+  mesh = myMesh;
+  input = myInput;
+
+  // Initialize multiphysics objects
+  heat = new HeatTransfer(mats,mesh,input,this);
+  dnps = new MultiGroupPrecursor(mats,mesh,input,this);
 };
 //==============================================================================
 

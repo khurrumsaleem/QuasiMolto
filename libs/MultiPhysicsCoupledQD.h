@@ -2,8 +2,12 @@
 #define MultiPhysicsCoupledQD_H
 
 #include "Mesh.h"
+#include "Materials.h"
 
 using namespace std;
+
+class HeatTransfer;
+class MultiGroupPrecursor;
 
 //==============================================================================
 //! Contains precursor, heat, and grey group quasidiffusion objects.
@@ -13,12 +17,22 @@ using namespace std;
 class MultiPhysicsCoupledQD
 {
   public:
-  MultiPhysicsCoupledQD();
+  MultiPhysicsCoupledQD(Materials * myMats,\
+    Mesh * myMesh,\
+    YAML::Node * myInput);
   
   Eigen::SparseMatrix<double> A;
   Eigen::VectorXd x,b;
   void fluxSource(int iZ,int iR,int iEq,double coeff);
   void solveLinearSystem();
+  HeatTransfer * heat;
+  MultiGroupPrecursor * dnps;
+
+  private:
+  Materials * mats;
+  Mesh * mesh;
+  YAML::Node * input;
+
 };
 
 //==============================================================================
