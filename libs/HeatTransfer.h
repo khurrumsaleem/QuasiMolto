@@ -3,9 +3,10 @@
 
 #include "Mesh.h"
 #include "Materials.h"
-#include "MultiPhysicsCoupledQD.h"
 
 using namespace std;
+
+class MultiPhysicsCoupledQD;
 
 //==============================================================================
 //! Contains information and builds linear system for heat transfer

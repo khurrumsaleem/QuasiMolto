@@ -3,6 +3,7 @@
 // Date: April 9, 2020
 
 #include "HeatTransfer.h"
+#include "MultiPhysicsCoupledQD.h"
 
 using namespace std;
 
