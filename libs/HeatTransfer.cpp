@@ -81,10 +81,10 @@ void HeatTransfer::buildLinearSystem()
       // East face
       if (iR == nR)
       {
-        coeff = -gParams[iEF]*mats->k(iZ,iR)\
-        /mesh->drsCorner(iR)/gParams[iVol];
+        coeff = (-gParams[iEF]*mats->k(iZ,iR)\
+        /mesh->drsCorner(iR))/gParams[iVol];
         mpqd->A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
-        mpqd->b(iEq) -= mesh->dt*coeff*wallT;             
+        mpqd->b(iEq) -= mesh->dt*coeff*wallT; 
       } else
       {
         harmonicAvg = pow(mesh->drsCorner(iR)/mats->k(iZ,iR)\
@@ -107,15 +107,15 @@ void HeatTransfer::buildLinearSystem()
       // North face
       if (iZ == 0 and mats->posVelocity)
       {
-        coeff = gParams[iNF]*mats->k(iZ,iR)\
-        /mesh->dzsCorner(iZ)/gParams[iVol];
+        coeff = (gParams[iNF]*mats->k(iZ,iR)\
+        /mesh->dzsCorner(iZ))/gParams[iVol];
         mpqd->A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
         mpqd->b(iEq) += mesh->dt*coeff*inletTemp(1,iR);             
       } else if (iZ != 0)
       {
         harmonicAvg = pow(mesh->dzsCorner(iZ-1)/mats->k(iZ-1,iR)\
           + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
-        coeff = -2.0*gParams[iNF]*harmonicAvg/gParams[iVol];
+        coeff = 2.0*gParams[iNF]*harmonicAvg/gParams[iVol];
         mpqd->A.coeffRef(iEq,nIndex) = -mesh->dt*coeff;
         mpqd->A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
       }
@@ -123,8 +123,8 @@ void HeatTransfer::buildLinearSystem()
       // South face
       if (iZ == nZ and !(mats->posVelocity))
       {
-        coeff = -gParams[iSF]*mats->k(iZ,iR)\
-        /mesh->dzsCorner(iZ)/gParams[iVol];
+        coeff = -(gParams[iSF]*mats->k(iZ,iR)\
+        /mesh->dzsCorner(iZ))/gParams[iVol];
         mpqd->A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
         mpqd->b(iEq) -= mesh->dt*coeff*inletTemp(0,iR);             
       } else if (iZ != nZ)
