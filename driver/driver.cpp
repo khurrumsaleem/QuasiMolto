@@ -13,12 +13,18 @@
 #include "../libs/QuasidiffusionSolver.h"
 #include "../libs/TransportToQDCoupling.h"
 #include "../libs/HeatTransfer.h"
+#include "../libs/MultiGroupPrecursor.h"
 #include "../libs/MultiPhysicsCoupledQD.h"
 #include "../libs/MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;
-void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input);
+void testHeatTransfer(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input);
+void testMultiGroupPrecursor(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input);
 
 int main(int argc, char** argv) {
 
@@ -77,6 +83,8 @@ int main(int argc, char** argv) {
     }
     else if (solveType == "testHeatTransfer")
       testHeatTransfer(myMaterials,myMesh,input);
+    else if (solveType == "testMultiGroupPrecursor")
+      testMultiGroupPrecursor(myMaterials,myMesh,input);
     else
       myMGT->solveTransportOnly();
   }
@@ -90,23 +98,21 @@ return(0);
 void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input){
   
   MultiPhysicsCoupledQD * myMPQD; 
-  HeatTransfer * myHeat; 
-  myMPQD = new MultiPhysicsCoupledQD();
-  myHeat = new HeatTransfer(myMaterials,myMesh,input,myMPQD);
-  myHeat->updateBoundaryConditions();
-  myHeat->calcDiracs();
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+  myMPQD->heat->updateBoundaryConditions();
+  myMPQD->heat->calcDiracs();
   cout << "diracs: " << endl;   
-  cout << myHeat->dirac << endl;
+  cout << myMPQD->heat->dirac << endl;
   cout << "flux: " << endl;   
-  cout << myHeat->flux << endl;
-  myHeat->calcFluxes();
+  cout << myMPQD->heat->flux << endl;
+  myMPQD->heat->calcFluxes();
   myMaterials->oneGroupXS->sigF.setOnes(myMesh->nZ,myMesh->nR);
   myMPQD->A.resize(myMesh->nZ*myMesh->nR,myMesh->nZ*myMesh->nR);
   cout << "Set size of A." << endl;
   myMPQD->b.resize(myMesh->nZ*myMesh->nR);
   myMPQD->x.resize(myMesh->nZ*myMesh->nR);
   cout << "Set size of b." << endl;
-  myHeat->buildLinearSystem();
+  myMPQD->heat->buildLinearSystem();
   cout << "A: " << endl;   
   cout << myMPQD->A << endl;;
   cout << "b: " << endl;   
@@ -114,7 +120,20 @@ void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input){
   myMPQD->solveLinearSystem();
   cout << "x: " << endl;   
   cout << myMPQD->x << endl;;
-  myHeat->getTemp();
-  cout << myHeat->temp << endl;;
+  myMPQD->heat->getTemp();
+  cout << myMPQD->heat->temp << endl;;
+  
+}
+
+void testMultiGroupPrecursor(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input){
+  
+  MultiPhysicsCoupledQD * myMPQD; 
+  MultiGroupPrecursor * myMGP; 
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+  cout << myMPQD->dnps->beta << endl;
+  cout << myMPQD->dnps->betas << endl;
+  cout << myMPQD->dnps->lambdas << endl;
   
 }
