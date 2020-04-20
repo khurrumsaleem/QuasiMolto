@@ -13,7 +13,7 @@
 #include "../libs/QuasidiffusionSolver.h"
 #include "../libs/TransportToQDCoupling.h"
 #include "../libs/HeatTransfer.h"
-#include "../libs/MultiGroupPrecursor.h"
+#include "../libs/MultiGroupDNP.h"
 #include "../libs/MultiPhysicsCoupledQD.h"
 #include "../libs/MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
@@ -130,7 +130,7 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   YAML::Node * input){
   
   MultiPhysicsCoupledQD * myMPQD; 
-  MultiGroupPrecursor * myMGP; 
+  MultiGroupDNP * myMGP; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
   cout << myMPQD->dnps->beta << endl;
   

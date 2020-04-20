@@ -6,7 +6,7 @@
 
 #include "MultiPhysicsCoupledQD.h"
 #include "HeatTransfer.h"
-#include "MultiGroupPrecursor.h"
+#include "MultiGroupDNP.h"
 
 using namespace std;
 
@@ -25,7 +25,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 
   // Initialize multiphysics objects
   heat = new HeatTransfer(mats,mesh,input,this);
-  dnps = new MultiGroupPrecursor(mats,mesh,input,this);
+  dnps = new MultiGroupDNP(mats,mesh,input,this);
 };
 //==============================================================================
 

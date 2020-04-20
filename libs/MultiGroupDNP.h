@@ -1,5 +1,5 @@
-#ifndef MultiGroupPrecursor_H
-#define MultiGroupPrecursor_H
+#ifndef MultiGroupDNP_H
+#define MultiGroupDNP_H
 
 #include "Mesh.h"
 #include "Materials.h"
@@ -7,20 +7,20 @@
 using namespace std;
 
 class MultiPhysicsCoupledQD;
-class SingleGroupPrecursor; 
+class SingleGroupDNP; 
 
 //==============================================================================
 //! Container for all precursor group
 
-class MultiGroupPrecursor
+class MultiGroupDNP
 {
   public:
   // Define default six group delayed neutron precursor data
   //Eigen::VectorXd betas;
   //Eigen::VectorXd lambdas;
   double beta;
-  vector< shared_ptr<SingleGroupPrecursor> > DNPs; 
-  MultiGroupPrecursor(Materials * myMats,\
+  vector< shared_ptr<SingleGroupDNP> > DNPs; 
+  MultiGroupDNP(Materials * myMats,\
     Mesh * myMesh,\
     YAML::Node * myInput,\
     MultiPhysicsCoupledQD * myMPQD);

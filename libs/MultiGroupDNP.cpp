@@ -1,18 +1,18 @@
-// File: MultiGroupPrecursor.cpp     
+// File: MultiGroupDNP.cpp     
 // Purpose: Container for all precursor groups
 // Date: April 9, 2020
 
-#include "MultiGroupPrecursor.h"
+#include "MultiGroupDNP.h"
 #include "MultiPhysicsCoupledQD.h"
-#include "SingleGroupPrecursor.h"
+#include "SingleGroupDNP.h"
 
 using namespace std;
 
 //==============================================================================
-/// MultiGroupPrecursor class object constructor
+/// MultiGroupDNP class object constructor
 ///
 /// @param [in] blankType blank for this material
-MultiGroupPrecursor::MultiGroupPrecursor(Materials * myMats,\
+MultiGroupDNP::MultiGroupDNP(Materials * myMats,\
 Mesh * myMesh,\
 YAML::Node * myInput,\
 MultiPhysicsCoupledQD * myMPQD)
@@ -33,7 +33,7 @@ MultiPhysicsCoupledQD * myMPQD)
 //==============================================================================
 /// readInput Read in input parameters for DNPs
 ///
-void MultiGroupPrecursor::readInput()
+void MultiGroupDNP::readInput()
 {
   
   // Temporary vector for beta and lambda input params
@@ -76,7 +76,7 @@ void MultiGroupPrecursor::readInput()
   }
   
   for (int iGroup = 0; iGroup < betas.size(); ++iGroup){
-    shared_ptr<SingleGroupPrecursor> SGDNP (new SingleGroupPrecursor(this,\
+    shared_ptr<SingleGroupDNP> SGDNP (new SingleGroupDNP(this,\
       betas(iGroup),lambdas(iGroup)));
     DNPs.push_back(std::move(SGDNP));
   }

@@ -1,23 +1,23 @@
-// File: SingleGroupPrecursor.cpp     
+// File: SingleGroupDNP.cpp     
 // Purpose: Contains information and builds linear system for a precursor group
 // Date: April 9, 2020
 
-#include "SingleGroupPrecursor.h"
-#include "MultiGroupPrecursor.h"
+#include "SingleGroupDNP.h"
+#include "MultiGroupDNP.h"
 
 using namespace std;
 
 //==============================================================================
-/// SingleGroupPrecursor class object constructor
+/// SingleGroupDNP class object constructor
 ///
 /// @param [in] blankType blank for this material
-SingleGroupPrecursor::SingleGroupPrecursor(MultiGroupPrecursor * myMGP,\
+SingleGroupDNP::SingleGroupDNP(MultiGroupDNP * myMGDNP,\
   double myBeta,\
   double myLambda)
 {
 
   // Assign inputs to their member variables
-  dnps = myMGP;
+  dnps = myMGDNP;
   beta = myBeta;
   lambda = myLambda;  
 };

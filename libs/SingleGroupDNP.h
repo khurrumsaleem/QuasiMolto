@@ -1,26 +1,26 @@
-#ifndef SingleGroupPrecursor_H
-#define SingleGroupPrecursor_H
+#ifndef SingleGroupDNP_H
+#define SingleGroupDNP_H
 
 #include "Mesh.h"
 
 using namespace std;
 
-class MultiGroupPrecursor; // forward declaration
+class MultiGroupDNP; // forward declaration
 
 //==============================================================================
 //! Contains information and builds linear system for a single precursor group
 
-class SingleGroupPrecursor
+class SingleGroupDNP
 {
   public:
-  SingleGroupPrecursor(MultiGroupPrecursor * myMGP,\
+  SingleGroupDNP(MultiGroupDNP * myMGDNPS,\
     double myBeta,\
     double myLambda);
   double beta; 
   double lambda; 
 
   private: 
-  MultiGroupPrecursor * dnps;
+  MultiGroupDNP * dnps;
 };
 
 //==============================================================================

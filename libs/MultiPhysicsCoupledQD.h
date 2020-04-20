@@ -7,7 +7,7 @@
 using namespace std;
 
 class HeatTransfer;
-class MultiGroupPrecursor;
+class MultiGroupDNP;
 
 //==============================================================================
 //! Contains precursor, heat, and grey group quasidiffusion objects.
@@ -26,7 +26,7 @@ class MultiPhysicsCoupledQD
   void fluxSource(int iZ,int iR,int iEq,double coeff);
   void solveLinearSystem();
   HeatTransfer * heat;
-  MultiGroupPrecursor * dnps;
+  MultiGroupDNP * dnps;
 
   private:
   Materials * mats;

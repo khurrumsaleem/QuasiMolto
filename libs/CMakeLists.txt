@@ -11,8 +11,8 @@ add_library(libs
         QuasidiffusionSolver.cpp
 	MMS.cpp
         Material.cpp
-        SingleGroupPrecursor.cpp
-        MultiGroupPrecursor.cpp
+        SingleGroupDNP.cpp
+        MultiGroupDNP.cpp
         MultiGroupQDToMultiPhysicsQDCoupling.cpp
         GreyGroupQD.cpp
         MultiPhysicsCoupledQD.cpp
