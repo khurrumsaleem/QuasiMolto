@@ -3,6 +3,7 @@
 // Date: April 9, 2020
 
 #include "SingleGroupPrecursor.h"
+#include "MultiGroupPrecursor.h"
 
 using namespace std;
 
@@ -10,8 +11,14 @@ using namespace std;
 /// SingleGroupPrecursor class object constructor
 ///
 /// @param [in] blankType blank for this material
-SingleGroupPrecursor::SingleGroupPrecursor()
+SingleGroupPrecursor::SingleGroupPrecursor(MultiGroupPrecursor * myMGP,\
+  double myBeta,\
+  double myLambda)
 {
+
   // Assign inputs to their member variables
+  dnps = myMGP;
+  beta = myBeta;
+  lambda = myLambda;  
 };
 //==============================================================================

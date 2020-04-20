@@ -5,13 +5,22 @@
 
 using namespace std;
 
+class MultiGroupPrecursor; // forward declaration
+
 //==============================================================================
 //! Contains information and builds linear system for a single precursor group
 
 class SingleGroupPrecursor
 {
   public:
-  SingleGroupPrecursor();
+  SingleGroupPrecursor(MultiGroupPrecursor * myMGP,\
+    double myBeta,\
+    double myLambda);
+  double beta; 
+  double lambda; 
+
+  private: 
+  MultiGroupPrecursor * dnps;
 };
 
 //==============================================================================
