@@ -26,7 +26,9 @@ class SingleGroupDNP
   int getIndex(int iZ,int iR);
   void calcDiracs();
   void calcFluxes();
-  void getConc(); 
+  void getConc();
+  double calcPhi(double theta,string fluxLimiter); 
+  double calcTheta(double TupwindInterface,double Tinterface);
 
   private: 
   Materials * mats;

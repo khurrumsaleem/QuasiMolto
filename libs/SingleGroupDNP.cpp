@@ -65,12 +65,8 @@ int SingleGroupDNP::getIndex(int iZ, int iR)
 //==============================================================================
 
 //==============================================================================
-/// Map 2D coordinates to index of delayed neutron precursor concentration in 
-/// the 1D solution vector
+/// Map solution in 1D vector to 2D solution
 ///
-/// @param [in] iZ axial location
-/// @param [in] iR radial location
-/// @param [out] index the index for temperature in the 1D solution vector
 void SingleGroupDNP::getConc()
 {
 
@@ -84,5 +80,23 @@ void SingleGroupDNP::getConc()
     }
   }
   
+};
+//==============================================================================
+
+//==============================================================================
+/// Calculate phi factor in flux limiting scheme
+///
+void SingleGroupDNP::calcPhi(double theta,string fluxLimiter)
+{
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Calculate theta factor in flux limiting scheme
+///
+void SingleGroupDNP::calcTheta(double TupwdinInterface,double Tinterface)
+{
+
 };
 //==============================================================================
