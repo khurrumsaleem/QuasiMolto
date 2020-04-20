@@ -133,7 +133,5 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   MultiGroupPrecursor * myMGP; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
   cout << myMPQD->dnps->beta << endl;
-  cout << myMPQD->dnps->betas << endl;
-  cout << myMPQD->dnps->lambdas << endl;
   
 }
