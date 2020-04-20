@@ -76,7 +76,7 @@ void MultiGroupDNP::readInput()
   }
   
   for (int iGroup = 0; iGroup < betas.size(); ++iGroup){
-    shared_ptr<SingleGroupDNP> SGDNP (new SingleGroupDNP(this,\
+    shared_ptr<SingleGroupDNP> SGDNP (new SingleGroupDNP(mats,mesh,this,\
       betas(iGroup),lambdas(iGroup)));
     DNPs.push_back(std::move(SGDNP));
   }

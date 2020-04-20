@@ -11,13 +11,17 @@ using namespace std;
 /// SingleGroupDNP class object constructor
 ///
 /// @param [in] blankType blank for this material
-SingleGroupDNP::SingleGroupDNP(MultiGroupDNP * myMGDNP,\
+SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
+  Mesh * myMesh,\
+  MultiGroupDNP * myMGDNP,\
   double myBeta,\
   double myLambda)
 {
 
   // Assign inputs to their member variables
-  mgdnp = mgdnp;
+  mats = myMats;
+  mesh = myMesh;
+  mgdnp = myMGDNP;
   beta = myBeta;
   lambda = myLambda;  
 };

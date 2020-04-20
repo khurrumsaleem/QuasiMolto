@@ -2,6 +2,7 @@
 #define SingleGroupDNP_H
 
 #include "Mesh.h"
+#include "Materials.h"
 
 using namespace std;
 
@@ -13,13 +14,17 @@ class MultiGroupDNP; // forward declaration
 class SingleGroupDNP
 {
   public:
-  SingleGroupDNP(MultiGroupDNP * myMGDNPS,\
+  SingleGroupDNP(Materials * myMats,\
+    Mesh * myMesh,\
+    MultiGroupDNP * myMGDNPS,\
     double myBeta,\
     double myLambda);
   double beta; 
   double lambda; 
 
   private: 
+  Materials * mats;
+  Mesh * mesh;
   MultiGroupDNP * mgdnp;
 };
 
