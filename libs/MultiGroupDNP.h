@@ -25,12 +25,12 @@ class MultiGroupDNP
     YAML::Node * myInput,\
     MultiPhysicsCoupledQD * myMPQD);
   void readInput();
+  MultiPhysicsCoupledQD * mpqd;
 
   private:
   Materials * mats;
   YAML::Node * input;
   Mesh * mesh; 
-  MultiPhysicsCoupledQD * mpqd;
   
 };
 
