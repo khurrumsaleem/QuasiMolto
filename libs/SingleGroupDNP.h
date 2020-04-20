@@ -14,13 +14,19 @@ class MultiGroupDNP; // forward declaration
 class SingleGroupDNP
 {
   public:
+  Eigen::MatrixXd dnpConc;
+  double beta; 
+  double lambda;
+  int indexOffset = 0;
   SingleGroupDNP(Materials * myMats,\
     Mesh * myMesh,\
     MultiGroupDNP * myMGDNPS,\
     double myBeta,\
     double myLambda);
-  double beta; 
-  double lambda; 
+  int getIndex(int iZ,int iR);
+  void calcDiracs();
+  void calcFluxes();
+  void getConc(); 
 
   private: 
   Materials * mats;
