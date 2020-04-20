@@ -7,6 +7,7 @@
 using namespace std;
 
 class MultiPhysicsCoupledQD;
+class SingleGroupPrecursor; 
 
 //==============================================================================
 //! Container for all precursor group
@@ -15,9 +16,10 @@ class MultiGroupPrecursor
 {
   public:
   // Define default six group delayed neutron precursor data
-  Eigen::VectorXd betas;
-  Eigen::VectorXd lambdas;
+  //Eigen::VectorXd betas;
+  //Eigen::VectorXd lambdas;
   double beta;
+  vector< shared_ptr<SingleGroupPrecursor> > DNPs; 
   MultiGroupPrecursor(Materials * myMats,\
     Mesh * myMesh,\
     YAML::Node * myInput,\
