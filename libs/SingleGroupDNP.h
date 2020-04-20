@@ -17,6 +17,8 @@ class SingleGroupDNP
   Eigen::MatrixXd dnpConc;
   double beta; 
   double lambda;
+  int coreInletIndex,coreOutletIndex,recircInletIndex,recircOutletIndex;
+  string fluxLimiter = "superbee";
   int indexOffset = 0;
   SingleGroupDNP(Materials * myMats,\
     Mesh * myMesh,\
@@ -28,7 +30,7 @@ class SingleGroupDNP
   void calcFluxes();
   void getConc();
   double calcPhi(double theta,string fluxLimiter); 
-  double calcTheta(double TupwindInterface,double Tinterface);
+  double calcTheta(double DNPupwindInterface,double DNPinterface);
 
   private: 
   Materials * mats;
