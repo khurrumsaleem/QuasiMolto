@@ -144,3 +144,37 @@ double SingleGroupDNP::calcTheta(double DNPupwindInterface,double DNPinterface)
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Assign boundary indices depending on direction of flow velocity
+///
+void SingleGroupDNP::assignBoundaryIndices()
+{
+
+  // ToDo: add recirculation region to mesh object and fix the statements 
+  //    below
+
+  if (mats->posVelocity)
+  {
+    // Assign core indices
+    coreInletIndex = 0;
+    coreOutletIndex = mesh->nZ-1;
+
+    // Assign recirculation indices
+    recircInletIndex = mesh->nZ-1;
+    recircOutletIndex = 0;
+
+  } else
+  {
+    // Assign core indices
+    coreInletIndex = mesh->nZ-1;
+    coreOutletIndex = 0;
+    
+    // Assign recirculation indices
+    recircInletIndex = 0;
+    recircOutletIndex = mesh->nZ-1;
+  }
+ 
+};
+//==============================================================================
+
