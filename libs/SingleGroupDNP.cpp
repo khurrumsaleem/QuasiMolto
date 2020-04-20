@@ -17,7 +17,7 @@ SingleGroupDNP::SingleGroupDNP(MultiGroupDNP * myMGDNP,\
 {
 
   // Assign inputs to their member variables
-  dnps = myMGDNP;
+  mgdnp = mgdnp;
   beta = myBeta;
   lambda = myLambda;  
 };
