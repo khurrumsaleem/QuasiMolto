@@ -79,6 +79,7 @@ class Mesh
         // Functions
   	vector<int> getQDCellIndices(int iR, int iZ);
   	vector<double> getGeoParams(int iR, int iZ);
+  	vector<double> getRecircGeoParams(int iR, int iZ);
   	void calcQuadSet();
 	void printQuadSet();
 	

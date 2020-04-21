@@ -710,6 +710,35 @@ vector<double> Mesh::getGeoParams(int iR,int iZ)
 };
 //============================================================================== 
 
+//==============================================================================   /// Return geometry parameters for the cell located at (iR,iZ) of recirc loop
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [out] gParams vector containing volume and surfaces areas of the
+///   west, east, north, and south faces, in that order.
+vector<double> Mesh::getRecircGeoParams(int iR,int iZ)
+{
+  vector<double> gParams;
+  double rDown,rUp,zDown,zUp,volume,wFaceSA,eFaceSA,nFaceSA,sFaceSA;
+  // get boundaries of this cell
+  rDown = rCornerEdge(iR); rUp = rCornerEdge(iR+1);
+  zDown = zCornerEdgeRecirc(iR); zUp = zCornerEdgeRecirc(iR+1);
+  // calculate geometry parameters
+  volume = M_PI*(rUp*rUp-rDown*rDown)*(zUp-zDown);
+  nFaceSA = M_PI*(rUp*rUp-rDown*rDown);
+  sFaceSA = nFaceSA;
+  eFaceSA = 2*M_PI*rUp*(zUp-zDown);
+  wFaceSA = 2*M_PI*rDown*(zUp-zDown);
+  // add parameters to the vector and return it
+  gParams.push_back(volume);
+  gParams.push_back(wFaceSA);
+  gParams.push_back(eFaceSA);
+  gParams.push_back(nFaceSA);
+  gParams.push_back(sFaceSA);
+  return gParams;
+};
+//============================================================================== 
+
+
 //==============================================================================
 /// Calculate time mesh
 
