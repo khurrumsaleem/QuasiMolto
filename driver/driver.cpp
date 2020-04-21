@@ -14,6 +14,7 @@
 #include "../libs/TransportToQDCoupling.h"
 #include "../libs/HeatTransfer.h"
 #include "../libs/MultiGroupDNP.h"
+#include "../libs/SingleGroupDNP.h"
 #include "../libs/MultiPhysicsCoupledQD.h"
 #include "../libs/MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
@@ -134,4 +135,7 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
   cout << myMPQD->dnps->beta << endl;
   cout << "recirculation Z: " << myMesh->recircZ << endl;
+  myMPQD->dnps->DNPs[0]->assignBoundaryIndices();
+  myMPQD->dnps->DNPs[0]->updateBoundaryConditions();
+  cout << "Updated boundary conditions" << endl;
 }
