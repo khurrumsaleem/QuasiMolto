@@ -14,7 +14,9 @@ class MultiGroupDNP; // forward declaration
 class SingleGroupDNP
 {
   public:
-  Eigen::MatrixXd dnpConc,recircConc;
+  Eigen::MatrixXd dnpConc,recircConc,flux,recircFlux,dirac,recircDirac;
+  Eigen::MatrixXd inletConc,recircInletConc;
+  Eigen::VectorXd inletVelocity,recircInletVelocity,outletConc,recircOutletConc;
   double beta; 
   double lambda;
   int coreInletIndex,coreOutletIndex,recircInletIndex,recircOutletIndex;
@@ -27,7 +29,9 @@ class SingleGroupDNP
     double myLambda);
   int getIndex(int iZ,int iR);
   void assignBoundaryIndices();
-  void calcDiracs();
+  Eigen::MatrixXd calcDiracs(Eigen::MatrixXd dnpConc,\
+    Eigen::MatrixXd inletConc,\
+    Eigen::VectorXd outletConc);
   void calcFluxes();
   void getConc();
   double calcPhi(double theta,string fluxLimiter); 

@@ -24,15 +24,114 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   mesh = myMesh;
   mgdnp = myMGDNP;
   beta = myBeta;
-  lambda = myLambda;  
+  lambda = myLambda;
+
+  // Initialize size of matrices and vectors
+  dnpConc.setZero(mesh->nZ,mesh->nR);
+  flux.setZero(mesh->nZ+1,mesh->nR); 
+  dirac.setZero(mesh->nZ+1,mesh->nR);
+  recircConc.setZero(mesh->nZrecirc,mesh->nR); 
+  recircFlux.setZero(mesh->nZrecirc+1,mesh->nR); 
+  recircDirac.setZero(mesh->nZrecirc+1,mesh->nR); 
 };
 //==============================================================================
 
 //==============================================================================
 /// Calculate diracs to model advection of precursors
 ///
-void SingleGroupDNP::calcDiracs()
+Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
+  Eigen::MatrixXd inletConc,\
+  Eigen::VectorXd outletConc)
 {
+
+  Eigen::MatrixXd myDirac(dnpConc.cols()+1,dnpConc.rows());
+  double CupwindInterface,Cinterface,theta,phi;
+  int lastDiracIndex = myDirac.rows()-1;
+
+  if (mats->posVelocity) 
+  {
+    for (int iR = 0; iR < myDirac.cols(); iR++)
+    {
+      // Handle iZ=0 case
+      CupwindInterface = inletConc(1,iR) - inletConc(0,iR);
+      Cinterface = dnpConc(0,iR) - inletConc(1,iR);
+      theta = calcTheta(CupwindInterface,Cinterface);
+      phi = calcPhi(theta,fluxLimiter); 
+      myDirac(0,iR) = phi*Cinterface;
+
+      // Handle iZ=1 case
+      CupwindInterface = dnpConc(0,iR) - inletConc(1,iR);
+      Cinterface = dnpConc(1,iR) - dnpConc(0,iR);
+      theta = calcTheta(CupwindInterface,Cinterface);
+      phi = calcPhi(theta,fluxLimiter); 
+      myDirac(1,iR) = phi*Cinterface; 
+      
+      // Handle all other cases
+      for (int iZ = 2; iZ < myDirac.rows()-1; iZ++)
+      {
+
+        CupwindInterface = dnpConc(iZ-1,iR) - dnpConc(iZ-2,iR);
+        Cinterface = dnpConc(iZ,iR) - dnpConc(iZ-1,iR);
+        theta = calcTheta(CupwindInterface,Cinterface);
+        phi = calcPhi(theta,fluxLimiter); 
+        myDirac(iZ,iR) = phi*Cinterface; 
+        
+      }
+
+      // Handle iZ = nZ case
+      CupwindInterface = dnpConc(lastDiracIndex-1,iR)\
+        - dnpConc(lastDiracIndex-2,iR);
+      Cinterface = outletConc(iR) - dnpConc(lastDiracIndex-1,iR);
+      theta = calcTheta(CupwindInterface,Cinterface);
+      phi = calcPhi(theta,fluxLimiter); 
+      myDirac(lastDiracIndex,iR) = phi*Cinterface; 
+
+    }
+  } else 
+  {
+    for (int iR = 0; iR < myDirac.cols(); iR++)
+    {
+      // Handle iZ=0 case
+      CupwindInterface = dnpConc(1,iR) - dnpConc(0,iR);
+      Cinterface = dnpConc(0,iR) - outletConc(iR);
+      theta = calcTheta(CupwindInterface,Cinterface);
+      phi = calcPhi(theta,fluxLimiter); 
+      myDirac(0,iR) = phi*Cinterface; 
+      
+      // Handle all other cases
+      for (int iZ = 1; iZ < myDirac.rows()-2; iZ++)
+      {
+
+        CupwindInterface = dnpConc(iZ+1,iR) - dnpConc(iZ,iR);
+        Cinterface = dnpConc(iZ,iR) - dnpConc(iZ-1,iR);
+        theta = calcTheta(CupwindInterface,Cinterface);
+        phi = calcPhi(theta,fluxLimiter); 
+        myDirac(iZ,iR) = phi*Cinterface; 
+        
+      }
+
+      // Handle iZ = nZ-1 case
+      CupwindInterface = inletConc(0,iR) - dnpConc(lastDiracIndex-1,iR);
+      Cinterface = dnpConc(lastDiracIndex-1,iR) - dnpConc(lastDiracIndex-2,iR);
+      theta = calcTheta(CupwindInterface,Cinterface);
+      phi = calcPhi(theta,fluxLimiter); 
+      myDirac(lastDiracIndex-1,iR) = phi*Cinterface; 
+
+      // Handle iZ = nZ case
+      CupwindInterface = inletConc(1,iR) - inletConc(0,iR);
+      Cinterface = inletConc(0,iR) - dnpConc(lastDiracIndex-1,iR);
+      theta = calcTheta(CupwindInterface,Cinterface);
+      phi = calcPhi(theta,fluxLimiter); 
+      myDirac(lastDiracIndex,iR) = phi*Cinterface; 
+    }
+
+  }
+  
+  cout << "calculated diracs" << endl;
+  cout << myDirac << endl;
+
+  return myDirac;
+
 };
 //==============================================================================
 
@@ -151,14 +250,11 @@ double SingleGroupDNP::calcTheta(double DNPupwindInterface,double DNPinterface)
 void SingleGroupDNP::assignBoundaryIndices()
 {
 
-  // ToDo: add recirculation region to mesh object and fix the statements 
-  //    below
-
   if (mats->posVelocity)
   {
     // Assign core indices
-    coreInletIndex = 0;
-    coreOutletIndex = mesh->nZ-1;
+    coreInletIndex = mesh->nZrecirc-1;
+    coreOutletIndex = 0;
 
     // Assign recirculation indices
     recircInletIndex = mesh->nZ-1;
@@ -167,8 +263,8 @@ void SingleGroupDNP::assignBoundaryIndices()
   } else
   {
     // Assign core indices
-    coreInletIndex = mesh->nZ-1;
-    coreOutletIndex = 0;
+    coreInletIndex = 0;
+    coreOutletIndex = mesh->nZrecirc-1;
     
     // Assign recirculation indices
     recircInletIndex = 0;
