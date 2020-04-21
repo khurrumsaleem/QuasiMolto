@@ -69,6 +69,14 @@ class Mesh
         rowvec zCornerCent;
         vector<quadLevel> quadrature;
 	vector<qdCell> qdCells; 
+
+        // Recirculation loop parameters
+        double dzCornerRecirc,recircZ;
+        int nZrecirc;
+	rowvec zCornerEdgeRecirc,dzsCornerRecirc;
+        rowvec zCornerCentRecirc;
+
+        // Functions
   	vector<int> getQDCellIndices(int iR, int iZ);
   	vector<double> getGeoParams(int iR, int iZ);
   	void calcQuadSet();
@@ -85,6 +93,7 @@ class Mesh
         void addLevels();
  	void calcNumAnglesTotalWeight();
  	void calcTimeMesh();
+  	void calcRecircMesh();
 	int quad_index(int p,int q);
 	int low_quad_index(int p,int q);
 	int getQDCellIndex(int iR,int iZ);

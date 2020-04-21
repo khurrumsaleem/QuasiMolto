@@ -76,9 +76,13 @@ Mesh::Mesh(YAML::Node * myInput){
   Z = (*input)["mesh"]["Z"].as<double>();
   R = (*input)["mesh"]["R"].as<double>();
   dt = (*input)["mesh"]["dt"].as<double>();
-  
 
-  
+  // Check for recirculation length
+  if ((*input)["mesh"]["recirculation Z"])
+    recircZ = (*input)["mesh"]["recirculation Z"].as<double>();
+  else
+    recircZ = Z;
+
   // Set up the mesh and quadrature set
   calcSpatialMesh();
   calcQuadSet();
@@ -441,6 +445,9 @@ void Mesh::calcSpatialMesh(){
     }
   }
 
+  // Calculate mesh data for recirculation loop
+  calcRecircMesh();
+
   // Initialize qdCells vector
   for (int iZ = 0; iZ < nCornersZ; ++iZ){
     for (int iR = 0; iR < nCornersR; ++iR){
@@ -454,6 +461,46 @@ void Mesh::calcSpatialMesh(){
   
 }
 //==============================================================================
+
+//==============================================================================
+/// Build spatial mesh for recirculation mesh
+
+void Mesh::calcRecircMesh(){
+
+  int nCornersZ;
+  dzCornerRecirc = dz/2;
+
+  // Calculate number of cells
+  nCornersZ = recircZ/dzCorner;
+
+  // Resize vectors storing dimensions of each cell
+  dzsCornerRecirc.zeros(nCornersZ);
+  dzsCornerRecirc.fill(dzCorner);
+
+  // Resize vector holding boundaries in each dimension
+  zCornerEdgeRecirc.zeros(nCornersZ+1);
+  
+  // Resize cell center location in each dimension
+  zCornerCentRecirc.zeros(nCornersZ);
+
+  // Populate vectors holding corner boundaries in each dimension
+  for (int iEdge = 1; iEdge < zCornerEdge.n_elem; ++iEdge){
+    zCornerEdgeRecirc(iEdge) = zCornerEdgeRecirc(iEdge-1) + \
+      dzsCornerRecirc(iEdge-1);
+  }
+  
+  // Populate vectors holding corner center location in each dimension
+  for (int iCent = 0; iCent < zCornerCent.n_elem; ++iCent){
+    zCornerCentRecirc(iCent) = (zCornerEdgeRecirc(iCent) + \
+      zCornerEdgeRecirc(iCent+1))/2.0;
+  }
+
+  // Set number of corners in axial and radial directions
+  nZrecirc = zCornerCentRecirc.size();
+
+}
+//==============================================================================
+
 
 //==============================================================================
 void Mesh::calcQDCellIndices(int nCornersR,int nCornersZ)
