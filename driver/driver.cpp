@@ -133,5 +133,5 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   MultiGroupDNP * myMGP; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
   cout << myMPQD->dnps->beta << endl;
-  
+  cout << "recirculation Z: " << myMesh->recircZ << endl;
 }
