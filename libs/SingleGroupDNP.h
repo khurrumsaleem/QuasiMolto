@@ -29,6 +29,7 @@ class SingleGroupDNP
     double myLambda);
   int getIndex(int iZ,int iR);
   void assignBoundaryIndices();
+  void updateBoundaryConditions();
   Eigen::MatrixXd calcDiracs(Eigen::MatrixXd dnpConc,\
     Eigen::MatrixXd inletConc,\
     Eigen::VectorXd outletConc);

@@ -32,7 +32,14 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   dirac.setZero(mesh->nZ+1,mesh->nR);
   recircConc.setZero(mesh->nZrecirc,mesh->nR); 
   recircFlux.setZero(mesh->nZrecirc+1,mesh->nR); 
-  recircDirac.setZero(mesh->nZrecirc+1,mesh->nR); 
+  recircDirac.setZero(mesh->nZrecirc+1,mesh->nR);
+  inletConc.setZero(2,mesh->nR);
+  recircInletConc.setZero(2,mesh->nR);
+  inletVelocity.setZero(mesh->nR);
+  recircInletVelocity.setZero(mesh->nR);
+  outletConc.setZero(mesh->nR);
+  recircOutletConc.setZero(mesh->nR);
+ 
 };
 //==============================================================================
 
@@ -273,4 +280,41 @@ void SingleGroupDNP::assignBoundaryIndices()
  
 };
 //==============================================================================
+
+//==============================================================================
+/// Update boundary conditions 
+///
+void SingleGroupDNP::updateBoundaryConditions()
+{
+  cout << "inletConc:"<<inletConc << endl;
+  cout << "recircInletConc: "<<recircInletConc << endl;
+  cout << "coreInletIndex: " << coreInletIndex << endl;
+  cout << "recircInletIndex: " << recircInletIndex << endl;
+
+  // Update variables with array splicing
+  if (mats->posVelocity)
+  {
+    inletConc = recircConc(Eigen::seq(coreInletIndex-1,coreInletIndex),\
+      Eigen::all);
+    recircInletConc = dnpConc(Eigen::seq(recircInletIndex-1,recircInletIndex),\
+      Eigen::all);
+  } else
+  {
+    inletConc = recircConc(Eigen::seq(coreInletIndex,coreInletIndex+1),\
+      Eigen::all);
+    recircInletConc = dnpConc(Eigen::seq(recircInletIndex,recircInletIndex+1),\
+      Eigen::all);
+  }
+  
+  cout << "inletConc:"<<inletConc << endl;
+  cout << "recircInletConc: "<<recircInletConc << endl;
+  
+  outletConc = recircConc.row(coreOutletIndex);   
+  inletVelocity = mats->flowVelocity.row(recircInletIndex);
+  recircOutletConc = dnpConc.row(recircOutletIndex);   
+  recircInletVelocity = mats->flowVelocity.row(recircInletIndex);
+  
+};
+//==============================================================================
+
 
