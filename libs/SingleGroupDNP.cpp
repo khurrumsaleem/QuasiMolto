@@ -27,10 +27,10 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   lambda = myLambda;
 
   // Initialize size of matrices and vectors
-  dnpConc.setZero(mesh->nZ,mesh->nR);
+  dnpConc.setOnes(mesh->nZ,mesh->nR);
   flux.setZero(mesh->nZ+1,mesh->nR); 
   dirac.setZero(mesh->nZ+1,mesh->nR);
-  recircConc.setZero(mesh->nZrecirc,mesh->nR); 
+  recircConc.setOnes(mesh->nZrecirc,mesh->nR); 
   recircFlux.setZero(mesh->nZrecirc+1,mesh->nR); 
   recircDirac.setZero(mesh->nZrecirc+1,mesh->nR);
   inletConc.setZero(2,mesh->nR);
@@ -51,7 +51,7 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
   Eigen::VectorXd outletConc)
 {
 
-  Eigen::MatrixXd myDirac(dnpConc.cols()+1,dnpConc.rows());
+  Eigen::MatrixXd myDirac(dnpConc.rows()+1,dnpConc.cols());
   double CupwindInterface,Cinterface,theta,phi;
   int lastDiracIndex = myDirac.rows()-1;
 
@@ -91,8 +91,8 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
       Cinterface = outletConc(iR) - dnpConc(lastDiracIndex-1,iR);
       theta = calcTheta(CupwindInterface,Cinterface);
       phi = calcPhi(theta,fluxLimiter); 
-      myDirac(lastDiracIndex,iR) = phi*Cinterface; 
-
+      myDirac(lastDiracIndex,iR) = phi*Cinterface;
+      
     }
   } else 
   {
@@ -145,8 +145,69 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
 //==============================================================================
 /// Calculate fluxes to model advection of precursors
 ///
-void SingleGroupDNP::calcFluxes()
+Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
+  Eigen::MatrixXd myFlowVelocity,\
+  Eigen::MatrixXd myDirac,\
+  Eigen::MatrixXd myInletConc,\
+  Eigen::VectorXd myInletVelocity,\
+  rowvec dzs)
 {
+
+  Eigen::MatrixXd myFlux;
+  double vel; // shorthand for velocity
+  int lastFluxIndex = myDirac.rows()-1;
+
+  myFlux.setZero(myDirac.rows(),myDirac.cols());
+ 
+  if (mats->posVelocity) {
+
+    for (int iR = 0; iR < myFlux.cols(); iR++)
+    {
+      // Handle iZ = 0 case
+      vel = myInletVelocity(iR);
+      myFlux(0,iR) = vel*myInletConc(1,iR)\
+        + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(0)))\
+        *myDirac(0,iR);
+
+      // Handle all other cases
+      for (int iZ = 1; iZ < myFlux.rows(); iZ++)
+      {
+        vel = myFlowVelocity(iZ-1,iR);
+        myFlux(iZ,iR) = vel*myDNPConc(iZ-1,iR)\
+          + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(iZ-1)))\
+          *myDirac(iZ,iR);
+      }
+
+    }
+    
+  } else
+  {
+
+    for (int iR = 0; iR < myFlux.cols(); iR++)
+    {
+
+      // Handle all other cases
+      for (int iZ = 0; iZ < myFlux.rows()-1; iZ++)
+      {
+        vel = myFlowVelocity(iZ,iR);
+        myFlux(iZ,iR) = vel*myDNPConc(iZ,iR)\
+          + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(iZ)))*myDirac(iZ,iR);
+      }
+      
+      // Handle iZ = nZ case
+      vel = myInletVelocity(iR);
+      myFlux(lastFluxIndex,iR) = vel*myInletConc(0,iR)\
+        + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(lastFluxIndex-1)))\
+        *myDirac(lastFluxIndex,iR);
+
+    }
+  }
+  
+  cout << "calculated fluxes" << endl;
+  cout << myFlux << endl;
+
+  return myFlux;
+
 };
 //==============================================================================
 
@@ -250,6 +311,52 @@ double SingleGroupDNP::calcTheta(double DNPupwindInterface,double DNPinterface)
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Calculate theta factor in flux limiting scheme
+///
+void SingleGroupDNP::calcRecircDNPFluxes()
+{
+
+  Eigen::MatrixXd recircDirac,recircFlux;
+
+  recircDirac = calcDiracs(recircConc,\
+    recircInletConc,\
+    recircOutletConc);
+
+  recircFlux = calcFluxes(recircConc,\
+    mats->recircFlowVelocity,\
+    recircDirac,\
+    recircInletConc,\
+    recircInletVelocity,\
+    mesh->dzsCornerRecirc);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Calculate theta factor in flux limiting scheme
+///
+void SingleGroupDNP::calcCoreDNPFluxes()
+{
+
+  Eigen::MatrixXd coreDirac,coreFlux;
+
+  coreDirac = calcDiracs(dnpConc,\
+    inletConc,\
+    outletConc);
+
+  coreFlux = calcFluxes(dnpConc,\
+    mats->flowVelocity,\
+    coreDirac,\
+    inletConc,\
+    inletVelocity,\
+    mesh->dzsCorner);
+
+};
+//==============================================================================
+
+
 
 //==============================================================================
 /// Assign boundary indices depending on direction of flow velocity

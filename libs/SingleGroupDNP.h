@@ -30,10 +30,17 @@ class SingleGroupDNP
   int getIndex(int iZ,int iR);
   void assignBoundaryIndices();
   void updateBoundaryConditions();
+  void calcRecircDNPFluxes();
+  void calcCoreDNPFluxes();
   Eigen::MatrixXd calcDiracs(Eigen::MatrixXd dnpConc,\
     Eigen::MatrixXd inletConc,\
     Eigen::VectorXd outletConc);
-  void calcFluxes();
+  Eigen::MatrixXd calcFluxes(Eigen::MatrixXd myDNPConc,\
+  Eigen::MatrixXd myFlowVelocity,\
+  Eigen::MatrixXd dirac,\
+  Eigen::MatrixXd inletConc,\
+  Eigen::VectorXd inletVelocity,\
+  rowvec dzs);
   void getConc();
   double calcPhi(double theta,string fluxLimiter); 
   double calcTheta(double DNPupwindInterface,double DNPinterface);
