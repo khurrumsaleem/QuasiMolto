@@ -17,6 +17,7 @@ class Materials
         CollapsedCrossSections * oneGroupXS;
 	Eigen::MatrixXi matMap; //resized later
 	Eigen::MatrixXd flowVelocity; 
+	Eigen::MatrixXd recircFlowVelocity; 
         Eigen::VectorXd neutV;
         int nGroups;
         bool posVelocity;

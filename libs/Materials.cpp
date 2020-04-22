@@ -28,8 +28,11 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
   // Initialize material map
   matMap.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   
-  // Initialize flow velocity matrix
+  // Initialize flow velocity matrix in core 
   flowVelocity.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+  
+  // Initialize flow velocity matrix in recirculation loop
+  recircFlowVelocity.setZero(mesh->nZrecirc,mesh->rCornerCent.size());
 
   // Read materials from input
   readMats();
@@ -193,6 +196,7 @@ void Materials::readFlowVelocity()
 {
 
   double inputFlowVelocity;
+  Eigen::VectorXd tempVelocity;
 
   if ((*input)["parameters"]["uniform flow velocity"])
     inputFlowVelocity = (*input)["parameters"]["uniform flow velocity"]\
@@ -217,7 +221,22 @@ void Materials::readFlowVelocity()
 
   cout << flowVelocity << endl;
   cout << posVelocity << endl;
-  
+
+  for (int iR = 0; iR < recircFlowVelocity.cols(); ++iR)
+  {
+    if (posVelocity)
+    {
+      tempVelocity.setConstant(mesh->nZrecirc,flowVelocity(Eigen::last,iR));
+      recircFlowVelocity(Eigen::all,iR) = tempVelocity;
+    }
+    else
+    {
+      tempVelocity.setConstant(mesh->nZrecirc,flowVelocity(0,iR));
+      recircFlowVelocity(Eigen::all,iR) = tempVelocity;
+    }
+  }
+  cout << "Recirc flow velocity" << endl;
+  cout << recircFlowVelocity << endl;
 };
 //==============================================================================
 
