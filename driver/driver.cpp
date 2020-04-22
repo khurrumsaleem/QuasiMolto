@@ -138,4 +138,6 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   myMPQD->dnps->DNPs[0]->assignBoundaryIndices();
   myMPQD->dnps->DNPs[0]->updateBoundaryConditions();
   cout << "Updated boundary conditions" << endl;
+  myMPQD->dnps->DNPs[0]->calcRecircDNPFluxes();
+  myMPQD->dnps->DNPs[0]->calcCoreDNPFluxes();
 }
