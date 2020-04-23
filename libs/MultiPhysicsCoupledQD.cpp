@@ -25,7 +25,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 
   // Initialize multiphysics objects
   heat = new HeatTransfer(mats,mesh,input,this);
-  dnps = new MultiGroupDNP(mats,mesh,input,this);
+  mgdnp = new MultiGroupDNP(mats,mesh,input,this);
 };
 //==============================================================================
 

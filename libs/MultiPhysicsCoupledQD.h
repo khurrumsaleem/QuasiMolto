@@ -26,7 +26,7 @@ class MultiPhysicsCoupledQD
   void fluxSource(int iZ,int iR,int iEq,double coeff);
   void solveLinearSystem();
   HeatTransfer * heat;
-  MultiGroupDNP * dnps;
+  MultiGroupDNP * mgdnp;
 
   private:
   Materials * mats;
