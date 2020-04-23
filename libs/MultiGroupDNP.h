@@ -18,7 +18,7 @@ class MultiGroupDNP
   // Define default six group delayed neutron precursor data
   double beta;
   vector< shared_ptr<SingleGroupDNP> > DNPs; 
-  Eigen::VectorXd recircb;
+  Eigen::VectorXd recircb,recircx;
   Eigen::SparseMatrix<double> recircA;
   MultiGroupDNP(Materials * myMats,\
     Mesh * myMesh,\
