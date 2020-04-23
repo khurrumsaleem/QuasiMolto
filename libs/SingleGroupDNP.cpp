@@ -51,17 +51,18 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
   Eigen::MatrixXd myDNPConc,\
   Eigen::MatrixXd myDNPFlux,\
   Eigen::MatrixXd mySigF,\
-  Eigen::MatrixXd dzs)
+  rowvec dzs,\
+  int myIndexOffset)
 {
 
-  int myIndex,iEq = indexOffset;
+  int myIndex,iEq = myIndexOffset;
   double coeff;
   
   for (int iR = 0; iR < myDNPConc.cols(); iR++)
   {
     for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
     {
-      myIndex = getIndex(iZ,iR);     
+      myIndex = getIndex(iZ,iR,myIndexOffset);     
 
       myA->coeffRef(iEq,myIndex) = 1 - mesh->dt*lambda; 
       
@@ -253,15 +254,14 @@ Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
 };
 //==============================================================================
 
-
 //==============================================================================
 /// Map 2D coordinates to index of delayed neutron precursor concentration in 
-/// the 1D solution vector
+/// the 1D solution
 ///
 /// @param [in] iZ axial location
 /// @param [in] iR radial location
 /// @param [out] index the index for dnp concentration in the 1D solution vector
-int SingleGroupDNP::getIndex(int iZ, int iR)
+int SingleGroupDNP::getIndex(int iZ, int iR,int indexOffset)
 {
 
   int index,nR = mesh->drsCorner.size();
@@ -276,7 +276,7 @@ int SingleGroupDNP::getIndex(int iZ, int iR)
 //==============================================================================
 /// Map solution in 1D vector to 2D solution
 ///
-void SingleGroupDNP::getConc()
+void SingleGroupDNP::getCoreConc()
 {
 
   for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
@@ -284,13 +284,33 @@ void SingleGroupDNP::getConc()
     for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
     { 
     
-      dnpConc(iZ,iR) = mgdnp->mpqd->x(getIndex(iZ,iR));   
+      dnpConc(iZ,iR) = mgdnp->mpqd->x(getIndex(iZ,iR,coreIndexOffset));   
     
     }
   }
   
 };
 //==============================================================================
+
+//==============================================================================
+/// Map solution in 1D vector to 2D solution
+///
+void SingleGroupDNP::getRecircConc()
+{
+
+  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
+    { 
+    
+      recircConc(iZ,iR) = mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset));   
+    
+    }
+  }
+  
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Calculate phi factor in flux limiting scheme
@@ -398,7 +418,67 @@ void SingleGroupDNP::calcCoreDNPFluxes()
 };
 //==============================================================================
 
+//==============================================================================
+/// Calculate theta factor in flux limiting scheme
+///
+void SingleGroupDNP::buildRecircLinearSystem()
+{
 
+  Eigen::MatrixXd recircDirac,recircFlux,dumbySigF;
+
+  // Assume there are no source terms in the recirculation loop 
+  dumbySigF.setZero(mesh->nZrecirc,mesh->nR);
+
+  recircDirac = calcDiracs(recircConc,\
+    inletConc,\
+    outletConc);
+
+  recircFlux = calcFluxes(recircConc,\
+    mats->recircFlowVelocity,\
+    recircDirac,\
+    recircInletConc,\
+    recircInletVelocity,\
+    mesh->dzsCornerRecirc);
+
+  buildLinearSystem(&(mgdnp->recircA),\
+    &(mgdnp->recircb),\
+    recircConc,\
+    recircFlux,\
+    dumbySigF,\
+    mesh->dzsCornerRecirc,\
+    recircIndexOffset);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Calculate theta factor in flux limiting scheme
+///
+void SingleGroupDNP::buildCoreLinearSystem()
+{
+
+  Eigen::MatrixXd coreDirac,coreFlux;
+
+  coreDirac = calcDiracs(dnpConc,\
+    inletConc,\
+    outletConc);
+
+  coreFlux = calcFluxes(dnpConc,\
+    mats->flowVelocity,\
+    coreDirac,\
+    inletConc,\
+    inletVelocity,\
+    mesh->dzsCorner);
+
+  buildLinearSystem(&(mgdnp->mpqd->A),\
+    &(mgdnp->mpqd->b),\
+    dnpConc,\
+    coreFlux,\
+    mats->oneGroupXS->sigF,\
+    mesh->dzsCorner,\
+    coreIndexOffset);
+};
+//==============================================================================
 
 //==============================================================================
 /// Assign boundary indices depending on direction of flow velocity

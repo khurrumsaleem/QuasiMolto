@@ -21,33 +21,38 @@ class SingleGroupDNP
   double lambda;
   int coreInletIndex,coreOutletIndex,recircInletIndex,recircOutletIndex;
   string fluxLimiter = "superbee";
-  int indexOffset = 0;
+  int coreIndexOffset = 0;
+  int recircIndexOffset = 0;
   SingleGroupDNP(Materials * myMats,\
     Mesh * myMesh,\
     MultiGroupDNP * myMGDNPS,\
     double myBeta,\
     double myLambda);
-  int getIndex(int iZ,int iR);
+  int getIndex(int iZ,int iR,int indexOffset);
   void assignBoundaryIndices();
   void updateBoundaryConditions();
   void calcRecircDNPFluxes();
   void calcCoreDNPFluxes();
+  void buildRecircLinearSystem();
+  void buildCoreLinearSystem();
   void buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
     Eigen::VectorXd * myb,\
     Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myDNPFlux,\
     Eigen::MatrixXd mySigF,\
-    Eigen::MatrixXd dzs);
+    rowvec dzs,\
+    int myIndexOffset);
   Eigen::MatrixXd calcDiracs(Eigen::MatrixXd dnpConc,\
     Eigen::MatrixXd inletConc,\
     Eigen::VectorXd outletConc);
   Eigen::MatrixXd calcFluxes(Eigen::MatrixXd myDNPConc,\
-  Eigen::MatrixXd myFlowVelocity,\
-  Eigen::MatrixXd dirac,\
-  Eigen::MatrixXd inletConc,\
-  Eigen::VectorXd inletVelocity,\
-  rowvec dzs);
-  void getConc();
+    Eigen::MatrixXd myFlowVelocity,\
+    Eigen::MatrixXd dirac,\
+    Eigen::MatrixXd inletConc,\
+    Eigen::VectorXd inletVelocity,\
+    rowvec dzs);
+  void getCoreConc();
+  void getRecircConc();
   double calcPhi(double theta,string fluxLimiter); 
   double calcTheta(double DNPupwindInterface,double DNPinterface);
 
