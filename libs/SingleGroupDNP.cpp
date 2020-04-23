@@ -44,6 +44,48 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
 //==============================================================================
 
 //==============================================================================
+/// Build linear system for this precursor group
+///
+void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
+  Eigen::VectorXd * myb,\
+  Eigen::MatrixXd myDNPConc,\
+  Eigen::MatrixXd myDNPFlux,\
+  Eigen::MatrixXd mySigF,\
+  Eigen::MatrixXd dzs)
+{
+
+  int myIndex,iEq = indexOffset;
+  double coeff;
+  
+  for (int iR = 0; iR < myDNPConc.cols(); iR++)
+  {
+    for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
+    {
+      myIndex = getIndex(iZ,iR);     
+
+      myA->coeffRef(iEq,myIndex) = 1 - mesh->dt*lambda; 
+      
+      // Time term
+      (*myb)(iEq) = myDNPConc(iZ,iR);
+
+      // Flux source term 
+      coeff = mesh->dt*beta*mySigF(iZ,iR);
+      mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
+
+      // Advection term
+      (*myb)(iEq) += (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
+
+      // Iterate equation count
+      iEq = iEq + 1;
+  
+    }
+  }
+
+};
+//==============================================================================
+
+
+//==============================================================================
 /// Calculate diracs to model advection of precursors
 ///
 Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\

@@ -32,6 +32,12 @@ class SingleGroupDNP
   void updateBoundaryConditions();
   void calcRecircDNPFluxes();
   void calcCoreDNPFluxes();
+  void buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
+    Eigen::VectorXd * myb,\
+    Eigen::MatrixXd myDNPConc,\
+    Eigen::MatrixXd myDNPFlux,\
+    Eigen::MatrixXd mySigF,\
+    Eigen::MatrixXd dzs);
   Eigen::MatrixXd calcDiracs(Eigen::MatrixXd dnpConc,\
     Eigen::MatrixXd inletConc,\
     Eigen::VectorXd outletConc);
