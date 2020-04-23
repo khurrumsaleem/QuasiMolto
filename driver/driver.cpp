@@ -133,11 +133,23 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   MultiPhysicsCoupledQD * myMPQD; 
   MultiGroupDNP * myMGP; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
-  cout << myMPQD->dnps->beta << endl;
+  cout << myMPQD->mgdnp->beta << endl;
   cout << "recirculation Z: " << myMesh->recircZ << endl;
-  myMPQD->dnps->DNPs[0]->assignBoundaryIndices();
-  myMPQD->dnps->DNPs[0]->updateBoundaryConditions();
+  myMPQD->mgdnp->DNPs[0]->assignBoundaryIndices();
+  myMPQD->mgdnp->DNPs[0]->updateBoundaryConditions();
   cout << "Updated boundary conditions" << endl;
-  myMPQD->dnps->DNPs[0]->calcRecircDNPFluxes();
-  myMPQD->dnps->DNPs[0]->calcCoreDNPFluxes();
+  myMPQD->mgdnp->DNPs[0]->calcRecircDNPFluxes();
+  myMPQD->mgdnp->DNPs[0]->calcCoreDNPFluxes();
+  cout << "Setting size of A and b..." << endl;
+  myMPQD->A.resize(myMesh->nZ*myMesh->nR,myMesh->nZ*myMesh->nR);
+  myMPQD->b.resize(myMesh->nZ*myMesh->nR);
+  cout << "Set size of A and b" << endl;
+  myMPQD->mgdnp->DNPs[0]->buildCoreLinearSystem();
+  cout << "built core system" << endl;
+  cout << "building recirc system..." << endl;
+  myMPQD->mgdnp->recircA.resize(myMesh->nZrecirc*myMesh->nR,\
+    myMesh->nZrecirc*myMesh->nR);
+  myMPQD->mgdnp->recircb.resize(myMesh->nZrecirc*myMesh->nR);
+  myMPQD->mgdnp->DNPs[0]->buildRecircLinearSystem();
+  cout << "built recirc system" << endl;
 }
