@@ -35,10 +35,13 @@ MultiPhysicsCoupledQD * myMPQD)
 ///
 void MultiGroupDNP::readInput()
 {
+  // Temporary integers to store number of group unknowns
+  int nGroupCoreUnknowns,nGroupRecircUnknowns,coreIndexOffset,recircIndexOffset;
   
   // Temporary vector for beta and lambda input params
   vector<double> betaInp,lambdaInp;
   Eigen::VectorXd betas,lambdas;
+
   // Check if DNP data are specified in input
   if ((*input)["delayed neutron precursors"]["betas"] and\
     (*input)["delayed neutron precursors"]["lambdas"])
@@ -74,12 +77,21 @@ void MultiGroupDNP::readInput()
     lambdas << 0.012375,0.03013,0.111774,0.301304,1.13607,3.01304;
     beta = betas.sum();
   }
+ 
+
+  // Initialize single group DNP objects 
+  nGroupCoreUnknowns = mesh->nZ*mesh->nR;
+  nGroupRecircUnknowns = mesh->nZrecirc*mesh->nR;
   
   for (int iGroup = 0; iGroup < betas.size(); ++iGroup){
+    coreIndexOffset = indexOffset + iGroup*nGroupCoreUnknowns;
+    recircIndexOffset = iGroup*nGroupRecircUnknowns;
     shared_ptr<SingleGroupDNP> SGDNP (new SingleGroupDNP(mats,mesh,this,\
-      betas(iGroup),lambdas(iGroup)));
+      betas(iGroup),lambdas(iGroup),coreIndexOffset,recircIndexOffset));
     DNPs.push_back(std::move(SGDNP));
   }
+  
+  nCoreUnknowns = DNPs.size()*nGroupCoreUnknowns;
    
 };
 //==============================================================================

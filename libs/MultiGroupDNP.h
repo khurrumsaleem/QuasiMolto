@@ -15,7 +15,8 @@ class SingleGroupDNP;
 class MultiGroupDNP
 {
   public:
-  // Define default six group delayed neutron precursor data
+  int indexOffset = 0;
+  int nCoreUnknowns;
   double beta;
   vector< shared_ptr<SingleGroupDNP> > DNPs; 
   Eigen::VectorXd recircb,recircx;
