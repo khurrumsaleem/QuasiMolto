@@ -146,10 +146,24 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   cout << "Set size of A and b" << endl;
   myMPQD->mgdnp->DNPs[0]->buildCoreLinearSystem();
   cout << "built core system" << endl;
+  cout << "A" << endl;
+  cout << myMPQD->A << endl;
+  cout << "b" << endl;
+  cout << myMPQD->b << endl;
+  myMPQD->solveLinearSystem();
+  cout << "x: " << endl;   
+  cout << myMPQD->x << endl;
   cout << "building recirc system..." << endl;
   myMPQD->mgdnp->recircA.resize(myMesh->nZrecirc*myMesh->nR,\
     myMesh->nZrecirc*myMesh->nR);
   myMPQD->mgdnp->recircb.resize(myMesh->nZrecirc*myMesh->nR);
   myMPQD->mgdnp->DNPs[0]->buildRecircLinearSystem();
   cout << "built recirc system" << endl;
+  cout << "recircA:" << endl;
+  cout << myMPQD->mgdnp->recircA << endl;
+  cout << "recircb:" << endl;
+  cout << myMPQD->mgdnp->recircb << endl;
+  myMPQD->mgdnp->solveRecircLinearSystem();
+  cout << "recircx: " << endl;   
+  cout << myMPQD->mgdnp->recircx << endl;
 }
