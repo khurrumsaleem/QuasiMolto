@@ -26,17 +26,8 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   beta = myBeta;
   lambda = myLambda;
 
-  Eigen::Matrix<double,5,5> initDNP;
-  initDNP << 1.1, 1.1, 1.1, 1.1, 1.1,\  
-    1.6, 1.6, 1.6, 1.6, 1.6,\  
-  1.8, 1.8, 1.8, 1.8, 1.8,\  
-  1.6, 1.6, 1.6, 1.6, 1.6,\  
-  1.1, 1.1, 1.1, 1.1, 1.1;
-
-
   // Initialize size of matrices and vectors
   dnpConc.setOnes(mesh->nZ,mesh->nR);
-  dnpConc = initDNP;
   flux.setZero(mesh->nZ+1,mesh->nR); 
   dirac.setZero(mesh->nZ+1,mesh->nR);
   recircConc.setOnes(mesh->nZrecirc,mesh->nR); 
@@ -61,7 +52,8 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
   Eigen::MatrixXd myDNPFlux,\
   Eigen::MatrixXd mySigF,\
   rowvec dzs,\
-  int myIndexOffset)
+  int myIndexOffset,\
+  bool fluxSource)
 {
 
   int myIndex,iEq = myIndexOffset;
@@ -80,7 +72,9 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
 
       // Flux source term 
       coeff = mesh->dt*beta*mySigF(iZ,iR);
-      mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
+      
+      if (fluxSource)
+        mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
 
       // Advection term
       (*myb)(iEq) += (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
@@ -455,7 +449,8 @@ void SingleGroupDNP::buildRecircLinearSystem()
     recircFlux,\
     dumbySigF,\
     mesh->dzsCornerRecirc,\
-    recircIndexOffset);
+    recircIndexOffset,\
+    false);
 
 };
 //==============================================================================
