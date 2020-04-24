@@ -25,6 +25,7 @@ class MultiGroupDNP
     YAML::Node * myInput,\
     MultiPhysicsCoupledQD * myMPQD);
   void readInput();
+  void solveRecircLinearSystem();
   MultiPhysicsCoupledQD * mpqd;
 
   private:

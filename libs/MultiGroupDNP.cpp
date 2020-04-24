@@ -83,3 +83,16 @@ void MultiGroupDNP::readInput()
    
 };
 //==============================================================================
+
+//==============================================================================
+/// Solve linear system for multiphysics coupled quasidiffusion system
+///
+void MultiGroupDNP::solveRecircLinearSystem()
+{
+  Eigen::SparseLU<Eigen::SparseMatrix<double>,\
+    Eigen::COLAMDOrdering<int> > solverLU;
+  recircA.makeCompressed();
+  solverLU.compute(recircA);
+  recircx = solverLU.solve(recircb);
+};
+//==============================================================================
