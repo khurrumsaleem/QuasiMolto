@@ -26,8 +26,17 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   beta = myBeta;
   lambda = myLambda;
 
+  Eigen::Matrix<double,5,5> initDNP;
+  initDNP << 1.1, 1.1, 1.1, 1.1, 1.1,\  
+    1.6, 1.6, 1.6, 1.6, 1.6,\  
+  1.8, 1.8, 1.8, 1.8, 1.8,\  
+  1.6, 1.6, 1.6, 1.6, 1.6,\  
+  1.1, 1.1, 1.1, 1.1, 1.1;
+
+
   // Initialize size of matrices and vectors
   dnpConc.setOnes(mesh->nZ,mesh->nR);
+  dnpConc = initDNP;
   flux.setZero(mesh->nZ+1,mesh->nR); 
   dirac.setZero(mesh->nZ+1,mesh->nR);
   recircConc.setOnes(mesh->nZrecirc,mesh->nR); 
@@ -64,7 +73,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
     {
       myIndex = getIndex(iZ,iR,myIndexOffset);     
 
-      myA->coeffRef(iEq,myIndex) = 1 - mesh->dt*lambda; 
+      myA->coeffRef(iEq,myIndex) = 1 + mesh->dt*lambda; 
       
       // Time term
       (*myb)(iEq) = myDNPConc(iZ,iR);
@@ -430,8 +439,8 @@ void SingleGroupDNP::buildRecircLinearSystem()
   dumbySigF.setZero(mesh->nZrecirc,mesh->nR);
 
   recircDirac = calcDiracs(recircConc,\
-    inletConc,\
-    outletConc);
+    recircInletConc,\
+    recircOutletConc);
 
   recircFlux = calcFluxes(recircConc,\
     mats->recircFlowVelocity,\
