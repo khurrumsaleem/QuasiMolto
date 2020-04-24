@@ -133,6 +133,12 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   MultiPhysicsCoupledQD * myMPQD; 
   MultiGroupDNP * myMGP; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+
+  myMPQD->mgdnp->buildRecircLinearSystem();
+  cout << "recirculation A: " << endl;
+  cout << myMPQD->mgdnp->recircA << endl;
+  myMPQD->mgdnp->solveRecircLinearSystem();
+
   cout << myMPQD->mgdnp->beta << endl;
   cout << "recirculation Z: " << myMesh->recircZ << endl;
   myMPQD->mgdnp->DNPs[0]->assignBoundaryIndices();
