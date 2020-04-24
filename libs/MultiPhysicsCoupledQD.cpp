@@ -47,12 +47,10 @@ void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
 ///
 void MultiPhysicsCoupledQD::solveLinearSystem()
 {
-  cout << "x: " << x << endl;
   Eigen::SparseLU<Eigen::SparseMatrix<double>,\
     Eigen::COLAMDOrdering<int> > solverLU;
   A.makeCompressed();
   solverLU.compute(A);
   x = solverLU.solve(b);
-  cout << "x: " << x << endl;
 };
 //==============================================================================
