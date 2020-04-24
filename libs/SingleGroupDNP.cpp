@@ -16,7 +16,9 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   Mesh * myMesh,\
   MultiGroupDNP * myMGDNP,\
   double myBeta,\
-  double myLambda)
+  double myLambda,\
+  int myCoreIndexOffset,\
+  int myRecircIndexOffset)
 {
 
   // Assign inputs to their member variables
@@ -25,6 +27,8 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   mgdnp = myMGDNP;
   beta = myBeta;
   lambda = myLambda;
+  coreIndexOffset = myCoreIndexOffset;
+  recircIndexOffset = myRecircIndexOffset;
 
   // Initialize size of matrices and vectors
   dnpConc.setOnes(mesh->nZ,mesh->nR);
@@ -432,6 +436,8 @@ void SingleGroupDNP::buildRecircLinearSystem()
   // Assume there are no source terms in the recirculation loop 
   dumbySigF.setZero(mesh->nZrecirc,mesh->nR);
 
+  updateBoundaryConditions();
+
   recircDirac = calcDiracs(recircConc,\
     recircInletConc,\
     recircOutletConc);
@@ -462,6 +468,8 @@ void SingleGroupDNP::buildCoreLinearSystem()
 {
 
   Eigen::MatrixXd coreDirac,coreFlux;
+  
+  updateBoundaryConditions();
 
   coreDirac = calcDiracs(dnpConc,\
     inletConc,\

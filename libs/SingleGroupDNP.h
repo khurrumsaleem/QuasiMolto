@@ -27,7 +27,9 @@ class SingleGroupDNP
     Mesh * myMesh,\
     MultiGroupDNP * myMGDNPS,\
     double myBeta,\
-    double myLambda);
+    double myLambda,\
+    int myCoreIndexOffset,\
+    int myRecircIndexOffset);
   int getIndex(int iZ,int iR,int indexOffset);
   void assignBoundaryIndices();
   void updateBoundaryConditions();
