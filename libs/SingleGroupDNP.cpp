@@ -43,6 +43,9 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   recircInletVelocity.setZero(mesh->nR);
   outletConc.setZero(mesh->nR);
   recircOutletConc.setZero(mesh->nR);
+
+  // assign boundary conditions depending on direction of flow
+  assignBoundaryIndices();
  
 };
 //==============================================================================
