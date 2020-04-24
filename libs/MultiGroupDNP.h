@@ -16,7 +16,7 @@ class MultiGroupDNP
 {
   public:
   int indexOffset = 0;
-  int nCoreUnknowns;
+  int nCoreUnknowns,nRecircUnknowns;
   double beta;
   vector< shared_ptr<SingleGroupDNP> > DNPs; 
   Eigen::VectorXd recircb,recircx;
@@ -26,6 +26,7 @@ class MultiGroupDNP
     YAML::Node * myInput,\
     MultiPhysicsCoupledQD * myMPQD);
   void readInput();
+  void buildRecircLinearSystem();
   void solveRecircLinearSystem();
   MultiPhysicsCoupledQD * mpqd;
 

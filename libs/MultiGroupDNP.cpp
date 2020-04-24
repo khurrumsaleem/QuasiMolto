@@ -92,7 +92,24 @@ void MultiGroupDNP::readInput()
   }
   
   nCoreUnknowns = DNPs.size()*nGroupCoreUnknowns;
-   
+  nRecircUnknowns = DNPs.size()*nGroupRecircUnknowns;
+
+  // Set sizes of matrices in recirculation solve
+  recircA.resize(nRecircUnknowns,nRecircUnknowns);     
+  recircb.resize(nRecircUnknowns);     
+  recircx.resize(nRecircUnknowns);     
+};
+//==============================================================================
+
+//==============================================================================
+/// Solve linear system for multiphysics coupled quasidiffusion system
+///
+void MultiGroupDNP::buildRecircLinearSystem()
+{
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->buildRecircLinearSystem();
+  }
 };
 //==============================================================================
 
