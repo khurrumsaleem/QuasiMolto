@@ -1005,6 +1005,8 @@ double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
 
   }
 
+  return hEval;
+
 };
 
 //==============================================================================
