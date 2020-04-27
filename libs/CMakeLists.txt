@@ -17,4 +17,5 @@ add_library(libs
         GreyGroupQD.cpp
         MultiPhysicsCoupledQD.cpp
         HeatTransfer.cpp
+        GreyGroupSolver.cpp
         CollapsedCrossSections.cpp)
