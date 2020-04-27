@@ -18,7 +18,7 @@ class GreyGroupSolver
   GreyGroupSolver(Mesh * myMesh,\
     Materials * myMaterials,\
     YAML::Node * myInput);
-  void formLinearSystem(SingleGroupQD * SGQD);
+  void formLinearSystem(int iEq, SingleGroupQD * SGQD);
   void formBackCalcSystem(SingleGroupQD * SGQD);
   
   // functions to map grid indices to global index
@@ -99,22 +99,29 @@ class GreyGroupSolver
   double calcIntegratingFactor(int iR,int iZ,double rEval,SingleGroupQD * SGQD);
   
   // function to solve linear system
-  void solve();
   void backCalculateCurrent();
+ 
+  // check optional inputs
+  void checkOptionalParams();
 
   // function to parse solution vector
   void getFlux(SingleGroupQD * SGQD);
   Eigen::VectorXd getFluxSolutionVector(SingleGroupQD * SGQD);
   Eigen::VectorXd getCurrentSolutionVector(SingleGroupQD * SGQD);
 
-  // check for input parameters
-  void checkOptionalParams();
+  // function to assign pointers 
+  void assignPointers(Eigen::SparseMatrix<double> * A,\
+   Eigen::VectorXd * xPast,\
+   Eigen::VectorXd * b);
   
   // public variables
-  Eigen::SparseMatrix<double> A,C;
-  Eigen::VectorXd x;
-  Eigen::VectorXd xPast,currPast;
-  Eigen::VectorXd b,d;
+  Eigen::SparseMatrix<double> * A;
+  Eigen::VectorXd * xPast;
+  Eigen::VectorXd * b;
+  Eigen::SparseMatrix<double> C;
+  Eigen::VectorXd xFlux;
+  Eigen::VectorXd currPast;
+  Eigen::VectorXd d;
   int energyGroups,nR,nZ,nGroupUnknowns,nGroupCurrentUnknowns;
   bool reflectingBCs = false;
   bool goldinBCs = false;
