@@ -2,10 +2,12 @@
 #define GreyGroupQD_H
 
 #include "Mesh.h"
-#include "SingleGroupQD.h"
-#include "GreyGroupSolver.h"
+#include "Materials.h"
 
 using namespace std;
+
+class MultiPhysicsCoupledQD;
+class GreyGroupSolver;
 
 //==============================================================================
 //! Contains information and builds linear system for a grey group qd
@@ -60,9 +62,12 @@ class GreyGroupQD
   Eigen::VectorXd nAbsCurrentBC;
   Eigen::VectorXd sAbsCurrentBC;
   
+  MultiPhysicsCoupledQD * mpqd; 
+  
   // FUNCTIONS
 
-  GreyGroupQD(Materials * myMaterials,\
+  GreyGroupQD(MultiPhysicsCoupledQD * myMPQD,\
+    Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * myInput);
 
@@ -70,7 +75,7 @@ class GreyGroupQD
   shared_ptr<GreyGroupSolver> GGSolver;
   Materials * materials;
   Mesh * mesh; 
-  YAML::Node * input; 
+  YAML::Node * input;
 };
 
 //==============================================================================

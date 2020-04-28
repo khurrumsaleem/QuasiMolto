@@ -3,6 +3,8 @@
 // Date: April 9, 2020
 
 #include "GreyGroupQD.h"
+#include "GreyGroupSolver.h"
+#include "MultiPhysicsCoupledQD.h"
 
 using namespace std;
 
@@ -10,11 +12,13 @@ using namespace std;
 /// GreyGroupQD class object constructor
 ///
 /// @param [in] blankType blank for this material
-GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
+GreyGroupQD::GreyGroupQD(MultiPhysicsCoupledQD * myMPQD,\
+  Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * myInput)
 {
   // Assign pointers for materials, mesh, and input objects
+  mpqd = myMPQD;
   materials = myMaterials;
   mesh = myMesh;
   input = myInput;
