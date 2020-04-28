@@ -70,9 +70,10 @@ class GreyGroupQD
     Mesh * myMesh,\
     YAML::Node * myInput,\
     MultiPhysicsCoupledQD * myMPQD);
+  
+  shared_ptr<GreyGroupSolver> GGSolver;
 
   private:
-  shared_ptr<GreyGroupSolver> GGSolver;
   Materials * materials;
   Mesh * mesh; 
   YAML::Node * input;
