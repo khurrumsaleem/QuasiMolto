@@ -36,6 +36,9 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
     fluxLimiter=(*input)["parameters"]["flux limiter"].as<string>();
   } 
 
+  // Set number of unknowns
+  nUnknowns = mesh->nR*mesh->nZ;
+
   // Initialize size of matrices and vectors
   temp.setConstant(mesh->nZ,mesh->nR,inletT);
   flux.setZero(mesh->nZ+1,mesh->nR);
@@ -45,6 +48,7 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   inletDensity.setZero(mesh->nR);
   inletVelocity.setZero(mesh->nR);
   inletcP.setZero(mesh->nR);
+  
 
   cout << "Initialized HeatTransfer object." << endl;
   cout << "wallTemp: " << wallT << endl;

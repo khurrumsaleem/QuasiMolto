@@ -22,7 +22,7 @@ class HeatTransfer
   // Default temperatures taken from "Introduction to Moltres:..." [2018]
   double wallT = 922.0;
   double inletT = 922.0;
-  int coreInletIndex,coreOutletIndex,indexOffset = 0; 
+  int coreInletIndex,coreOutletIndex,nUnknowns,indexOffset = 0; 
   string fluxLimiter = "superbee";
   Eigen::MatrixXd temp,flux,dirac,inletTemp;
   Eigen::VectorXd inletDensity,inletVelocity,inletcP,outletTemp;        
