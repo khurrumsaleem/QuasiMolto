@@ -19,15 +19,23 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   Mesh * myMesh,\
   YAML::Node * myInput) 
 {
+  int tempIndexOffset;
+
   // Assign inputs to their member variables
   mats = myMats;
   mesh = myMesh;
   input = myInput;
 
-  // Initialize multiphysics objects
-  heat = new HeatTransfer(mats,mesh,input,this);
-  mgdnp = new MultiGroupDNP(mats,mesh,input,this);
+  // Initialize grey group qd object
   ggqd = new GreyGroupQD(mats,mesh,input,this);
+
+  // Initialize heat transfer object and set index offset
+  heat = new HeatTransfer(mats,mesh,input,this);
+  heat->indexOffset = ggqd->nUnknowns;
+  
+  // Calculate index offset for MGDNP object initialization
+  tempIndexOffset = ggqd->nUnknowns + heat->nUnknowns;
+  mgdnp = new MultiGroupDNP(mats,mesh,input,this,tempIndexOffset);
 };
 //==============================================================================
 
