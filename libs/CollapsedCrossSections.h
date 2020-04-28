@@ -13,7 +13,7 @@ class CollapsedCrossSections
 {
         public:
         CollapsedCrossSections(int nZ,int nR);
-	Eigen::MatrixXd sigT,sigS,sigF,chiP,chiD; 
+	Eigen::MatrixXd sigT,sigS,sigF,chiP,chiD,neutV,nu; 
 };
 
 //==============================================================================

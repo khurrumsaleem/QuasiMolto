@@ -20,6 +20,8 @@ CollapsedCrossSections::CollapsedCrossSections(int nZ,int nR)
   sigF.setZero(nZ,nR);  
   chiP.setZero(nZ,nR);  
   chiD.setZero(nZ,nR);  
+  neutV.setZero(nZ,nR);  
+  chiD.setZero(nZ,nR);  
 
 };
 //==============================================================================
