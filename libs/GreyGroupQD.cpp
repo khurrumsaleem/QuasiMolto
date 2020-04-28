@@ -12,10 +12,10 @@ using namespace std;
 /// GreyGroupQD class object constructor
 ///
 /// @param [in] blankType blank for this material
-GreyGroupQD::GreyGroupQD(MultiPhysicsCoupledQD * myMPQD,\
-  Materials * myMaterials,\
+GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   Mesh * myMesh,\
-  YAML::Node * myInput)
+  YAML::Node * myInput,\
+  MultiPhysicsCoupledQD * myMPQD)
 {
   // Assign pointers for materials, mesh, and input objects
   mpqd = myMPQD;

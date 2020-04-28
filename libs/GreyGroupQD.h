@@ -66,10 +66,10 @@ class GreyGroupQD
   
   // FUNCTIONS
 
-  GreyGroupQD(MultiPhysicsCoupledQD * myMPQD,\
-    Materials * myMaterials,\
+  GreyGroupQD(Materials * myMaterials,\
     Mesh * myMesh,\
-    YAML::Node * myInput);
+    YAML::Node * myInput,\
+    MultiPhysicsCoupledQD * myMPQD);
 
   private:
   shared_ptr<GreyGroupSolver> GGSolver;
