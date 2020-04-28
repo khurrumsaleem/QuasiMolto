@@ -130,8 +130,13 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
   double groupSourceCoeff;
 
   indices = getIndices(iR,iZ);
+  
+  // Scatter and fission source term
   groupSourceCoeff = calcScatterAndFissionCoeff(iZ,iR);
   A->insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
+
+  // DNP source term
+  GGQD->mpqd->dnpSource(iZ,iR,iEq,geoParams[iCF]);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
