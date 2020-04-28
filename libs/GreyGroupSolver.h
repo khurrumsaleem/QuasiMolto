@@ -3,6 +3,8 @@
 
 #include "Mesh.h"
 #include "Materials.h"
+#include "MultiPhysicsCoupledQD.h"
+#include "MultiGroupDNP.h"
 
 class GreyGroupQD;
 

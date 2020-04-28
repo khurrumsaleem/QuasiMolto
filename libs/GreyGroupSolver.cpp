@@ -836,13 +836,13 @@ void GreyGroupSolver::assertEBC(int iR,int iZ,int iEq)
 double GreyGroupSolver::calcScatterAndFissionCoeff(int iR,int iZ)
 {
 
+  double beta = GGQD->mpqd->mgdnp->beta;
   double localSigF,localNu,localChiP,localSigS,sourceCoefficient;
 
   localSigF = materials->oneGroupXS->sigF(iZ,iR);
   localNu = materials->oneGroupXS->nu(iZ,iR);
-  localChiP = materials->oneGroupXS->chiP(iZ,iR);
   localSigS = materials->oneGroupXS->sigS(iZ,iR);
-  sourceCoefficient = localSigS + localChiP * localNu * localSigF;
+  sourceCoefficient = localSigS + (1-beta)*localNu*localSigF;
 
   return sourceCoefficient;
 };
