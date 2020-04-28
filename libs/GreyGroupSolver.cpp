@@ -984,7 +984,9 @@ void GreyGroupSolver::getFlux()
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
       indices = getIndices(iR,iZ);
+      xFlux(indices[iCF]) = (*x)(indices[iCF]);
       GGQD->sFlux(iZ,iR) = xFlux(indices[iCF]);
+
     }
   }  
 

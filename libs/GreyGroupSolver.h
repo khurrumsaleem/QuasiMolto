@@ -93,6 +93,7 @@ class GreyGroupSolver
   Eigen::SparseMatrix<double> * A;
   Eigen::VectorXd * xPast;
   Eigen::VectorXd * b;
+  Eigen::VectorXd * x;
   Eigen::SparseMatrix<double> C;
   Eigen::VectorXd xFlux;
   Eigen::VectorXd currPast;
