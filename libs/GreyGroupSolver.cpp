@@ -3,7 +3,7 @@
 // Date: February 05, 2020
 
 #include "GreyGroupSolver.h"
-#include "SingleGroupQD.h"
+#include "GreyGroupQD.h"
 
 using namespace std; 
 
@@ -13,32 +13,28 @@ using namespace std;
 /// @param [in] myMesh Mesh object for the simulation
 /// @param [in] myMaterials Materials object for the simulation
 /// @param [in] myInput YAML input object for the simulation
-GreyGroupSolver::GreyGroupSolver(Mesh * myMesh,\
+GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
+  Mesh * myMesh,\
   Materials * myMaterials,\
   YAML::Node * myInput)	      
 {
   // Point to variables for mesh and input file
+  GGQD = myGGQD;
   mesh = myMesh;
   input = myInput;
   materials = myMaterials;
 
-  // temporary variables for initialization
-  int nUnknowns,nCurrentUnknowns;
-
   // calculate number of unknowns  
-  energyGroups = materials->nGroups;
-  nR = mesh->rCornerCent.size();
-  nZ = mesh->zCornerCent.size();
-  nGroupUnknowns = 3*(nZ*nR) + nZ + nR;
-  nGroupCurrentUnknowns = 2*(nZ*nR) + nZ + nR;
-  nUnknowns = energyGroups*nGroupUnknowns;
-  nCurrentUnknowns = energyGroups*nGroupCurrentUnknowns;
+  nR = mesh->nR;
+  nZ = mesh->nZ;
+  nUnknowns = 3*(nZ*nR) + nZ + nR;
+  nCurrentUnknowns = 2*(nZ*nR) + nZ + nR;
 
   // initialize size of linear system
   C.resize(nCurrentUnknowns,nUnknowns);
   C.reserve(4*nCurrentUnknowns);
   xFlux.setZero(nUnknowns);
-  currPast.setZero(energyGroups*nGroupCurrentUnknowns);
+  currPast.setZero(nCurrentUnknowns);
   d.setZero(nCurrentUnknowns);
 
   checkOptionalParams();
@@ -48,9 +44,9 @@ GreyGroupSolver::GreyGroupSolver(Mesh * myMesh,\
 
 //==============================================================================
 /// Form a portion of the linear system that belongs to SGQD 
-/// @param [in] SGQD quasidiffusion energy group to build portion of linear 
+/// @param [in] GGQD quasidiffusion energy group to build portion of linear 
 ///   for
-void GreyGroupSolver::formLinearSystem(int iEq, SingleGroupQD * SGQD)	      
+void GreyGroupSolver::formLinearSystem(int iEq)	      
 {
 
   // loop over spatial mesh
@@ -60,14 +56,14 @@ void GreyGroupSolver::formLinearSystem(int iEq, SingleGroupQD * SGQD)
     {
 
       // apply zeroth moment equation
-      assertZerothMoment(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      assertZerothMoment(iR,iZ,iEq);
       iEq = iEq + 1;
 
       // north face
       if (iZ == 0)
       {
         // if on the boundary, assert boundary conditions
-        assertNBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        assertNBC(iR,iZ,iEq);
         iEq = iEq + 1;
       } 
 
@@ -75,12 +71,12 @@ void GreyGroupSolver::formLinearSystem(int iEq, SingleGroupQD * SGQD)
       if (iZ == mesh->dzsCorner.size()-1)
       {
         // if on the boundary, assert boundary conditions
-        assertSBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        assertSBC(iR,iZ,iEq);
         iEq = iEq + 1;
       } else
       {
         // otherwise assert first moment balance on south face
-        applyAxialBoundary(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        applyAxialBoundary(iR,iZ,iEq);
         iEq = iEq + 1;
       }
 
@@ -88,7 +84,7 @@ void GreyGroupSolver::formLinearSystem(int iEq, SingleGroupQD * SGQD)
       if (iR == 0)
       {
         // if on the boundary, assert boundary conditions
-        assertWBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        assertWBC(iR,iZ,iEq);
         iEq = iEq + 1;
       } 
 
@@ -96,12 +92,12 @@ void GreyGroupSolver::formLinearSystem(int iEq, SingleGroupQD * SGQD)
       if (iR == mesh->drsCorner.size()-1)
       {
         // if on the boundary, assert boundary conditions
-        assertEBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        assertEBC(iR,iZ,iEq);
         iEq = iEq + 1;
       } else
       {
         // otherwise assert first moment balance on north face
-        applyRadialBoundary(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        applyRadialBoundary(iR,iZ,iEq);
         iEq = iEq + 1;
       }
     }
@@ -124,45 +120,35 @@ void GreyGroupSolver::backCalculateCurrent()
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert equation for
-/// @param [in] SGQD of this energyGroup
-// ToDo: eliminate energyGroup input, as it can just be defined from the SGQD
-// object. Same with a lot of functions in this class
-void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
 {
   vector<int> indices;
-  vector<double> geoParams = calcGeoParams(iR,iZ);
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutV(energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double groupSourceCoeff;
 
-  // populate entries representing sources from scattering and fission in 
-  // this and other energy groups
-  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup)
-  {
-    indices = getIndices(iR,iZ,iGroup);
-    groupSourceCoeff = calcScatterAndFissionCoeff(iZ,iR,energyGroup,iGroup);
-    A->insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
-  }
+  indices = getIndices(iR,iZ);
+  groupSourceCoeff = calcScatterAndFissionCoeff(iZ,iR);
+  A->insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
 
   // populate entries representing streaming and reaction terms
-  indices = getIndices(iR,iZ,energyGroup);
+  indices = getIndices(iR,iZ);
 
   A->coeffRef(iEq,indices[iCF]) += geoParams[iCF] * ((1/(v*deltaT)) + sigT);
 
-  westCurrent(-geoParams[iWF],iR,iZ,iEq,energyGroup,SGQD);
+  westCurrent(-geoParams[iWF],iR,iZ,iEq);
   
-  eastCurrent(geoParams[iEF],iR,iZ,iEq,energyGroup,SGQD);
+  eastCurrent(geoParams[iEF],iR,iZ,iEq);
 
-  northCurrent(-geoParams[iNF],iR,iZ,iEq,energyGroup,SGQD);
+  northCurrent(-geoParams[iNF],iR,iZ,iEq);
 
-  southCurrent(geoParams[iSF],iR,iZ,iEq,energyGroup,SGQD);
+  southCurrent(geoParams[iSF],iR,iZ,iEq);
 
   // formulate RHS entry
   (*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
-    ( ((*xPast)(indices[iCF])/(v*deltaT)) + SGQD->q(iZ,iR));
+    ( ((*xPast)(indices[iCF])/(v*deltaT)) + GGQD->q(iZ,iR));
 };
 //==============================================================================
 
@@ -171,13 +157,10 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert equation for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::applyRadialBoundary(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::applyRadialBoundary(int iR,int iZ,int iEq)
 {
-  eastCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
-  westCurrent(-1,iR+1,iZ,iEq,energyGroup,SGQD);
+  eastCurrent(1,iR,iZ,iEq);
+  westCurrent(-1,iR+1,iZ,iEq);
 }
 //==============================================================================
 
@@ -186,13 +169,10 @@ void GreyGroupSolver::applyRadialBoundary(int iR,int iZ,int iEq,int energyGroup,
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert equation for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::applyAxialBoundary(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::applyAxialBoundary(int iR,int iZ,int iEq)
 {
-  northCurrent(1,iR,iZ+1,iEq,energyGroup,SGQD);
-  southCurrent(-1,iR,iZ,iEq,energyGroup,SGQD);
+  northCurrent(1,iR,iZ+1,iEq);
+  southCurrent(-1,iR,iZ,iEq);
 }
 //==============================================================================
 
@@ -201,16 +181,13 @@ void GreyGroupSolver::applyAxialBoundary(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert equation for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
-  vector<double> geoParams = calcGeoParams(iR,iZ);
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutV(energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
 
   // calculate geometric values
@@ -220,12 +197,12 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energy
   deltaR = rUp-rDown; deltaZ = zUp-zAvg;
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  ErrL = GGQD->Err(iZ,iR);
+  EzzL = GGQD->Ezz(iZ,iR);
+  ErzL = GGQD->Erz(iZ,iR);
 
   // populate entries representing streaming and reaction terms
-  indices = getIndices(iR,iZ,energyGroup);
+  indices = getIndices(iR,iZ);
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
@@ -247,16 +224,13 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energy
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert equation for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
-  vector<double> geoParams = calcGeoParams(iR,iZ);
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutV(energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
 
   // calculate geometric values
@@ -266,12 +240,12 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energy
   deltaR = rUp-rDown; deltaZ = zAvg-zDown;
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  ErrL = GGQD->Err(iZ,iR);
+  EzzL = GGQD->Ezz(iZ,iR);
+  ErzL = GGQD->Erz(iZ,iR);
 
   // populate entries representing streaming and reaction terms
-  indices = getIndices(iR,iZ,energyGroup);
+  indices = getIndices(iR,iZ);
   
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
@@ -293,16 +267,13 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energy
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert equation for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
-  vector<double> geoParams = calcGeoParams(iR,iZ);
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutV(energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
   double hCent,hDown;
 
@@ -311,16 +282,16 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyG
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg);
+  hDown = calcIntegratingFactor(iR,iZ,rDown);
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  ErrL = GGQD->Err(iZ,iR);
+  EzzL = GGQD->Ezz(iZ,iR);
+  ErzL = GGQD->Erz(iZ,iR);
   
   // populate entries representing streaming and reaction terms
-  indices = getIndices(iR,iZ,energyGroup);
+  indices = getIndices(iR,iZ);
   
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
@@ -342,16 +313,13 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyG
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert equation for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
-  vector<double> geoParams = calcGeoParams(iR,iZ);
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutV(energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
   double hCent,hUp;
 
@@ -360,16 +328,16 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyG
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg);
+  hUp = calcIntegratingFactor(iR,iZ,rUp);
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  ErrL = GGQD->Err(iZ,iR);
+  EzzL = GGQD->Ezz(iZ,iR);
+  ErzL = GGQD->Erz(iZ,iR);
 
   // populate entries representing streaming and reaction terms
-  indices = getIndices(iR,iZ,energyGroup);
+  indices = getIndices(iR,iZ);
   
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
@@ -387,12 +355,12 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyG
 //==============================================================================
 
 //==============================================================================
-/// Form a portion of the current back calc linear system that belongs to SGQD 
-/// @param [in] SGQD quasidiffusion energy group to build portion of linear 
+/// Form a portion of the current back calc linear system that belongs to GGQD 
+/// @param [in] GGQD quasidiffusion energy group to build portion of linear 
 ///   for
-void GreyGroupSolver::formBackCalcSystem(SingleGroupQD * SGQD)	      
+void GreyGroupSolver::formBackCalcSystem()	      
 {
-  int iEq = SGQD->energyGroup*nGroupCurrentUnknowns;
+  int iEq = GGQD->indexOffset;
 
   // loop over spatial mesh
   for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
@@ -401,17 +369,17 @@ void GreyGroupSolver::formBackCalcSystem(SingleGroupQD * SGQD)
     {
       
       // south face
-      calcSouthCurrent(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      calcSouthCurrent(iR,iZ,iEq);
       iEq = iEq + 1;
 
       // east face
-      calcEastCurrent(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      calcEastCurrent(iR,iZ,iEq);
       iEq = iEq + 1;
 
       // north face
       if (iZ == 0)
       {
-        calcNorthCurrent(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        calcNorthCurrent(iR,iZ,iEq);
         iEq = iEq + 1;
       } 
 
@@ -419,7 +387,7 @@ void GreyGroupSolver::formBackCalcSystem(SingleGroupQD * SGQD)
       if (iR == 0)
       {
         // if on the boundary, assert boundary conditions
-        calcWestCurrent(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        calcWestCurrent(iR,iZ,iEq);
         iEq = iEq + 1;
       } 
 
@@ -435,16 +403,13 @@ void GreyGroupSolver::formBackCalcSystem(SingleGroupQD * SGQD)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert equation for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
-  int energyGroup,SingleGroupQD * SGQD)
+void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
-  vector<double> geoParams = calcGeoParams(iR,iZ);
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutV(energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
 
   // calculate geometric values
@@ -454,12 +419,12 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
   deltaR = rUp-rDown; deltaZ = zUp-zAvg;
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  ErrL = GGQD->Err(iZ,iR);
+  EzzL = GGQD->Ezz(iZ,iR);
+  ErzL = GGQD->Erz(iZ,iR);
 
   // populate entries representing streaming and reaction terms
-  indices = getIndices(iR,iZ,energyGroup);
+  indices = getIndices(iR,iZ);
 
   coeff = 1/((1/(v*deltaT))+sigT); 
 
@@ -481,16 +446,13 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert equation for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
-  int energyGroup,SingleGroupQD * SGQD)
+void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
-  vector<double> geoParams = calcGeoParams(iR,iZ);
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutV(energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
 
   // calculate geometric values
@@ -500,12 +462,12 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
   deltaR = rUp-rDown; deltaZ = zAvg-zDown;
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  ErrL = GGQD->Err(iZ,iR);
+  EzzL = GGQD->Ezz(iZ,iR);
+  ErzL = GGQD->Erz(iZ,iR);
 
   // populate entries representing streaming and reaction terms
-  indices = getIndices(iR,iZ,energyGroup);
+  indices = getIndices(iR,iZ);
   
   coeff = 1/((1/(v*deltaT))+sigT); 
 
@@ -527,16 +489,13 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert equation for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq,\
-  int energyGroup,SingleGroupQD * SGQD)
+void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
-  vector<double> geoParams = calcGeoParams(iR,iZ);
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutV(energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
   double hCent,hDown;
 
@@ -545,16 +504,16 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg);
+  hDown = calcIntegratingFactor(iR,iZ,rDown);
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  ErrL = GGQD->Err(iZ,iR);
+  EzzL = GGQD->Ezz(iZ,iR);
+  ErzL = GGQD->Erz(iZ,iR);
   
   // populate entries representing streaming and reaction terms
-  indices = getIndices(iR,iZ,energyGroup);
+  indices = getIndices(iR,iZ);
   
   coeff = 1/((1/(v*deltaT))+sigT); 
 
@@ -576,16 +535,13 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert equation for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq,\
-  int energyGroup,SingleGroupQD * SGQD)
+void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
-  vector<double> geoParams = calcGeoParams(iR,iZ);
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutV(energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
   double hCent,hUp;
 
@@ -594,16 +550,16 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg);
+  hUp = calcIntegratingFactor(iR,iZ,rUp);
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  ErrL = GGQD->Err(iZ,iR);
+  EzzL = GGQD->Ezz(iZ,iR);
+  ErzL = GGQD->Erz(iZ,iR);
 
   // populate entries representing streaming and reaction terms
-  indices = getIndices(iR,iZ,energyGroup);
+  indices = getIndices(iR,iZ);
   
   coeff = 1/((1/(v*deltaT))+sigT); 
 
@@ -625,15 +581,12 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertNFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertNFluxBC(int iR,int iZ,int iEq)
 {
-  vector<int> indices = getIndices(iR,iZ,energyGroup);
+  vector<int> indices = getIndices(iR,iZ);
   
   A->insert(iEq,indices[iNF]) = 1.0;
-  (*b)(iEq) = SGQD->nFluxBC(iR);
+  (*b)(iEq) = GGQD->nFluxBC(iR);
 };
 //==============================================================================
 
@@ -642,15 +595,12 @@ void GreyGroupSolver::assertNFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertSFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertSFluxBC(int iR,int iZ,int iEq)
 {
-  vector<int> indices = getIndices(iR,iZ,energyGroup);
+  vector<int> indices = getIndices(iR,iZ);
   
   A->insert(iEq,indices[iSF]) = 1.0;
-  (*b)(iEq) = SGQD->sFluxBC(iR);
+  (*b)(iEq) = GGQD->sFluxBC(iR);
 };
 //==============================================================================
 
@@ -659,15 +609,12 @@ void GreyGroupSolver::assertSFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertWFluxBC(int iR,int iZ,int iEq)
 {
-  vector<int> indices = getIndices(iR,iZ,energyGroup);
+  vector<int> indices = getIndices(iR,iZ);
   
   A->insert(iEq,indices[iWF]) = 1.0;
-  (*b)(iEq) = SGQD->wFluxBC(iZ);
+  (*b)(iEq) = GGQD->wFluxBC(iZ);
 };
 //==============================================================================
 
@@ -676,15 +623,12 @@ void GreyGroupSolver::assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertEFluxBC(int iR,int iZ,int iEq)
 {
-  vector<int> indices = getIndices(iR,iZ,energyGroup);
+  vector<int> indices = getIndices(iR,iZ);
   
   A->insert(iEq,indices[iEF]) = 1.0;
-  (*b)(iEq) = SGQD->eFluxBC(iZ);
+  (*b)(iEq) = GGQD->eFluxBC(iZ);
 };
 //==============================================================================
 
@@ -693,12 +637,9 @@ void GreyGroupSolver::assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertNCurrentBC(int iR,int iZ,int iEq)
 {
-  northCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+  northCurrent(1,iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -707,12 +648,9 @@ void GreyGroupSolver::assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertSCurrentBC(int iR,int iZ,int iEq)
 {
-  southCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+  southCurrent(1,iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -721,12 +659,9 @@ void GreyGroupSolver::assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertWCurrentBC(int iR,int iZ,int iEq)
 {
-  westCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+  westCurrent(1,iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -735,12 +670,9 @@ void GreyGroupSolver::assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertECurrentBC(int iR,int iZ,int iEq)
 {
-  eastCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
+  eastCurrent(1,iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -749,18 +681,15 @@ void GreyGroupSolver::assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertNGoldinBC(int iR,int iZ,int iEq)
 {
-  vector<int> indices = getIndices(iR,iZ,energyGroup);
-  double ratio = SGQD->nOutwardCurrToFluxRatioBC(iR);
-  double absCurrent = SGQD->nAbsCurrentBC(iR);
-  double inwardCurrent = SGQD->nInwardCurrentBC(iR);
-  double inwardFlux = SGQD->nInwardFluxBC(iR);
+  vector<int> indices = getIndices(iR,iZ);
+  double ratio = GGQD->nOutwardCurrToFluxRatioBC(iR);
+  double absCurrent = GGQD->nAbsCurrentBC(iR);
+  double inwardCurrent = GGQD->nInwardCurrentBC(iR);
+  double inwardFlux = GGQD->nInwardFluxBC(iR);
 
-  northCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  northCurrent(1.0,iR,iZ,iEq);
   A->coeffRef(iEq,indices[iNF]) -= ratio;
   (*b)(iEq) = (*b)(iEq) + (inwardCurrent-ratio*inwardFlux);
   
@@ -782,18 +711,15 @@ void GreyGroupSolver::assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertSGoldinBC(int iR,int iZ,int iEq)
 {
-  vector<int> indices = getIndices(iR,iZ,energyGroup);
-  double ratio = SGQD->sOutwardCurrToFluxRatioBC(iR);
-  double absCurrent = SGQD->sAbsCurrentBC(iR);
-  double inwardCurrent = SGQD->sInwardCurrentBC(iR);
-  double inwardFlux = SGQD->sInwardFluxBC(iR);
+  vector<int> indices = getIndices(iR,iZ);
+  double ratio = GGQD->sOutwardCurrToFluxRatioBC(iR);
+  double absCurrent = GGQD->sAbsCurrentBC(iR);
+  double inwardCurrent = GGQD->sInwardCurrentBC(iR);
+  double inwardFlux = GGQD->sInwardFluxBC(iR);
 
-  southCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  southCurrent(1.0,iR,iZ,iEq);
   A->coeffRef(iEq,indices[iSF]) -= ratio;
   (*b)(iEq) = (*b)(iEq) + (inwardCurrent-ratio*inwardFlux);
 
@@ -815,18 +741,15 @@ void GreyGroupSolver::assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertEGoldinBC(int iR,int iZ,int iEq)
 {
-  vector<int> indices = getIndices(iR,iZ,energyGroup);
-  double ratio = SGQD->eOutwardCurrToFluxRatioBC(iZ);
-  double absCurrent = SGQD->eAbsCurrentBC(iZ);
-  double inwardCurrent = SGQD->eInwardCurrentBC(iZ);
-  double inwardFlux = SGQD->eInwardFluxBC(iZ);
+  vector<int> indices = getIndices(iR,iZ);
+  double ratio = GGQD->eOutwardCurrToFluxRatioBC(iZ);
+  double absCurrent = GGQD->eAbsCurrentBC(iZ);
+  double inwardCurrent = GGQD->eInwardCurrentBC(iZ);
+  double inwardFlux = GGQD->eInwardFluxBC(iZ);
 
-  eastCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  eastCurrent(1.0,iR,iZ,iEq);
   A->coeffRef(iEq,indices[iEF]) -= ratio;
   (*b)(iEq) = (*b)(iEq) + (inwardCurrent-ratio*inwardFlux);
   
@@ -849,17 +772,14 @@ void GreyGroupSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertNBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertNBC(int iR,int iZ,int iEq)
 {
   if (reflectingBCs)
-    assertNCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertNCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
-    assertNGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertNGoldinBC(iR,iZ,iEq);
   else
-    assertNFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertNFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -868,17 +788,14 @@ void GreyGroupSolver::assertNBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertSBC(int iR,int iZ,int iEq)
 {
   if (reflectingBCs)
-    assertSCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertSCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
-    assertSGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertSGoldinBC(iR,iZ,iEq);
   else
-    assertSFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertSFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -887,15 +804,12 @@ void GreyGroupSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertWBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertWBC(int iR,int iZ,int iEq)
 {
   if (reflectingBCs or goldinBCs)
-    assertWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertWCurrentBC(iR,iZ,iEq);
   else
-    assertWFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertWFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -904,17 +818,14 @@ void GreyGroupSolver::assertWBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-/// @param [in] energyGroup energy group to assert boundary condition for
-/// @param [in] SGQD of this energyGroup
-void GreyGroupSolver::assertEBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+void GreyGroupSolver::assertEBC(int iR,int iZ,int iEq)
 {
   if (reflectingBCs)
-    assertECurrentBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertECurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
-    assertEGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertEGoldinBC(iR,iZ,iEq);
   else
-    assertEFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertEFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -922,18 +833,15 @@ void GreyGroupSolver::assertEBC(int iR,int iZ,int iEq,int energyGroup,\
 /// Calculate multigroup source coefficient for cell at (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
-/// @param [in] toEnergyGroup energy group of sourcing group
-/// @param [in] fromEnergyGroup energy group of source group
-double GreyGroupSolver::calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
-  int fromEnergyGroup)
+double GreyGroupSolver::calcScatterAndFissionCoeff(int iR,int iZ)
 {
 
   double localSigF,localNu,localChiP,localSigS,sourceCoefficient;
 
-  localSigF = materials->sigF(iZ,iR,fromEnergyGroup);
-  localNu = materials->nu(iZ,iR);
-  localChiP = materials->chiP(iZ,iR,toEnergyGroup);
-  localSigS = materials->sigS(iZ,iR,fromEnergyGroup,toEnergyGroup);
+  localSigF = materials->oneGroupXS->sigF(iZ,iR);
+  localNu = materials->oneGroupXS->nu(iZ,iR);
+  localChiP = materials->oneGroupXS->chiP(iZ,iR);
+  localSigS = materials->oneGroupXS->sigS(iZ,iR);
   sourceCoefficient = localSigS + localChiP * localNu * localSigF;
 
   return sourceCoefficient;
@@ -941,21 +849,19 @@ double GreyGroupSolver::calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGro
 //==============================================================================
 
 //==============================================================================
-/// Form a portion of the linear system that belongs to SGQD 
+/// Form a portion of the linear system that belongs to GGQD 
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] rEval radial location to evaluate integrating factor at
-/// @param [in] SGQD of this energyGroup
-double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
-  SingleGroupQD * SGQD)	      
+double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval)	      
 {
   double EzzL,ErrL,ErzL,G,rUp,rDown,rAvg,g0,g1,ratio,hEval;
   int p;
   
   // get local Eddington factors 
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  ErrL = GGQD->Err(iZ,iR);
+  EzzL = GGQD->Ezz(iZ,iR);
+  ErzL = GGQD->Erz(iZ,iR);
 
   // evaluate G
   G = 1 + (ErrL+EzzL-1)/ErrL;
@@ -992,30 +898,25 @@ double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
 /// Return global index of south face current at indices iR and iZ 
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
-/// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [out] index global index for south face current in cell at (iR,iZ)
-vector<int> GreyGroupSolver::getIndices(int iR,int iZ,int energyGroup)
+vector<int> GreyGroupSolver::getIndices(int iR,int iZ)
 {
   
   vector<int> indices,oneGroupIndices;
   
-  // Set flux and current offsets according to energy group
-  int offsetFlux = energyGroup*nGroupUnknowns;
-  int offsetCurr = energyGroup*nGroupCurrentUnknowns;
-
   // Get indices for a single energy group 
   oneGroupIndices = mesh->getQDCellIndices(iR,iZ);
 
   // Offset by specified energy group
-  indices.push_back(oneGroupIndices[iCF] + offsetFlux);
-  indices.push_back(oneGroupIndices[iWF] + offsetFlux);
-  indices.push_back(oneGroupIndices[iEF] + offsetFlux);
-  indices.push_back(oneGroupIndices[iNF] + offsetFlux);
-  indices.push_back(oneGroupIndices[iSF] + offsetFlux);
-  indices.push_back(oneGroupIndices[iWC] + offsetCurr);
-  indices.push_back(oneGroupIndices[iEC] + offsetCurr);
-  indices.push_back(oneGroupIndices[iNC] + offsetCurr);
-  indices.push_back(oneGroupIndices[iSC] + offsetCurr);
+  indices.push_back(oneGroupIndices[iCF] + GGQD->indexOffset);
+  indices.push_back(oneGroupIndices[iWF] + GGQD->indexOffset);
+  indices.push_back(oneGroupIndices[iEF] + GGQD->indexOffset);
+  indices.push_back(oneGroupIndices[iNF] + GGQD->indexOffset);
+  indices.push_back(oneGroupIndices[iSF] + GGQD->indexOffset);
+  indices.push_back(oneGroupIndices[iWC]);
+  indices.push_back(oneGroupIndices[iEC]);
+  indices.push_back(oneGroupIndices[iNC]);
+  indices.push_back(oneGroupIndices[iSC]);
 
   return indices;
 };
@@ -1073,8 +974,7 @@ double GreyGroupSolver::calcVolAvgR(double rDown,double rUp)
 
 //==============================================================================
 /// Extract cell average values from solution vector and store
-/// @param [in] SGQD single group quasidiffusion object to get flux for
-void GreyGroupSolver::getFlux(SingleGroupQD * SGQD)
+void GreyGroupSolver::getFlux()
 {
   vector<int> indices;
 
@@ -1083,8 +983,8 @@ void GreyGroupSolver::getFlux(SingleGroupQD * SGQD)
   {
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
-      indices = getIndices(iR,iZ,SGQD->energyGroup);
-      SGQD->sFlux(iZ,iR) = xFlux(indices[iCF]);
+      indices = getIndices(iR,iZ);
+      GGQD->sFlux(iZ,iR) = xFlux(indices[iCF]);
     }
   }  
 
@@ -1092,12 +992,11 @@ void GreyGroupSolver::getFlux(SingleGroupQD * SGQD)
 //==============================================================================
 
 //==============================================================================
-/// Extract flux values from SGQD object, store to solution vector, and return 
-/// @param [in] SGQD single group quasidiffusion object to get flux for
+/// Extract flux values from GGQD object, store to solution vector, and return 
 /// @param [out] solVector flux values mapped to the 1D vector
-Eigen::VectorXd GreyGroupSolver::getFluxSolutionVector(SingleGroupQD * SGQD)
+Eigen::VectorXd GreyGroupSolver::getFluxSolutionVector()
 {
-  Eigen::VectorXd solVector(energyGroups*nGroupUnknowns);
+  Eigen::VectorXd solVector(nUnknowns);
   solVector.setZero();
   vector<int> indices;
 
@@ -1106,13 +1005,13 @@ Eigen::VectorXd GreyGroupSolver::getFluxSolutionVector(SingleGroupQD * SGQD)
   {
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
-      indices = getIndices(iR,iZ,SGQD->energyGroup);
-      solVector(indices[iCF]) = SGQD->sFlux(iZ,iR);
+      indices = getIndices(iR,iZ);
+      solVector(indices[iCF]) = GGQD->sFlux(iZ,iR);
 
-      solVector(indices[iWF]) = SGQD->sFluxR(iZ,iR);
-      solVector(indices[iEF]) = SGQD->sFluxR(iZ,iR+1);
-      solVector(indices[iNF]) = SGQD->sFluxZ(iZ,iR);
-      solVector(indices[iSF]) = SGQD->sFluxZ(iZ+1,iR);
+      solVector(indices[iWF]) = GGQD->sFluxR(iZ,iR);
+      solVector(indices[iEF]) = GGQD->sFluxR(iZ,iR+1);
+      solVector(indices[iNF]) = GGQD->sFluxZ(iZ,iR);
+      solVector(indices[iSF]) = GGQD->sFluxZ(iZ+1,iR);
 
     }
   }  
@@ -1122,13 +1021,12 @@ Eigen::VectorXd GreyGroupSolver::getFluxSolutionVector(SingleGroupQD * SGQD)
 //==============================================================================
 
 //==============================================================================
-/// Extract current values from SGQD object, store to solution vector, and 
+/// Extract current values from GGQD object, store to solution vector, and 
 /// return 
-/// @param [in] SGQD single group quasidiffusion object to get current for
 /// @param [out] solVector current values mapped to the 1D vector
-Eigen::VectorXd GreyGroupSolver::getCurrentSolutionVector(SingleGroupQD * SGQD)
+Eigen::VectorXd GreyGroupSolver::getCurrentSolutionVector()
 {
-  Eigen::VectorXd solVector(energyGroups*nGroupCurrentUnknowns);
+  Eigen::VectorXd solVector(nCurrentUnknowns);
   solVector.setZero();
   vector<int> indices;
 
@@ -1137,12 +1035,12 @@ Eigen::VectorXd GreyGroupSolver::getCurrentSolutionVector(SingleGroupQD * SGQD)
   {
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
-      indices = getIndices(iR,iZ,SGQD->energyGroup);
+      indices = getIndices(iR,iZ);
 
-      solVector(indices[iWC]) = SGQD->currentR(iZ,iR);
-      solVector(indices[iEC]) = SGQD->currentR(iZ,iR+1);
-      solVector(indices[iNC]) = SGQD->currentZ(iZ,iR);
-      solVector(indices[iSC]) = SGQD->currentZ(iZ+1,iR);
+      solVector(indices[iWC]) = GGQD->currentR(iZ,iR);
+      solVector(indices[iEC]) = GGQD->currentR(iZ,iR+1);
+      solVector(indices[iNC]) = GGQD->currentZ(iZ,iR);
+      solVector(indices[iSC]) = GGQD->currentZ(iZ+1,iR);
     }
   }  
 

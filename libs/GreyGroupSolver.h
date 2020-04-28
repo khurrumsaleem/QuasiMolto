@@ -4,7 +4,7 @@
 #include "Mesh.h"
 #include "Materials.h"
 
-class SingleGroupQD;
+class GreyGroupQD;
 
 using namespace std; 
 
@@ -15,88 +15,63 @@ class GreyGroupSolver
 {
   public:
   // public functions
-  GreyGroupSolver(Mesh * myMesh,\
+  GreyGroupSolver(GreyGroupQD * myGGQD,\
+    Mesh * myMesh,\
     Materials * myMaterials,\
     YAML::Node * myInput);
-  void formLinearSystem(int iEq, SingleGroupQD * SGQD);
-  void formBackCalcSystem(SingleGroupQD * SGQD);
+  void formLinearSystem(int iEq);
+  void formBackCalcSystem();
   
   // functions to map grid indices to global index
-  vector<int> getIndices(int iR,int iZ,int energyGroup);
+  vector<int> getIndices(int iR,int iZ);
   
   // functions to calculate geometry parameters
   double calcVolAvgR(double rDown,double rUp);
   vector<double> calcGeoParams(int iR,int iZ);
   
   // functions to enforce governing equations
-  void assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void applyRadialBoundary(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void applyAxialBoundary(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
+  void assertZerothMoment(int iR,int iZ,int iEq);
+  void applyRadialBoundary(int iR,int iZ,int iEq);
+  void applyAxialBoundary(int iR,int iZ,int iEq);
+    
   
   // functions to enforce coefficients for facial currents
-  void southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
+  void southCurrent(double coeff,int iR,int iZ,int iEq);
+  void northCurrent(double coeff,int iR,int iZ,int iEq);
+  void westCurrent(double coeff,int iR,int iZ,int iEq);
+  void eastCurrent(double coeff,int iR,int iZ,int iEq);
 
   // functions to enforce coefficients for calculation of facial currents
-  void calcSouthCurrent(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void calcNorthCurrent(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void calcWestCurrent(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void calcEastCurrent(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
+  void calcSouthCurrent(int iR,int iZ,int iEq);
+  void calcNorthCurrent(int iR,int iZ,int iEq);
+  void calcWestCurrent(int iR,int iZ,int iEq);
+  void calcEastCurrent(int iR,int iZ,int iEq);
 
   // functions to assert flux BCs
-  void assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertNFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertSFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
+  void assertWFluxBC(int iR,int iZ,int iEq);
+  void assertEFluxBC(int iR,int iZ,int iEq);
+  void assertNFluxBC(int iR,int iZ,int iEq);
+  void assertSFluxBC(int iR,int iZ,int iEq);
 
   // functions to assert current BCs
-  void assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
+  void assertWCurrentBC(int iR,int iZ,int iEq);
+  void assertECurrentBC(int iR,int iZ,int iEq);
+  void assertNCurrentBC(int iR,int iZ,int iEq);
+  void assertSCurrentBC(int iR,int iZ,int iEq);
   
   // functions to assert Gol'din BCs
-  void assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
+  void assertNGoldinBC(int iR,int iZ,int iEq);
+  void assertSGoldinBC(int iR,int iZ,int iEq);
+  void assertEGoldinBC(int iR,int iZ,int iEq);
 
   // wrapper to assert either a flux or current BC
-  void assertWBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertEBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertNBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
-  void assertSBC(int iR,int iZ,int iEq,int energyGroup,\
-    SingleGroupQD * SGQD);
+  void assertWBC(int iR,int iZ,int iEq);
+  void assertEBC(int iR,int iZ,int iEq);
+  void assertNBC(int iR,int iZ,int iEq);
+  void assertSBC(int iR,int iZ,int iEq);
 
-  double calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
-    int fromEnergyGroup);
-  double calcIntegratingFactor(int iR,int iZ,double rEval,SingleGroupQD * SGQD);
+  double calcScatterAndFissionCoeff(int iR,int iZ);
+  double calcIntegratingFactor(int iR,int iZ,double rEval);
   
   // function to solve linear system
   void backCalculateCurrent();
@@ -105,9 +80,9 @@ class GreyGroupSolver
   void checkOptionalParams();
 
   // function to parse solution vector
-  void getFlux(SingleGroupQD * SGQD);
-  Eigen::VectorXd getFluxSolutionVector(SingleGroupQD * SGQD);
-  Eigen::VectorXd getCurrentSolutionVector(SingleGroupQD * SGQD);
+  void getFlux();
+  Eigen::VectorXd getFluxSolutionVector();
+  Eigen::VectorXd getCurrentSolutionVector();
 
   // function to assign pointers 
   void assignPointers(Eigen::SparseMatrix<double> * A,\
@@ -122,12 +97,13 @@ class GreyGroupSolver
   Eigen::VectorXd xFlux;
   Eigen::VectorXd currPast;
   Eigen::VectorXd d;
-  int energyGroups,nR,nZ,nGroupUnknowns,nGroupCurrentUnknowns;
+  int energyGroups,nR,nZ,nUnknowns,nCurrentUnknowns;
   bool reflectingBCs = false;
   bool goldinBCs = false;
   
   private:
   // private variables
+  GreyGroupQD * GGQD;
   YAML::Node * input;
   Mesh * mesh;
   Materials * materials;
