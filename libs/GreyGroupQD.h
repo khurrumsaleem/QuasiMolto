@@ -2,6 +2,8 @@
 #define GreyGroupQD_H
 
 #include "Mesh.h"
+#include "SingleGroupQD.h"
+#include "GreyGroupSolver.h"
 
 using namespace std;
 
@@ -11,7 +13,64 @@ using namespace std;
 class GreyGroupQD
 {
   public:
-  GreyGroupQD();
+
+  // VARIABLES
+
+  int indexOffset;
+
+  Eigen::MatrixXd sFlux;
+  Eigen::MatrixXd sFluxR;
+  Eigen::MatrixXd sFluxZ;
+  Eigen::MatrixXd currentR;
+  Eigen::MatrixXd currentZ;
+  Eigen::MatrixXd sFluxPrev;
+  Eigen::MatrixXd q;
+  
+  // Eddington factors
+  Eigen::MatrixXd Err,ErrPrev;
+  Eigen::MatrixXd Ezz,EzzPrev;
+  Eigen::MatrixXd Erz,ErzPrev;
+
+  // flux boundary conditions  
+  Eigen::VectorXd wFluxBC;
+  Eigen::VectorXd eFluxBC;
+  Eigen::VectorXd nFluxBC;
+  Eigen::VectorXd sFluxBC;
+  
+  // current boundary conditions
+  Eigen::VectorXd wCurrentRBC;
+  Eigen::VectorXd eCurrentRBC;
+  Eigen::VectorXd nCurrentZBC;
+  Eigen::VectorXd sCurrentZBC;
+    
+  // vectors for robin boundary conditions
+  Eigen::VectorXd eInwardCurrentBC;
+  Eigen::VectorXd nInwardCurrentBC;
+  Eigen::VectorXd sInwardCurrentBC;
+  
+  Eigen::VectorXd eInwardFluxBC;
+  Eigen::VectorXd nInwardFluxBC;
+  Eigen::VectorXd sInwardFluxBC;
+  
+  Eigen::VectorXd eOutwardCurrToFluxRatioBC;
+  Eigen::VectorXd nOutwardCurrToFluxRatioBC;
+  Eigen::VectorXd sOutwardCurrToFluxRatioBC;
+  
+  Eigen::VectorXd eAbsCurrentBC;
+  Eigen::VectorXd nAbsCurrentBC;
+  Eigen::VectorXd sAbsCurrentBC;
+  
+  // FUNCTIONS
+
+  GreyGroupQD(Materials * myMaterials,\
+    Mesh * myMesh,\
+    YAML::Node * myInput);
+
+  private:
+  shared_ptr<GreyGroupSolver> GGSolver;
+  Materials * materials;
+  Mesh * mesh; 
+  YAML::Node * input; 
 };
 
 //==============================================================================
