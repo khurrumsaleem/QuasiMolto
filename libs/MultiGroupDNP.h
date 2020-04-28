@@ -24,7 +24,8 @@ class MultiGroupDNP
   MultiGroupDNP(Materials * myMats,\
     Mesh * myMesh,\
     YAML::Node * myInput,\
-    MultiPhysicsCoupledQD * myMPQD);
+    MultiPhysicsCoupledQD * myMPQD,\
+    int myIndexOffset);
   void readInput();
   void buildRecircLinearSystem();
   void solveRecircLinearSystem();

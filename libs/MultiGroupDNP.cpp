@@ -13,9 +13,10 @@ using namespace std;
 ///
 /// @param [in] blankType blank for this material
 MultiGroupDNP::MultiGroupDNP(Materials * myMats,\
-Mesh * myMesh,\
-YAML::Node * myInput,\
-MultiPhysicsCoupledQD * myMPQD)
+  Mesh * myMesh,\
+  YAML::Node * myInput,\
+  MultiPhysicsCoupledQD * myMPQD,\
+  int myIndexOffset)
 {
   
   // Assign pointers
@@ -23,6 +24,7 @@ MultiPhysicsCoupledQD * myMPQD)
   mesh = myMesh; 
   input = myInput;
   mpqd = myMPQD;
+  indexOffset = myIndexOffset;
   
   // Read input parameters
   readInput();
