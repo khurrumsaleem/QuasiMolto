@@ -136,7 +136,7 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
   A->insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
 
   // DNP source term
-  GGQD->mpqd->dnpSource(iZ,iR,iEq,geoParams[iCF]);
+  GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF]);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
