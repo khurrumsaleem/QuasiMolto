@@ -7,6 +7,7 @@
 #include "MultiPhysicsCoupledQD.h"
 #include "HeatTransfer.h"
 #include "MultiGroupDNP.h"
+#include "GreyGroupQD.h"
 
 using namespace std;
 
@@ -26,6 +27,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   // Initialize multiphysics objects
   heat = new HeatTransfer(mats,mesh,input,this);
   mgdnp = new MultiGroupDNP(mats,mesh,input,this);
+  ggqd = new GreyGroupQD(mats,mesh,input,this);
 };
 //==============================================================================
 
@@ -38,9 +40,23 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 /// @param [in] coeff coefficient of flux source
 void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
 {
+ 
+};
+//==============================================================================
+
+//==============================================================================
+/// Include a dnp source in the linear system
+///
+/// @param [in] iZ axial location 
+/// @param [in] iR radial location
+/// @param [in] iEq equation index
+/// @param [in] coeff coefficient of dnp source
+void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
+{
 
 };
 //==============================================================================
+
 
 //==============================================================================
 /// Solve linear system for multiphysics coupled quasidiffusion system
