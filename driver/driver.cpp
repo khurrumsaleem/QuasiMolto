@@ -26,6 +26,9 @@ void testHeatTransfer(Materials * myMaterials,\
 void testMultiGroupPrecursor(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
+void testMultiPhysicsCoupledQD(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input);
 
 int main(int argc, char** argv) {
 
@@ -86,6 +89,8 @@ int main(int argc, char** argv) {
       testHeatTransfer(myMaterials,myMesh,input);
     else if (solveType == "testMultiGroupPrecursor")
       testMultiGroupPrecursor(myMaterials,myMesh,input);
+    else if (solveType == "testMultiPhysicsCoupledQD")
+      testMultiPhysicsCoupledQD(myMaterials,myMesh,input);
     else
       myMGT->solveTransportOnly();
   }
@@ -141,9 +146,11 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
 
   cout << myMPQD->mgdnp->beta << endl;
   cout << "recirculation Z: " << myMesh->recircZ << endl;
+  
   myMPQD->mgdnp->DNPs[0]->assignBoundaryIndices();
   myMPQD->mgdnp->DNPs[0]->updateBoundaryConditions();
   cout << "Updated boundary conditions" << endl;
+ 
   myMPQD->mgdnp->DNPs[0]->calcRecircDNPFluxes();
   myMPQD->mgdnp->DNPs[0]->calcCoreDNPFluxes();
   cout << "Setting size of A and b..." << endl;
@@ -172,4 +179,12 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   myMPQD->mgdnp->solveRecircLinearSystem();
   cout << "recircx: " << endl;   
   cout << myMPQD->mgdnp->recircx << endl;
+}
+
+void testMultiPhysicsCoupledQD(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input){
+  
+  MultiPhysicsCoupledQD * myMPQD; 
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
 }
