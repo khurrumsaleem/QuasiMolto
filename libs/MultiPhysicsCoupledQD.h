@@ -3,6 +3,8 @@
 
 #include "Mesh.h"
 #include "Materials.h"
+#include "GreyGroupSolver.h"
+#include "SingleGroupDNP.h"
 
 using namespace std;
 

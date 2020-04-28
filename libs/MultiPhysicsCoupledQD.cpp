@@ -40,6 +40,11 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 /// @param [in] coeff coefficient of flux source
 void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
 {
+
+  int iCF = 0; // index of cell-average flux value in index vector  
+  vector<int> indices = ggqd->GGSolver->getIndices(iZ,iR);
+  
+  A.coeffRef(iEq,indices[0]) += coeff; 
  
 };
 //==============================================================================
@@ -53,6 +58,17 @@ void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
 /// @param [in] coeff coefficient of dnp source
 void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
 {
+  int index,groupBeta,groupLambda,indexOffset;
+
+  for (int iGroup = 0; iGroup < mgdnp->DNPs.size(); ++iGroup)
+  {
+    indexOffset = mgdnp->DNPs[iGroup]->coreIndexOffset;
+    index = mgdnp->DNPs[iGroup]->getIndex(iZ,iR,indexOffset);
+    groupBeta = mgdnp->DNPs[iGroup]->beta;
+    groupLambda = mgdnp->DNPs[iGroup]->lambda;
+
+    A.coeffRef(iEq,index) += coeff*groupLambda*groupBeta;
+  }
 
 };
 //==============================================================================
