@@ -18,7 +18,7 @@ class GreyGroupQD
 
   // VARIABLES
 
-  int indexOffset;
+  int indexOffset,nUnknowns;
 
   Eigen::MatrixXd sFlux;
   Eigen::MatrixXd sFluxR;

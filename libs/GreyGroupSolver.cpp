@@ -37,6 +37,9 @@ GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
   currPast.setZero(nCurrentUnknowns);
   d.setZero(nCurrentUnknowns);
 
+  // Set number of unknowns if GreyGroupQD object
+  GGQD->nUnknowns = nUnknowns;
+
   checkOptionalParams();
 };
 
