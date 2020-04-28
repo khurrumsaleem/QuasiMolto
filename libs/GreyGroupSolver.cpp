@@ -1051,6 +1051,22 @@ Eigen::VectorXd GreyGroupSolver::getCurrentSolutionVector()
 //==============================================================================
 
 //==============================================================================
+/// Assign pointers to linear system components 
+///
+void GreyGroupSolver::assignPointers(Eigen::SparseMatrix<double> * myA,\
+  Eigen::VectorXd * myx,\
+  Eigen::VectorXd * myb)
+{
+
+  A = myA;
+  x = myx;
+  b = myb;
+
+};
+//==============================================================================
+
+
+//==============================================================================
 /// Check for optional inputs of relevance to this object
 void GreyGroupSolver::checkOptionalParams()
 {
