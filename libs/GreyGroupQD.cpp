@@ -27,3 +27,17 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Build linear system for QD equations
+///
+void GreyGroupQD::buildLinearSystem()
+{
+
+  GGSolver->formLinearSystem(0); // Assuming this is the first set of equations
+                                 //   equations to be built  
+
+};
+//==============================================================================
+
+
