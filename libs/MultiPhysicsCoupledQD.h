@@ -28,6 +28,7 @@ class MultiPhysicsCoupledQD
   Eigen::VectorXd x,b;
   void fluxSource(int iZ,int iR,int iEq,double coeff);
   void dnpSource(int iZ,int iR,int iEq,double coeff);
+  void buildLinearSystem();
   void solveLinearSystem();
   HeatTransfer * heat;
   MultiGroupDNP * mgdnp;

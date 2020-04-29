@@ -81,6 +81,21 @@ void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
 };
 //==============================================================================
 
+//==============================================================================
+/// Build linear system for multiphysics coupled quasidiffusion system
+///
+void MultiPhysicsCoupledQD::buildLinearSystem()
+{
+  // Reset linear system
+
+  // Build QD system
+  
+  // Build heat transfer system
+
+  // Build delayed neutron precursor balance system
+
+};
+//==============================================================================
 
 //==============================================================================
 /// Solve linear system for multiphysics coupled quasidiffusion system
