@@ -43,9 +43,9 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   nUnknowns = ggqd->nUnknowns + heat->nUnknowns + mgdnp->nCoreUnknowns;
   A.resize(nUnknowns,nUnknowns); 
   x.setZero(nUnknowns); 
-  xPast.setZero(nUnknowns); 
+  xPast.setOnes(nUnknowns); 
   b.setZero(nUnknowns); 
-
+  
 };
 //==============================================================================
 
@@ -60,7 +60,7 @@ void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
 {
 
   int iCF = 0; // index of cell-average flux value in index vector  
-  vector<int> indices = ggqd->GGSolver->getIndices(iZ,iR);
+  vector<int> indices = ggqd->GGSolver->getIndices(iR,iZ);
   
   A.coeffRef(iEq,indices[0]) += coeff; 
  
@@ -127,5 +127,9 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
   A.makeCompressed();
   solverLU.compute(A);
   x = solverLU.solve(b);
+
+  ggqd->GGSolver->getFlux();
+  cout << "flux" << endl; 
+  cout << ggqd->sFlux << endl; 
 };
 //==============================================================================
