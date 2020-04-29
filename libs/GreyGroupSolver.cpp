@@ -47,10 +47,11 @@ GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
 
 //==============================================================================
 /// Form a portion of the linear system that belongs to SGQD 
-/// @param [in] GGQD quasidiffusion energy group to build portion of linear 
-///   for
-void GreyGroupSolver::formLinearSystem(int iEq)	      
+
+void GreyGroupSolver::formLinearSystem()	      
 {
+
+  int iEq = GGQD->indexOffset;
 
   // loop over spatial mesh
   for (int iR = 0; iR < mesh->drsCorner.size(); iR++)

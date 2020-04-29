@@ -21,7 +21,7 @@ class GreyGroupSolver
     Mesh * myMesh,\
     Materials * myMaterials,\
     YAML::Node * myInput);
-  void formLinearSystem(int iEq);
+  void formLinearSystem();
   void formBackCalcSystem();
   
   // functions to map grid indices to global index
