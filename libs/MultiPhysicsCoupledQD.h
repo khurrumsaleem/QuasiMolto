@@ -25,7 +25,7 @@ class MultiPhysicsCoupledQD
     YAML::Node * myInput);
   
   Eigen::SparseMatrix<double> A;
-  Eigen::VectorXd x,b;
+  Eigen::VectorXd x,xPast,b;
   void fluxSource(int iZ,int iR,int iEq,double coeff);
   void dnpSource(int iZ,int iR,int iEq,double coeff);
   void buildLinearSystem();

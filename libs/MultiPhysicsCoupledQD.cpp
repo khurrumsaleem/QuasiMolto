@@ -29,7 +29,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   // Initialize grey group qd object
   ggqd = new GreyGroupQD(mats,mesh,input,this);
   ggqd->indexOffset = 0;  
-  ggqd->GGSolver->assignPointers(&A,&x,&b);
+  ggqd->GGSolver->assignPointers(&A,&x,&xPast,&b);
 
   // Initialize heat transfer object and set index offset
   heat = new HeatTransfer(mats,mesh,input,this);
@@ -43,6 +43,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   nUnknowns = ggqd->nUnknowns + heat->nUnknowns + mgdnp->nCoreUnknowns;
   A.resize(nUnknowns,nUnknowns); 
   x.setZero(nUnknowns); 
+  xPast.setZero(nUnknowns); 
   b.setZero(nUnknowns); 
 
 };
