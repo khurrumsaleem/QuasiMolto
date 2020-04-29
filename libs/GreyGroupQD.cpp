@@ -34,9 +34,8 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
 void GreyGroupQD::buildLinearSystem()
 {
 
-  GGSolver->formLinearSystem(0); // Assuming this is the first set of equations
+  GGSolver->formLinearSystem(); // Assuming this is the first set of equations
                                  //   equations to be built  
-
 };
 //==============================================================================
 
