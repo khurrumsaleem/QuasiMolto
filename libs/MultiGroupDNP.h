@@ -28,6 +28,7 @@ class MultiGroupDNP
     int myIndexOffset);
   void readInput();
   void buildRecircLinearSystem();
+  void buildCoreLinearSystem();
   void solveRecircLinearSystem();
   MultiPhysicsCoupledQD * mpqd;
 

@@ -104,7 +104,7 @@ void MultiGroupDNP::readInput()
 //==============================================================================
 
 //==============================================================================
-/// Solve linear system for multiphysics coupled quasidiffusion system
+/// Build linear system for DNP recirculation
 ///
 void MultiGroupDNP::buildRecircLinearSystem()
 {
@@ -114,6 +114,19 @@ void MultiGroupDNP::buildRecircLinearSystem()
   }
 };
 //==============================================================================
+
+//==============================================================================
+/// Build linear system for DNPs inmultiphysics coupled quasidiffusion system
+///
+void MultiGroupDNP::buildCoreLinearSystem()
+{
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->buildCoreLinearSystem();
+  }
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Solve linear system for multiphysics coupled quasidiffusion system
