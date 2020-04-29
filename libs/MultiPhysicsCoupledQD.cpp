@@ -19,7 +19,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   Mesh * myMesh,\
   YAML::Node * myInput) 
 {
-  int tempIndexOffset;
+  int tempIndexOffset,nUnknowns;
 
   // Assign inputs to their member variables
   mats = myMats;
@@ -28,6 +28,8 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 
   // Initialize grey group qd object
   ggqd = new GreyGroupQD(mats,mesh,input,this);
+  ggqd->indexOffset = 0;  
+  ggqd->GGSolver->assignPointers(&A,&x,&b);
 
   // Initialize heat transfer object and set index offset
   heat = new HeatTransfer(mats,mesh,input,this);
@@ -36,6 +38,13 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   // Calculate index offset for MGDNP object initialization
   tempIndexOffset = ggqd->nUnknowns + heat->nUnknowns;
   mgdnp = new MultiGroupDNP(mats,mesh,input,this,tempIndexOffset);
+
+  // Set size of linear system
+  nUnknowns = ggqd->nUnknowns + heat->nUnknowns + mgdnp->nCoreUnknowns;
+  A.resize(nUnknowns,nUnknowns); 
+  x.setZero(nUnknowns); 
+  b.setZero(nUnknowns); 
+
 };
 //==============================================================================
 
@@ -87,12 +96,22 @@ void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
 void MultiPhysicsCoupledQD::buildLinearSystem()
 {
   // Reset linear system
+  A.setZero();
+  x.setZero();
+  b.setZero();
+  cout << "Reset linear system" << endl; 
 
   // Build QD system
+  ggqd->buildLinearSystem();
+  cout << "Built GGQD" << endl; 
   
   // Build heat transfer system
+  heat->buildLinearSystem();
+  cout << "Built heat" << endl; 
 
   // Build delayed neutron precursor balance system
+  mgdnp->buildCoreLinearSystem();  
+  cout << "Built DNP" << endl; 
 
 };
 //==============================================================================
