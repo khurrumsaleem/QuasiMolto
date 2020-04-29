@@ -56,10 +56,8 @@ void GreyGroupSolver::formLinearSystem()
   // loop over spatial mesh
   for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
   {
-    cout << "iR: " << iR << endl;
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
-      cout << "iZ: " << iZ << endl;
       
       // apply zeroth moment equation
       assertZerothMoment(iR,iZ,iEq);
@@ -106,7 +104,6 @@ void GreyGroupSolver::formLinearSystem()
         applyRadialBoundary(iR,iZ,iEq);
         iEq = iEq + 1;
       }
-      cout << "Asserted east face equation"<< endl;
     }
   }
 };
@@ -139,7 +136,7 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
   indices = getIndices(iR,iZ);
   
   // Scatter and fission source term
-  groupSourceCoeff = calcScatterAndFissionCoeff(iZ,iR);
+  groupSourceCoeff = calcScatterAndFissionCoeff(iR,iZ);
   A->insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
 
   // DNP source term

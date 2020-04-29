@@ -166,7 +166,7 @@ void QDSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup)
   {
     indices = getIndices(iR,iZ,iGroup);
-    groupSourceCoeff = calcScatterAndFissionCoeff(iZ,iR,energyGroup,iGroup);
+    groupSourceCoeff = calcScatterAndFissionCoeff(iR,iZ,energyGroup,iGroup);
     A.insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
   }
 
