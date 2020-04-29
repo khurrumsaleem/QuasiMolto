@@ -73,6 +73,8 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
     neutV = 2200.0*neutV;
   }
 
+  // Initialize data in collapsed cross sections class
+  initCollapsedXS();
 
 };
 //==============================================================================
@@ -455,6 +457,28 @@ void Materials::checkMats()
   }
 };
 //==============================================================================
+
+//==============================================================================
+/// Initialize collapsed xs data, arbitrarily, to that defined in the fast group 
+
+void Materials::initCollapsedXS()
+{
+  
+  for (int iR = 0; iR < mesh->nR; ++iR)
+  {
+    for (int iZ = 0; iZ < mesh->nZ; ++iZ)
+    {
+      oneGroupXS->sigT(iZ,iR) = sigT(iZ,iR,0);      
+      oneGroupXS->sigF(iZ,iR) = sigF(iZ,iR,0);      
+      oneGroupXS->sigS(iZ,iR) = sigS(iZ,iR,0,0);      
+      oneGroupXS->nu(iZ,iR) = nu(iZ,iR);      
+      oneGroupXS->neutV(iZ,iR) = neutV(0);      
+    }
+  }
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Print out material map and all entries in material bank

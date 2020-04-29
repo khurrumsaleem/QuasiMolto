@@ -40,6 +40,7 @@ class Materials
 	double cP(int zIdx,int rIdx);
 	double omega(int zIdx,int rIdx);
         void checkMats();
+        void initCollapsedXS();
         void edit();
 
         private:
