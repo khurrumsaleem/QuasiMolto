@@ -89,6 +89,7 @@ class GreyGroupSolver
   // function to assign pointers 
   void assignPointers(Eigen::SparseMatrix<double> * myA,\
    Eigen::VectorXd * myx,\
+   Eigen::VectorXd * myxpast,\
    Eigen::VectorXd * myb);
   
   // public variables

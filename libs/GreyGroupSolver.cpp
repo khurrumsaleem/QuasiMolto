@@ -56,9 +56,11 @@ void GreyGroupSolver::formLinearSystem()
   // loop over spatial mesh
   for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
   {
+    cout << "iR: " << iR << endl;
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
-
+      cout << "iZ: " << iZ << endl;
+      
       // apply zeroth moment equation
       assertZerothMoment(iR,iZ,iEq);
       iEq = iEq + 1;
@@ -104,6 +106,7 @@ void GreyGroupSolver::formLinearSystem()
         applyRadialBoundary(iR,iZ,iEq);
         iEq = iEq + 1;
       }
+      cout << "Asserted east face equation"<< endl;
     }
   }
 };
@@ -141,7 +144,7 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
 
   // DNP source term
   GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF]);
-
+  
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
 
@@ -1064,11 +1067,13 @@ Eigen::VectorXd GreyGroupSolver::getCurrentSolutionVector()
 ///
 void GreyGroupSolver::assignPointers(Eigen::SparseMatrix<double> * myA,\
   Eigen::VectorXd * myx,\
+  Eigen::VectorXd * myxpast,\
   Eigen::VectorXd * myb)
 {
 
   A = myA;
   x = myx;
+  xPast = myxpast;
   b = myb;
 
 };
