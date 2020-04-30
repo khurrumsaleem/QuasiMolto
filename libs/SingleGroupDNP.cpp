@@ -78,7 +78,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
       (*myb)(iEq) = myDNPConc(iZ,iR);
 
       // Flux source term 
-      coeff = mesh->dt*beta*mySigF(iZ,iR);
+      coeff = -mesh->dt*beta*mySigF(iZ,iR);
       
       if (fluxSource)
         mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
