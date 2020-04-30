@@ -127,6 +127,19 @@ void MultiGroupDNP::buildCoreLinearSystem()
 };
 //==============================================================================
 
+//==============================================================================
+/// Extract core DNP concentrations into 2D matrices in each group 
+///
+void MultiGroupDNP::getCoreDNPConc()
+{
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->getCoreConc();
+  }
+};
+//==============================================================================
+
+
 
 //==============================================================================
 /// Solve linear system for multiphysics coupled quasidiffusion system
