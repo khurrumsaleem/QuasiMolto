@@ -30,6 +30,7 @@ class MultiGroupDNP
   void buildRecircLinearSystem();
   void buildCoreLinearSystem();
   void getCoreDNPConc();
+  void setCoreDNPConc();
   void printCoreDNPConc();
   void solveRecircLinearSystem();
   MultiPhysicsCoupledQD * mpqd;

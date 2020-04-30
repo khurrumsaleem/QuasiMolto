@@ -55,7 +55,9 @@ class SingleGroupDNP
     Eigen::VectorXd inletVelocity,\
     rowvec dzs);
   void getCoreConc();
+  void setCoreConc();
   void getRecircConc();
+  void setRecircConc();
   double calcPhi(double theta,string fluxLimiter); 
   double calcTheta(double DNPupwindInterface,double DNPinterface);
 

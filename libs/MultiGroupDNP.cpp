@@ -142,6 +142,19 @@ void MultiGroupDNP::getCoreDNPConc()
 //==============================================================================
 /// Extract core DNP concentrations into 2D matrices in each group 
 ///
+void MultiGroupDNP::setCoreDNPConc()
+{
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->setCoreConc();
+  }
+};
+//==============================================================================
+
+
+//==============================================================================
+/// Extract core DNP concentrations into 2D matrices in each group 
+///
 void MultiGroupDNP::printCoreDNPConc()
 {
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)

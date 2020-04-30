@@ -118,6 +118,25 @@ void MultiPhysicsCoupledQD::buildLinearSystem()
 //==============================================================================
 
 //==============================================================================
+/// Map values in multiphysics objects into xPast
+///
+void MultiPhysicsCoupledQD::setXPast()
+{
+
+  // Set fluxes 
+  ggqd->GGSolver->setFlux();
+  
+  // Set temperatures
+  heat->setTemp();
+
+  // Set DNP concentrations in core
+  mgdnp->setCoreDNPConc();  
+
+};
+//==============================================================================
+
+
+//==============================================================================
 /// Solve linear system for multiphysics coupled quasidiffusion system
 ///
 void MultiPhysicsCoupledQD::solveLinearSystem()

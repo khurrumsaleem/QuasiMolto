@@ -303,6 +303,25 @@ void SingleGroupDNP::getCoreConc()
 //==============================================================================
 
 //==============================================================================
+/// Map solution from 2D matrix to 1D vector
+///
+void SingleGroupDNP::setCoreConc()
+{
+
+  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
+    { 
+    
+      mgdnp->mpqd->xPast(getIndex(iZ,iR,coreIndexOffset)) = dnpConc(iZ,iR);   
+    
+    }
+  }
+  
+};
+//==============================================================================
+
+//==============================================================================
 /// Map solution in 1D vector to 2D solution
 ///
 void SingleGroupDNP::getRecircConc()
@@ -321,6 +340,24 @@ void SingleGroupDNP::getRecircConc()
 };
 //==============================================================================
 
+//==============================================================================
+/// Map solution to 1D vector from 2D solution
+///
+void SingleGroupDNP::setRecircConc()
+{
+
+  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
+    { 
+    
+      mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset)) = recircConc(iZ,iR);   
+    
+    }
+  }
+  
+};
+//==============================================================================
 
 //==============================================================================
 /// Calculate phi factor in flux limiting scheme

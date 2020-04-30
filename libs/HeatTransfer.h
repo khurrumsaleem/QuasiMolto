@@ -31,6 +31,7 @@ class HeatTransfer
   void calcDiracs();
   void calcFluxes();
   void getTemp();
+  void setTemp();
   void assignBoundaryIndices();
   void updateBoundaryConditions();
   double calcPhi(double theta,string fluxLimiter);

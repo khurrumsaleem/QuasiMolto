@@ -441,9 +441,6 @@ int HeatTransfer::getIndex(int iZ, int iR)
 //==============================================================================
 /// Map 2D coordinates to index of temperature in the 1D solution vector
 ///
-/// @param [in] iZ axial location
-/// @param [in] iR radial location
-/// @param [out] index the index for temperature in the 1D solution vector
 void HeatTransfer::getTemp()
 {
 
@@ -453,6 +450,25 @@ void HeatTransfer::getTemp()
     { 
     
       temp(iZ,iR) = mpqd->x(getIndex(iZ,iR));   
+    
+    }
+  }
+  
+};
+//==============================================================================
+
+//==============================================================================
+/// Map values from 2D matrix into 1D solution vector
+///
+void HeatTransfer::setTemp()
+{
+
+  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
+    { 
+    
+      mpqd->xPast(getIndex(iZ,iR)) = temp(iZ,iR);   
     
     }
   }

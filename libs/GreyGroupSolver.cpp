@@ -1003,6 +1003,31 @@ void GreyGroupSolver::getFlux()
 //==============================================================================
 
 //==============================================================================
+/// Map values from 2D matrix to 1D solution vector
+void GreyGroupSolver::setFlux()
+{
+  vector<int> indices;
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+      indices = getIndices(iR,iZ);
+      (*xPast)(indices[iCF]) = GGQD->sFlux(iZ,iR);
+      
+      (*xPast)(indices[iWF]) = GGQD->sFluxR(iZ,iR);
+      (*xPast)(indices[iEF]) = GGQD->sFluxR(iZ,iR+1);
+      (*xPast)(indices[iNF]) = GGQD->sFluxZ(iZ,iR);
+      (*xPast)(indices[iSF]) = GGQD->sFluxZ(iZ+1,iR);
+
+    }
+  }  
+
+};
+//==============================================================================
+
+//==============================================================================
 /// Extract flux values from GGQD object, store to solution vector, and return 
 /// @param [out] solVector flux values mapped to the 1D vector
 Eigen::VectorXd GreyGroupSolver::getFluxSolutionVector()
