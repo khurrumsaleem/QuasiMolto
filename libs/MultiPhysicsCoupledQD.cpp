@@ -131,5 +131,13 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
   ggqd->GGSolver->getFlux();
   cout << "flux" << endl; 
   cout << ggqd->sFlux << endl; 
+  
+  heat->getTemp();
+  cout << "temp" << endl; 
+  cout << heat->temp << endl; 
+  
+  mgdnp->getCoreDNPConc();
+  cout << "DNP conc" << endl; 
+  mgdnp->printCoreDNPConc();
 };
 //==============================================================================
