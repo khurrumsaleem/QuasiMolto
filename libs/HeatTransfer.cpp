@@ -40,7 +40,7 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   nUnknowns = mesh->nR*mesh->nZ;
 
   // Initialize size of matrices and vectors
-  temp.setConstant(mesh->nZ,mesh->nR,inletT);
+  temp.setConstant(mesh->nZ,mesh->nR,1.0);
   flux.setZero(mesh->nZ+1,mesh->nR);
   dirac.setZero(mesh->nZ+1,mesh->nR);
   inletTemp.setConstant(2,mesh->nR,inletT);
@@ -145,7 +145,7 @@ void HeatTransfer::buildLinearSystem()
       mpqd->b(iEq) += mats->density(iZ,iR)*mats->cP(iZ,iR)*temp(iZ,iR); 
 
       // Flux source term 
-      coeff = mesh->dt*mats->omega(iZ,iR)*mats->oneGroupXS->sigF(iZ,iR);
+      coeff = -mesh->dt*mats->omega(iZ,iR)*mats->oneGroupXS->sigF(iZ,iR);
       mpqd->fluxSource(iZ,iR,iEq,coeff);
 
       // Advection term
