@@ -85,7 +85,7 @@ void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
     groupBeta = mgdnp->DNPs[iGroup]->beta;
     groupLambda = mgdnp->DNPs[iGroup]->lambda;
 
-    A.coeffRef(iEq,index) += coeff*groupLambda*groupBeta;
+    A.coeffRef(iEq,index) += coeff*groupLambda;
   }
 
 };
@@ -132,6 +132,8 @@ void MultiPhysicsCoupledQD::initializeXPast()
   // Set DNP concentrations in core
   mgdnp->setCoreDNPConc();  
 
+  cout << "xPast" << endl;
+  cout << xPast << endl;
 };
 //==============================================================================
 
@@ -146,6 +148,11 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
   A.makeCompressed();
   solverLU.compute(A);
   x = solverLU.solve(b);
+
+  cout << "A" << endl; 
+  cout << A << endl;
+  cout << "b" << endl; 
+  cout << b << endl;
 
   ggqd->GGSolver->getFlux();
   cout << "flux" << endl; 
