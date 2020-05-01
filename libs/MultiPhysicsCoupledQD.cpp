@@ -120,7 +120,7 @@ void MultiPhysicsCoupledQD::buildLinearSystem()
 //==============================================================================
 /// Map values in multiphysics objects into xPast
 ///
-void MultiPhysicsCoupledQD::setXPast()
+void MultiPhysicsCoupledQD::initializeXPast()
 {
 
   // Set fluxes 
