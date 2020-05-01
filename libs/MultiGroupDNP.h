@@ -34,10 +34,10 @@ class MultiGroupDNP
   void printCoreDNPConc();
   void solveRecircLinearSystem();
   MultiPhysicsCoupledQD * mpqd;
+  YAML::Node * input;
 
   private:
   Materials * mats;
-  YAML::Node * input;
   Mesh * mesh; 
   
 };
