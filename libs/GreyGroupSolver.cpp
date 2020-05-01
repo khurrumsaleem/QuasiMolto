@@ -818,7 +818,10 @@ void GreyGroupSolver::assertWBC(int iR,int iZ,int iEq)
   if (reflectingBCs or goldinBCs)
     assertWCurrentBC(iR,iZ,iEq);
   else
-    assertWFluxBC(iR,iZ,iEq);
+    // Can't think of a circumstance where there wouldn't be a reflecting BC at
+    //   r = 0 
+    //assertWFluxBC(iR,iZ,iEq);
+    assertWCurrentBC(iR,iZ,iEq);
 };
 //==============================================================================
 

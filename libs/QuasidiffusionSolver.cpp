@@ -918,7 +918,10 @@ void QDSolver::assertWBC(int iR,int iZ,int iEq,int energyGroup,\
   if (reflectingBCs or goldinBCs)
     assertWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else
-    assertWFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+    // Can't think of a circumstance where there wouldn't be a reflecting BC at
+    //   r = 0 
+    //assertWFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
 
