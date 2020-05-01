@@ -17,6 +17,10 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   YAML::Node * myInput,\
   MultiPhysicsCoupledQD * myMPQD)
 {
+  // Variables for reading inputs
+  vector<double> inpSFluxPrev0;
+  double fluxSum;
+
   // Assign pointers for materials, mesh, and input objects
   mpqd = myMPQD;
   materials = myMaterials;
@@ -46,6 +50,24 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   sFlux.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   sFluxR.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size()+1);
   sFluxZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
+
+  // Check for optional input  
+  if ((*input)["parameters"]["initial previous flux"])
+  {
+    
+    // Read in input
+    inpSFluxPrev0=(*input)["parameters"]["initial previous flux"]\
+    .as<vector<double>>();
+   
+    // Get sum of group fluxes 
+    fluxSum = accumulate(inpSFluxPrev0.begin(),inpSFluxPrev0.end(),0.0);   
+ 
+    sFlux.setConstant(fluxSum);     
+    sFluxR.setConstant(fluxSum);     
+    sFluxZ.setConstant(fluxSum);    
+ 
+  }
+
   currentR.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size()+1);
   currentZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
   
