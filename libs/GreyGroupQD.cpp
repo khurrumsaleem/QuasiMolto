@@ -50,10 +50,10 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   currentZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
   
   // initialize boundary conditions
-  wFluxBC.setOnes(mesh->dzsCorner.size());
-  eFluxBC.setOnes(mesh->dzsCorner.size());
-  nFluxBC.setOnes(mesh->drsCorner.size());
-  sFluxBC.setOnes(mesh->drsCorner.size());
+  wFluxBC.setZero(mesh->dzsCorner.size());
+  eFluxBC.setZero(mesh->dzsCorner.size());
+  nFluxBC.setZero(mesh->drsCorner.size());
+  sFluxBC.setZero(mesh->drsCorner.size());
   wCurrentRBC.setZero(mesh->dzsCorner.size());
   eCurrentRBC.setZero(mesh->dzsCorner.size());
   nCurrentZBC.setZero(mesh->drsCorner.size());
