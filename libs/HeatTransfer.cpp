@@ -40,7 +40,7 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   nUnknowns = mesh->nR*mesh->nZ;
 
   // Initialize size of matrices and vectors
-  temp.setConstant(mesh->nZ,mesh->nR,1.0);
+  temp.setConstant(mesh->nZ,mesh->nR,inletT);
   flux.setZero(mesh->nZ+1,mesh->nR);
   dirac.setZero(mesh->nZ+1,mesh->nR);
   inletTemp.setConstant(2,mesh->nR,inletT);
@@ -68,6 +68,10 @@ void HeatTransfer::buildLinearSystem()
   int nZ = temp.rows()-1;
   double harmonicAvg,coeff;
   vector<double> gParams;
+
+  updateBoundaryConditions();
+  calcDiracs();
+  calcFluxes();
   
   for (int iR = 0; iR < temp.cols(); iR++)
   {
@@ -159,7 +163,6 @@ void HeatTransfer::buildLinearSystem()
    
 };
 //==============================================================================
-
 
 //==============================================================================
 /// Calculate energy diracs
