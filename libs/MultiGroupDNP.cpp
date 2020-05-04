@@ -108,6 +108,8 @@ void MultiGroupDNP::readInput()
 ///
 void MultiGroupDNP::buildRecircLinearSystem()
 {
+  A.setZero();
+  b.setZero();
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
     DNPs[iGroup]->buildRecircLinearSystem();
@@ -140,6 +142,18 @@ void MultiGroupDNP::getCoreDNPConc()
 //==============================================================================
 
 //==============================================================================
+/// Extract recirc DNP concentrations into 2D matrices in each group 
+///
+void MultiGroupDNP::getRecircDNPConc()
+{
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->getRecircConc();
+  }
+};
+//==============================================================================
+
+//==============================================================================
 /// Extract core DNP concentrations into 2D matrices in each group 
 ///
 void MultiGroupDNP::setCoreDNPConc()
@@ -151,9 +165,20 @@ void MultiGroupDNP::setCoreDNPConc()
 };
 //==============================================================================
 
-
 //==============================================================================
 /// Extract core DNP concentrations into 2D matrices in each group 
+///
+void MultiGroupDNP::setRecircDNPConc()
+{
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->setRecircConc();
+  }
+};
+//==============================================================================
+
+//==============================================================================
+/// Print core DNP concentrations in 2D matrices 
 ///
 void MultiGroupDNP::printCoreDNPConc()
 {
@@ -161,6 +186,19 @@ void MultiGroupDNP::printCoreDNPConc()
   {
     cout << "Group: " << iGroup << endl;
     cout << DNPs[iGroup]->dnpConc << endl;
+  }
+};
+//==============================================================================
+
+//==============================================================================
+/// Print core DNP concentrations in 2D matrices 
+///
+void MultiGroupDNP::printRecircDNPConc()
+{
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    cout << "Group: " << iGroup << endl;
+    cout << DNPs[iGroup]->recircConc << endl;
   }
 };
 //==============================================================================

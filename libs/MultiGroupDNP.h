@@ -32,6 +32,9 @@ class MultiGroupDNP
   void getCoreDNPConc();
   void setCoreDNPConc();
   void printCoreDNPConc();
+  void getRecircDNPConc();
+  void setRecircDNPConc();
+  void printRecircDNPConc();
   void solveRecircLinearSystem();
   MultiPhysicsCoupledQD * mpqd;
   YAML::Node * input;
