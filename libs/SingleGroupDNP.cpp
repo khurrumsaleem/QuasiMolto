@@ -49,7 +49,7 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
 
   flux.setZero(mesh->nZ+1,mesh->nR); 
   dirac.setZero(mesh->nZ+1,mesh->nR);
-  recircConc.setZero(mesh->nZrecirc,mesh->nR); 
+  recircConc.setConstant(mesh->nZrecirc,mesh->nR,0.5); 
   recircFlux.setZero(mesh->nZrecirc+1,mesh->nR); 
   recircDirac.setZero(mesh->nZrecirc+1,mesh->nR);
   inletConc.setZero(2,mesh->nR);
