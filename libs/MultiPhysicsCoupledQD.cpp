@@ -133,8 +133,9 @@ void MultiPhysicsCoupledQD::initializeXPast()
   // Set temperatures
   heat->setTemp();
 
-  // Set DNP concentrations in core
+  // Set DNP concentrations in core and recirculation loop
   mgdnp->setCoreDNPConc();  
+  mgdnp->setRecircDNPConc();  
 
   cout << "xPast" << endl;
   cout << xPast << endl;
@@ -153,6 +154,8 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
   solverLU.compute(A);
   x = solverLU.solve(b);
 
+  mgdnp->solveRecircLinearSystem();
+
   cout << "A" << endl; 
   cout << A << endl;
   cout << "b" << endl; 
@@ -169,5 +172,9 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
   mgdnp->getCoreDNPConc();
   cout << "DNP conc" << endl; 
   mgdnp->printCoreDNPConc();
+  
+  mgdnp->getRecircDNPConc();
+  cout << "DNP conc" << endl; 
+  mgdnp->printRecircDNPConc();
 };
 //==============================================================================
