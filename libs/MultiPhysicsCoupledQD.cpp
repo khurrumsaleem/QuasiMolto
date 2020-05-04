@@ -16,8 +16,8 @@ using namespace std;
 ///
 /// @param [in] blankType blank for this material
 MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
-  Mesh * myMesh,\
-  YAML::Node * myInput) 
+    Mesh * myMesh,\
+    YAML::Node * myInput) 
 {
   int tempIndexOffset,nUnknowns;
 
@@ -34,7 +34,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   // Initialize heat transfer object and set index offset
   heat = new HeatTransfer(mats,mesh,input,this);
   heat->indexOffset = ggqd->nUnknowns;
-  
+
   // Calculate index offset for MGDNP object initialization
   tempIndexOffset = ggqd->nUnknowns + heat->nUnknowns;
   mgdnp = new MultiGroupDNP(mats,mesh,input,this,tempIndexOffset);
@@ -45,7 +45,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   x.setZero(nUnknowns); 
   xPast.setOnes(nUnknowns); 
   b.setZero(nUnknowns); 
-  
+
 };
 //==============================================================================
 
@@ -61,9 +61,9 @@ void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
 
   int iCF = 0; // index of cell-average flux value in index vector  
   vector<int> indices = ggqd->GGSolver->getIndices(iR,iZ);
-  
+
   A.coeffRef(iEq,indices[0]) += coeff; 
- 
+
 };
 //==============================================================================
 
@@ -105,14 +105,18 @@ void MultiPhysicsCoupledQD::buildLinearSystem()
   // Build QD system
   ggqd->buildLinearSystem();
   cout << "Built GGQD" << endl; 
-  
+
   // Build heat transfer system
   heat->buildLinearSystem();
   cout << "Built heat" << endl; 
 
-  // Build delayed neutron precursor balance system
+  // Build delayed neutron precursor balance system in core
   mgdnp->buildCoreLinearSystem();  
   cout << "Built DNP" << endl; 
+
+  // Build delayed neutron precursor balance system in recirculation loop
+  mgdnp->buildRecircLinearSystem();  
+  cout << "Built recirc DNP" << endl; 
 
 };
 //==============================================================================
@@ -125,7 +129,7 @@ void MultiPhysicsCoupledQD::initializeXPast()
 
   // Set fluxes 
   ggqd->GGSolver->setFlux();
-  
+
   // Set temperatures
   heat->setTemp();
 
@@ -157,11 +161,11 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
   ggqd->GGSolver->getFlux();
   cout << "flux" << endl; 
   cout << ggqd->sFlux << endl; 
-  
+
   heat->getTemp();
   cout << "temp" << endl; 
   cout << heat->temp << endl; 
-  
+
   mgdnp->getCoreDNPConc();
   cout << "DNP conc" << endl; 
   mgdnp->printCoreDNPConc();
