@@ -49,7 +49,7 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   inletVelocity.setZero(mesh->nR);
   inletcP.setZero(mesh->nR);
   
-
+  assignBoundaryIndices();
   cout << "Initialized HeatTransfer object." << endl;
   cout << "wallTemp: " << wallT << endl;
   cout << "inletTemp: " << inletT << endl;
@@ -416,10 +416,6 @@ void HeatTransfer::updateBoundaryConditions()
     inletcP(iR) = mats->cP(coreInletIndex,iR);
   }
 
-  cout << "inletTemp" << endl;
-  cout << inletTemp << endl;
-  cout << "temp" << endl;
-  cout << temp << endl; 
 };
 //==============================================================================
 
