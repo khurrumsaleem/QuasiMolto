@@ -14,9 +14,9 @@ using namespace std;
 /// @param [in] myMaterials Materials object for the simulation
 /// @param [in] myInput YAML input object for the simulation
 GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
-  Mesh * myMesh,\
-  Materials * myMaterials,\
-  YAML::Node * myInput)	      
+    Mesh * myMesh,\
+    Materials * myMaterials,\
+    YAML::Node * myInput)	      
 {
   // Point to variables for mesh and input file
   GGQD = myGGQD;
@@ -58,7 +58,7 @@ void GreyGroupSolver::formLinearSystem()
   {
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
-      
+
       // apply zeroth moment equation
       assertZerothMoment(iR,iZ,iEq);
       iEq = iEq + 1;
@@ -134,21 +134,21 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
   double groupSourceCoeff;
 
   indices = getIndices(iR,iZ);
-  
+
   // Scatter and fission source term
   groupSourceCoeff = calcScatterAndFissionCoeff(iR,iZ);
   A->insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
 
   // DNP source term
   GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF]);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
 
   A->coeffRef(iEq,indices[iCF]) += geoParams[iCF] * ((1/(v*deltaT)) + sigT);
 
   westCurrent(-geoParams[iWF],iR,iZ,iEq);
-  
+
   eastCurrent(geoParams[iEF],iR,iZ,iEq);
 
   northCurrent(-geoParams[iNF],iR,iZ,iEq);
@@ -157,7 +157,7 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
 
   // formulate RHS entry
   (*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
-    ( ((*xPast)(indices[iCF])/(v*deltaT)) + GGQD->q(iZ,iR));
+              ( ((*xPast)(indices[iCF])/(v*deltaT)) + GGQD->q(iZ,iR));
 };
 //==============================================================================
 
@@ -222,7 +222,7 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
 
   A->coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
-  
+
   // formulate RHS entry
   (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iSC])/(v*deltaT));
 };
@@ -255,7 +255,7 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
-  
+
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
   A->coeffRef(iEq,indices[iNF]) += coeff*EzzL/deltaZ;
@@ -298,10 +298,10 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   ErrL = GGQD->Err(iZ,iR);
   EzzL = GGQD->Ezz(iZ,iR);
   ErzL = GGQD->Erz(iZ,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
-  
+
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
   A->coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
@@ -347,7 +347,7 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
-  
+
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
   A->coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
@@ -357,7 +357,7 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrL/(hUp*deltaR);
 
   A->coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrL/(hUp*deltaR);
-  
+
   // formulate RHS entry
   (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iEC])/(v*deltaT));
 };
@@ -371,12 +371,16 @@ void GreyGroupSolver::formBackCalcSystem()
 {
   int iEq = GGQD->indexOffset;
 
+  // Reset linear system
+  C.setZero();
+  d.setZero();
+
   // loop over spatial mesh
   for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
   {
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
-      
+
       // south face
       calcSouthCurrent(iR,iZ,iEq);
       iEq = iEq + 1;
@@ -444,7 +448,7 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
 
   C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
-  
+
   // formulate RHS entry
   d(iEq) = coeff*(currPast(indices[iSC])/(v*deltaT));
 };
@@ -477,7 +481,7 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
-  
+
   coeff = 1/((1/(v*deltaT))+sigT); 
 
   C.coeffRef(iEq,indices[iNF]) += coeff*EzzL/deltaZ;
@@ -520,10 +524,10 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
   ErrL = GGQD->Err(iZ,iR);
   EzzL = GGQD->Ezz(iZ,iR);
   ErzL = GGQD->Erz(iZ,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
-  
+
   coeff = 1/((1/(v*deltaT))+sigT); 
 
   C.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
@@ -569,7 +573,7 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
-  
+
   coeff = 1/((1/(v*deltaT))+sigT); 
 
   C.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
@@ -579,7 +583,7 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrL/(hUp*deltaR);
 
   C.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrL/(hUp*deltaR);
-  
+
   // formulate RHS entry
   d(iEq) = coeff*(currPast(indices[iEC])/(v*deltaT));
 };
@@ -593,7 +597,7 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
 void GreyGroupSolver::assertNFluxBC(int iR,int iZ,int iEq)
 {
   vector<int> indices = getIndices(iR,iZ);
-  
+
   A->insert(iEq,indices[iNF]) = 1.0;
   (*b)(iEq) = GGQD->nFluxBC(iR);
 };
@@ -607,7 +611,7 @@ void GreyGroupSolver::assertNFluxBC(int iR,int iZ,int iEq)
 void GreyGroupSolver::assertSFluxBC(int iR,int iZ,int iEq)
 {
   vector<int> indices = getIndices(iR,iZ);
-  
+
   A->insert(iEq,indices[iSF]) = 1.0;
   (*b)(iEq) = GGQD->sFluxBC(iR);
 };
@@ -621,7 +625,7 @@ void GreyGroupSolver::assertSFluxBC(int iR,int iZ,int iEq)
 void GreyGroupSolver::assertWFluxBC(int iR,int iZ,int iEq)
 {
   vector<int> indices = getIndices(iR,iZ);
-  
+
   A->insert(iEq,indices[iWF]) = 1.0;
   (*b)(iEq) = GGQD->wFluxBC(iZ);
 };
@@ -635,7 +639,7 @@ void GreyGroupSolver::assertWFluxBC(int iR,int iZ,int iEq)
 void GreyGroupSolver::assertEFluxBC(int iR,int iZ,int iEq)
 {
   vector<int> indices = getIndices(iR,iZ);
-  
+
   A->insert(iEq,indices[iEF]) = 1.0;
   (*b)(iEq) = GGQD->eFluxBC(iZ);
 };
@@ -701,15 +705,15 @@ void GreyGroupSolver::assertNGoldinBC(int iR,int iZ,int iEq)
   northCurrent(1.0,iR,iZ,iEq);
   A->coeffRef(iEq,indices[iNF]) -= ratio;
   (*b)(iEq) = (*b)(iEq) + (inwardCurrent-ratio*inwardFlux);
-  
+
   //northCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
   //A.coeffRef(iEq,indices[iNF]) -= absCurrent/SGQD->nFluxBC(iR);
   //b(iEq) = b(iEq) + (2*inwardCurrent);
-  
+
   //northCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //southCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //b(iEq) = b(iEq) + SGQD->nCurrentZBC(iR);
-  
+
   //A.coeffRef(iEq,indices[iNF]) = 1.0;
   //b(iEq) = SGQD->nFluxBC(iR); 
 };
@@ -735,7 +739,7 @@ void GreyGroupSolver::assertSGoldinBC(int iR,int iZ,int iEq)
   //southCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
   //A.coeffRef(iEq,indices[iSF]) -= absCurrent/SGQD->sFluxBC(iR);
   //b(iEq) = b(iEq) + (2*inwardCurrent);
-  
+
   //southCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //northCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //b(iEq) = b(iEq) + SGQD->sCurrentZBC(iR);
@@ -761,15 +765,15 @@ void GreyGroupSolver::assertEGoldinBC(int iR,int iZ,int iEq)
   eastCurrent(1.0,iR,iZ,iEq);
   A->coeffRef(iEq,indices[iEF]) -= ratio;
   (*b)(iEq) = (*b)(iEq) + (inwardCurrent-ratio*inwardFlux);
-  
+
   //eastCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
   //A.coeffRef(iEq,indices[iEF]) -= absCurrent/SGQD->eFluxBC(iZ);
   //b(iEq) = b(iEq) + (2*inwardCurrent);
-  
+
   //eastCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //westCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //b(iEq) = b(iEq) + SGQD->eCurrentRBC(iZ);
-  
+
   //A.coeffRef(iEq,indices[iEF]) = 1.0;
   //b(iEq) = SGQD->eFluxBC(iZ); 
 };
@@ -869,7 +873,7 @@ double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval)
 {
   double EzzL,ErrL,ErzL,G,rUp,rDown,rAvg,g0,g1,ratio,hEval;
   int p;
-  
+
   // get local Eddington factors 
   ErrL = GGQD->Err(iZ,iR);
   EzzL = GGQD->Ezz(iZ,iR);
@@ -899,7 +903,7 @@ double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval)
     hEval = pow(rEval,G);
 
   }
-  
+
   return hEval;
 
 };
@@ -913,9 +917,9 @@ double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval)
 /// @param [out] index global index for south face current in cell at (iR,iZ)
 vector<int> GreyGroupSolver::getIndices(int iR,int iZ)
 {
-  
+
   vector<int> indices,oneGroupIndices;
-  
+
   // Get indices for a single energy group 
   oneGroupIndices = mesh->getQDCellIndices(iR,iZ);
 
@@ -946,7 +950,7 @@ vector<double> GreyGroupSolver::calcGeoParams(int iR,int iZ)
 {
   vector<double> gParams;
   double rDown,rUp,zDown,zUp,volume,wFaceSA,eFaceSA,nFaceSA,sFaceSA;
-  
+
   // get boundaries of this cell
   rDown = mesh->rCornerEdge(iR); rUp = mesh->rCornerEdge(iR+1);
   zDown = mesh->zCornerEdge(iR); zUp = mesh->zCornerEdge(iR+1);
@@ -996,11 +1000,23 @@ void GreyGroupSolver::getFlux()
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
       indices = getIndices(iR,iZ);
+
+      // Read fluxes into recirculation back calc vector
       xFlux(indices[iCF]) = (*x)(indices[iCF]);
+      xFlux(indices[iWF]) = (*x)(indices[iWF]);
+      xFlux(indices[iEF]) = (*x)(indices[iEF]);
+      xFlux(indices[iNF]) = (*x)(indices[iNF]);
+      xFlux(indices[iSF]) = (*x)(indices[iSF]);
+
+      // Read fluxes into GGQD object
       GGQD->sFlux(iZ,iR) = xFlux(indices[iCF]);
+      GGQD->sFluxR(iZ,iR) = xFlux(indices[iWF]);
+      GGQD->sFluxR(iZ,iR+1) = xFlux(indices[iEF]);
+      GGQD->sFluxZ(iZ,iR) = xFlux(indices[iNF]);
+      GGQD->sFluxZ(iZ+1,iR) = xFlux(indices[iSF]);
 
     }
-  }  
+  } 
 
 };
 //==============================================================================
@@ -1018,7 +1034,7 @@ void GreyGroupSolver::setFlux()
     {
       indices = getIndices(iR,iZ);
       (*xPast)(indices[iCF]) = GGQD->sFlux(iZ,iR);
-      
+
       (*xPast)(indices[iWF]) = GGQD->sFluxR(iZ,iR);
       (*xPast)(indices[iEF]) = GGQD->sFluxR(iZ,iR+1);
       (*xPast)(indices[iNF]) = GGQD->sFluxZ(iZ,iR);
@@ -1091,9 +1107,9 @@ Eigen::VectorXd GreyGroupSolver::getCurrentSolutionVector()
 /// Assign pointers to linear system components 
 ///
 void GreyGroupSolver::assignPointers(Eigen::SparseMatrix<double> * myA,\
-  Eigen::VectorXd * myx,\
-  Eigen::VectorXd * myxpast,\
-  Eigen::VectorXd * myb)
+    Eigen::VectorXd * myx,\
+    Eigen::VectorXd * myxpast,\
+    Eigen::VectorXd * myb)
 {
 
   A = myA;
@@ -1120,19 +1136,19 @@ void GreyGroupSolver::checkOptionalParams()
     if (boundaryType == "TQD") goldinBCs = true;
 
   }
-  
+
   if ((*input)["parameters"]["mgqd-bcs"])
   {
 
     boundaryType=(*input)["parameters"]["mgqd-bcs"].as<string>();
 
     if (boundaryType == "reflective" or boundaryType == "REFLECTIVE"\
-      or boundaryType == "Reflective")
+        or boundaryType == "Reflective")
       reflectingBCs = true;
     else if (boundaryType == "goldin" or boundaryType == "GOLDIN" \
-      or boundaryType == "Goldin")
+        or boundaryType == "Goldin")
       goldinBCs = true;
-    
+
   }
 }
 //==============================================================================
