@@ -108,8 +108,8 @@ void MultiGroupDNP::readInput()
 ///
 void MultiGroupDNP::buildRecircLinearSystem()
 {
-  A.setZero();
-  b.setZero();
+  recircA.setZero();
+  recircb.setZero();
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
     DNPs[iGroup]->buildRecircLinearSystem();
