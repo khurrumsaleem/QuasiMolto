@@ -139,9 +139,15 @@ void MultiPhysicsCoupledQD::initializeXPast()
 
   cout << "xPast" << endl;
   cout << xPast << endl;
+
+  // Calculate currents consistent with fluxes in xPast
+  x = xPast; // getFlux() pulls from x
+  ggqd->GGSolver->getFlux();
+  ggqd->GGSolver->formBackCalcSystem();
+  ggqd->GGSolver->backCalculateCurrent();
+  x.setZero(); // Reset x
 };
 //==============================================================================
-
 
 //==============================================================================
 /// Solve linear system for multiphysics coupled quasidiffusion system
@@ -156,11 +162,7 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
 
   mgdnp->solveRecircLinearSystem();
 
-  cout << "A" << endl; 
-  cout << A << endl;
-  cout << "b" << endl; 
-  cout << b << endl;
-
+  // Read solutions from 1D vector to 2D matrices 
   ggqd->GGSolver->getFlux();
   cout << "flux" << endl; 
   cout << ggqd->sFlux << endl; 
@@ -176,5 +178,12 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
   mgdnp->getRecircDNPConc();
   cout << "DNP conc" << endl; 
   mgdnp->printRecircDNPConc();
+
+  // Back calculate currents
+  ggqd->GGSolver->formBackCalcSystem();
+  ggqd->GGSolver->backCalculateCurrent();
+
+  // Set xPast 
+  xPast = x; 
 };
 //==============================================================================
