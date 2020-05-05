@@ -192,4 +192,6 @@ void testMultiPhysicsCoupledQD(Materials * myMaterials,\
   myMPQD->solveLinearSystem();
   myMPQD->buildLinearSystem();
   myMPQD->solveLinearSystem();
+  myMPQD->buildLinearSystem();
+  myMPQD->solveLinearSystem();
 }
