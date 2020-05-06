@@ -11,9 +11,17 @@ using namespace arma;
 
 class CollapsedCrossSections
 {
-        public:
-        CollapsedCrossSections(int nZ,int nR);
-	Eigen::MatrixXd sigT,sigS,sigF,chiP,chiD,neutV,nu; 
+  public:
+    
+    // Constructor
+    CollapsedCrossSections(int nZ,int nR);
+    
+    // Variables
+    Eigen::MatrixXd sigT,sigS,sigF,chiP,chiD,neutV,nu,qdFluxCoeff; 
+    vector<Eigen::MatrixXd> groupDNPFluxCoeff; 
+  
+    // Functions 
+    double dnpFluxCoeff(int iZ,int iR,int dnpID);
 };
 
 //==============================================================================

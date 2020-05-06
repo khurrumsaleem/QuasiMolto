@@ -10,7 +10,8 @@ using namespace arma;
 ///==============================================================================
 /// CollapsedCrossSections class object constructor
 ///
-/// @param [in] myMats Materials object for this simulation
+/// @param [in] nZ number of axial cells
+/// @param [in] nR number of radial cells
 CollapsedCrossSections::CollapsedCrossSections(int nZ,int nR)
 {
   
@@ -23,7 +24,21 @@ CollapsedCrossSections::CollapsedCrossSections(int nZ,int nR)
   neutV.setZero(nZ,nR);  
   chiD.setZero(nZ,nR);  
   nu.setZero(nZ,nR);  
+  qdFluxCoeff.setZero(nZ,nR);  
 
 };
 //==============================================================================
 
+///==============================================================================
+/// Return DNP flux coefficient at a location and precursor group
+///
+/// @param [in] nZ number of axial cells
+/// @param [in] nR number of radial cells
+/// @param [in] dnpID number of precursor group
+double CollapsedCrossSections::dnpFluxCoeff(int iZ,int iR,int dnpID)
+{
+
+  return groupDNPFluxCoeff[dnpID](iZ,iR);
+
+};
+//==============================================================================
