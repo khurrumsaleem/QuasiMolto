@@ -15,10 +15,11 @@ using namespace std;
 SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   Mesh * myMesh,\
   MultiGroupDNP * myMGDNP,\
-  double myBeta,\
+  Eigen::VectorXd myBeta,\
   double myLambda,\
   int myCoreIndexOffset,\
-  int myRecircIndexOffset)
+  int myRecircIndexOffset,\
+  int myDNPid)
 {
   // Variables to hold optional parameters
   double inpConc0;
@@ -31,6 +32,7 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   lambda = myLambda;
   coreIndexOffset = myCoreIndexOffset;
   recircIndexOffset = myRecircIndexOffset;
+  dnpID = myDNPid;
 
   // Initialize size of matrices and vectors
   dnpConc.setZero(mesh->nZ,mesh->nR);
@@ -49,7 +51,20 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
 
   flux.setZero(mesh->nZ+1,mesh->nR); 
   dirac.setZero(mesh->nZ+1,mesh->nR);
-  recircConc.setConstant(mesh->nZrecirc,mesh->nR,0.5); 
+  recircConc.setZero(mesh->nZrecirc,mesh->nR); 
+
+  // Check for optional input  
+  if ((*(mgdnp->input))["parameters"]["initial recirc dnp concentration"])
+  {
+    
+    // Read in input
+    inpConc0=(*(mgdnp->input))["parameters"]\
+             ["initial recirc dnp concentration"].as<double>();
+   
+    recircConc.setConstant(inpConc0);
+ 
+  }
+
   recircFlux.setZero(mesh->nZrecirc+1,mesh->nR); 
   recircDirac.setZero(mesh->nZrecirc+1,mesh->nR);
   inletConc.setZero(2,mesh->nR);
@@ -94,7 +109,8 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
 
       // Flux source term 
       if (fluxSource)
-        coeff = -mesh->dt*beta*mats->nu(iZ,iR)*mySigF(iZ,iR);
+        //coeff = -mesh->dt*beta*mats->nu(iZ,iR)*mySigF(iZ,iR);
+        coeff = -mesh->dt*mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
         mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
 
       // Advection term
