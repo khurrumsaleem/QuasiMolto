@@ -82,7 +82,6 @@ void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
   {
     indexOffset = mgdnp->DNPs[iGroup]->coreIndexOffset;
     index = mgdnp->DNPs[iGroup]->getIndex(iZ,iR,indexOffset);
-    groupBeta = mgdnp->DNPs[iGroup]->beta;
     groupLambda = mgdnp->DNPs[iGroup]->lambda;
 
     A.coeffRef(iEq,index) += coeff*groupLambda;
