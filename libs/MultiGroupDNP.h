@@ -17,7 +17,7 @@ class MultiGroupDNP
   public:
   int indexOffset = 0;
   int nCoreUnknowns,nRecircUnknowns;
-  double beta;
+  Eigen::VectorXd beta;
   vector< shared_ptr<SingleGroupDNP> > DNPs; 
   Eigen::VectorXd recircb,recircx;
   Eigen::SparseMatrix<double> recircA;

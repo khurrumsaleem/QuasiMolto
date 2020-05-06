@@ -39,10 +39,15 @@ void MultiGroupDNP::readInput()
 {
   // Temporary integers to store number of group unknowns
   int nGroupCoreUnknowns,nGroupRecircUnknowns,coreIndexOffset,recircIndexOffset;
-  
+  double tempVal;  
+
   // Temporary vector for beta and lambda input params
   vector<double> betaInp,lambdaInp;
-  Eigen::VectorXd betas,lambdas;
+  Eigen::VectorXd lambdas;
+  Eigen::MatrixXd betas;
+
+  // Set size of beta vector
+  beta.setZero(mats->nGroups);
 
   // Check if DNP data are specified in input
   if ((*input)["delayed neutron precursors"]["betas"] and\
@@ -50,56 +55,120 @@ void MultiGroupDNP::readInput()
   {
     // ToDo: allow specification of just betas or lambdas 
 
-    betaInp = (*input)["delayed neutron precursors"]["betas"]\
-            .as<vector<double>>();
-    betas.setZero(betaInp.size());
-
     lambdaInp = (*input)["delayed neutron precursors"]["lambdas"]\
             .as<vector<double>>();
     lambdas.setZero(lambdaInp.size());
+
+    betaInp = (*input)["delayed neutron precursors"]["betas"]\
+            .as<vector<double>>();
+    betas.setZero(mats->nGroups,lambdaInp.size());
 
     cout << "read inputs" << endl;
     cout << "betas size: " <<  betaInp.size()<<endl;
     cout << "lambdas size: " <<  lambdaInp.size()<<endl;
     
-    for (int iGroup = 0; iGroup < betaInp.size(); iGroup++)
+    for (int iDNPGroup = 0; iDNPGroup < lambdaInp.size(); iDNPGroup++)
     {
-      betas(iGroup) = betaInp[iGroup];
-      lambdas(iGroup) = lambdaInp[iGroup];
+      lambdas(iDNPGroup) = lambdaInp[iDNPGroup];
     } 
 
-    beta = betas.sum(); 
-
-  } else
+    // If the size of the beta input matches that of the lambda input, then
+    // assume the same set of betas is used in each neutron energy group
+    if (lambdaInp.size() == betaInp.size())
+    {
+      for (int iDNPGroup = 0; iDNPGroup < betaInp.size(); iDNPGroup++)
+      {
+        for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+          betas(iEnergyGroup,iDNPGroup) = betaInp[iDNPGroup];
+      }
+    }
+    // Otherwise, assume betas are specified for each neutron energy group and 
+    // cycle through the betaInp appropriately 
+    else
+    {
+      for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+      {
+        for (int iDNPGroup = 0; iDNPGroup < lambdaInp.size(); iDNPGroup++)
+        {
+          betas(iEnergyGroup,iDNPGroup) 
+              = betaInp[iEnergyGroup*lambdaInp.size() + iDNPGroup];
+        }
+      }
+    } 
+  } 
+  // If betas and lambdas are not specified, assume the defaults defined below
+  else
   {
     // Set default DNP data.
-    betas.setZero(6);
+    betas.setZero(mats->nGroups,6);
     lambdas.setZero(6);
-    betas << 0.00021,0.00142,0.00128,0.00257,0.00075,0.00027;
+    for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+    {
+      betas.row(iEnergyGroup) << 0.00021,0.00142,0.00128,0.00257,0.00075,\
+        0.00027;
+    }
     lambdas << 0.012375,0.03013,0.111774,0.301304,1.13607,3.01304;
-    beta = betas.sum();
+    
   }
- 
+  // Calculate total DNP fraction in each neutron energy group
+  for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+  {     
+    beta(iEnergyGroup) = betas.row(iEnergyGroup).sum();
+  }
 
   // Initialize single group DNP objects 
   nGroupCoreUnknowns = mesh->nZ*mesh->nR;
   nGroupRecircUnknowns = mesh->nZrecirc*mesh->nR;
-  
-  for (int iGroup = 0; iGroup < betas.size(); ++iGroup){
-    coreIndexOffset = indexOffset + iGroup*nGroupCoreUnknowns;
-    recircIndexOffset = iGroup*nGroupRecircUnknowns;
+
+  for (int iDNPGroup = 0; iDNPGroup < lambdas.size(); ++iDNPGroup){
+    coreIndexOffset = indexOffset + iDNPGroup*nGroupCoreUnknowns;
+    recircIndexOffset = iDNPGroup*nGroupRecircUnknowns;
     shared_ptr<SingleGroupDNP> SGDNP (new SingleGroupDNP(mats,mesh,this,\
-      betas(iGroup),lambdas(iGroup),coreIndexOffset,recircIndexOffset));
+          betas.col(iDNPGroup),lambdas(iDNPGroup),coreIndexOffset,\
+          recircIndexOffset,iDNPGroup));
     DNPs.push_back(std::move(SGDNP));
   }
-  
+
   nCoreUnknowns = DNPs.size()*nGroupCoreUnknowns;
   nRecircUnknowns = DNPs.size()*nGroupRecircUnknowns;
 
   // Set sizes of matrices in recirculation solve
   recircA.resize(nRecircUnknowns,nRecircUnknowns);     
   recircb.resize(nRecircUnknowns);     
-  recircx.resize(nRecircUnknowns);     
+  recircx.resize(nRecircUnknowns);    
+
+  // Initialize DNP data in collapsed cross section object
+  mats->oneGroupXS->groupDNPFluxCoeff.resize(lambdas.size()); 
+
+  for (int iDNPGroup = 0; iDNPGroup < lambdas.size(); iDNPGroup ++)
+  {
+    mats->oneGroupXS->groupDNPFluxCoeff[iDNPGroup].setZero(mesh->nZ,mesh->nR);
+
+    for (int iR = 0; iR < mesh->nR; iR++)
+    {
+      for (int iZ = 0; iZ < mesh->nZ; iZ++)
+      {
+
+        tempVal = DNPs[iDNPGroup]->beta(0)*mats->oneGroupXS->nu(iZ,iR)\
+                       *mats->oneGroupXS->sigF(iZ,iR);  
+        mats->oneGroupXS->groupDNPFluxCoeff[iDNPGroup](iZ,iR) = tempVal;
+
+      }
+    } 
+  }
+
+  for (int iR = 0; iR < mesh->nR; iR++)
+  {
+    for (int iZ = 0; iZ < mesh->nZ; iZ++)
+    {
+
+      tempVal = (1-beta(0))*mats->oneGroupXS->nu(iZ,iR)\
+                *mats->oneGroupXS->sigF(iZ,iR);  
+      mats->oneGroupXS->qdFluxCoeff(iZ,iR) = tempVal;
+
+    }
+  } 
+
 };
 //==============================================================================
 
@@ -202,7 +271,6 @@ void MultiGroupDNP::printRecircDNPConc()
   }
 };
 //==============================================================================
-
 
 //==============================================================================
 /// Solve linear system for multiphysics coupled quasidiffusion system
