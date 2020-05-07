@@ -43,7 +43,6 @@ class SingleGroupDNP
         Eigen::VectorXd * myb,\
         Eigen::MatrixXd myDNPConc,\
         Eigen::MatrixXd myDNPFlux,\
-        Eigen::MatrixXd mySigF,\
         rowvec dzs,\
         int myIndexOffset,
         bool fluxSource = true);

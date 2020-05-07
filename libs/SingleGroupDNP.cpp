@@ -11,7 +11,17 @@ using namespace std;
 //==============================================================================
 /// SingleGroupDNP class object constructor
 ///
-/// @param [in] blankType blank for this material
+/// @param [in] myMaterials materials object for the simulation
+/// @param [in] myMesh mesh object for the simulation
+/// @param [in] myMGDNP multigroup dnp object this object belongs to
+/// @param [in] myQD multiphysics coupled QD object for the simulation
+/// @param [in] myBeta DNP fractions for this group in each neutron energy
+///               group
+/// @param [in] myLambda decay constant for this group 
+/// @param [in] myCoreIndexOffset offset used in forming linear system in core
+/// @param [in] myRecircIndexOffset offset used in forming linear system in
+///               recirculation loop 
+/// @param [in] myDNPid group ID for this group
 SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
     Mesh * myMesh,\
     MultiGroupDNP * myMGDNP,\
@@ -81,13 +91,18 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
 //==============================================================================
 
 //==============================================================================
-/// Build linear system for this precursor group
+/// Build linear system for this precursor group. Utilized for building the core
+///   and recirculation linear system. 
 ///
+/// @param [in] myA pointer to linear system to build in
+/// @param [in] myb pointer to RHS of linear system
+/// @param [in] myDNPConc DNP concentration at last time step
+/// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
+/// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
 void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
     Eigen::VectorXd * myb,\
     Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myDNPFlux,\
-    Eigen::MatrixXd mySigF,\
     rowvec dzs,\
     int myIndexOffset,\
     bool fluxSource)
@@ -503,9 +518,6 @@ void SingleGroupDNP::buildRecircLinearSystem()
 
   Eigen::MatrixXd recircDirac,recircFlux,dumbySigF;
 
-  // Assume there are no source terms in the recirculation loop 
-  dumbySigF.setZero(mesh->nZrecirc,mesh->nR);
-
   updateBoundaryConditions();
 
   recircDirac = calcDiracs(recircConc,\
@@ -523,7 +535,6 @@ void SingleGroupDNP::buildRecircLinearSystem()
       &(mgdnp->recircb),\
       recircConc,\
       recircFlux,\
-      dumbySigF,\
       mesh->dzsCornerRecirc,\
       recircIndexOffset,\
       false);
@@ -556,7 +567,6 @@ void SingleGroupDNP::buildCoreLinearSystem()
       &(mgdnp->mpqd->b),\
       dnpConc,\
       coreFlux,\
-      mats->oneGroupXS->sigF,\
       mesh->dzsCorner,\
       coreIndexOffset);
 };
