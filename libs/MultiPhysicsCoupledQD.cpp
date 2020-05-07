@@ -173,7 +173,7 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
   mgdnp->getCoreDNPConc();
   cout << "DNP conc" << endl; 
   mgdnp->printCoreDNPConc();
-  
+
   mgdnp->getRecircDNPConc();
   cout << "DNP conc" << endl; 
   mgdnp->printRecircDNPConc();

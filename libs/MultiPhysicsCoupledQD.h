@@ -20,25 +20,25 @@ class GreyGroupQD;
 class MultiPhysicsCoupledQD
 {
   public:
-  MultiPhysicsCoupledQD(Materials * myMats,\
-    Mesh * myMesh,\
-    YAML::Node * myInput);
-  
-  Eigen::SparseMatrix<double> A;
-  Eigen::VectorXd x,xPast,b;
-  void fluxSource(int iZ,int iR,int iEq,double coeff);
-  void dnpSource(int iZ,int iR,int iEq,double coeff);
-  void initializeXPast();
-  void buildLinearSystem();
-  void solveLinearSystem();
-  HeatTransfer * heat;
-  MultiGroupDNP * mgdnp;
-  GreyGroupQD * ggqd;
+    MultiPhysicsCoupledQD(Materials * myMats,\
+        Mesh * myMesh,\
+        YAML::Node * myInput);
+
+    Eigen::SparseMatrix<double> A;
+    Eigen::VectorXd x,xPast,b;
+    void fluxSource(int iZ,int iR,int iEq,double coeff);
+    void dnpSource(int iZ,int iR,int iEq,double coeff);
+    void initializeXPast();
+    void buildLinearSystem();
+    void solveLinearSystem();
+    HeatTransfer * heat;
+    MultiGroupDNP * mgdnp;
+    GreyGroupQD * ggqd;
 
   private:
-  Materials * mats;
-  Mesh * mesh;
-  YAML::Node * input;
+    Materials * mats;
+    Mesh * mesh;
+    YAML::Node * input;
 
 };
 

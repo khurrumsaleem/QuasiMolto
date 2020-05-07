@@ -13,13 +13,13 @@ using namespace std;
 ///
 /// @param [in] blankType blank for this material
 SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
-  Mesh * myMesh,\
-  MultiGroupDNP * myMGDNP,\
-  Eigen::VectorXd myBeta,\
-  double myLambda,\
-  int myCoreIndexOffset,\
-  int myRecircIndexOffset,\
-  int myDNPid)
+    Mesh * myMesh,\
+    MultiGroupDNP * myMGDNP,\
+    Eigen::VectorXd myBeta,\
+    double myLambda,\
+    int myCoreIndexOffset,\
+    int myRecircIndexOffset,\
+    int myDNPid)
 {
   // Variables to hold optional parameters
   double inpConc0;
@@ -40,13 +40,13 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   // Check for optional input  
   if ((*(mgdnp->input))["parameters"]["initial dnp concentration"])
   {
-    
+
     // Read in input
     inpConc0=(*(mgdnp->input))["parameters"]["initial dnp concentration"]\
-    .as<double>();
-   
+             .as<double>();
+
     dnpConc.setConstant(inpConc0);
- 
+
   }
 
   flux.setZero(mesh->nZ+1,mesh->nR); 
@@ -56,13 +56,13 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   // Check for optional input  
   if ((*(mgdnp->input))["parameters"]["initial recirc dnp concentration"])
   {
-    
+
     // Read in input
     inpConc0=(*(mgdnp->input))["parameters"]\
              ["initial recirc dnp concentration"].as<double>();
-   
+
     recircConc.setConstant(inpConc0);
- 
+
   }
 
   recircFlux.setZero(mesh->nZrecirc+1,mesh->nR); 
@@ -76,7 +76,7 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
 
   // assign boundary conditions depending on direction of flow
   assignBoundaryIndices();
- 
+
 };
 //==============================================================================
 
@@ -84,18 +84,18 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
 /// Build linear system for this precursor group
 ///
 void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
-  Eigen::VectorXd * myb,\
-  Eigen::MatrixXd myDNPConc,\
-  Eigen::MatrixXd myDNPFlux,\
-  Eigen::MatrixXd mySigF,\
-  rowvec dzs,\
-  int myIndexOffset,\
-  bool fluxSource)
+    Eigen::VectorXd * myb,\
+    Eigen::MatrixXd myDNPConc,\
+    Eigen::MatrixXd myDNPFlux,\
+    Eigen::MatrixXd mySigF,\
+    rowvec dzs,\
+    int myIndexOffset,\
+    bool fluxSource)
 {
 
   int myIndex,iEq = myIndexOffset;
   double coeff;
-  
+
   for (int iR = 0; iR < myDNPConc.cols(); iR++)
   {
     for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
@@ -103,7 +103,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
       myIndex = getIndex(iZ,iR,myIndexOffset);     
 
       myA->coeffRef(iEq,myIndex) = 1 + mesh->dt*lambda; 
-      
+
       // Time term
       (*myb)(iEq) = myDNPConc(iZ,iR);
 
@@ -111,14 +111,14 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
       if (fluxSource)
         //coeff = -mesh->dt*beta*mats->nu(iZ,iR)*mySigF(iZ,iR);
         coeff = -mesh->dt*mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
-        mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
+      mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
 
       // Advection term
       (*myb)(iEq) += (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
 
       // Iterate equation count
       iEq = iEq + 1;
-  
+
     }
   }
 
@@ -130,8 +130,8 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
 /// Calculate diracs to model advection of precursors
 ///
 Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
-  Eigen::MatrixXd inletConc,\
-  Eigen::VectorXd outletConc)
+    Eigen::MatrixXd inletConc,\
+    Eigen::VectorXd outletConc)
 {
 
   Eigen::MatrixXd myDirac(dnpConc.rows()+1,dnpConc.cols());
@@ -155,7 +155,7 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
       theta = calcTheta(CupwindInterface,Cinterface);
       phi = calcPhi(theta,fluxLimiter); 
       myDirac(1,iR) = phi*Cinterface; 
-      
+
       // Handle all other cases
       for (int iZ = 2; iZ < myDirac.rows()-1; iZ++)
       {
@@ -165,17 +165,17 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
         theta = calcTheta(CupwindInterface,Cinterface);
         phi = calcPhi(theta,fluxLimiter); 
         myDirac(iZ,iR) = phi*Cinterface; 
-        
+
       }
 
       // Handle iZ = nZ case
       CupwindInterface = dnpConc(lastDiracIndex-1,iR)\
-        - dnpConc(lastDiracIndex-2,iR);
+                         - dnpConc(lastDiracIndex-2,iR);
       Cinterface = outletConc(iR) - dnpConc(lastDiracIndex-1,iR);
       theta = calcTheta(CupwindInterface,Cinterface);
       phi = calcPhi(theta,fluxLimiter); 
       myDirac(lastDiracIndex,iR) = phi*Cinterface;
-      
+
     }
   } else 
   {
@@ -187,7 +187,7 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
       theta = calcTheta(CupwindInterface,Cinterface);
       phi = calcPhi(theta,fluxLimiter); 
       myDirac(0,iR) = phi*Cinterface; 
-      
+
       // Handle all other cases
       for (int iZ = 1; iZ < myDirac.rows()-2; iZ++)
       {
@@ -197,7 +197,7 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
         theta = calcTheta(CupwindInterface,Cinterface);
         phi = calcPhi(theta,fluxLimiter); 
         myDirac(iZ,iR) = phi*Cinterface; 
-        
+
       }
 
       // Handle iZ = nZ-1 case
@@ -216,7 +216,7 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
     }
 
   }
-  
+
   cout << "calculated diracs" << endl;
   cout << myDirac << endl;
 
@@ -229,11 +229,11 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
 /// Calculate fluxes to model advection of precursors
 ///
 Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
-  Eigen::MatrixXd myFlowVelocity,\
-  Eigen::MatrixXd myDirac,\
-  Eigen::MatrixXd myInletConc,\
-  Eigen::VectorXd myInletVelocity,\
-  rowvec dzs)
+    Eigen::MatrixXd myFlowVelocity,\
+    Eigen::MatrixXd myDirac,\
+    Eigen::MatrixXd myInletConc,\
+    Eigen::VectorXd myInletVelocity,\
+    rowvec dzs)
 {
 
   Eigen::MatrixXd myFlux;
@@ -241,7 +241,7 @@ Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
   int lastFluxIndex = myDirac.rows()-1;
 
   myFlux.setZero(myDirac.rows(),myDirac.cols());
- 
+
   if (mats->posVelocity) {
 
     for (int iR = 0; iR < myFlux.cols(); iR++)
@@ -249,20 +249,20 @@ Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
       // Handle iZ = 0 case
       vel = myInletVelocity(iR);
       myFlux(0,iR) = vel*myInletConc(1,iR)\
-        + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(0)))\
-        *myDirac(0,iR);
+                     + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(0)))\
+                     *myDirac(0,iR);
 
       // Handle all other cases
       for (int iZ = 1; iZ < myFlux.rows(); iZ++)
       {
         vel = myFlowVelocity(iZ-1,iR);
         myFlux(iZ,iR) = vel*myDNPConc(iZ-1,iR)\
-          + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(iZ-1)))\
-          *myDirac(iZ,iR);
+                        + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(iZ-1)))\
+                        *myDirac(iZ,iR);
       }
 
     }
-    
+
   } else
   {
 
@@ -274,18 +274,18 @@ Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
       {
         vel = myFlowVelocity(iZ,iR);
         myFlux(iZ,iR) = vel*myDNPConc(iZ,iR)\
-          + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(iZ)))*myDirac(iZ,iR);
+                        + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(iZ)))*myDirac(iZ,iR);
       }
-      
+
       // Handle iZ = nZ case
       vel = myInletVelocity(iR);
       myFlux(lastFluxIndex,iR) = vel*myInletConc(0,iR)\
-        + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(lastFluxIndex-1)))\
-        *myDirac(lastFluxIndex,iR);
+                                 + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(lastFluxIndex-1)))\
+                                 *myDirac(lastFluxIndex,iR);
 
     }
   }
-  
+
   cout << "calculated fluxes" << endl;
   cout << myFlux << endl;
 
@@ -309,7 +309,7 @@ int SingleGroupDNP::getIndex(int iZ, int iR,int indexOffset)
   index = indexOffset + iR + nR*iZ;
 
   return index;
-  
+
 };
 //==============================================================================
 
@@ -323,12 +323,12 @@ void SingleGroupDNP::getCoreConc()
   {
     for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
     { 
-    
+
       dnpConc(iZ,iR) = mgdnp->mpqd->x(getIndex(iZ,iR,coreIndexOffset));   
-    
+
     }
   }
-  
+
 };
 //==============================================================================
 
@@ -342,12 +342,12 @@ void SingleGroupDNP::setCoreConc()
   {
     for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
     { 
-    
+
       mgdnp->mpqd->xPast(getIndex(iZ,iR,coreIndexOffset)) = dnpConc(iZ,iR);   
-    
+
     }
   }
-  
+
 };
 //==============================================================================
 
@@ -361,12 +361,12 @@ void SingleGroupDNP::getRecircConc()
   {
     for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
     { 
-    
+
       recircConc(iZ,iR) = mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset));   
-    
+
     }
   }
-  
+
 };
 //==============================================================================
 
@@ -380,12 +380,12 @@ void SingleGroupDNP::setRecircConc()
   {
     for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
     { 
-    
+
       mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset)) = recircConc(iZ,iR);   
-    
+
     }
   }
-  
+
 };
 //==============================================================================
 
@@ -460,15 +460,15 @@ void SingleGroupDNP::calcRecircDNPFluxes()
   Eigen::MatrixXd recircDirac,recircFlux;
 
   recircDirac = calcDiracs(recircConc,\
-    recircInletConc,\
-    recircOutletConc);
+      recircInletConc,\
+      recircOutletConc);
 
   recircFlux = calcFluxes(recircConc,\
-    mats->recircFlowVelocity,\
-    recircDirac,\
-    recircInletConc,\
-    recircInletVelocity,\
-    mesh->dzsCornerRecirc);
+      mats->recircFlowVelocity,\
+      recircDirac,\
+      recircInletConc,\
+      recircInletVelocity,\
+      mesh->dzsCornerRecirc);
 
 };
 //==============================================================================
@@ -482,15 +482,15 @@ void SingleGroupDNP::calcCoreDNPFluxes()
   Eigen::MatrixXd coreDirac,coreFlux;
 
   coreDirac = calcDiracs(dnpConc,\
-    inletConc,\
-    outletConc);
+      inletConc,\
+      outletConc);
 
   coreFlux = calcFluxes(dnpConc,\
-    mats->flowVelocity,\
-    coreDirac,\
-    inletConc,\
-    inletVelocity,\
-    mesh->dzsCorner);
+      mats->flowVelocity,\
+      coreDirac,\
+      inletConc,\
+      inletVelocity,\
+      mesh->dzsCorner);
 
 };
 //==============================================================================
@@ -509,24 +509,24 @@ void SingleGroupDNP::buildRecircLinearSystem()
   updateBoundaryConditions();
 
   recircDirac = calcDiracs(recircConc,\
-    recircInletConc,\
-    recircOutletConc);
+      recircInletConc,\
+      recircOutletConc);
 
   recircFlux = calcFluxes(recircConc,\
-    mats->recircFlowVelocity,\
-    recircDirac,\
-    recircInletConc,\
-    recircInletVelocity,\
-    mesh->dzsCornerRecirc);
+      mats->recircFlowVelocity,\
+      recircDirac,\
+      recircInletConc,\
+      recircInletVelocity,\
+      mesh->dzsCornerRecirc);
 
   buildLinearSystem(&(mgdnp->recircA),\
-    &(mgdnp->recircb),\
-    recircConc,\
-    recircFlux,\
-    dumbySigF,\
-    mesh->dzsCornerRecirc,\
-    recircIndexOffset,\
-    false);
+      &(mgdnp->recircb),\
+      recircConc,\
+      recircFlux,\
+      dumbySigF,\
+      mesh->dzsCornerRecirc,\
+      recircIndexOffset,\
+      false);
 
 };
 //==============================================================================
@@ -538,27 +538,27 @@ void SingleGroupDNP::buildCoreLinearSystem()
 {
 
   Eigen::MatrixXd coreDirac,coreFlux;
-  
+
   updateBoundaryConditions();
 
   coreDirac = calcDiracs(dnpConc,\
-    inletConc,\
-    outletConc);
+      inletConc,\
+      outletConc);
 
   coreFlux = calcFluxes(dnpConc,\
-    mats->flowVelocity,\
-    coreDirac,\
-    inletConc,\
-    inletVelocity,\
-    mesh->dzsCorner);
+      mats->flowVelocity,\
+      coreDirac,\
+      inletConc,\
+      inletVelocity,\
+      mesh->dzsCorner);
 
   buildLinearSystem(&(mgdnp->mpqd->A),\
-    &(mgdnp->mpqd->b),\
-    dnpConc,\
-    coreFlux,\
-    mats->oneGroupXS->sigF,\
-    mesh->dzsCorner,\
-    coreIndexOffset);
+      &(mgdnp->mpqd->b),\
+      dnpConc,\
+      coreFlux,\
+      mats->oneGroupXS->sigF,\
+      mesh->dzsCorner,\
+      coreIndexOffset);
 };
 //==============================================================================
 
@@ -583,12 +583,12 @@ void SingleGroupDNP::assignBoundaryIndices()
     // Assign core indices
     coreInletIndex = 0;
     coreOutletIndex = mesh->nZrecirc-1;
-    
+
     // Assign recirculation indices
     recircInletIndex = 0;
     recircOutletIndex = mesh->nZ-1;
   }
- 
+
 };
 //==============================================================================
 
@@ -606,25 +606,25 @@ void SingleGroupDNP::updateBoundaryConditions()
   if (mats->posVelocity)
   {
     inletConc = recircConc(Eigen::seq(coreInletIndex-1,coreInletIndex),\
-      Eigen::all);
+        Eigen::all);
     recircInletConc = dnpConc(Eigen::seq(recircInletIndex-1,recircInletIndex),\
-      Eigen::all);
+        Eigen::all);
   } else
   {
     inletConc = recircConc(Eigen::seq(coreInletIndex,coreInletIndex+1),\
-      Eigen::all);
+        Eigen::all);
     recircInletConc = dnpConc(Eigen::seq(recircInletIndex,recircInletIndex+1),\
-      Eigen::all);
+        Eigen::all);
   }
-  
+
   cout << "inletConc:"<<inletConc << endl;
   cout << "recircInletConc: "<<recircInletConc << endl;
-  
+
   outletConc = recircConc.row(coreOutletIndex);   
   inletVelocity = mats->flowVelocity.row(recircInletIndex);
   recircOutletConc = dnpConc.row(recircOutletIndex);   
   recircInletVelocity = mats->flowVelocity.row(recircInletIndex);
-  
+
 };
 //==============================================================================
 

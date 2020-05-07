@@ -13,9 +13,9 @@ using namespace std;
 ///
 /// @param [in] blankType blank for this material
 GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * myInput,\
-  MultiPhysicsCoupledQD * myMPQD)
+    Mesh * myMesh,\
+    YAML::Node * myInput,\
+    MultiPhysicsCoupledQD * myMPQD)
 {
   // Variables for reading inputs
   vector<double> inpSFluxPrev0;
@@ -36,12 +36,12 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   Ezz = (1.0/3.0)*Ezz;
   Erz.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   Erz = 0.0*Erz;
-  
+
   // initialize previous Eddington factors
   ErrPrev = Err;
   EzzPrev = Ezz;
   ErzPrev = Erz;
-  
+
   // initialize source 
   q.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   q = 0.0*q;
@@ -54,23 +54,23 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   // Check for optional input  
   if ((*input)["parameters"]["initial previous flux"])
   {
-    
+
     // Read in input
     inpSFluxPrev0=(*input)["parameters"]["initial previous flux"]\
-    .as<vector<double>>();
-   
+                  .as<vector<double>>();
+
     // Get sum of group fluxes 
     fluxSum = accumulate(inpSFluxPrev0.begin(),inpSFluxPrev0.end(),0.0);   
- 
+
     sFlux.setConstant(fluxSum);     
     sFluxR.setConstant(fluxSum);     
     sFluxZ.setConstant(fluxSum);    
- 
+
   }
 
   currentR.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size()+1);
   currentZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
-  
+
   // initialize boundary conditions
   wFluxBC.setZero(mesh->dzsCorner.size());
   eFluxBC.setZero(mesh->dzsCorner.size());
@@ -104,7 +104,7 @@ void GreyGroupQD::buildLinearSystem()
 {
 
   GGSolver->formLinearSystem(); // Assuming this is the first set of equations
-                                 //   equations to be built  
+  //   equations to be built  
 };
 //==============================================================================
 
