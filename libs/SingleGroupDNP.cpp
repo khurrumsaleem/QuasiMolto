@@ -99,6 +99,9 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
 /// @param [in] myDNPConc DNP concentration at last time step
 /// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
 /// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
+/// @param [in] dzs axial heights on advecting mesh
+/// @param [in] myIndexOffset row to start building linear system on 
+/// @param [in] fluxSource indicator for whether a flux source is present 
 void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
     Eigen::VectorXd * myb,\
     Eigen::MatrixXd myDNPConc,\
@@ -144,15 +147,21 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
 //==============================================================================
 /// Calculate diracs to model advection of precursors
 ///
+/// @param [in] dnpConc DNP concentration from last time step
+/// @param [in] inletConc DNP concentration at inlet
+/// @param [in] outletConc DNP concentration at outlet
+/// @param [out] myDirac diracs used to calculat DNP flux
 Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
     Eigen::MatrixXd inletConc,\
     Eigen::VectorXd outletConc)
 {
 
+  // Declare temporary variables
   Eigen::MatrixXd myDirac(dnpConc.rows()+1,dnpConc.cols());
   double CupwindInterface,Cinterface,theta,phi;
   int lastDiracIndex = myDirac.rows()-1;
 
+  // If flux is positive
   if (mats->posVelocity) 
   {
     for (int iR = 0; iR < myDirac.cols(); iR++)
@@ -192,7 +201,9 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
       myDirac(lastDiracIndex,iR) = phi*Cinterface;
 
     }
-  } else 
+  } 
+  // If flux is negative
+  else 
   {
     for (int iR = 0; iR < myDirac.cols(); iR++)
     {
@@ -243,6 +254,13 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
 //==============================================================================
 /// Calculate fluxes to model advection of precursors
 ///
+/// @param [in] myDNPConc DNP concentration at last time step
+/// @param [in] myFlowVelocity flow velocity acting on precursors  
+/// @param [in] myDirac diracs to be used in flux calculation
+/// @param [in] myInletConc DNP concentration at inlet
+/// @param [in] myInletVelocity velocity at inlet
+/// @param [in] dzs axial heights on advecting mesh
+/// @param [out] myFlux fluxes used to model precursor advection
 Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myFlowVelocity,\
     Eigen::MatrixXd myDirac,\
@@ -251,12 +269,15 @@ Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
     rowvec dzs)
 {
 
+  // Declare temporary variables
   Eigen::MatrixXd myFlux;
   double vel; // shorthand for velocity
   int lastFluxIndex = myDirac.rows()-1;
 
+  // Initialize DNP flux matrix
   myFlux.setZero(myDirac.rows(),myDirac.cols());
 
+  // If velocity is positive
   if (mats->posVelocity) {
 
     for (int iR = 0; iR < myFlux.cols(); iR++)
@@ -278,7 +299,9 @@ Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
 
     }
 
-  } else
+  } 
+  // If velocity is negative
+  else
   {
 
     for (int iR = 0; iR < myFlux.cols(); iR++)
@@ -289,13 +312,15 @@ Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
       {
         vel = myFlowVelocity(iZ,iR);
         myFlux(iZ,iR) = vel*myDNPConc(iZ,iR)\
-                        + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(iZ)))*myDirac(iZ,iR);
+                        + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(iZ)))\
+                        *myDirac(iZ,iR);
       }
 
       // Handle iZ = nZ case
       vel = myInletVelocity(iR);
       myFlux(lastFluxIndex,iR) = vel*myInletConc(0,iR)\
-                                 + 0.5*abs(vel)*(1-abs(vel*mesh->dt/dzs(lastFluxIndex-1)))\
+                                 + 0.5*abs(vel)\
+                                 *(1-abs(vel*mesh->dt/dzs(lastFluxIndex-1)))\
                                  *myDirac(lastFluxIndex,iR);
 
     }
