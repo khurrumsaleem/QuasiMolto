@@ -11,7 +11,10 @@ using namespace std;
 //==============================================================================
 /// GreyGroupQD class object constructor
 ///
-/// @param [in] blankType blank for this material
+/// @param [in] myMaterials Materials object for the simulation
+/// @param [in] myMesh Mesh object for the simulation
+/// @param [in] myInput YAML input object for the simulation
+/// @param [in] myMPQD multiphysics coupled QD object for the simulation
 GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * myInput,\
@@ -104,7 +107,6 @@ void GreyGroupQD::buildLinearSystem()
 {
 
   GGSolver->formLinearSystem(); // Assuming this is the first set of equations
-  //   equations to be built  
 };
 //==============================================================================
 

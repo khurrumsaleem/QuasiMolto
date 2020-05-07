@@ -13,6 +13,7 @@ using namespace std;
 /// @param [in] myMesh Mesh object for the simulation
 /// @param [in] myMaterials Materials object for the simulation
 /// @param [in] myInput YAML input object for the simulation
+/// @param [in] myMPQD multiphysics coupled QD object for the simulation
 GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
     Mesh * myMesh,\
     Materials * myMaterials,\
@@ -112,6 +113,7 @@ void GreyGroupSolver::formLinearSystem()
 
 //==============================================================================
 /// Compute currents from flux values in x
+///
 void GreyGroupSolver::backCalculateCurrent()
 {
   currPast = d + C*(xFlux); 
@@ -121,6 +123,7 @@ void GreyGroupSolver::backCalculateCurrent()
 
 //==============================================================================
 /// Assert the zeroth moment equation for cell (iR,iZ)
+///
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -163,6 +166,7 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
 
 //==============================================================================
 /// Apply radial boundary for cell (iR,iZ)
+///
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -175,6 +179,7 @@ void GreyGroupSolver::applyRadialBoundary(int iR,int iZ,int iEq)
 
 //==============================================================================
 /// Apply axial boundary for cell (iR,iZ)
+///
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -187,6 +192,8 @@ void GreyGroupSolver::applyAxialBoundary(int iR,int iZ,int iEq)
 
 //==============================================================================
 /// Enforce coefficients for current on south face
+///
+/// @param [in] coeff coefficient multiplying current
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -230,6 +237,8 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
 
 //==============================================================================
 /// Enforce coefficients for current on north face 
+///
+/// @param [in] coeff coefficient multiplying current
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -273,6 +282,8 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
 
 //==============================================================================
 /// Enforce coefficients for current on west face
+///
+/// @param [in] coeff coefficient multiplying current
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -319,6 +330,8 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
 
 //==============================================================================
 /// Enforce coefficients for current on east face
+///
+/// @param [in] coeff coefficient multiplying current
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
