@@ -21,16 +21,16 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
   // Point to variables for mesh and input file
   mesh = myMesh;
   input = myInput;
-  
+
   // Initialize 1GXS
   oneGroupXS = new CollapsedCrossSections(mesh->nZ,mesh->nR);
-  
+
   // Initialize material map
   matMap.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
-  
+
   // Initialize flow velocity matrix in core 
   flowVelocity.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
-  
+
   // Initialize flow velocity matrix in recirculation loop
   recircFlowVelocity.setZero(mesh->nZrecirc,mesh->rCornerCent.size());
 
@@ -47,20 +47,20 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
   // data is sensible
   edit();
   checkMats();        
- 
+
   // Check if neutron velocities are specified in input
   if ((*input)["parameters"]["neutron velocity"]){
-    
-    
+
+
     neutVInp = (*input)["parameters"]["neutron velocity"]\
-            .as<vector<double>>();
+               .as<vector<double>>();
 
     if (neutVInp.size() == 1){
       neutV.setOnes(nGroups);
       neutV = neutVInp[0]*neutV;
     } 
     else {
-      
+
       neutV.setZero(nGroups);
       for (int iGroup = 0; iGroup < nGroups; ++iGroup){
         neutV(iGroup) = neutVInp[iGroup];
@@ -96,7 +96,7 @@ void Materials::readGeom()
     regType=it->first.as<string>();
 
     if (regType=="background"){
-      
+
       // Set the entire material map to this material
       index = mat2idx[it->second.as<string>()];
       setMatRegion(index,0.0,mesh->R,0.0,mesh->Z);
@@ -111,7 +111,7 @@ void Materials::readGeom()
       rOut = it->second["outer-r"].as<double>(); 
       zLow = it->second["lower-z"].as<double>(); 
       zUp = it->second["upper-z"].as<double>();
-    
+
       // Make call set region index
       setMatRegion(index,rIn,rOut,zLow,zUp);
     }
@@ -132,7 +132,7 @@ void Materials::readMats()
   int ID,size;
   double nu,density,gamma,k,cP,omega;
   bool stationary;
-  
+
   int iCount=0;
   for (YAML::const_iterator it=mats.begin(); it!=mats.end(); ++it){
 
@@ -181,11 +181,11 @@ void Materials::readMats()
 
     // Add material to bank
     shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,\
-      sigF,chiP,chiD,nu,density,gamma,k,cP,omega,stationary));
+          sigF,chiP,chiD,nu,density,gamma,k,cP,omega,stationary));
     matBank.push_back(std::move(newMat));
     ++iCount;
   }
-  
+
   // Set number of energy groups for the simulation	
   nGroups = size;
 };
@@ -202,22 +202,22 @@ void Materials::readFlowVelocity()
 
   if ((*input)["parameters"]["uniform flow velocity"])
     inputFlowVelocity = (*input)["parameters"]["uniform flow velocity"]\
-            .as<double>();
+                        .as<double>();
   else
     inputFlowVelocity = 0.0;
-  
+
   for (int iZ = 0; iZ < mesh->zCornerCent.size(); iZ++){
     for (int iR = 0; iR < mesh->rCornerCent.size(); iR++){
 
       // If the material here is not stationary, assign the input flow velocity
       if (!matBank[matMap(iZ,iR)]->stationary){
-                
+
         flowVelocity(iZ,iR) = inputFlowVelocity;
-        
+
       }
     }
   }
- 
+
   // Check whether velocities are all positive 
   posVelocity = -1E-10 < flowVelocity.minCoeff();
 
@@ -257,9 +257,9 @@ void Materials::setMatRegion(int myIndex,double rIn,double rOut,double zLow,doub
     if (mesh->zCornerCent(iZ)>zLow && mesh->zCornerCent(iZ)<zUp){
       for (int iR = 0; iR < mesh->rCornerCent.size(); iR++){
         if (mesh->rCornerCent(iR)>rIn && mesh->rCornerCent(iR)<rOut){
-                
+
           matMap(iZ,iR) = myIndex;
-        
+
         }
       }
     }
@@ -463,7 +463,7 @@ void Materials::checkMats()
 
 void Materials::initCollapsedXS()
 {
-  
+
   for (int iR = 0; iR < mesh->nR; ++iR)
   {
     for (int iZ = 0; iZ < mesh->nZ; ++iZ)
