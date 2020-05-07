@@ -187,11 +187,5 @@ void testMultiPhysicsCoupledQD(Materials * myMaterials,\
   
   MultiPhysicsCoupledQD * myMPQD; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
-  myMPQD->initializeXPast();
-  myMPQD->buildLinearSystem();
-  myMPQD->solveLinearSystem();
-  myMPQD->buildLinearSystem();
-  myMPQD->solveLinearSystem();
-  myMPQD->buildLinearSystem();
-  myMPQD->solveLinearSystem();
+  myMPQD->solveTransient();
 }
