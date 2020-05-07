@@ -15,70 +15,70 @@ using namespace arma;
 class SingleGroupQD
 {
   public:
-  int energyGroup;
-  Eigen::MatrixXd sFlux;
-  Eigen::MatrixXd sFluxR;
-  Eigen::MatrixXd sFluxZ;
-  Eigen::MatrixXd currentR;
-  Eigen::MatrixXd currentZ;
-  Eigen::MatrixXd sFluxPrev;
-  Eigen::MatrixXd q;
-  Eigen::MatrixXd fissionSource;
-  Eigen::MatrixXd scatterSource;
-  
-  // Eddington factors
-  Eigen::MatrixXd Err,ErrPrev;
-  Eigen::MatrixXd Ezz,EzzPrev;
-  Eigen::MatrixXd Erz,ErzPrev;
+    int energyGroup;
+    Eigen::MatrixXd sFlux;
+    Eigen::MatrixXd sFluxR;
+    Eigen::MatrixXd sFluxZ;
+    Eigen::MatrixXd currentR;
+    Eigen::MatrixXd currentZ;
+    Eigen::MatrixXd sFluxPrev;
+    Eigen::MatrixXd q;
+    Eigen::MatrixXd fissionSource;
+    Eigen::MatrixXd scatterSource;
 
-  // flux boundary conditions  
-  Eigen::VectorXd wFluxBC;
-  Eigen::VectorXd eFluxBC;
-  Eigen::VectorXd nFluxBC;
-  Eigen::VectorXd sFluxBC;
-  
-  // current boundary conditions
-  Eigen::VectorXd wCurrentRBC;
-  Eigen::VectorXd eCurrentRBC;
-  Eigen::VectorXd nCurrentZBC;
-  Eigen::VectorXd sCurrentZBC;
-    
-  // vectors for robin boundary conditions
-  Eigen::VectorXd eInwardCurrentBC;
-  Eigen::VectorXd nInwardCurrentBC;
-  Eigen::VectorXd sInwardCurrentBC;
-  
-  Eigen::VectorXd eInwardFluxBC;
-  Eigen::VectorXd nInwardFluxBC;
-  Eigen::VectorXd sInwardFluxBC;
-  
-  Eigen::VectorXd eOutwardCurrToFluxRatioBC;
-  Eigen::VectorXd nOutwardCurrToFluxRatioBC;
-  Eigen::VectorXd sOutwardCurrToFluxRatioBC;
-  
-  Eigen::VectorXd eAbsCurrentBC;
-  Eigen::VectorXd nAbsCurrentBC;
-  Eigen::VectorXd sAbsCurrentBC;
+    // Eddington factors
+    Eigen::MatrixXd Err,ErrPrev;
+    Eigen::MatrixXd Ezz,EzzPrev;
+    Eigen::MatrixXd Erz,ErzPrev;
 
-  // public functions
-  SingleGroupQD(int myEnergyGroup,\
-    MultiGroupQD * myMGQD,\
-    Materials * myMaterials,\
-    Mesh * myMesh,\
-    YAML::Node * myInput);
-  void formContributionToLinearSystem();
-  void formContributionToBackCalcSystem();
-  void getFlux();
-  Eigen::VectorXd getFluxSolutionVector();
-  Eigen::VectorXd getCurrentSolutionVector();
-  void checkOptionalParams();
-  void writeFlux();
+    // flux boundary conditions  
+    Eigen::VectorXd wFluxBC;
+    Eigen::VectorXd eFluxBC;
+    Eigen::VectorXd nFluxBC;
+    Eigen::VectorXd sFluxBC;
+
+    // current boundary conditions
+    Eigen::VectorXd wCurrentRBC;
+    Eigen::VectorXd eCurrentRBC;
+    Eigen::VectorXd nCurrentZBC;
+    Eigen::VectorXd sCurrentZBC;
+
+    // vectors for robin boundary conditions
+    Eigen::VectorXd eInwardCurrentBC;
+    Eigen::VectorXd nInwardCurrentBC;
+    Eigen::VectorXd sInwardCurrentBC;
+
+    Eigen::VectorXd eInwardFluxBC;
+    Eigen::VectorXd nInwardFluxBC;
+    Eigen::VectorXd sInwardFluxBC;
+
+    Eigen::VectorXd eOutwardCurrToFluxRatioBC;
+    Eigen::VectorXd nOutwardCurrToFluxRatioBC;
+    Eigen::VectorXd sOutwardCurrToFluxRatioBC;
+
+    Eigen::VectorXd eAbsCurrentBC;
+    Eigen::VectorXd nAbsCurrentBC;
+    Eigen::VectorXd sAbsCurrentBC;
+
+    // public functions
+    SingleGroupQD(int myEnergyGroup,\
+        MultiGroupQD * myMGQD,\
+        Materials * myMaterials,\
+        Mesh * myMesh,\
+        YAML::Node * myInput);
+    void formContributionToLinearSystem();
+    void formContributionToBackCalcSystem();
+    void getFlux();
+    Eigen::VectorXd getFluxSolutionVector();
+    Eigen::VectorXd getCurrentSolutionVector();
+    void checkOptionalParams();
+    void writeFlux();
 
   private:
-  MultiGroupQD * MGQD;
-  Materials * mats;
-  YAML::Node * input;
-  Mesh * mesh;
+    MultiGroupQD * MGQD;
+    Materials * mats;
+    YAML::Node * input;
+    Mesh * mesh;
 
 };
 

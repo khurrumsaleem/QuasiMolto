@@ -15,35 +15,35 @@ class MultiGroupTransport; // forward declaration
 class SingleGroupTransport
 {
   public:
-  int energyGroup;
-  cube aFlux;
-  cube aHalfFlux;
-  Eigen::MatrixXd sFlux; 
-  Eigen::MatrixXd sFluxPrev; 
-  Eigen::MatrixXd alpha; 
-  Eigen::MatrixXd q; 
-  Eigen::MatrixXd fissionSource; 
-  Eigen::MatrixXd scatterSource; 
-  // public functions
-  SingleGroupTransport(int myEnergyGroup,\
-    MultiGroupTransport * myMGT,\
-    Materials * myMaterials,\
-    Mesh * myMesh,\
-    YAML::Node * myInput);
-  void solveStartAngle();
-  void solveSCB();
-  double calcSource(string calcType="FS"); 
-  double calcFissionSource(); 
-  double calcScatterSource(); 
-  double calcFlux();
-  double calcAlpha();
-  void writeFlux();
+    int energyGroup;
+    cube aFlux;
+    cube aHalfFlux;
+    Eigen::MatrixXd sFlux; 
+    Eigen::MatrixXd sFluxPrev; 
+    Eigen::MatrixXd alpha; 
+    Eigen::MatrixXd q; 
+    Eigen::MatrixXd fissionSource; 
+    Eigen::MatrixXd scatterSource; 
+    // public functions
+    SingleGroupTransport(int myEnergyGroup,\
+        MultiGroupTransport * myMGT,\
+        Materials * myMaterials,\
+        Mesh * myMesh,\
+        YAML::Node * myInput);
+    void solveStartAngle();
+    void solveSCB();
+    double calcSource(string calcType="FS"); 
+    double calcFissionSource(); 
+    double calcScatterSource(); 
+    double calcFlux();
+    double calcAlpha();
+    void writeFlux();
 
   private:
-  MultiGroupTransport * MGT;
-  Materials * mats;
-  YAML::Node * input;
-  Mesh * mesh;
+    MultiGroupTransport * MGT;
+    Materials * mats;
+    YAML::Node * input;
+    Mesh * mesh;
 
 };
 

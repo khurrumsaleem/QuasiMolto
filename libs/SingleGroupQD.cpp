@@ -16,15 +16,15 @@ using namespace std;
 /// @param [in] myMesh Mesh object for the simulation
 /// @param [in] myInput YAML input object for the simulation
 SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
-  MultiGroupQD * myMGQD,\
-  Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * myInput)
+    MultiGroupQD * myMGQD,\
+    Materials * myMaterials,\
+    Mesh * myMesh,\
+    YAML::Node * myInput)
 {
-    
+
   // Assign energy group for this object 
   energyGroup = myEnergyGroup;
-  
+
   // Assign pointers
   MGQD = myMGQD;
   mats = myMaterials;
@@ -38,12 +38,12 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   Ezz = (1.0/3.0)*Ezz;
   Erz.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   Erz = 0.0*Erz;
-  
+
   // initialize previous Eddington factors
   ErrPrev = Err;
   EzzPrev = Ezz;
   ErzPrev = Erz;
-  
+
   // initialize source 
   q.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   q = 0.0*q;
@@ -54,7 +54,7 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   sFluxZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
   currentR.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size()+1);
   currentZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
-  
+
   // initialize boundary conditions
   wFluxBC.setZero(mesh->dzsCorner.size());
   eFluxBC.setZero(mesh->dzsCorner.size());
@@ -136,8 +136,8 @@ void SingleGroupQD::checkOptionalParams()
   if ((*input)["parameters"]["lowerBC"]){
 
     inpaFlux=(*input)["parameters"]["lowerBC"]\
-      .as<vector<double> >();
-    
+             .as<vector<double> >();
+
     nFluxBC.setOnes();
     if (inpaFlux.size() == 1)
       nFluxBC = 4.0*inpaFlux[0]*nFluxBC;
@@ -148,7 +148,7 @@ void SingleGroupQD::checkOptionalParams()
   if ((*input)["parameters"]["upperBC"]){
 
     inpaFlux=(*input)["parameters"]["upperBC"]\
-      .as<vector<double> >();
+             .as<vector<double> >();
 
     sFluxBC.setOnes();
     if (inpaFlux.size() == 1)
@@ -160,7 +160,7 @@ void SingleGroupQD::checkOptionalParams()
   if ((*input)["parameters"]["innerBC"]){
 
     inpaFlux=(*input)["parameters"]["innerBC"]\
-      .as<vector<double> >();
+             .as<vector<double> >();
 
     wFluxBC.setOnes();
     if (inpaFlux.size() == 1)
@@ -172,7 +172,7 @@ void SingleGroupQD::checkOptionalParams()
   if ((*input)["parameters"]["outerBC"]){
 
     inpaFlux=(*input)["parameters"]["outerBC"]\
-      .as<vector<double> >();
+             .as<vector<double> >();
 
     eFluxBC.setOnes();
     if (inpaFlux.size() == 1)
@@ -184,7 +184,7 @@ void SingleGroupQD::checkOptionalParams()
   if ((*input)["parameters"]["lowerCurrentBC"]){
 
     inpCurrent=(*input)["parameters"]["lowerCurrentBC"]\
-      .as<vector<double> >();
+               .as<vector<double> >();
 
     nCurrentZBC.setOnes();
     if (inpaFlux.size() == 1)
@@ -196,7 +196,7 @@ void SingleGroupQD::checkOptionalParams()
   if ((*input)["parameters"]["upperCurrentBC"]){
 
     inpCurrent=(*input)["parameters"]["upperCurrentBC"]\
-      .as<vector<double> >();
+               .as<vector<double> >();
 
     sCurrentZBC.setOnes();
     if (inpaFlux.size() == 1)
@@ -208,7 +208,7 @@ void SingleGroupQD::checkOptionalParams()
   if ((*input)["parameters"]["innerCurrentBC"]){
 
     inpCurrent=(*input)["parameters"]["innerCurrentBC"]\
-      .as<vector<double> >();
+               .as<vector<double> >();
 
     wCurrentRBC.setOnes();
     if (inpaFlux.size() == 1)
@@ -220,7 +220,7 @@ void SingleGroupQD::checkOptionalParams()
   if ((*input)["parameters"]["outerCurrentBC"]){
 
     inpCurrent=(*input)["parameters"]["outerCurrentBC"]\
-      .as<vector<double> >();
+               .as<vector<double> >();
 
     eCurrentRBC.setOnes();
     if (inpaFlux.size() == 1)
@@ -232,7 +232,7 @@ void SingleGroupQD::checkOptionalParams()
   if ((*input)["parameters"]["initial previous flux"]){
 
     inpSFluxPrev=(*input)["parameters"]["initial previous flux"]\
-      .as<vector<double> >();
+                 .as<vector<double> >();
 
     sFlux.setOnes();
     sFluxR.setOnes();
@@ -254,7 +254,7 @@ void SingleGroupQD::checkOptionalParams()
   if ((*input)["parameters"]["initial previous current"]){
 
     inpCurrentPrev=(*input)["parameters"]["initial previous current"]\
-      .as<vector<double> >();
+                   .as<vector<double> >();
 
     currentR.setOnes();
     currentZ.setOnes();
@@ -283,9 +283,9 @@ void SingleGroupQD::writeFlux()
   string fileName;
 
   fileName = "qd-scalar-flux-group-" + to_string(energyGroup)\
-    +"-dz-" + to_string(mesh->dz)+ "-dt-"+to_string(mesh->dt)\
-    + "-T-" + to_string(mesh->T) + ".csv";
-  
+              +"-dz-" + to_string(mesh->dz)+ "-dt-"+to_string(mesh->dt)\
+              + "-T-" + to_string(mesh->T) + ".csv";
+
   // open file
   fluxFile.open(fileName);
 

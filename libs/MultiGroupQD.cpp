@@ -14,8 +14,8 @@ using namespace std;
 /// @param [in] myMesh Mesh object for the simulation
 /// @param [in] myInput YAML input object for the simulation
 MultiGroupQD::MultiGroupQD(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * myInput)
+    Mesh * myMesh,\
+    YAML::Node * myInput)
 {
   // Assign pointers for materials, mesh, and input objects
   materials = myMaterials;
@@ -25,7 +25,7 @@ MultiGroupQD::MultiGroupQD(Materials * myMaterials,\
   // Initialize pointers to each SGQD group
   for (int iGroups = 0; iGroups < materials->nGroups; ++iGroups){
     shared_ptr<SingleGroupQD> newSGQD (new SingleGroupQD(iGroups,\
-      this,materials,mesh,input));
+          this,materials,mesh,input));
     SGQDs.push_back(std::move(newSGQD));
   }
 
@@ -53,11 +53,11 @@ void MultiGroupQD::buildLinearSystem()
 void MultiGroupQD::solveLinearSystem()
 {
   QDSolve->solve();
-  
+
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
     SGQDs[iGroup]->getFlux();
-   // cout << SGQDs[iGroup]->sFlux << endl;
+    // cout << SGQDs[iGroup]->sFlux << endl;
   }
 }
 //==============================================================================
@@ -83,12 +83,12 @@ void MultiGroupQD::buildBackCalcSystem()
 void MultiGroupQD::backCalculateCurrent()
 {
   QDSolve->backCalculateCurrent();
-  
-//  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
-//  {
-//    SGQDs[iGroup]->getFlux();
-//    cout << SGQDs[iGroup]->sFlux << endl;
-//  }
+
+  //  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+  //  {
+  //    SGQDs[iGroup]->getFlux();
+  //    cout << SGQDs[iGroup]->sFlux << endl;
+  //  }
 }
 //==============================================================================
 
@@ -100,9 +100,9 @@ void MultiGroupQD::setInitialCondition()
 {
   // Initialize vectors
   Eigen::VectorXd initialFluxCondition(QDSolve->energyGroups*\
-    QDSolve->nGroupUnknowns);
+      QDSolve->nGroupUnknowns);
   Eigen::VectorXd initialCurrentCondition(QDSolve->energyGroups*\
-    QDSolve->nGroupCurrentUnknowns);
+      QDSolve->nGroupCurrentUnknowns);
   initialFluxCondition.setZero();   
   initialCurrentCondition.setZero(); 
 
@@ -110,9 +110,9 @@ void MultiGroupQD::setInitialCondition()
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
     initialFluxCondition = initialFluxCondition\
-      + SGQDs[iGroup]->getFluxSolutionVector();
+                           + SGQDs[iGroup]->getFluxSolutionVector();
     initialCurrentCondition = initialCurrentCondition\
-      + SGQDs[iGroup]->getCurrentSolutionVector();
+                              + SGQDs[iGroup]->getCurrentSolutionVector();
   }
 
   // Set initial conditions in QDSolver object

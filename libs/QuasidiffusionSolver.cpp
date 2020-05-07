@@ -14,8 +14,8 @@ using namespace std;
 /// @param [in] myMaterials Materials object for the simulation
 /// @param [in] myInput YAML input object for the simulation
 QDSolver::QDSolver(Mesh * myMesh,\
-  Materials * myMaterials,\
-  YAML::Node * myInput)	      
+    Materials * myMaterials,\
+    YAML::Node * myInput)	      
 {
   // Point to variables for mesh and input file
   mesh = myMesh;
@@ -120,11 +120,11 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
 /// low order quasidiffusion system
 void QDSolver::solve()
 {
- // Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
- // solver.preconditioner().setDroptol(0.001);
- // solver.compute(A);
- // x = solver.solve(b);
-  
+  // Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
+  // solver.preconditioner().setDroptol(0.001);
+  // solver.compute(A);
+  // x = solver.solve(b);
+
   Eigen::SparseLU<Eigen::SparseMatrix<double>,\
     Eigen::COLAMDOrdering<int> > solverLU;
   A.makeCompressed();
@@ -152,7 +152,7 @@ void QDSolver::backCalculateCurrent()
 // ToDo: eliminate energyGroup input, as it can just be defined from the SGQD
 // object. Same with a lot of functions in this class
 void QDSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
@@ -176,7 +176,7 @@ void QDSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
   A.coeffRef(iEq,indices[iCF]) += geoParams[iCF] * ((1/(v*deltaT)) + sigT);
 
   westCurrent(-geoParams[iWF],iR,iZ,iEq,energyGroup,SGQD);
-  
+
   eastCurrent(geoParams[iEF],iR,iZ,iEq,energyGroup,SGQD);
 
   northCurrent(-geoParams[iNF],iR,iZ,iEq,energyGroup,SGQD);
@@ -185,7 +185,7 @@ void QDSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
 
   // formulate RHS entry
   b(iEq) = b(iEq) + geoParams[iCF]*\
-    ( (xPast(indices[iCF])/(v*deltaT)) + SGQD->q(iZ,iR));
+           ( (xPast(indices[iCF])/(v*deltaT)) + SGQD->q(iZ,iR));
 };
 //==============================================================================
 
@@ -197,7 +197,7 @@ void QDSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert equation for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::applyRadialBoundary(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   eastCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
   westCurrent(-1,iR+1,iZ,iEq,energyGroup,SGQD);
@@ -212,7 +212,7 @@ void QDSolver::applyRadialBoundary(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert equation for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::applyAxialBoundary(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   northCurrent(1,iR,iZ+1,iEq,energyGroup,SGQD);
   southCurrent(-1,iR,iZ,iEq,energyGroup,SGQD);
@@ -227,7 +227,7 @@ void QDSolver::applyAxialBoundary(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert equation for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
@@ -259,7 +259,7 @@ void QDSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   A.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
 
   A.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
-  
+
   // formulate RHS entry
   b(iEq) = b(iEq) - coeff*(currPast(indices[iSC])/(v*deltaT));
 };
@@ -273,7 +273,7 @@ void QDSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert equation for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
@@ -295,7 +295,7 @@ void QDSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
-  
+
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
   A.coeffRef(iEq,indices[iNF]) += coeff*EzzL/deltaZ;
@@ -319,7 +319,7 @@ void QDSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert equation for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
@@ -341,10 +341,10 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   ErrL = SGQD->Err(iZ,iR);
   EzzL = SGQD->Ezz(iZ,iR);
   ErzL = SGQD->Erz(iZ,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
-  
+
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
   A.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
@@ -368,7 +368,7 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert equation for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
@@ -393,7 +393,7 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
-  
+
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
   A.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
@@ -403,7 +403,7 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   A.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrL/(hUp*deltaR);
 
   A.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrL/(hUp*deltaR);
-  
+
   // formulate RHS entry
   b(iEq) = b(iEq) - coeff*(currPast(indices[iEC])/(v*deltaT));
 };
@@ -422,7 +422,7 @@ void QDSolver::formBackCalcSystem(SingleGroupQD * SGQD)
   {
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
-      
+
       // south face
       calcSouthCurrent(iR,iZ,iEq,SGQD->energyGroup,SGQD);
       iEq = iEq + 1;
@@ -461,7 +461,7 @@ void QDSolver::formBackCalcSystem(SingleGroupQD * SGQD)
 /// @param [in] energyGroup energy group to assert equation for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
-  int energyGroup,SingleGroupQD * SGQD)
+    int energyGroup,SingleGroupQD * SGQD)
 {
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
@@ -493,7 +493,7 @@ void QDSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
   C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
 
   C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
-  
+
   // formulate RHS entry
   d(iEq) = coeff*(currPast(indices[iSC])/(v*deltaT));
 };
@@ -507,7 +507,7 @@ void QDSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
 /// @param [in] energyGroup energy group to assert equation for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
-  int energyGroup,SingleGroupQD * SGQD)
+    int energyGroup,SingleGroupQD * SGQD)
 {
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
@@ -529,7 +529,7 @@ void QDSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
-  
+
   coeff = 1/((1/(v*deltaT))+sigT); 
 
   C.coeffRef(iEq,indices[iNF]) += coeff*EzzL/deltaZ;
@@ -553,7 +553,7 @@ void QDSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
 /// @param [in] energyGroup energy group to assert equation for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
-  int energyGroup,SingleGroupQD * SGQD)
+    int energyGroup,SingleGroupQD * SGQD)
 {
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
@@ -575,10 +575,10 @@ void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
   ErrL = SGQD->Err(iZ,iR);
   EzzL = SGQD->Ezz(iZ,iR);
   ErzL = SGQD->Erz(iZ,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
-  
+
   coeff = 1/((1/(v*deltaT))+sigT); 
 
   C.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
@@ -602,7 +602,7 @@ void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
 /// @param [in] energyGroup energy group to assert equation for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
-  int energyGroup,SingleGroupQD * SGQD)
+    int energyGroup,SingleGroupQD * SGQD)
 {
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
@@ -627,7 +627,7 @@ void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
-  
+
   coeff = 1/((1/(v*deltaT))+sigT); 
 
   C.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
@@ -637,7 +637,7 @@ void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
   C.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrL/(hUp*deltaR);
 
   C.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrL/(hUp*deltaR);
-  
+
   // formulate RHS entry
   d(iEq) = coeff*(currPast(indices[iEC])/(v*deltaT));
 };
@@ -651,10 +651,10 @@ void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertNFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices = getIndices(iR,iZ,energyGroup);
-  
+
   A.insert(iEq,indices[iNF]) = 1.0;
   b(iEq) = SGQD->nFluxBC(iR);
 };
@@ -668,10 +668,10 @@ void QDSolver::assertNFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertSFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices = getIndices(iR,iZ,energyGroup);
-  
+
   A.insert(iEq,indices[iSF]) = 1.0;
   b(iEq) = SGQD->sFluxBC(iR);
 };
@@ -685,10 +685,10 @@ void QDSolver::assertSFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices = getIndices(iR,iZ,energyGroup);
-  
+
   A.insert(iEq,indices[iWF]) = 1.0;
   b(iEq) = SGQD->wFluxBC(iZ);
 };
@@ -702,10 +702,10 @@ void QDSolver::assertWFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices = getIndices(iR,iZ,energyGroup);
-  
+
   A.insert(iEq,indices[iEF]) = 1.0;
   b(iEq) = SGQD->eFluxBC(iZ);
 };
@@ -719,7 +719,7 @@ void QDSolver::assertEFluxBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   northCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -733,7 +733,7 @@ void QDSolver::assertNCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   southCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -747,7 +747,7 @@ void QDSolver::assertSCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   westCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -761,7 +761,7 @@ void QDSolver::assertWCurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   eastCurrent(1,iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -775,7 +775,7 @@ void QDSolver::assertECurrentBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices = getIndices(iR,iZ,energyGroup);
   double ratio = SGQD->nOutwardCurrToFluxRatioBC(iR);
@@ -786,15 +786,15 @@ void QDSolver::assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
   northCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
   A.coeffRef(iEq,indices[iNF]) -= ratio;
   b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
-  
+
   //northCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
   //A.coeffRef(iEq,indices[iNF]) -= absCurrent/SGQD->nFluxBC(iR);
   //b(iEq) = b(iEq) + (2*inwardCurrent);
-  
+
   //northCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //southCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //b(iEq) = b(iEq) + SGQD->nCurrentZBC(iR);
-  
+
   //A.coeffRef(iEq,indices[iNF]) = 1.0;
   //b(iEq) = SGQD->nFluxBC(iR); 
 };
@@ -808,7 +808,7 @@ void QDSolver::assertNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices = getIndices(iR,iZ,energyGroup);
   double ratio = SGQD->sOutwardCurrToFluxRatioBC(iR);
@@ -823,7 +823,7 @@ void QDSolver::assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
   //southCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
   //A.coeffRef(iEq,indices[iSF]) -= absCurrent/SGQD->sFluxBC(iR);
   //b(iEq) = b(iEq) + (2*inwardCurrent);
-  
+
   //southCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //northCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //b(iEq) = b(iEq) + SGQD->sCurrentZBC(iR);
@@ -841,7 +841,7 @@ void QDSolver::assertSGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   vector<int> indices = getIndices(iR,iZ,energyGroup);
   double ratio = SGQD->eOutwardCurrToFluxRatioBC(iZ);
@@ -852,15 +852,15 @@ void QDSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
   eastCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
   A.coeffRef(iEq,indices[iEF]) -= ratio;
   b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
-  
+
   //eastCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
   //A.coeffRef(iEq,indices[iEF]) -= absCurrent/SGQD->eFluxBC(iZ);
   //b(iEq) = b(iEq) + (2*inwardCurrent);
-  
+
   //eastCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //westCurrent(0.5,iR,iZ,iEq,energyGroup,SGQD);
   //b(iEq) = b(iEq) + SGQD->eCurrentRBC(iZ);
-  
+
   //A.coeffRef(iEq,indices[iEF]) = 1.0;
   //b(iEq) = SGQD->eFluxBC(iZ); 
 };
@@ -875,7 +875,7 @@ void QDSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertNBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   if (reflectingBCs)
     assertNCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
@@ -894,7 +894,7 @@ void QDSolver::assertNBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   if (reflectingBCs)
     assertSCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
@@ -913,7 +913,7 @@ void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertWBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   if (reflectingBCs or goldinBCs)
     assertWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
@@ -933,7 +933,7 @@ void QDSolver::assertWBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
 void QDSolver::assertEBC(int iR,int iZ,int iEq,int energyGroup,\
-  SingleGroupQD * SGQD)
+    SingleGroupQD * SGQD)
 {
   if (reflectingBCs)
     assertECurrentBC(iR,iZ,iEq,energyGroup,SGQD);
@@ -951,7 +951,7 @@ void QDSolver::assertEBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] toEnergyGroup energy group of sourcing group
 /// @param [in] fromEnergyGroup energy group of source group
 double QDSolver::calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
-  int fromEnergyGroup)
+    int fromEnergyGroup)
 {
 
   double localSigF,localNu,localChiP,localSigS,sourceCoefficient;
@@ -973,11 +973,11 @@ double QDSolver::calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
 /// @param [in] rEval radial location to evaluate integrating factor at
 /// @param [in] SGQD of this energyGroup
 double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
-  SingleGroupQD * SGQD)	      
+    SingleGroupQD * SGQD)	      
 {
   double EzzL,ErrL,ErzL,G,rUp,rDown,rAvg,g0,g1,ratio,hEval;
   int p;
-  
+
   // get local Eddington factors 
   ErrL = SGQD->Err(iZ,iR);
   EzzL = SGQD->Ezz(iZ,iR);
@@ -1022,9 +1022,9 @@ double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
 /// @param [out] index global index for south face current in cell at (iR,iZ)
 vector<int> QDSolver::getIndices(int iR,int iZ,int energyGroup)
 {
-  
+
   vector<int> indices,oneGroupIndices;
-  
+
   // Set flux and current offsets according to energy group
   int offsetFlux = energyGroup*nGroupUnknowns;
   int offsetCurr = energyGroup*nGroupCurrentUnknowns;
@@ -1059,7 +1059,7 @@ vector<double> QDSolver::calcGeoParams(int iR,int iZ)
 {
   vector<double> gParams;
   double rDown,rUp,zDown,zUp,volume,wFaceSA,eFaceSA,nFaceSA,sFaceSA;
-  
+
   // get boundaries of this cell
   rDown = mesh->rCornerEdge(iR); rUp = mesh->rCornerEdge(iR+1);
   zDown = mesh->zCornerEdge(iR); zUp = mesh->zCornerEdge(iR+1);
@@ -1191,19 +1191,19 @@ void QDSolver::checkOptionalParams()
     if (boundaryType == "TQD") goldinBCs = true;
 
   }
-  
+
   if ((*input)["parameters"]["mgqd-bcs"])
   {
 
     boundaryType=(*input)["parameters"]["mgqd-bcs"].as<string>();
 
     if (boundaryType == "reflective" or boundaryType == "REFLECTIVE"\
-      or boundaryType == "Reflective")
+        or boundaryType == "Reflective")
       reflectingBCs = true;
     else if (boundaryType == "goldin" or boundaryType == "GOLDIN" \
-      or boundaryType == "Goldin")
+        or boundaryType == "Goldin")
       goldinBCs = true;
-    
+
   }
 }
 //==============================================================================

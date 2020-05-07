@@ -17,8 +17,8 @@ using namespace arma;
 /// @param [in] myMesh Mesh object for the simulation
 /// @param [in] myInput YAML input object for the simulation
 MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * myInput)
+    Mesh * myMesh,\
+    YAML::Node * myInput)
 {
   // Assign pointers for materials, mesh, and input objects
   materials = myMaterials;
@@ -28,7 +28,7 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
   // Initialize pointers to each SGT group
   for (int iGroups = 0; iGroups < materials->nGroups; ++iGroups){
     shared_ptr<SingleGroupTransport> newSGT (new SingleGroupTransport(iGroups,\
-      this,materials,mesh,input));
+          this,materials,mesh,input));
     SGTs.push_back(std::move(newSGT)); 
   }
 
@@ -52,7 +52,7 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
   if ((*input)["parameters"]["powerMaxIter"]){
     epsAlpha=(*input)["parameters"]["powerMaxIter"].as<double>();
   }
-  
+
 };
 
 //==============================================================================
@@ -88,11 +88,11 @@ void MultiGroupTransport::solveSCBs()
 /// @param [out] allConverged Indicates whether fluxes are globally converged
 bool MultiGroupTransport::calcFluxes(string printResidual)
 {
-  
+
   // Vector containing the flux residuals in each SGT
   Eigen::VectorXd residuals(SGTs.size());
   residuals.setZero();
-  
+
   // Vector indicating whether flux in each SGT is converged 
   VectorXb converged(SGTs.size());
   converged.fill(false); 
@@ -139,11 +139,11 @@ bool MultiGroupTransport::calcFluxes(string printResidual)
 /// @param [out] allConverged Indicates whether sources are globally converged
 bool MultiGroupTransport::calcSources(string calcType)
 {
-  
+
   // Vector indicating whether source in each SGT is converged
   VectorXb converged(SGTs.size());
   converged.fill(false); 
-  
+
   // Vector containing the source residuals in each SGT
   Eigen::VectorXd residuals(SGTs.size());
   residuals.setZero();
@@ -163,7 +163,7 @@ bool MultiGroupTransport::calcSources(string calcType)
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
     allConverged = (allConverged and converged(iGroup)); 
   }
-  
+
   return allConverged;
 };
 
@@ -176,7 +176,7 @@ bool MultiGroupTransport::calcSources(string calcType)
 /// converged
 bool MultiGroupTransport::calcAlphas(string printResidual)
 {
-  
+
   // Vector indicating whether alpha in each SGT is converged
   VectorXb converged(SGTs.size());
 
@@ -202,7 +202,7 @@ bool MultiGroupTransport::calcAlphas(string printResidual)
     cout << endl; 
     cout << endl;
   } 
- 
+
   // Perform an AND operation over all SGTs to determine whether
   // the alpha estimates are globally converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
@@ -222,7 +222,7 @@ bool MultiGroupTransport::calcAlphas(string printResidual)
 /// source is converged based on the convergence criteria epsilon  
 bool MultiGroupTransport::calcFissionSources(string printResidual)
 {
-  
+
   // Vector indicating whether fission source in each SGT is converged
   VectorXb converged(SGTs.size());
 
@@ -275,7 +275,7 @@ bool MultiGroupTransport::sourceIteration()
 
   // Iterate on fission source
   for (int iter = 0; iter < sourceMaxIter; ++iter){
-    
+
     // Calculate scatter source, solve for the starting angle equation, then 
     // solve the full time dependent neutron tranport equation with a 
     // fixed source. Then calculate the scalar flux with the newly calculated
@@ -344,7 +344,7 @@ void MultiGroupTransport::solveTransportOnly()
 
   // Calculate initial source
   calcSources(); 
-  
+
   for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
   {
     cout << "Flux residuals: " << endl;
@@ -371,7 +371,7 @@ void MultiGroupTransport::solveTransportOnly()
         {
           cout << "Flux residuals: " << endl;
         }
-      
+
       } else 
       {
         cout << "Source iteration non-convergent." << endl;

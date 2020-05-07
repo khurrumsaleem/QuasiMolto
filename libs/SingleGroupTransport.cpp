@@ -20,14 +20,14 @@ using namespace arma;
 /// @param [in] myMesh Mesh object for the simulation
 /// @param [in] myInput YAML input object for the simulation
 SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
-  MultiGroupTransport * myMGT,\
-  Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * myInput)
+    MultiGroupTransport * myMGT,\
+    Materials * myMaterials,\
+    Mesh * myMesh,\
+    YAML::Node * myInput)
 {
   // Assign energy group for this object 
   energyGroup = myEnergyGroup;
-  
+
   // Assign pointers
   MGT = myMGT;
   mats = myMaterials;
@@ -40,11 +40,11 @@ SingleGroupTransport::SingleGroupTransport(int myEnergyGroup,\
   // Initialize angular fluxes
   aFlux.set_size(mesh->zCornerCent.size(),mesh->rCornerCent.size(),mesh->nAngles);
   aFlux.zeros();
-  
+
   // Initialize half angle angular fluxes used to approximate the angular
   // redistribution term of the RZ neutron transport equation
   aHalfFlux.set_size(mesh->zCornerCent.size(),mesh->rCornerCent.size(),\
-    mesh->quadrature.size());
+      mesh->quadrature.size());
   aHalfFlux.zeros();
 
   // Initialize scalar fluxes
@@ -131,16 +131,16 @@ double SingleGroupTransport::calcSource(string calcType)
 { 
   double residual; 
   Eigen::MatrixXd q_old = q;
-  
-  
+
+
   if (calcType=="s" or calcType=="S"){
-    
+
     // Just re-evaluate scattering source
     calcScatterSource();
     q = scatterSource + fissionSource;
-  
+
   } else if (calcType == "fs" or calcType == "FS"){
-    
+
     // Re-evaluate scattering and fission source
     calcScatterSource();
     calcFissionSource();
@@ -162,37 +162,37 @@ double SingleGroupTransport::calcSource(string calcType)
 /// fission source and the past fission source
 double SingleGroupTransport::calcFissionSource()
 {  
-  
+
   double residual;
   Eigen::MatrixXd fissionSource_old = fissionSource;
   Eigen::MatrixXd fissionSourceDiff;
 
   // Set fission source to zero
   fissionSource.setZero();
- 
+
   // Calculate fission source 
   for (int iZ = 0; iZ < fissionSource.rows(); ++iZ){
     for (int iR = 0; iR < fissionSource.cols(); ++iR){
       for (int iGroup = 0; iGroup < MGT->SGTs.size(); ++iGroup){
-        
+
         fissionSource(iZ,iR) = fissionSource(iZ,iR) + (1.0/mesh->totalWeight)*(
-        mats->chiP(iZ,iR,energyGroup)*mats->nu(iZ,iR)*mats->sigF(iZ,iR,iGroup)\
-        *MGT->SGTs[iGroup]->sFlux(iZ,iR));
+            mats->chiP(iZ,iR,energyGroup)*mats->nu(iZ,iR)*mats->sigF(iZ,iR,iGroup)\
+            *MGT->SGTs[iGroup]->sFlux(iZ,iR));
 
         // need to account for precursors, too.
       } // iGroup
     } // iR
   } // iZ
-   
+
   fissionSourceDiff = (fissionSource_old-fissionSource);
-  
+
   // Need to be careful how we calculate the relative difference here, as
   // some values we're dividing by may be equal to 0.
   for (int iRow = 0; iRow < fissionSourceDiff.rows(); ++iRow){
     for (int iCol = 0; iCol < fissionSourceDiff.cols(); ++iCol){
       if (fissionSource(iRow,iCol)!=0){
         fissionSourceDiff(iRow,iCol) = fissionSourceDiff(iRow,iCol)\
-          /fissionSource(iRow,iCol);
+                                       /fissionSource(iRow,iCol);
       } else {
         fissionSourceDiff(iRow,iCol) = 0;
       }
@@ -215,28 +215,28 @@ double SingleGroupTransport::calcFissionSource()
 /// scattering source and the past scattering source
 double SingleGroupTransport::calcScatterSource()
 {  
-  
+
   double residual;
   Eigen::MatrixXd scatterSource_old = scatterSource;
 
   // Set scattering source to zero
   scatterSource.setZero();
-  
+
   // Calculate the scattering source
   for (int iZ = 0; iZ < scatterSource.rows(); ++iZ){
     for (int iR = 0; iR < scatterSource.cols(); ++iR){
       for (int iGroup = 0; iGroup < MGT->SGTs.size(); ++iGroup){
         scatterSource(iZ,iR) = scatterSource(iZ,iR) + (1.0/mesh->totalWeight)*(
-        mats->sigS(iZ,iR,iGroup,energyGroup)*MGT->SGTs[iGroup]->sFlux(iZ,iR));
+            mats->sigS(iZ,iR,iGroup,energyGroup)*MGT->SGTs[iGroup]->sFlux(iZ,iR));
 
         // need to account for precursors, too.
       } // iGroup
     } // iR
   } // iZ
-  
+
   // Calculate residual
   residual = ((scatterSource_old-scatterSource)\
-    .cwiseQuotient(scatterSource)).norm();
+      .cwiseQuotient(scatterSource)).norm();
   return residual;
 };
 
@@ -251,7 +251,7 @@ double SingleGroupTransport::calcScatterSource()
 /// flux and past flux
 double SingleGroupTransport::calcFlux()
 {
-  
+
   double weight,residual; 
   int weightIdx=3,angIdx;
   Eigen::MatrixXd sFlux_old = sFlux;
@@ -268,15 +268,15 @@ double SingleGroupTransport::calcFlux()
 
       for (int iZ = 0; iZ < sFlux.rows(); ++iZ){
         for (int iR = 0; iR < sFlux.cols(); ++iR){
-          
+
           sFlux(iZ,iR) = sFlux(iZ,iR)\
-          +weight*aFlux(iZ,iR,angIdx);
-        
+                         +weight*aFlux(iZ,iR,angIdx);
+
         } // iR
       } // iZ
     } // iP
   } // iQ
-  
+
   // Calculate residual
   residual = ((sFlux_old-sFlux).cwiseQuotient(sFlux)).norm();
   return residual;
@@ -293,7 +293,7 @@ double SingleGroupTransport::calcFlux()
 /// and past alpha
 double SingleGroupTransport::calcAlpha()
 {  
-  
+
   double residual,deltaT = mesh->dt;
   Eigen::MatrixXd alpha_old = alpha;
   Eigen::MatrixXd alphaDiff;
@@ -307,8 +307,8 @@ double SingleGroupTransport::calcAlpha()
       alpha(iZ,iR) = (1.0/deltaT)*log(sFlux(iZ,iR)/sFluxPrev(iZ,iR));
     } // iR
   } // iZ
-  
-  
+
+
   alphaDiff = (alpha_old-alpha);
   // Calculate residual
   // Need to be careful how we calculate the relative difference here, as
@@ -322,7 +322,7 @@ double SingleGroupTransport::calcAlpha()
       }
     }
   }
-  
+
   residual = alphaDiff.norm();
 
   return residual;
@@ -340,11 +340,11 @@ void SingleGroupTransport::writeFlux()
 
   ofstream fluxFile;
   string fileName;
-  
+
   // parse file name 
   fileName = "scalar-flux-group-" + to_string(energyGroup)\
-    +"-dz-" + to_string(mesh->dz)+ "-dt-"+to_string(mesh->dt)\
-    +"-T-"+ to_string(mesh->T) + ".csv";
+              +"-dz-" + to_string(mesh->dz)+ "-dt-"+to_string(mesh->dt)\
+              +"-T-"+ to_string(mesh->T) + ".csv";
 
   // open file
   fluxFile.open(fileName);
@@ -361,8 +361,8 @@ void SingleGroupTransport::writeFlux()
 
   // parse file name 
   fileName = "angular-flux-group-" + to_string(energyGroup)\
-    +"-dz-" + to_string(mesh->dz)+ "-dt-"+to_string(mesh->dt)\
-    +"-T-"+ to_string(mesh->T) + ".csv";
+              +"-dz-" + to_string(mesh->dz)+ "-dt-"+to_string(mesh->dt)\
+              +"-T-"+ to_string(mesh->T) + ".csv";
 
   // open file
   fluxFile.open(fileName);
@@ -389,7 +389,7 @@ void SingleGroupTransport::writeFlux()
     }
     fluxFile << endl;
     fluxFile.close();
-  
+
     // write axial mesh to .csv
     fileName = "z-mesh.csv"; 
     fluxFile.open(fileName); 
@@ -401,7 +401,7 @@ void SingleGroupTransport::writeFlux()
     fluxFile.close();
   }
 };
-  
+
 //==============================================================================
 
 

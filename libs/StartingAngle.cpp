@@ -16,19 +16,19 @@ using namespace arma;
 /// @param [in] myMaterials Materials object for the simulation
 /// @param [in] myInput YAML input object for the simulation
 StartingAngle::StartingAngle(Mesh * myMesh,\
-	Materials * myMaterials,\
-	YAML::Node * myInput)	      
+    Materials * myMaterials,\
+    YAML::Node * myInput)	      
 {
   // Point to variables for mesh and input file
   mesh = myMesh;
   input = myInput;
   materials = myMaterials;
-  
+
   // Size boundary value vectors to hold boundaries in each energy group
   upperBC.resize(materials->nGroups);
   lowerBC.resize(materials->nGroups);
   outerBC.resize(materials->nGroups);
-  
+
   vector<double> inpUpperBC,inpLowerBC,inpOuterBC;
 
   // ToDo: make function to read in optional arguments
@@ -92,9 +92,9 @@ StartingAngle::StartingAngle(Mesh * myMesh,\
 /// values that correspond to the starting half angle, and results in the 
 /// elimination of the angular redistribution term. 
 void StartingAngle::calcStartingAngle(cube * halfAFlux,\
-  Eigen::MatrixXd * source,\
-  Eigen::MatrixXd * alpha,\
-  int energyGroup)
+    Eigen::MatrixXd * source,\
+    Eigen::MatrixXd * alpha,\
+    int energyGroup)
 {
 
   for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi){
@@ -112,18 +112,18 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 /// values that correspond to the starting half angle, and results in the 
 /// elimination of the angular redistribution term. 
 void StartingAngle::solveAngularFlux(cube * halfAFlux,\
-  Eigen::MatrixXd * source,\
-  Eigen::MatrixXd * alpha,\
-  int energyGroup,int iXi)
+    Eigen::MatrixXd * source,\
+    Eigen::MatrixXd * alpha,\
+    int energyGroup,int iXi)
 {
-  
-  
+
+
   // Index xi value is stored in in quadLevel
   const int xiIndex = 0;
 
   // Temporary variable used for looping though quad set
   double xi,sqrtXi,sigTEff,sigTEps=1E-4;
-  
+
   xi = mesh->quadrature[iXi].quad[0][xiIndex];
   int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR,zStartCell,rStartCell;
   int rows = 4,cols = 4;
@@ -205,13 +205,13 @@ void StartingAngle::solveAngularFlux(cube * halfAFlux,\
       0,0,\
       0,1,\
       -1,1;
-    
+
     // Set dirichlet bc
     zBC = lowerBC[energyGroup];
-          
+
   }
   else {			
-    
+
     // Marching from the top to the bottom  
     zStart = mesh->dzsCorner.size()-1;
     zStartCell = mesh->dzs.size()-1;
@@ -229,23 +229,23 @@ void StartingAngle::solveAngularFlux(cube * halfAFlux,\
     zBC = upperBC[energyGroup];
   }
   for (int iR = rStart,iCellR = rStartCell,countR = 0;\
-    countR < mesh->drsCorner.size(); 
-    iR = iR - 2,--iCellR,countR = countR + 2){
+      countR < mesh->drsCorner.size(); 
+      iR = iR - 2,--iCellR,countR = countR + 2){
 
     for (int iZ = zStart, iCellZ = zStartCell,countZ = 0; \
-      countZ < mesh->dzsCorner.size();\
-      iZ = iZ + zInc, iCellZ = iCellZ + zInc/2,countZ = countZ + 2){
-      
+        countZ < mesh->dzsCorner.size();\
+        iZ = iZ + zInc, iCellZ = iCellZ + zInc/2,countZ = countZ + 2){
+
       // Set source in each corner
       for (int iCorner = 0; iCorner < 4; ++iCorner){
         q(iCorner) = (*source)(iZ+cornerOffset(iCorner,1),\
-        iR+cornerOffset(iCorner,0));
+            iR+cornerOffset(iCorner,0));
       }
 
       for (int iSig = 0; iSig < sigT.cols(); ++iSig){
         sigTEff = materials->sigT(iZ+cornerOffset(iSig,1),\
-          iR+cornerOffset(iSig,0),energyGroup)\
-          +(*alpha)(iZ+cornerOffset(iSig,1),iR+cornerOffset(iSig,0))/v;
+            iR+cornerOffset(iSig,0),energyGroup)\
+                  +(*alpha)(iZ+cornerOffset(iSig,1),iR+cornerOffset(iSig,0))/v;
 
         if (sigTEff > sigTEps)
           sigT(iSig,iSig) = sigTEff;
@@ -254,32 +254,32 @@ void StartingAngle::solveAngularFlux(cube * halfAFlux,\
       }
 
       gamma = mesh->rEdge(iCellR)/mesh->rEdge(iCellR+1);
-      
+
       // Calculate radial within cell leakage matrix
       kRCoeff = mesh->dzs(iCellZ)*mesh->rEdge(iCellR+1)/8.0;
       kR=calckR(gamma);
       kR=kRCoeff*kR;
-      
+
       // Calculate axial within cell leakage matrix
       kZCoeff = mesh->drs(iCellR)*mesh->rEdge(iCellR+1)/16.0;
       kZ=calckZ(gamma);
       kZ=kZCoeff*kZ;
-      
+
       // Calculate radial out of cell leakage matrix
       lRCoeff = mesh->dzs(iCellZ)*mesh->rEdge(iCellR+1)/2.0;
       lR=calclR(gamma);
       lR=lRCoeff*lR;
-      
+
       // Calculate axial out of cell leakage matrix
       lZCoeff = mesh->drs(iCellR)*mesh->rEdge(iCellR+1)/8.0;
       lZ=calclZ(gamma);
       lZ=lZCoeff*lZ;
-      
+
       // Calculate first collision matrix
       t1Coeff = mesh->drs(iCellR)*mesh->dzs(iCellZ)*mesh->rEdge(iCellR+1)/16.0;
       t1=calct1(gamma);
       t1=t1Coeff*t1;
-      
+
       // Calculate second collision matrix
       t2Coeff = mesh->drs(iCellR)*mesh->dzs(iCellZ)/4.0;
       t2=calct2(gamma);
@@ -298,46 +298,46 @@ void StartingAngle::solveAngularFlux(cube * halfAFlux,\
         mask(outUpstreamR[iCol],outUpstreamR[iCol])=0;
       }
       downstream = sqrtXi*lR*mask;	
-      
+
       // Consider axial downstream values defined in this cell
       mask.setIdentity();
       for (int iCol = 0; iCol < outUpstreamZ.size(); ++iCol){
         mask(outUpstreamZ[iCol],outUpstreamZ[iCol])=0;
       }
       downstream = downstream + xi*lZ*mask;	
-      
+
       A = A + downstream;
-      
+
       // Form b matrix
       b = t1*q;
       // Consider upstream values in other cells or BCs
       if (iR!=rStart){
         upstream =\
-        sqrtXi*(*halfAFlux)(iZ+cornerOffset(outUpstreamR[0],1),\
-        iR+borderCellR,iXi)*lR.col(outUpstreamR[0])+\
-        sqrtXi*(*halfAFlux)(iZ+cornerOffset(outUpstreamR[1],1),\
-        iR+borderCellR,iXi)*lR.col(outUpstreamR[1]);
+                  sqrtXi*(*halfAFlux)(iZ+cornerOffset(outUpstreamR[0],1),\
+                      iR+borderCellR,iXi)*lR.col(outUpstreamR[0])+\
+                  sqrtXi*(*halfAFlux)(iZ+cornerOffset(outUpstreamR[1],1),\
+                      iR+borderCellR,iXi)*lR.col(outUpstreamR[1]);
         b = b - upstream;
 
       } else {
         upstream = sqrtXi*rBC\
-        *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
+                   *(lR.col(outUpstreamR[0])+lR.col(outUpstreamR[1]));
         b = b - upstream;
       }
       if (iZ!=zStart){
         upstream =\
-        xi*(*halfAFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[0],0),\
-        iXi)*lZ.col(outUpstreamZ[0])+\
-        xi*(*halfAFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[1],0),\
-        iXi)*lZ.col(outUpstreamZ[1]);
+                  xi*(*halfAFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[0],0),\
+                      iXi)*lZ.col(outUpstreamZ[0])+\
+                  xi*(*halfAFlux)(iZ+borderCellZ,iR+cornerOffset(outUpstreamZ[1],0),\
+                      iXi)*lZ.col(outUpstreamZ[1]);
         b = b - upstream;
 
       }else{
         upstream = xi*zBC\
-        *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
+                   *(lZ.col(outUpstreamZ[0])+lZ.col(outUpstreamZ[1]));
         b = b - upstream;
       }
-     
+
       x = A.partialPivLu().solve(b);
 
       (*halfAFlux)(iZ+cornerOffset(0,1),iR+cornerOffset(0,0),iXi) = x(0);
@@ -365,7 +365,7 @@ Eigen::MatrixXd StartingAngle::calckR(double myGamma){
   kR(1,0) = b; kR(1,1) = b;
   kR(2,2) = b; kR(2,3) = b;
   kR(3,2) = a; kR(3,3) = a;
-   
+
   return kR;
 }
 
@@ -386,7 +386,7 @@ Eigen::MatrixXd StartingAngle::calckZ(double myGamma){
   kZ(1,1) = b; kZ(1,2) = b;
   kZ(2,1) = -b; kZ(2,2) = -b;
   kZ(3,0) = -a; kZ(3,3) = -a;
-   
+
   return kZ;
 }
 
@@ -404,7 +404,7 @@ Eigen::MatrixXd StartingAngle::calclR(double myGamma){
   lR(1,1) = b; 
   lR(2,2) = b; 
   lR(3,3) = a; 
-   
+
   return lR;
 }
 //==============================================================================
@@ -423,7 +423,7 @@ Eigen::MatrixXd StartingAngle::calclZ(double myGamma){
   lZ(1,1) = -b; 
   lZ(2,2) = b; 
   lZ(3,3) = a; 
-   
+
   return lZ;
 }
 //==============================================================================
@@ -443,7 +443,7 @@ Eigen::MatrixXd StartingAngle::calct1(double myGamma){
   t1(1,1) = b; 
   t1(2,2) = b; 
   t1(3,3) = a; 
-   
+
   return t1;
 }
 //==============================================================================
@@ -461,7 +461,7 @@ Eigen::MatrixXd StartingAngle::calct2(double myGamma){
   t2(1,1) = a; 
   t2(2,2) = a;
   t2(3,3) = a; 
-   
+
   return t2;
 }
 //==============================================================================
@@ -472,15 +472,15 @@ Eigen::MatrixXd StartingAngle::calct2(double myGamma){
 /// @param [out] subCellVol Volume in each corner of a cell
 Eigen::VectorXd StartingAngle::calcSubCellVol(int myiZ, int myiR){
   Eigen::VectorXd subCellVol = Eigen::VectorXd::Zero(4);
-  
+
   subCellVol(0) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
-          pow(mesh->rEdge(myiR),2))/2;
+      pow(mesh->rEdge(myiR),2))/2;
   subCellVol(1) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
-          pow(mesh->rCent(myiR),2))/2;
+      pow(mesh->rCent(myiR),2))/2;
   subCellVol(2) = (mesh->dzs(myiZ)/2)*(pow(mesh->rEdge(myiR+1),2)-\
-          pow(mesh->rCent(myiR),2))/2;
+      pow(mesh->rCent(myiR),2))/2;
   subCellVol(3) = (mesh->dzs(myiZ)/2)*(pow(mesh->rCent(myiR),2)-\
-          pow(mesh->rEdge(myiR),2))/2;
+      pow(mesh->rEdge(myiR),2))/2;
 
   return subCellVol;
 }
