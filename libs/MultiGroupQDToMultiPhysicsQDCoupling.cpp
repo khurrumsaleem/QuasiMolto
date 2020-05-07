@@ -11,8 +11,19 @@ using namespace std;
 /// MultiGroupQDToMultiPhysicsQDCoupling class object constructor
 ///
 /// @param [in] blankType blank for this material
-MGQDToMPQDCoupling::MGQDToMPQDCoupling()
+MGQDToMPQDCoupling::MGQDToMPQDCoupling(Mesh * myMesh,\
+        Materials * myMats,\
+        YAML::Node * myInput,\
+        MultiPhysicsCoupledQD * myMPQD,\
+        MultiGroupQD * myMGQD)
 {
+
   // Assign inputs to their member variables
+  mesh = myMesh; 
+  mats = myMats;
+  input = myInput;
+  mpqd = myMPQD;
+  mgqd = myMGQD;
+
 };
 //==============================================================================

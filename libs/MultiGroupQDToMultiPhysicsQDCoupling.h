@@ -14,14 +14,18 @@ using namespace std;
 class MGQDToMPQDCoupling
 {
   public:
-    MGQDToMPQDCoupling();
+    MGQDToMPQDCoupling(Mesh * myMesh,\
+        Materials * myMats,\
+        YAML::Node * myInput,\
+        MultiPhysicsCoupledQD * myMPQD,\
+        MultiGroupQD * myMGQD);
 
   private:
     Mesh * mesh; 
     Materials * mats;
     YAML::Node * input;
     MultiPhysicsCoupledQD * mpqd;
-    MultiGroupQD * MGQD;
+    MultiGroupQD * mgqd;
 };
 
 //==============================================================================
