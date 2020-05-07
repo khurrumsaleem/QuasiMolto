@@ -31,6 +31,7 @@ class MultiPhysicsCoupledQD
     void initializeXPast();
     void buildLinearSystem();
     void solveLinearSystem();
+    void solveTransient();
     HeatTransfer * heat;
     MultiGroupDNP * mgdnp;
     GreyGroupQD * ggqd;

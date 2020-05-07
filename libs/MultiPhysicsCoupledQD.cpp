@@ -186,3 +186,19 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
   xPast = x; 
 };
 //==============================================================================
+
+//==============================================================================
+/// Run transient with multiple solves 
+///
+void MultiPhysicsCoupledQD::solveTransient()
+{
+ 
+  initializeXPast();
+ 
+  for (int iT = 0; iT < mesh->dts.size(); iT++)
+  {
+    buildLinearSystem();
+    solveLinearSystem();   
+  }
+};
+//==============================================================================
