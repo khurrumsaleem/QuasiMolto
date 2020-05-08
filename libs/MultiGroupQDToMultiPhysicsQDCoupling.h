@@ -5,6 +5,7 @@
 #include "Materials.h"
 #include "MultiPhysicsCoupledQD.h"
 #include "MultiGroupQD.h"
+#include "SingleGroupQD.h"
 
 using namespace std;
 

@@ -39,7 +39,8 @@ void MGQDToMPQDCoupling::collapseNuclearData()
 {
 
   // Temporary accumulator variables
-  double fluxAccum,rCurrentAccum,zCurrentAccum;
+  double fluxAccum,rCurrentAccum,zCurrentAccum,totalSigS;
+  double flux,rCurrent,zCurrent;
 
   // Reset collapsed nuclear data
   mats->oneGroupXS->resetData();
@@ -58,32 +59,66 @@ void MGQDToMPQDCoupling::collapseNuclearData()
       // Loop over neutron energy groups
       for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
       {
+        // Get flux and currents in this cell and energy group
+        flux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,iR); 
+        rCurrent = mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR); 
+        zCurrent = mgqd->SGQDs[iEnergyGroup]->currentZ(iZ,iR); 
+
         // Flux weighted sigT
+        mats->oneGroupXS->sigT(iZ,iR) = mats->sigT(iZ,iR,iEnergyGroup)*flux;
+
         // Flux weighted sigS
+        totalSigS = 0; 
+        for (int iScat = 0; iScat < mats->nGroups; iScat++)
+        {
+          totalSigS = totalSigS + mats->sigS(iZ,iR,0,iScat); 
+        }
+        mats->oneGroupXS->sigS(iZ,iR) = totalSigS*flux;
+
         // Flux weighted neutron velocity
+        mats->oneGroupXS->neutV(iEnergyGroup) = mats->neutV(iEnergyGroup)*flux;
+
         // Flux weighted Ezz
+        mats->oneGroupXS->Ezz(iZ,iR) = mgqd->SGQDs[iEnergyGroup]->Ezz(iZ,iR)\
+                                       *flux;
+
         // Flux weighted Err
+        mats->oneGroupXS->Err(iZ,iR) = mgqd->SGQDs[iEnergyGroup]->Err(iZ,iR)\
+                                       *flux;
+
         // Flux weighted Erz
+        mats->oneGroupXS->Erz(iZ,iR) = mgqd->SGQDs[iEnergyGroup]->Erz(iZ,iR)\
+                                       *flux;
+
         // Flux weighted quasidiffusion coefficient
         // Flux weighted DNP coefficient 
-        // Accumulate flux
 
         // Axial current weighted neutron velocity
         // Axial current weighted sigTR
-        // Accumulate axial current
 
         // Radial current weighted neutron velocity
         // Radial current weighted sigTR
-        // Accumulate radial current
 
         // Radial current weighted zeta1
         // Radial current weighted zeta2
 
         // Axial current weighted zeta1
         // Axial current weighted zeta2
+
+        // Loop over DNP groups
+        for (int iDNPGroup = 0; iDNPGroup < mpqd->mgdnp->DNPs.size(); 
+            iDNPGroup++) 
+        {
+          // Flux weighted DNP coefficient 
+        }
+
+        // Accumulate flux
+        // Accumulate absolute axial current
+        // Accumulate absolute radial current
+        
       }
+      // Divide data by accumulated values
     }
   }
-
 };
 //==============================================================================
