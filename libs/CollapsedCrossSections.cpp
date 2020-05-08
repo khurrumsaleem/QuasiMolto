@@ -52,3 +52,39 @@ double CollapsedCrossSections::dnpFluxCoeff(int iZ,int iR,int dnpID)
 
 };
 //==============================================================================
+
+///==============================================================================
+/// Reset collapsed nuclear data 
+///
+void CollapsedCrossSections::resetData()
+{
+
+  // Set Eigen::MatrixXd types to zeros
+  sigT.setZero();  
+  sigS.setZero();  
+  sigF.setZero();  
+  rSigTR.setZero();  
+  zSigTR.setZero();  
+  chiP.setZero();  
+  chiD.setZero();  
+  neutV.setZero();  
+  rNeutV.setZero();  
+  zNeutV.setZero();  
+  Ezz.setZero();  
+  Err.setZero();  
+  Erz.setZero();  
+  rZeta1.setZero();  
+  rZeta2.setZero();  
+  zZeta1.setZero();  
+  zZeta2.setZero();  
+  nu.setZero();  
+  qdFluxCoeff.setZero();  
+
+  // Reset dnpFluxCoeff
+  for (int iDNPGroup = 0; iDNPGroup < qdFluxCoeff.size(); iDNPGroup++)
+  {
+    groupDNPFluxCoeff[iDNPGroup].setZero();
+  }
+
+};
+//==============================================================================

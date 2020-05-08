@@ -23,6 +23,7 @@ class CollapsedCrossSections
   
     // Functions 
     double dnpFluxCoeff(int iZ,int iR,int dnpID);
+    void resetData();
 };
 
 //==============================================================================
