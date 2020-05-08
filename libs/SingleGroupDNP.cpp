@@ -127,7 +127,6 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
 
       // Flux source term 
       if (fluxSource)
-        //coeff = -mesh->dt*beta*mats->nu(iZ,iR)*mySigF(iZ,iR);
         coeff = -mesh->dt*mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
       mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
 

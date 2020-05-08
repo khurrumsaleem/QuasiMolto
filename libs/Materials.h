@@ -33,7 +33,7 @@ class Materials
 	double sigF(int zIdx,int rIdx,int eIndx);
 	double chiP(int zIdx,int rIdx,int eIndx);
 	double chiD(int zIdx,int rIdx,int eIndx);
-	double nu(int zIdx,int rIdx);
+	double nu(int zIdx,int rIdx,int eIdx);
 	double density(int zIdx,int rIdx);
 	double gamma(int zIdx,int rIdx);
 	double k(int zIdx,int rIdx);

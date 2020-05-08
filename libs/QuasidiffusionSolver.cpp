@@ -957,7 +957,7 @@ double QDSolver::calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
   double localSigF,localNu,localChiP,localSigS,sourceCoefficient;
 
   localSigF = materials->sigF(iZ,iR,fromEnergyGroup);
-  localNu = materials->nu(iZ,iR);
+  localNu = materials->nu(iZ,iR,fromEnergyGroup);
   localChiP = materials->chiP(iZ,iR,toEnergyGroup);
   localSigS = materials->sigS(iZ,iR,fromEnergyGroup,toEnergyGroup);
   sourceCoefficient = localSigS + localChiP * localNu * localSigF;

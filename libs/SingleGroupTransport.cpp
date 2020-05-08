@@ -176,8 +176,8 @@ double SingleGroupTransport::calcFissionSource()
       for (int iGroup = 0; iGroup < MGT->SGTs.size(); ++iGroup){
 
         fissionSource(iZ,iR) = fissionSource(iZ,iR) + (1.0/mesh->totalWeight)*(
-            mats->chiP(iZ,iR,energyGroup)*mats->nu(iZ,iR)*mats->sigF(iZ,iR,iGroup)\
-            *MGT->SGTs[iGroup]->sFlux(iZ,iR));
+            mats->chiP(iZ,iR,energyGroup)*mats->nu(iZ,iR,energyGroup)\
+            *mats->sigF(iZ,iR,iGroup)*MGT->SGTs[iGroup]->sFlux(iZ,iR));
 
         // need to account for precursors, too.
       } // iGroup

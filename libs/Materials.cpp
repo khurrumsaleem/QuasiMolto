@@ -126,11 +126,11 @@ void Materials::readMats()
 {
   YAML::Node mats = (*input)["materials"];
   string name;
-  vector<double> sigTInp,sigSInp,sigFInp,chiPInp,chiDInp;
-  Eigen::VectorXd sigT,sigF,chiP,chiD; 
+  vector<double> sigTInp,sigSInp,sigFInp,chiPInp,chiDInp,nuInp;
+  Eigen::VectorXd sigT,sigF,chiP,chiD,nu; 
   Eigen::MatrixXd sigS;
   int ID,size;
-  double nu,density,gamma,k,cP,omega;
+  double density,gamma,k,cP,omega;
   bool stationary;
 
   int iCount=0;
@@ -149,7 +149,7 @@ void Materials::readMats()
     sigFInp = it->second["sigF"].as<vector<double>>();
     chiPInp = it->second["chiP"].as<vector<double>>();
     chiDInp = it->second["chiD"].as<vector<double>>();
-    nu = it->second["nu"].as<double>();
+    nuInp = it->second["nu"].as<vector<double>>();
     density = it->second["density"].as<double>();
     gamma = it->second["gamma"].as<double>();
     k = it->second["k"].as<double>();
@@ -164,6 +164,7 @@ void Materials::readMats()
     sigF.setZero(size);
     chiP.setZero(size);
     chiD.setZero(size);
+    nu.setZero(size);
     sigS.setZero(size,size);
 
     // Load vector inputs into Eigen vectors
@@ -173,6 +174,12 @@ void Materials::readMats()
       sigF(iSig) = sigFInp[iSig];
       chiP(iSig) = chiPInp[iSig];
       chiD(iSig) = chiDInp[iSig];
+
+      // Accomodate a blanket nu over groups
+      if (nuInp.size() == size)
+        nu(iSig) = nuInp[iSig];
+      else
+        nu(iSig) = nuInp[0];
 
       for(int iGroup = 0; iGroup < size; ++iGroup){
         sigS(iSig,iGroup) = sigSInp[iSig*size+iGroup];
@@ -364,9 +371,9 @@ double Materials::chiD(int zIdx,int rIdx,int eIndx){
 /// @param [in] zIdx R index of location 
 /// @param [in] eIndx Energy index of location 
 /// @param [out] nu Nu at the inquired location 
-double Materials::nu(int zIdx,int rIdx){
+double Materials::nu(int zIdx,int rIdx,int eIndx){
 
-  double nu = matBank[matMap(zIdx,rIdx)]->nu;
+  double nu = matBank[matMap(zIdx,rIdx)]->nu(eIndx);
 
   return nu;
 };
@@ -471,7 +478,7 @@ void Materials::initCollapsedXS()
       oneGroupXS->sigT(iZ,iR) = sigT(iZ,iR,0);      
       oneGroupXS->sigF(iZ,iR) = sigF(iZ,iR,0);      
       oneGroupXS->sigS(iZ,iR) = sigS(iZ,iR,0,0);      
-      oneGroupXS->nu(iZ,iR) = nu(iZ,iR);      
+      oneGroupXS->nu(iZ,iR) = nu(iZ,iR,0);      
       oneGroupXS->neutV(iZ,iR) = neutV(0);      
     }
   }
