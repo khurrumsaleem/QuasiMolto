@@ -19,6 +19,7 @@ class MGQDToMPQDCoupling
         YAML::Node * myInput,\
         MultiPhysicsCoupledQD * myMPQD,\
         MultiGroupQD * myMGQD);
+  void collapseNuclearData();
 
   private:
     Mesh * mesh; 

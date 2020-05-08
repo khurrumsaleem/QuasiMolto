@@ -10,7 +10,11 @@ using namespace std;
 //==============================================================================
 /// MultiGroupQDToMultiPhysicsQDCoupling class object constructor
 ///
-/// @param [in] blankType blank for this material
+/// @param [in] myMesh mesh object 
+/// @param [in] myMats materials object 
+/// @param [in] myInput input object 
+/// @param [in] myMPQD MultiPhysicsCoupledQD object 
+/// @param [in] myMGPQD multigroup quasidiffusion object 
 MGQDToMPQDCoupling::MGQDToMPQDCoupling(Mesh * myMesh,\
         Materials * myMats,\
         YAML::Node * myInput,\
@@ -24,6 +28,16 @@ MGQDToMPQDCoupling::MGQDToMPQDCoupling(Mesh * myMesh,\
   input = myInput;
   mpqd = myMPQD;
   mgqd = myMGQD;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Collapse nuclear data with flux and current weighting 
+///
+void MGQDToMPQDCoupling::collapseNuclearData()
+{
+
 
 };
 //==============================================================================
