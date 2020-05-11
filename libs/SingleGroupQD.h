@@ -18,9 +18,13 @@ class SingleGroupQD
     int energyGroup;
     Eigen::MatrixXd sFlux;
     Eigen::MatrixXd sFluxR;
+    Eigen::MatrixXd sFluxRPrev;
     Eigen::MatrixXd sFluxZ;
+    Eigen::MatrixXd sFluxZPrev;
     Eigen::MatrixXd currentR;
+    Eigen::MatrixXd currentRPrev;
     Eigen::MatrixXd currentZ;
+    Eigen::MatrixXd currentZPrev;
     Eigen::MatrixXd sFluxPrev;
     Eigen::MatrixXd q;
     Eigen::MatrixXd fissionSource;

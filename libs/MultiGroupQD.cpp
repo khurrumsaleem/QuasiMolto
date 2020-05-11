@@ -53,12 +53,6 @@ void MultiGroupQD::buildLinearSystem()
 void MultiGroupQD::solveLinearSystem()
 {
   QDSolve->solve();
-
-  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
-  {
-    SGQDs[iGroup]->getFlux();
-    // cout << SGQDs[iGroup]->sFlux << endl;
-  }
 }
 //==============================================================================
 
@@ -82,13 +76,9 @@ void MultiGroupQD::buildBackCalcSystem()
 /// values
 void MultiGroupQD::backCalculateCurrent()
 {
+
   QDSolve->backCalculateCurrent();
 
-  //  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
-  //  {
-  //    SGQDs[iGroup]->getFlux();
-  //    cout << SGQDs[iGroup]->sFlux << endl;
-  //  }
 }
 //==============================================================================
 
@@ -135,8 +125,20 @@ void MultiGroupQD::solveMGQDOnly()
     QDSolve->xPast = QDSolve->x;
     buildBackCalcSystem();
     backCalculateCurrent();
+    getFluxes();
   }
   writeFluxes();
+}
+//==============================================================================
+
+//==============================================================================
+/// Extracts fluxes and currents from solution vector into 2D matrices 
+void MultiGroupQD::getFluxes()
+{
+  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+  {
+    SGQDs[iGroup]->getFlux();
+  }
 }
 //==============================================================================
 

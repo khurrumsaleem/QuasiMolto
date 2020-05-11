@@ -30,6 +30,7 @@ class MultiGroupQD
     void backCalculateCurrent();
     void setInitialCondition();
     void solveMGQDOnly();
+    void getFluxes();
     void writeFluxes();
 
   private:

@@ -55,6 +55,13 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   currentR.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size()+1);
   currentZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
 
+  // Initialize past values
+  sFluxPrev.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+  sFluxRPrev.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size()+1);
+  sFluxZPrev.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
+  currentRPrev.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size()+1);
+  currentZPrev.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
+
   // initialize boundary conditions
   wFluxBC.setZero(mesh->dzsCorner.size());
   eFluxBC.setZero(mesh->dzsCorner.size());
