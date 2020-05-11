@@ -81,7 +81,7 @@ void CollapsedCrossSections::resetData()
   qdFluxCoeff.setZero();  
 
   // Reset dnpFluxCoeff
-  for (int iDNPGroup = 0; iDNPGroup < qdFluxCoeff.size(); iDNPGroup++)
+  for (int iDNPGroup = 0; iDNPGroup < groupDNPFluxCoeff.size(); iDNPGroup++)
   {
     groupDNPFluxCoeff[iDNPGroup].setZero();
   }
