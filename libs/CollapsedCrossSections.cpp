@@ -25,7 +25,9 @@ CollapsedCrossSections::CollapsedCrossSections(int nZ,int nR)
   chiD.setZero(nZ,nR);  
   neutV.setZero(nZ,nR);  
   rNeutV.setZero(nZ,nR+1);  
+  rNeutVPast.setZero(nZ,nR+1);  
   zNeutV.setZero(nZ+1,nR);  
+  zNeutVPast.setZero(nZ+1,nR);  
   Ezz.setZero(nZ,nR);  
   Err.setZero(nZ,nR);  
   Erz.setZero(nZ,nR);  
