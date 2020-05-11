@@ -1104,13 +1104,35 @@ void QDSolver::getFlux(SingleGroupQD * SGQD)
 {
   vector<int> indices;
 
+  // Store past current values. These are used in the group collapse calc.
+  SGQD->sFluxPrev = SGQD->sFlux;
+  SGQD->sFluxRPrev = SGQD->sFluxR;
+  SGQD->sFluxZPrev = SGQD->sFluxZ;
+  SGQD->currentRPrev = SGQD->currentR;
+  SGQD->currentZPrev = SGQD->currentZ;
+
   // loop over spatial mesh
   for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
   {
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
       indices = getIndices(iR,iZ,SGQD->energyGroup);
+
+      // Get cell average flux
       SGQD->sFlux(iZ,iR) = x(indices[iCF]);
+
+      // Get cell interface fluxes
+      SGQD->sFluxR(iZ,iR) = x(indices[iWF]);
+      SGQD->sFluxR(iZ,iR+1) = x(indices[iEF]);
+      SGQD->sFluxZ(iZ,iR) = x(indices[iNF]);
+      SGQD->sFluxZ(iZ+1,iR) = x(indices[iSF]);
+
+      // Get cell currents 
+      SGQD->currentR(iZ,iR) = currPast(indices[iWC]);
+      SGQD->currentR(iZ,iR+1) = currPast(indices[iEC]);
+      SGQD->currentZ(iZ,iR) = currPast(indices[iNC]);
+      SGQD->currentZ(iZ+1,iR) = currPast(indices[iSC]);
+
     }
   }  
 
