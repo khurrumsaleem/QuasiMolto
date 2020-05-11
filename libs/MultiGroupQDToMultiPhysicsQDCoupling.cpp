@@ -46,6 +46,10 @@ void MGQDToMPQDCoupling::collapseNuclearData()
   // Reset collapsed nuclear data
   mats->oneGroupXS->resetData();
 
+  // Store past values
+  mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;
+  mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;
+
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR; iR++)
   {
