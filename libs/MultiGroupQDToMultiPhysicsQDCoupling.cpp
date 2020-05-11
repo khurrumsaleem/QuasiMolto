@@ -141,6 +141,7 @@ void MGQDToMPQDCoupling::collapseNuclearData()
   {
     for (int iZ = 0; iZ < mesh->nZ+1; iZ++)
     {
+
       // Reset accumulator
       zCurrentAccum = 0.0;
       fluxAccum = 0.0;
@@ -153,7 +154,17 @@ void MGQDToMPQDCoupling::collapseNuclearData()
         flux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(iZ,iR);
 
         // Get nuclear data at these locations and energy groups
-        mySigT = mats->sigT(iZ,iR,iEnergyGroup);
+        // Assuming a matching material exist on the other side of boundaries 
+        if (iZ == 0)
+          mySigT = mats->sigT(iZ,iR,iEnergyGroup);
+        else if (iZ == mesh->nZ)
+          mySigT = mats->sigT(iZ-1,iR,iEnergyGroup);
+        else
+        {
+          mySigT = (mats->sigT(iZ-1,iR,iEnergyGroup)*mesh->dzsCorner(iZ-1)\
+              + mats->sigT(iZ,iR,iEnergyGroup)*mesh->dzsCorner(iZ))\
+                   /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
+        }     
         myNeutV = mats->neutV(iEnergyGroup);
 
         // Axial current weighted neutron velocity
@@ -195,7 +206,16 @@ void MGQDToMPQDCoupling::collapseNuclearData()
         flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR);
       
         // Get nuclear data at these locations and energy groups
-        mySigT = mats->sigT(iZ,iR,iEnergyGroup);
+        if (iR == 0)
+          mySigT = mats->sigT(iZ,iR,iEnergyGroup);
+        else if (iR == mesh->nR)
+          mySigT = mats->sigT(iZ,iR-1,iEnergyGroup);
+        else
+        {
+          mySigT = (mats->sigT(iZ,iR-1,iEnergyGroup)*mesh->drsCorner(iR-1)\
+              + mats->sigT(iZ,iR,iEnergyGroup)*mesh->drsCorner(iR))\
+                   /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
+        }     
         myNeutV = mats->neutV(iEnergyGroup);
 
         // Radial current weighted sigTR
@@ -219,7 +239,6 @@ void MGQDToMPQDCoupling::collapseNuclearData()
       
     }
   }
-
 
 };
 //==============================================================================
