@@ -16,6 +16,7 @@
 #include "../libs/MultiGroupDNP.h"
 #include "../libs/SingleGroupDNP.h"
 #include "../libs/MultiPhysicsCoupledQD.h"
+#include "../libs/MultiGroupQDToMultiPhysicsQDCoupling.h"
 #include "../libs/MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
@@ -27,6 +28,9 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
 void testMultiPhysicsCoupledQD(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input);
+void testMultiGroupToGreyGroupCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
 
@@ -91,6 +95,8 @@ int main(int argc, char** argv) {
       testMultiGroupPrecursor(myMaterials,myMesh,input);
     else if (solveType == "testMultiPhysicsCoupledQD")
       testMultiPhysicsCoupledQD(myMaterials,myMesh,input);
+    else if (solveType == "testMultiGroupToGreyGroupCoupling")
+      testMultiGroupToGreyGroupCoupling(myMaterials,myMesh,input);
     else
       myMGT->solveTransportOnly();
   }
@@ -188,4 +194,28 @@ void testMultiPhysicsCoupledQD(Materials * myMaterials,\
   MultiPhysicsCoupledQD * myMPQD; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
   myMPQD->solveTransient();
+}
+
+void testMultiGroupToGreyGroupCoupling(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input){
+  
+  // initialize multigroup quasidiffusion object
+  MultiGroupQD * myMGQD; 
+  myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
+
+  // Initialize MultiPhysicsCoupledQD
+  MultiPhysicsCoupledQD * myMPQD; 
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+
+  // Initialize MultiPhysicsCoupledQD
+  MGQDToMPQDCoupling * myMGToGG; 
+  myMGToGG = new MGQDToMPQDCoupling(myMesh,myMaterials,input,myMPQD,myMGQD);
+
+  cout << "Initialized MGQDToMGQDCoupling" << endl;
+
+  // Collapse nuclear data
+  myMGToGG->collapseNuclearData();
+  
+  cout << "Collapsed nuclear data" << endl;
 }
