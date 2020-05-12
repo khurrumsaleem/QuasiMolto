@@ -19,7 +19,7 @@ class CollapsedCrossSections
     // Variables
     Eigen::MatrixXd sigT,sigS,sigF,rSigTR,zSigTR,chiP,chiD,neutV,rNeutV,\
       rNeutVPast,zNeutV,zNeutVPast,nu,qdFluxCoeff,Ezz,Err,Erz,rZeta1,rZeta2,\
-      zZeta1,zZeta2; 
+      rZeta,zZeta1,zZeta2,zZeta; 
     vector<Eigen::MatrixXd> groupDNPFluxCoeff; 
   
     // Functions 

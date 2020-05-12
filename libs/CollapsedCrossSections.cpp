@@ -35,6 +35,8 @@ CollapsedCrossSections::CollapsedCrossSections(int nZ,int nR)
   rZeta2.setZero(nZ,nR+1);  
   zZeta1.setZero(nZ+1,nR);  
   zZeta2.setZero(nZ+1,nR);  
+  rZeta.setZero(nZ,nR+1);  
+  zZeta.setZero(nZ+1,nR);  
   nu.setZero(nZ,nR);  
   qdFluxCoeff.setZero(nZ,nR);  
 
