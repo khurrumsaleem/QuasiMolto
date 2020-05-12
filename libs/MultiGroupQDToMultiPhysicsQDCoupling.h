@@ -21,6 +21,11 @@ class MGQDToMPQDCoupling
         MultiPhysicsCoupledQD * myMPQD,\
         MultiGroupQD * myMGQD);
   void collapseNuclearData();
+  void calculateFluxWeightedData();
+  void calculateAxialCurrentWeightedData();
+  void calculateRadialCurrentWeightedData();
+  void calculateRadialZetaFactors();
+  void calculateAxialZetaFactors();
 
   private:
     Mesh * mesh; 

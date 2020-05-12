@@ -50,6 +50,28 @@ void MGQDToMPQDCoupling::collapseNuclearData()
   mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;
   mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;
 
+  // Calculate flux and current weighted data
+  calculateFluxWeightedData();
+  calculateAxialCurrentWeightedData();
+  calculateRadialCurrentWeightedData();
+
+  // Calculate zeta factors
+  calculateAxialZetaFactors(); 
+  calculateRadialZetaFactors(); 
+};
+//==============================================================================
+
+//==============================================================================
+/// Collapse nuclear data with flux weighting 
+///
+void MGQDToMPQDCoupling::calculateFluxWeightedData()
+{
+
+  // Temporary accumulator variables
+  double fluxAccum,totalSigS;
+  double flux,beta,nu;
+  double mySigT,mySigS,mySigF,myNeutV,myErr,myEzz,myErz;
+
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR; iR++)
   {
@@ -139,6 +161,19 @@ void MGQDToMPQDCoupling::collapseNuclearData()
 
     }
   }
+};
+//==============================================================================
+
+//==============================================================================
+/// Collapse nuclear data with axial current weighting 
+///
+void MGQDToMPQDCoupling::calculateAxialCurrentWeightedData()
+{
+
+  // Temporary accumulator variables
+  double zCurrentAccum;
+  double zCurrent;
+  double mySigT,myNeutV;
 
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR; iR++)
@@ -148,14 +183,12 @@ void MGQDToMPQDCoupling::collapseNuclearData()
 
       // Reset accumulator
       zCurrentAccum = 0.0;
-      fluxAccum = 0.0;
 
       // Loop over neutron energy groups
       for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
       {
         // Get flux and currents in this cell and energy group
         zCurrent = abs(mgqd->SGQDs[iEnergyGroup]->currentZ(iZ,iR));
-        flux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(iZ,iR);
 
         // Get nuclear data at these locations and energy groups
         // Assuming a matching material exist on the other side of boundaries 
@@ -175,10 +208,7 @@ void MGQDToMPQDCoupling::collapseNuclearData()
         mats->oneGroupXS->zSigTR(iZ,iR) = mySigT*zCurrent;
 
         // Axial current weighted sigTR
-        mats->oneGroupXS->zNeutV(iEnergyGroup) = myNeutV*zCurrent;
-
-        // Axial current weighted zeta1
-        // Axial current weighted zeta2
+        mats->oneGroupXS->zNeutV(iEnergyGroup) = zCurrent/myNeutV;
 
         // Accumulate absolute axial current
         zCurrentAccum = zCurrentAccum + zCurrent;
@@ -191,6 +221,19 @@ void MGQDToMPQDCoupling::collapseNuclearData()
                                         /mats->oneGroupXS->zNeutV(iZ,iR);
     }
   }
+};
+//==============================================================================
+
+//==============================================================================
+/// Collapse nuclear data with radial current weighting 
+///
+void MGQDToMPQDCoupling::calculateRadialCurrentWeightedData()
+{
+
+  // Temporary accumulator variables
+  double rCurrentAccum;
+  double rCurrent;
+  double mySigT,myNeutV;
 
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR+1; iR++)
@@ -200,14 +243,12 @@ void MGQDToMPQDCoupling::collapseNuclearData()
 
       // Reset accumulators
       rCurrentAccum = 0.0;
-      fluxAccum = 0.0;
 
       // Loop over neutron energy groups
       for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
       {
         // Get flux and currents in this cell and energy group
         rCurrent = abs(mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR)); 
-        flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR);
       
         // Get nuclear data at these locations and energy groups
         if (iR == 0)
@@ -226,10 +267,7 @@ void MGQDToMPQDCoupling::collapseNuclearData()
         mats->oneGroupXS->rSigTR(iZ,iR) = mySigT*rCurrent;
 
         // Radial current weighted neutron velocity
-        mats->oneGroupXS->rNeutV(iZ,iR) = myNeutV*rCurrent;
-
-        // Radial current weighted zeta1
-        // Radial current weighted zeta2
+        mats->oneGroupXS->rNeutV(iZ,iR) = rCurrent/myNeutV;
 
         // Accumulate absolute radial current
         rCurrentAccum = rCurrentAccum + rCurrent;
@@ -240,9 +278,158 @@ void MGQDToMPQDCoupling::collapseNuclearData()
                                         /rCurrentAccum;
       mats->oneGroupXS->rNeutV(iZ,iR) = rCurrentAccum\
                                         /mats->oneGroupXS->rNeutV(iZ,iR);
-      
     }
   }
-
 };
 //==============================================================================
+
+//==============================================================================
+/// Calculate radial zeta factors 
+///
+void MGQDToMPQDCoupling::calculateRadialZetaFactors()
+{
+
+  // Temporary accumulator variables
+  double fluxAccum;
+  double flux,rCurrent,rCurrentPast;
+  double mySigT,mySigTR,myNeutV,myRNeutV,myRNeutVPast;
+  double timeDerivative,sigTDiff,pastSum,presentSum; 
+
+
+  // Loop over spatial mesh
+  for (int iR = 0; iR < mesh->nR+1; iR++)
+  {
+    for (int iZ = 0; iZ < mesh->nZ; iZ++)
+    {
+
+      // Reset accumulators
+      fluxAccum = 0.0;
+      pastSum = 0.0;
+      presentSum = 0.0;
+      sigTDiff = 0.0;
+
+      // Now that the current weight neutron velocities are calculated, we 
+      // calculate we can calculate the zeta factors
+      for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+      {
+        // Get flux and currents in this cell and energy group
+        rCurrent = mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR); 
+        rCurrentPast = mgqd->SGQDs[iEnergyGroup]->currentRPrev(iZ,iR); 
+        flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR);
+      
+        // Get nuclear data at these locations and energy groups
+        if (iR == 0)
+          mySigT = mats->sigT(iZ,iR,iEnergyGroup);
+        else if (iR == mesh->nR)
+          mySigT = mats->sigT(iZ,iR-1,iEnergyGroup);
+        else
+        {
+          mySigT = (mats->sigT(iZ,iR-1,iEnergyGroup)*mesh->drsCorner(iR-1)\
+              + mats->sigT(iZ,iR,iEnergyGroup)*mesh->drsCorner(iR))\
+                   /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
+        }     
+        mySigTR = mats->oneGroupXS->rSigTR(iZ,iR);
+        myNeutV = mats->neutV(iEnergyGroup);
+        myRNeutV = mats->oneGroupXS->rNeutV(iZ,iR);
+        myRNeutVPast = mats->oneGroupXS->rNeutVPast(iZ,iR);
+        
+        // Radial current weighted zeta1
+        pastSum = pastSum + (1.0/myNeutV-1.0/myRNeutVPast)*rCurrentPast;
+        presentSum = presentSum + (1.0/myNeutV-1.0/myRNeutV)*rCurrent;
+
+        // Radial current weighted zeta2
+        sigTDiff = sigTDiff + (mySigT-mySigTR)*rCurrent;       
+
+        // Accumulate absolute radial current
+        fluxAccum = fluxAccum + flux;
+        
+      }
+
+      // Approximate derivative
+      timeDerivative = (presentSum-pastSum)/mesh->dt; 
+
+      // Divide by accumulated flux
+      mats->oneGroupXS->rZeta1(iZ,iR) = timeDerivative/fluxAccum; 
+      mats->oneGroupXS->rZeta2(iZ,iR) = sigTDiff/fluxAccum; 
+      mats->oneGroupXS->rZeta(iZ,iR) = mats->oneGroupXS->rZeta1(iZ,iR)\
+                                       + mats->oneGroupXS->rZeta2(iZ,iR); 
+    }
+  }
+};
+//==============================================================================
+
+//==============================================================================
+/// Calculate axial zeta factors 
+///
+void MGQDToMPQDCoupling::calculateAxialZetaFactors()
+{
+
+  // Temporary accumulator variables
+  double fluxAccum;
+  double flux,zCurrent,zCurrentPast;
+  double mySigT,mySigTR,myNeutV,myZNeutV,myZNeutVPast;
+  double timeDerivative,sigTDiff,pastSum,presentSum; 
+
+
+  // Loop over spatial mesh
+  for (int iR = 0; iR < mesh->nR; iR++)
+  {
+    for (int iZ = 0; iZ < mesh->nZ+1; iZ++)
+    {
+
+      // Reset accumulators
+      fluxAccum = 0.0;
+      pastSum = 0.0;
+      presentSum = 0.0;
+      sigTDiff = 0.0;
+
+      // Now that the current weight neutron velocities are calculated, we 
+      // calculate we can calculate the zeta factors
+      for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+      {
+        // Get flux and currents in this cell and energy group
+        zCurrent = mgqd->SGQDs[iEnergyGroup]->currentZ(iZ,iR); 
+        zCurrentPast = mgqd->SGQDs[iEnergyGroup]->currentZPrev(iZ,iR); 
+        flux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(iZ,iR);
+      
+        // Get nuclear data at these locations and energy groups
+        if (iZ == 0)
+          mySigT = mats->sigT(iZ,iR,iEnergyGroup);
+        else if (iZ == mesh->nZ)
+          mySigT = mats->sigT(iZ-1,iR,iEnergyGroup);
+        else
+        {
+          mySigT = (mats->sigT(iZ-1,iR,iEnergyGroup)*mesh->dzsCorner(iZ-1)\
+              + mats->sigT(iZ,iR,iEnergyGroup)*mesh->dzsCorner(iZ))\
+                   /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
+        }     
+        mySigTR = mats->oneGroupXS->zSigTR(iZ,iR);
+        myNeutV = mats->neutV(iEnergyGroup);
+        myZNeutV = mats->oneGroupXS->zNeutV(iZ,iR);
+        myZNeutVPast = mats->oneGroupXS->zNeutVPast(iZ,iR);
+        
+        // Radial current weighted zeta1
+        pastSum = pastSum + (1.0/myNeutV-1.0/myZNeutVPast)*zCurrentPast;
+        presentSum = presentSum + (1.0/myNeutV-1.0/myZNeutV)*zCurrent;
+
+        // Radial current weighted zeta2
+        sigTDiff = sigTDiff + (mySigT-mySigTR)*zCurrent;       
+
+        // Accumulate absolute radial current
+        fluxAccum = fluxAccum + flux;
+        
+      }
+
+      // Approximate derivative
+      timeDerivative = (presentSum-pastSum)/mesh->dt; 
+
+      // Divide by accumulated flux
+      mats->oneGroupXS->zZeta1(iZ,iR) = timeDerivative/fluxAccum; 
+      mats->oneGroupXS->zZeta2(iZ,iR) = sigTDiff/fluxAccum; 
+      mats->oneGroupXS->zZeta(iZ,iR) = mats->oneGroupXS->zZeta1(iZ,iR)\
+                                       + mats->oneGroupXS->zZeta2(iZ,iR); 
+    }
+  }
+};
+//==============================================================================
+
