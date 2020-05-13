@@ -52,6 +52,7 @@ void MGQDToMPQDCoupling::collapseNuclearData()
 
   // Calculate flux and current weighted data
   calculateFluxWeightedData();
+  calculateFluxWeightedBCData();
   calculateAxialCurrentWeightedData();
   calculateRadialCurrentWeightedData();
 
@@ -162,9 +163,6 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
     }
   }
 
-  // Calculate flux weighted BC params
-  calculateFluxWeightedBCData();
-
 };
 //==============================================================================
 
@@ -175,14 +173,23 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
 {
 
   // Temporary accumulator variables
-  double nFluxAccum,nFlux,nRatio;
-  double sFluxAccum,sFlux,sRatio;
-  double eFluxAccum,eFlux,eRatio;
+  double nFluxAccum,nFlux,nInwardFlux,nRatio;
+  double sFluxAccum,sFlux,sInwardFlux,sRatio;
+  double eFluxAccum,eFlux,eInwardFlux,eRatio;
+  double nInwardCurrent,sInwardCurrent,eInwardCurrent;
 
   // Reset ratios
   mpqd->ggqd->nOutwardCurrToFluxRatioBC.setZero();
   mpqd->ggqd->sOutwardCurrToFluxRatioBC.setZero();
   mpqd->ggqd->eOutwardCurrToFluxRatioBC.setZero();
+
+  mpqd->ggqd->nOutwardCurrToFluxRatioInwardWeightedBC.setZero();
+  mpqd->ggqd->sOutwardCurrToFluxRatioInwardWeightedBC.setZero();
+  mpqd->ggqd->eOutwardCurrToFluxRatioInwardWeightedBC.setZero();
+
+  mpqd->ggqd->nInwardFluxBC.setZero();
+  mpqd->ggqd->sInwardFluxBC.setZero();
+  mpqd->ggqd->eInwardFluxBC.setZero();
 
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR; iR++)
@@ -200,6 +207,12 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
       nFlux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(0,iR); 
       sFlux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(mesh->nZ,iR); 
 
+      nInwardFlux = mgqd->SGQDs[iEnergyGroup]->nInwardFluxBC(iR); 
+      sInwardFlux = mgqd->SGQDs[iEnergyGroup]->sInwardFluxBC(iR); 
+
+      nInwardCurrent = mgqd->SGQDs[iEnergyGroup]->nInwardCurrentBC(iR); 
+      sInwardCurrent = mgqd->SGQDs[iEnergyGroup]->sInwardCurrentBC(iR); 
+
       // Get outward current to flux ratio for these cells
       nRatio = mgqd->SGQDs[iEnergyGroup]->nOutwardCurrToFluxRatioBC(iR); 
       sRatio = mgqd->SGQDs[iEnergyGroup]->sOutwardCurrToFluxRatioBC(iR); 
@@ -208,9 +221,20 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
       mpqd->ggqd->nOutwardCurrToFluxRatioBC(iR) += nRatio*nFlux; 
       mpqd->ggqd->sOutwardCurrToFluxRatioBC(iR) += sRatio*sFlux;
 
-      // Accumulate fluxes 
+      mpqd->ggqd->nOutwardCurrToFluxRatioInwardWeightedBC(iR)\
+        += nRatio*nInwardFlux; 
+      mpqd->ggqd->sOutwardCurrToFluxRatioInwardWeightedBC(iR)\
+        += sRatio*sInwardFlux;
+
+      // Accumulate fluxes and currents 
       nFluxAccum = nFluxAccum + nFlux;
       sFluxAccum = sFluxAccum + sFlux;
+
+      mpqd->ggqd->nInwardFluxBC(iR) += nInwardFlux;
+      mpqd->ggqd->sInwardFluxBC(iR) += sInwardFlux;
+
+      mpqd->ggqd->nInwardCurrentBC(iR) += nInwardCurrent;
+      mpqd->ggqd->sInwardCurrentBC(iR) += sInwardCurrent;
 
     }
 
@@ -219,6 +243,13 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
       = mpqd->ggqd->nOutwardCurrToFluxRatioBC(iR)/nFluxAccum; 
     mpqd->ggqd->sOutwardCurrToFluxRatioBC(iR)\
       = mpqd->ggqd->sOutwardCurrToFluxRatioBC(iR)/sFluxAccum; 
+
+    mpqd->ggqd->nOutwardCurrToFluxRatioInwardWeightedBC(iR)\
+      = mpqd->ggqd->nOutwardCurrToFluxRatioInwardWeightedBC(iR)\
+      /mpqd->ggqd->nInwardFluxBC(iR); 
+    mpqd->ggqd->sOutwardCurrToFluxRatioInwardWeightedBC(iR)\
+      = mpqd->ggqd->sOutwardCurrToFluxRatioInwardWeightedBC(iR)\
+      /mpqd->ggqd->sInwardFluxBC(iR); 
 
   }
 
@@ -236,19 +267,34 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
       // Get flux in these cells and energy group
       eFlux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,mesh->nR); 
 
+      eInwardFlux = mgqd->SGQDs[iEnergyGroup]->eInwardFluxBC(iZ); 
+
+      eInwardCurrent = mgqd->SGQDs[iEnergyGroup]->eInwardCurrentBC(iZ); 
+
       // Get outward current to flux ratio for these cells
       eRatio = mgqd->SGQDs[iEnergyGroup]->eOutwardCurrToFluxRatioBC(iZ); 
 
       // Flux weighted quasidiffusion coefficient
-      mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ) += eRatio*nFlux; 
+      mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ) += eRatio*nFlux;
 
-      // Accumulate fluxes 
+      mpqd->ggqd->eOutwardCurrToFluxRatioInwardWeightedBC(iZ)\
+        += eRatio*nInwardFlux;
+
+      // Accumulate fluxes and currents 
       eFluxAccum = eFluxAccum + eFlux;
+
+      mpqd->ggqd->eInwardFluxBC(iZ) += eInwardFlux;
+
+      mpqd->ggqd->eInwardCurrentBC(iZ) += eInwardCurrent;
     }
 
     // Divide data by accumulated values
     mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ)\
       = mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ)/nFluxAccum; 
+
+    mpqd->ggqd->eOutwardCurrToFluxRatioInwardWeightedBC(iZ)\
+      = mpqd->ggqd->eOutwardCurrToFluxRatioInwardWeightedBC(iZ)\
+      /mpqd->ggqd->eInwardFluxBC(iZ); 
   }
 
 };
