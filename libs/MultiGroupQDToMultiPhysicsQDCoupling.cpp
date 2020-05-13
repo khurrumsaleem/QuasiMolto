@@ -105,25 +105,25 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
         myErz = mgqd->SGQDs[iEnergyGroup]->Erz(iZ,iR);
 
         // Flux weighted sigT
-        mats->oneGroupXS->sigT(iZ,iR) = mySigT*flux;
+        mats->oneGroupXS->sigT(iZ,iR) += mySigT*flux;
 
         // Flux weighted sigS
-        mats->oneGroupXS->sigS(iZ,iR) = mySigS*flux;
+        mats->oneGroupXS->sigS(iZ,iR) += mySigS*flux;
 
         // Flux weighted neutron velocity
-        mats->oneGroupXS->neutV(iZ,iR) = myNeutV*flux;
+        mats->oneGroupXS->neutV(iZ,iR) += myNeutV*flux;
 
         // Flux weighted Ezz
-        mats->oneGroupXS->Ezz(iZ,iR) = myEzz*flux;
+        mats->oneGroupXS->Ezz(iZ,iR) += myEzz*flux;
 
         // Flux weighted Err
-        mats->oneGroupXS->Err(iZ,iR) = myErr*flux;
+        mats->oneGroupXS->Err(iZ,iR) += myErr*flux;
 
         // Flux weighted Erz
-        mats->oneGroupXS->Erz(iZ,iR) = myErz*flux;
+        mats->oneGroupXS->Erz(iZ,iR) += myErz*flux;
 
         // Flux weighted quasidiffusion coefficient
-        mats->oneGroupXS->qdFluxCoeff(iZ,iR) = (1-beta)*nu*mySigF*flux;
+        mats->oneGroupXS->qdFluxCoeff(iZ,iR) += (1-beta)*nu*mySigF*flux;
 
         // Loop over DNP groups
         for (int iDNPGroup = 0; iDNPGroup < mpqd->mgdnp->DNPs.size(); 
@@ -132,7 +132,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
           // Flux weighted DNP coefficient 
           beta = mpqd->mgdnp->DNPs[iDNPGroup]->beta(iEnergyGroup);
           mats->oneGroupXS->groupDNPFluxCoeff[iDNPGroup](iZ,iR)\
-            = beta*nu*mySigF*flux; 
+            += beta*nu*mySigF*flux; 
         }
 
         // Accumulate flux
@@ -161,6 +161,96 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
 
     }
   }
+
+  // Calculate flux weighted BC params
+  calculateFluxWeightedBCData();
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Collapse boundary condition data 
+///
+void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
+{
+
+  // Temporary accumulator variables
+  double nFluxAccum,nFlux,nRatio;
+  double sFluxAccum,sFlux,sRatio;
+  double eFluxAccum,eFlux,eRatio;
+
+  // Reset ratios
+  mpqd->ggqd->nOutwardCurrToFluxRatioBC.setZero();
+  mpqd->ggqd->sOutwardCurrToFluxRatioBC.setZero();
+  mpqd->ggqd->eOutwardCurrToFluxRatioBC.setZero();
+
+  // Loop over spatial mesh
+  for (int iR = 0; iR < mesh->nR; iR++)
+  {
+
+    // Reset accumulators
+    nFluxAccum = 0.0;
+    sFluxAccum = 0.0;
+
+    // Loop over neutron energy groups
+    for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+    {
+
+      // Get flux in these cells and energy group
+      nFlux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(0,iR); 
+      sFlux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(mesh->nZ,iR); 
+
+      // Get outward current to flux ratio for these cells
+      nRatio = mgqd->SGQDs[iEnergyGroup]->nOutwardCurrToFluxRatioBC(iR); 
+      sRatio = mgqd->SGQDs[iEnergyGroup]->sOutwardCurrToFluxRatioBC(iR); 
+
+      // Flux weighted quasidiffusion coefficient
+      mpqd->ggqd->nOutwardCurrToFluxRatioBC(iR) += nRatio*nFlux; 
+      mpqd->ggqd->sOutwardCurrToFluxRatioBC(iR) += sRatio*sFlux;
+
+      // Accumulate fluxes 
+      nFluxAccum = nFluxAccum + nFlux;
+      sFluxAccum = sFluxAccum + sFlux;
+
+    }
+
+    // Divide data by accumulated values
+    mpqd->ggqd->nOutwardCurrToFluxRatioBC(iR)\
+      = mpqd->ggqd->nOutwardCurrToFluxRatioBC(iR)/nFluxAccum; 
+    mpqd->ggqd->sOutwardCurrToFluxRatioBC(iR)\
+      = mpqd->ggqd->sOutwardCurrToFluxRatioBC(iR)/sFluxAccum; 
+
+  }
+
+  // Loop over spatial mesh
+  for (int iZ = 0; iZ < mesh->nZ; iZ++)
+  {
+
+    // Reset accumulators
+    eFluxAccum = 0.0;
+
+    // Loop over neutron energy groups
+    for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+    {
+
+      // Get flux in these cells and energy group
+      eFlux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,mesh->nR); 
+
+      // Get outward current to flux ratio for these cells
+      eRatio = mgqd->SGQDs[iEnergyGroup]->eOutwardCurrToFluxRatioBC(iZ); 
+
+      // Flux weighted quasidiffusion coefficient
+      mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ) += eRatio*nFlux; 
+
+      // Accumulate fluxes 
+      eFluxAccum = eFluxAccum + eFlux;
+    }
+
+    // Divide data by accumulated values
+    mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ)\
+      = mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ)/nFluxAccum; 
+  }
+
 };
 //==============================================================================
 
@@ -205,14 +295,14 @@ void MGQDToMPQDCoupling::calculateAxialCurrentWeightedData()
         myNeutV = mats->neutV(iEnergyGroup);
 
         // Axial current weighted neutron velocity
-        mats->oneGroupXS->zSigTR(iZ,iR) = mySigT*zCurrent;
+        mats->oneGroupXS->zSigTR(iZ,iR) += mySigT*zCurrent;
 
         // Axial current weighted sigTR
-        mats->oneGroupXS->zNeutV(iEnergyGroup) = zCurrent/myNeutV;
+        mats->oneGroupXS->zNeutV(iZ,iR) += zCurrent/myNeutV;
 
         // Accumulate absolute axial current
         zCurrentAccum = zCurrentAccum + zCurrent;
-        
+
       }
       // Divide data by accumulated values
       mats->oneGroupXS->zSigTR(iZ,iR) = mats->oneGroupXS->zSigTR(iZ,iR)\
@@ -249,7 +339,7 @@ void MGQDToMPQDCoupling::calculateRadialCurrentWeightedData()
       {
         // Get flux and currents in this cell and energy group
         rCurrent = abs(mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR)); 
-      
+
         // Get nuclear data at these locations and energy groups
         if (iR == 0)
           mySigT = mats->sigT(iZ,iR,iEnergyGroup);
@@ -264,14 +354,14 @@ void MGQDToMPQDCoupling::calculateRadialCurrentWeightedData()
         myNeutV = mats->neutV(iEnergyGroup);
 
         // Radial current weighted sigTR
-        mats->oneGroupXS->rSigTR(iZ,iR) = mySigT*rCurrent;
+        mats->oneGroupXS->rSigTR(iZ,iR) += mySigT*rCurrent;
 
         // Radial current weighted neutron velocity
-        mats->oneGroupXS->rNeutV(iZ,iR) = rCurrent/myNeutV;
+        mats->oneGroupXS->rNeutV(iZ,iR) += rCurrent/myNeutV;
 
         // Accumulate absolute radial current
         rCurrentAccum = rCurrentAccum + rCurrent;
-        
+
       }
       // Divide data by accumulated values
       mats->oneGroupXS->rSigTR(iZ,iR) = mats->oneGroupXS->rSigTR(iZ,iR)\
@@ -316,7 +406,7 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
         rCurrent = mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR); 
         rCurrentPast = mgqd->SGQDs[iEnergyGroup]->currentRPrev(iZ,iR); 
         flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR);
-      
+
         // Get nuclear data at these locations and energy groups
         if (iR == 0)
           mySigT = mats->sigT(iZ,iR,iEnergyGroup);
@@ -332,7 +422,7 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
         myNeutV = mats->neutV(iEnergyGroup);
         myRNeutV = mats->oneGroupXS->rNeutV(iZ,iR);
         myRNeutVPast = mats->oneGroupXS->rNeutVPast(iZ,iR);
-        
+
         // Radial current weighted zeta1
         pastSum = pastSum + (1.0/myNeutV-1.0/myRNeutVPast)*rCurrentPast;
         presentSum = presentSum + (1.0/myNeutV-1.0/myRNeutV)*rCurrent;
@@ -342,7 +432,7 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
 
         // Accumulate absolute radial current
         fluxAccum = fluxAccum + flux;
-        
+
       }
 
       // Approximate derivative
@@ -391,7 +481,7 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
         zCurrent = mgqd->SGQDs[iEnergyGroup]->currentZ(iZ,iR); 
         zCurrentPast = mgqd->SGQDs[iEnergyGroup]->currentZPrev(iZ,iR); 
         flux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(iZ,iR);
-      
+
         // Get nuclear data at these locations and energy groups
         if (iZ == 0)
           mySigT = mats->sigT(iZ,iR,iEnergyGroup);
@@ -407,7 +497,7 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
         myNeutV = mats->neutV(iEnergyGroup);
         myZNeutV = mats->oneGroupXS->zNeutV(iZ,iR);
         myZNeutVPast = mats->oneGroupXS->zNeutVPast(iZ,iR);
-        
+
         // Radial current weighted zeta1
         pastSum = pastSum + (1.0/myNeutV-1.0/myZNeutVPast)*zCurrentPast;
         presentSum = presentSum + (1.0/myNeutV-1.0/myZNeutV)*zCurrent;
@@ -417,7 +507,7 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
 
         // Accumulate absolute radial current
         fluxAccum = fluxAccum + flux;
-        
+
       }
 
       // Approximate derivative

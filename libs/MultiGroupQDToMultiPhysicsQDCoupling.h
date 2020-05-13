@@ -6,6 +6,7 @@
 #include "MultiPhysicsCoupledQD.h"
 #include "MultiGroupQD.h"
 #include "SingleGroupQD.h"
+#include "GreyGroupQD.h"
 
 using namespace std;
 
@@ -22,6 +23,7 @@ class MGQDToMPQDCoupling
         MultiGroupQD * myMGQD);
   void collapseNuclearData();
   void calculateFluxWeightedData();
+  void calculateFluxWeightedBCData();
   void calculateAxialCurrentWeightedData();
   void calculateRadialCurrentWeightedData();
   void calculateRadialZetaFactors();
