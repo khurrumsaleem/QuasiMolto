@@ -79,19 +79,28 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   eFluxBC.setZero(mesh->dzsCorner.size());
   nFluxBC.setZero(mesh->drsCorner.size());
   sFluxBC.setZero(mesh->drsCorner.size());
+
   wCurrentRBC.setZero(mesh->dzsCorner.size());
   eCurrentRBC.setZero(mesh->dzsCorner.size());
   nCurrentZBC.setZero(mesh->drsCorner.size());
   sCurrentZBC.setZero(mesh->drsCorner.size());
+
   eInwardFluxBC.setZero(mesh->dzsCorner.size());
   nInwardFluxBC.setZero(mesh->drsCorner.size());
   sInwardFluxBC.setZero(mesh->drsCorner.size());
+
   eInwardCurrentBC.setZero(mesh->dzsCorner.size());
   nInwardCurrentBC.setZero(mesh->drsCorner.size());
   sInwardCurrentBC.setZero(mesh->drsCorner.size());
+
   eOutwardCurrToFluxRatioBC.setZero(mesh->dzsCorner.size());
   nOutwardCurrToFluxRatioBC.setZero(mesh->drsCorner.size());
   sOutwardCurrToFluxRatioBC.setZero(mesh->drsCorner.size());
+
+  eOutwardCurrToFluxRatioInwardWeightedBC.setZero(mesh->dzsCorner.size());
+  nOutwardCurrToFluxRatioInwardWeightedBC.setZero(mesh->drsCorner.size());
+  sOutwardCurrToFluxRatioInwardWeightedBC.setZero(mesh->drsCorner.size());
+
   eAbsCurrentBC.setZero(mesh->dzsCorner.size());
   nAbsCurrentBC.setZero(mesh->drsCorner.size());
   sAbsCurrentBC.setZero(mesh->drsCorner.size());

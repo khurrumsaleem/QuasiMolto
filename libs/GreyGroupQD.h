@@ -57,6 +57,10 @@ class GreyGroupQD
     Eigen::VectorXd eOutwardCurrToFluxRatioBC;
     Eigen::VectorXd nOutwardCurrToFluxRatioBC;
     Eigen::VectorXd sOutwardCurrToFluxRatioBC;
+    
+    Eigen::VectorXd eOutwardCurrToFluxRatioInwardWeightedBC;
+    Eigen::VectorXd nOutwardCurrToFluxRatioInwardWeightedBC;
+    Eigen::VectorXd sOutwardCurrToFluxRatioInwardWeightedBC;
 
     Eigen::VectorXd eAbsCurrentBC;
     Eigen::VectorXd nAbsCurrentBC;
