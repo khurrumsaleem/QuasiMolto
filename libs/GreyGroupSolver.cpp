@@ -204,7 +204,7 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -216,6 +216,7 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   ErrL = GGQD->Err(iZ,iR);
   EzzL = GGQD->Ezz(iZ,iR);
   ErzL = GGQD->Erz(iZ,iR);
+  zetaL = materials->oneGroupXS->zZeta(iZ+1,iR);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
@@ -229,6 +230,9 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
 
   A->coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+
+  // Enforce zeta coefficient
+  A->coeffRef(iEq,indices[iSF]) += zetaL;
 
   // formulate RHS entry
   (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iSC])/(v*deltaT));
@@ -249,7 +253,7 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -261,6 +265,7 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
   ErrL = GGQD->Err(iZ,iR);
   EzzL = GGQD->Ezz(iZ,iR);
   ErzL = GGQD->Erz(iZ,iR);
+  zetaL = materials->oneGroupXS->zZeta(iZ,iR);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
@@ -274,6 +279,9 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
 
   A->coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+
+  // Enforce zeta coefficient
+  A->coeffRef(iEq,indices[iNF]) += coeff*zetaL;
 
   // formulate RHS entry
   (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iNC])/(v*deltaT));
@@ -294,7 +302,7 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;
   double hCent,hDown;
 
   // calculate geometric values
@@ -309,6 +317,7 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   ErrL = GGQD->Err(iZ,iR);
   EzzL = GGQD->Ezz(iZ,iR);
   ErzL = GGQD->Erz(iZ,iR);
+  zetaL = materials->oneGroupXS->rZeta(iZ,iR);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
@@ -322,6 +331,9 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrL/(hDown*deltaR);
 
   A->coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrL/(hDown*deltaR);
+
+  // Enforce zeta coefficient
+  A->coeffRef(iEq,indices[iWF]) += coeff*zetaL;
 
   // formulate RHS entry
   (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iWC])/(v*deltaT));
@@ -342,7 +354,7 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;  
   double hCent,hUp;
 
   // calculate geometric values
@@ -357,6 +369,7 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   ErrL = GGQD->Err(iZ,iR);
   EzzL = GGQD->Ezz(iZ,iR);
   ErzL = GGQD->Erz(iZ,iR);
+  zetaL = materials->oneGroupXS->rZeta(iZ,iR+1);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
@@ -370,6 +383,9 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrL/(hUp*deltaR);
 
   A->coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrL/(hUp*deltaR);
+
+  // Enforce zeta coefficient
+  A->coeffRef(iEq,indices[iEF]) += coeff*zetaL;
 
   // formulate RHS entry
   (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iEC])/(v*deltaT));
