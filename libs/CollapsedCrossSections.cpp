@@ -81,6 +81,8 @@ void CollapsedCrossSections::resetData()
   rZeta2.setZero();  
   zZeta1.setZero();  
   zZeta2.setZero();  
+  zZeta.setZero();  
+  rZeta.setZero();  
   nu.setZero();  
   qdFluxCoeff.setZero();  
 
@@ -88,6 +90,104 @@ void CollapsedCrossSections::resetData()
   for (int iDNPGroup = 0; iDNPGroup < groupDNPFluxCoeff.size(); iDNPGroup++)
   {
     groupDNPFluxCoeff[iDNPGroup].setZero();
+  }
+
+};
+//==============================================================================
+
+///==============================================================================
+/// Print collapsed nuclear data 
+///
+void CollapsedCrossSections::print()
+{
+
+  // Set Eigen::MatrixXd types to zeros
+  cout << "sigT: " << endl;
+  cout << sigT  << endl;
+  cout << endl;
+
+  cout << "sigS: " << endl;
+  cout << sigS  << endl;
+  cout << endl;
+
+  cout << "sigF: " << endl;
+  cout << sigF  << endl;
+  cout << endl;
+
+  cout << "rSigTR: " << endl;
+  cout << rSigTR  << endl;
+  cout << endl;
+
+  cout << "zSigTR: " << endl;
+  cout << zSigTR  << endl;
+  cout << endl;
+
+  cout << "neutV: " << endl;
+  cout << neutV  << endl;
+  cout << endl;
+
+  cout << "rNeutV: " << endl;
+  cout << rNeutV  << endl;
+  cout << endl;
+
+  cout << "zNeutV: " << endl;
+  cout << zNeutV  << endl;
+  cout << endl;
+
+  cout << "rNeutVPast: " << endl;
+  cout << rNeutVPast  << endl;
+  cout << endl;
+
+  cout << "zNeutVPast: " << endl;
+  cout << zNeutVPast  << endl;
+  cout << endl;
+
+  cout << "Ezz: " << endl;
+  cout << Ezz  << endl;
+  cout << endl;
+
+  cout << "Err: " << endl;
+  cout << Err  << endl;
+  cout << endl;
+
+  cout << "Erz: " << endl;
+  cout << Erz  << endl;
+  cout << endl;
+
+  cout << "rZeta1: " << endl;
+  cout << rZeta1  << endl;
+  cout << endl;
+
+  cout << "rZeta2: " << endl;
+  cout << rZeta2  << endl;
+  cout << endl;
+
+  cout << "rZeta: " << endl;
+  cout << rZeta  << endl;
+  cout << endl;
+
+  cout << "zZeta1: " << endl;
+  cout << zZeta1  << endl;
+  cout << endl;
+
+  cout << "zZeta2: " << endl;
+  cout << zZeta2  << endl;
+  cout << endl;
+
+  cout << "zZeta: " << endl;
+  cout << zZeta  << endl;
+  cout << endl;
+
+  cout << "qdFluxCoeff: " << endl;
+  cout << qdFluxCoeff  << endl;
+  cout << endl;
+
+  // Print dnpFluxCoeff
+  cout << "groupDNPFluxCoeff: " << endl;
+  for (int iDNPGroup = 0; iDNPGroup < groupDNPFluxCoeff.size(); iDNPGroup++)
+  {
+    cout << groupDNPFluxCoeff[iDNPGroup] << endl;
+    cout << endl;
   }
 
 };
