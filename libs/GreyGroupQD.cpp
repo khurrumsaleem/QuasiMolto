@@ -105,7 +105,6 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   nAbsCurrentBC.setZero(mesh->drsCorner.size());
   sAbsCurrentBC.setZero(mesh->drsCorner.size());
 
-
 };
 //==============================================================================
 
@@ -174,6 +173,19 @@ cout << sOutwardCurrToFluxRatioInwardWeightedBC << endl;
 cout << endl;
 };
 //==============================================================================
+
+//==============================================================================
+/// Assign pointer to MultiGroupQuasiDiffusion object 
+///
+void GreyGroupQD::assignMGQDPointer(MultiGroupQD * myMGQD)
+{
+
+  mgqd = myMGQD;
+  useMGQDPastCurrents = true; 
+
+};
+//==============================================================================
+
 
 
 

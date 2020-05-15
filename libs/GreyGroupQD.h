@@ -3,6 +3,8 @@
 
 #include "Mesh.h"
 #include "Materials.h"
+#include "MultiGroupQD.h"
+#include "SingleGroupQD.h"
 
 using namespace std;
 
@@ -66,7 +68,10 @@ class GreyGroupQD
     Eigen::VectorXd nAbsCurrentBC;
     Eigen::VectorXd sAbsCurrentBC;
 
+    bool useMGQDPastCurrents = false;
+
     MultiPhysicsCoupledQD * mpqd; 
+    MultiGroupQD * mgqd;
 
     // FUNCTIONS
 
@@ -79,6 +84,7 @@ class GreyGroupQD
 
     void buildLinearSystem();
     void printBCParams();
+    void assignMGQDPointer(MultiGroupQD * myMGQD);
 
   private:
     Materials * materials;
