@@ -21,6 +21,7 @@ class MGQDToMPQDCoupling
         YAML::Node * myInput,\
         MultiPhysicsCoupledQD * myMPQD,\
         MultiGroupQD * myMGQD);
+  void initCollapsedNuclearData();
   void collapseNuclearData();
   void calculateFluxWeightedData();
   void calculateFluxWeightedBCData();

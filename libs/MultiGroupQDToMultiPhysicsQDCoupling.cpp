@@ -29,8 +29,25 @@ MGQDToMPQDCoupling::MGQDToMPQDCoupling(Mesh * myMesh,\
   mpqd = myMPQD;
   mgqd = myMGQD;
 
+  // Initialize collapsed nuclear data based on initial values stored on MGQD
+  // objects 
+  initCollapsedNuclearData();
 };
 //==============================================================================
+
+//==============================================================================
+/// Collapse nuclear data with flux and current weighting 
+///
+void MGQDToMPQDCoupling::initCollapsedNuclearData()
+{
+  
+  collapseNuclearData();
+  mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;
+  mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Collapse nuclear data with flux and current weighting 
@@ -38,17 +55,12 @@ MGQDToMPQDCoupling::MGQDToMPQDCoupling(Mesh * myMesh,\
 void MGQDToMPQDCoupling::collapseNuclearData()
 {
 
-  // Temporary accumulator variables
-  double fluxAccum,rCurrentAccum,zCurrentAccum,totalSigS;
-  double flux,rCurrent,zCurrent,beta,nu;
-  double mySigT,mySigS,mySigF,myNeutV,myErr,myEzz,myErz;
-
-  // Reset collapsed nuclear data
-  mats->oneGroupXS->resetData();
-
   // Store past values
   mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;
   mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;
+
+  // Reset collapsed nuclear data
+  mats->oneGroupXS->resetData();
 
   // Calculate flux and current weighted data
   calculateFluxWeightedData();
@@ -58,7 +70,8 @@ void MGQDToMPQDCoupling::collapseNuclearData()
 
   // Calculate zeta factors
   calculateAxialZetaFactors(); 
-  calculateRadialZetaFactors(); 
+  calculateRadialZetaFactors();
+
 };
 //==============================================================================
 
@@ -69,7 +82,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
 {
 
   // Temporary accumulator variables
-  double fluxAccum,totalSigS;
+  double fluxAccum;
   double flux,beta,nu;
   double mySigT,mySigS,mySigF,myNeutV,myErr,myEzz,myErz;
 
@@ -97,7 +110,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
         mySigS= 0; 
         for (int iScat = 0; iScat < mats->nGroups; iScat++)
         {
-          mySigS = totalSigS + mats->sigS(iZ,iR,0,iScat); 
+          mySigS = mySigS + mats->sigS(iZ,iR,0,iScat); 
         }
         mySigF = mats->sigF(iZ,iR,iEnergyGroup);
         myNeutV = mats->neutV(iEnergyGroup);
@@ -112,7 +125,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
         mats->oneGroupXS->sigS(iZ,iR) += mySigS*flux;
 
         // Flux weighted neutron velocity
-        mats->oneGroupXS->neutV(iZ,iR) += myNeutV*flux;
+        mats->oneGroupXS->neutV(iZ,iR) += flux/myNeutV;
 
         // Flux weighted Ezz
         mats->oneGroupXS->Ezz(iZ,iR) += myEzz*flux;
@@ -190,6 +203,10 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
   mpqd->ggqd->nInwardFluxBC.setZero();
   mpqd->ggqd->sInwardFluxBC.setZero();
   mpqd->ggqd->eInwardFluxBC.setZero();
+  
+  mpqd->ggqd->nInwardCurrentBC.setZero();
+  mpqd->ggqd->sInwardCurrentBC.setZero();
+  mpqd->ggqd->eInwardCurrentBC.setZero();
 
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR; iR++)
