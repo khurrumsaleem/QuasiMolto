@@ -186,10 +186,11 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
 {
 
   // Temporary accumulator variables
-  double nFluxAccum,nFlux,nInwardFlux,nRatio;
-  double sFluxAccum,sFlux,sInwardFlux,sRatio;
-  double eFluxAccum,eFlux,eInwardFlux,eRatio;
+  double nFluxAccum,nFlux,nInwardFlux,nInwardFluxAccum,nRatio;
+  double sFluxAccum,sFlux,sInwardFlux,sInwardFluxAccum,sRatio;
+  double eFluxAccum,eFlux,eInwardFlux,eInwardFluxAccum,eRatio;
   double nInwardCurrent,sInwardCurrent,eInwardCurrent;
+  double eps = 1E-25;
 
   // Reset ratios
   mpqd->ggqd->nOutwardCurrToFluxRatioBC.setZero();
@@ -215,6 +216,9 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
     // Reset accumulators
     nFluxAccum = 0.0;
     sFluxAccum = 0.0;
+
+    nInwardFluxAccum = 0.0;
+    sInwardFluxAccum = 0.0;
 
     // Loop over neutron energy groups
     for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
@@ -247,6 +251,9 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
       nFluxAccum = nFluxAccum + nFlux;
       sFluxAccum = sFluxAccum + sFlux;
 
+      nInwardFluxAccum += nInwardFlux;
+      sInwardFluxAccum += sInwardFlux;
+
       mpqd->ggqd->nInwardFluxBC(iR) += nInwardFlux;
       mpqd->ggqd->sInwardFluxBC(iR) += sInwardFlux;
 
@@ -254,6 +261,15 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
       mpqd->ggqd->sInwardCurrentBC(iR) += sInwardCurrent;
 
     }
+
+    // Check for zero values in accumulators to prevent division by zero
+    if (abs(nFluxAccum) < eps) nFluxAccum = eps; 
+
+    if (abs(sFluxAccum) < eps) sFluxAccum = eps; 
+
+    if (abs(nInwardFluxAccum) < eps) nInwardFluxAccum = eps; 
+
+    if (abs(sInwardFluxAccum) < eps) sInwardFluxAccum = eps; 
 
     // Divide data by accumulated values
     mpqd->ggqd->nOutwardCurrToFluxRatioBC(iR)\
@@ -263,10 +279,10 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
 
     mpqd->ggqd->nOutwardCurrToFluxRatioInwardWeightedBC(iR)\
       = mpqd->ggqd->nOutwardCurrToFluxRatioInwardWeightedBC(iR)\
-      /mpqd->ggqd->nInwardFluxBC(iR); 
+      /nInwardFluxAccum; 
     mpqd->ggqd->sOutwardCurrToFluxRatioInwardWeightedBC(iR)\
       = mpqd->ggqd->sOutwardCurrToFluxRatioInwardWeightedBC(iR)\
-      /mpqd->ggqd->sInwardFluxBC(iR); 
+      /sInwardFluxAccum;
 
   }
 
@@ -276,6 +292,8 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
 
     // Reset accumulators
     eFluxAccum = 0.0;
+
+    eInwardFluxAccum = 0.0;
 
     // Loop over neutron energy groups
     for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
@@ -299,19 +317,27 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
 
       // Accumulate fluxes and currents 
       eFluxAccum = eFluxAccum + eFlux;
+      
+      eInwardFluxAccum += eInwardFlux;
 
       mpqd->ggqd->eInwardFluxBC(iZ) += eInwardFlux;
 
       mpqd->ggqd->eInwardCurrentBC(iZ) += eInwardCurrent;
     }
 
+    // Check for zero values in accumulators to prevent division by zero
+    if (abs(eFluxAccum) < eps) eFluxAccum = eps; 
+
+    if (abs(eInwardFluxAccum) < eps) eInwardFluxAccum = eps; 
+
+
     // Divide data by accumulated values
     mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ)\
-      = mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ)/nFluxAccum; 
+      = mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ)/eFluxAccum; 
 
     mpqd->ggqd->eOutwardCurrToFluxRatioInwardWeightedBC(iZ)\
       = mpqd->ggqd->eOutwardCurrToFluxRatioInwardWeightedBC(iZ)\
-      /mpqd->ggqd->eInwardFluxBC(iZ); 
+      /eInwardFluxAccum;
   }
 
 };
@@ -326,13 +352,17 @@ void MGQDToMPQDCoupling::calculateAxialCurrentWeightedData()
   // Temporary accumulator variables
   double zCurrentAccum;
   double zCurrent;
-  double mySigT,myNeutV;
+  double mySigT,myNeutV,eps;
 
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR; iR++)
   {
     for (int iZ = 0; iZ < mesh->nZ+1; iZ++)
     {
+
+      // Check whether a bias is needed to prevent division by zero during
+      // group collapse. eps = 0, if not. 
+      eps = checkForZeroAxialCurrent(iZ,iR);           
 
       // Reset accumulator
       zCurrentAccum = 0.0;
@@ -341,7 +371,7 @@ void MGQDToMPQDCoupling::calculateAxialCurrentWeightedData()
       for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
       {
         // Get flux and currents in this cell and energy group
-        zCurrent = abs(mgqd->SGQDs[iEnergyGroup]->currentZ(iZ,iR));
+        zCurrent = abs(mgqd->SGQDs[iEnergyGroup]->currentZ(iZ,iR) + eps);
 
         // Get nuclear data at these locations and energy groups
         // Assuming a matching material exist on the other side of boundaries 
@@ -386,13 +416,17 @@ void MGQDToMPQDCoupling::calculateRadialCurrentWeightedData()
   // Temporary accumulator variables
   double rCurrentAccum;
   double rCurrent;
-  double mySigT,myNeutV;
+  double mySigT,myNeutV,eps;
 
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR+1; iR++)
   {
     for (int iZ = 0; iZ < mesh->nZ; iZ++)
     {
+
+      // Check whether a bias is needed to prevent division by zero during
+      // group collapse. eps = 0, if not. 
+      eps = checkForZeroRadialCurrent(iZ,iR);           
 
       // Reset accumulators
       rCurrentAccum = 0.0;
@@ -401,7 +435,7 @@ void MGQDToMPQDCoupling::calculateRadialCurrentWeightedData()
       for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
       {
         // Get flux and currents in this cell and energy group
-        rCurrent = abs(mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR)); 
+        rCurrent = abs(mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR) + eps); 
 
         // Get nuclear data at these locations and energy groups
         if (iR == 0)
