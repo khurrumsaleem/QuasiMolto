@@ -119,4 +119,61 @@ void GreyGroupQD::buildLinearSystem()
 };
 //==============================================================================
 
+//==============================================================================
+/// Print BC parameters 
+///
+void GreyGroupQD::printBCParams()
+{
+
+cout << "eInwardCurrentBC: " << endl;
+cout << eInwardCurrentBC << endl;
+cout << endl;
+
+cout << "nInwardCurrentBC: " << endl;
+cout << nInwardCurrentBC << endl;
+cout << endl;
+
+cout << "sInwardCurrentBC: " << endl;
+cout << sInwardCurrentBC << endl;
+cout << endl;
+
+cout << "eInwardFluxBC: " << endl;
+cout << eInwardFluxBC << endl;
+cout << endl;
+
+cout << "eInwardFluxBC: " << endl;
+cout << nInwardFluxBC << endl;
+cout << endl;
+
+cout << "eInwardFluxBC: " << endl;
+cout << sInwardFluxBC << endl;
+cout << endl;
+
+cout << "eOutwardCurrToFluxRatioBC: " << endl;
+cout << eOutwardCurrToFluxRatioBC << endl;
+cout << endl;
+
+cout << "nOutwardCurrToFluxRatioBC: " << endl;
+cout << nOutwardCurrToFluxRatioBC << endl;
+cout << endl;
+
+cout << "sOutwardCurrToFluxRatioBC: " << endl;
+cout << sOutwardCurrToFluxRatioBC << endl;
+cout << endl;
+
+cout << "eOutwardCurrToFluxRatioInwardWeightedBC: " << endl;
+cout << eOutwardCurrToFluxRatioInwardWeightedBC << endl;
+cout << endl;
+
+cout << "nOutwardCurrToFluxRatioInwardWeightedBC: " << endl;
+cout << nOutwardCurrToFluxRatioInwardWeightedBC << endl;
+cout << endl;
+
+cout << "sOutwardCurrToFluxRatioInwardWeightedBC: " << endl;
+cout << sOutwardCurrToFluxRatioInwardWeightedBC << endl;
+cout << endl;
+};
+//==============================================================================
+
+
 

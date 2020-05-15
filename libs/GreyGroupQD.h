@@ -78,6 +78,7 @@ class GreyGroupQD
         MultiPhysicsCoupledQD * myMPQD);
 
     void buildLinearSystem();
+    void printBCParams();
 
   private:
     Materials * materials;
