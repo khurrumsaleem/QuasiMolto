@@ -216,6 +216,8 @@ void testMultiGroupToGreyGroupCoupling(Materials * myMaterials,\
 
   // Collapse nuclear data
   myMGToGG->collapseNuclearData();
+  myMaterials->oneGroupXS->print();
+  myMPQD->ggqd->printBCParams();
   
   cout << "Collapsed nuclear data" << endl;
 }
