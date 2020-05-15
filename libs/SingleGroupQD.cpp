@@ -267,13 +267,13 @@ void SingleGroupQD::checkOptionalParams()
     currentZ.setOnes();
     if (inpSFluxPrev.size() == 1)
     {
-      currentR = inpCurrentPrev[0]*sFluxR;
-      currentZ = inpCurrentPrev[0]*sFluxZ;
+      currentR = inpCurrentPrev[0]*currentR;
+      currentZ = inpCurrentPrev[0]*currentZ;
     }
     else
     {
-      currentR = inpCurrentPrev[energyGroup]*sFluxR;
-      currentZ = inpCurrentPrev[energyGroup]*sFluxZ;
+      currentR = inpCurrentPrev[energyGroup]*currentR;
+      currentZ = inpCurrentPrev[energyGroup]*currentZ;
     }
   }
 
