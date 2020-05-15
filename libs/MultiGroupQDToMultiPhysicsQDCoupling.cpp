@@ -499,7 +499,11 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
       }
 
       // Approximate derivative
-      timeDerivative = (presentSum-pastSum)/mesh->dt; 
+      //timeDerivative = (presentSum-pastSum)/mesh->dt;
+      // The expression below is consistent with that used by Tamang, although
+      // it seems the continuous expression would suggest the form commented 
+      // above
+      timeDerivative = (presentSum)/mesh->dt; 
 
       // Divide by accumulated flux
       mats->oneGroupXS->rZeta1(iZ,iR) = timeDerivative/fluxAccum; 
@@ -574,7 +578,11 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
       }
 
       // Approximate derivative
-      timeDerivative = (presentSum-pastSum)/mesh->dt; 
+      //timeDerivative = (presentSum-pastSum)/mesh->dt; 
+      // The expression below is consistent with that used by Tamang, although
+      // it seems the continuous expression would suggest the form commented 
+      // above
+      timeDerivative = (presentSum)/mesh->dt; 
 
       // Divide by accumulated flux
       mats->oneGroupXS->zZeta1(iZ,iR) = timeDerivative/fluxAccum; 
