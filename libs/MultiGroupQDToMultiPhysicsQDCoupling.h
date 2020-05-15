@@ -29,6 +29,8 @@ class MGQDToMPQDCoupling
   void calculateRadialCurrentWeightedData();
   void calculateRadialZetaFactors();
   void calculateAxialZetaFactors();
+  double checkForZeroRadialCurrent(int iZ,int iR);
+  double checkForZeroAxialCurrent(int iZ,int iR);
 
   private:
     Mesh * mesh; 

@@ -594,3 +594,59 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
 };
 //==============================================================================
 
+//==============================================================================
+/// Check if axial current is zero in every group and return a biasing factor 
+/// to prevent division by zero   
+///
+double MGQDToMPQDCoupling::checkForZeroAxialCurrent(int iZ,int iR)
+{
+
+  double groupCurrent;
+  bool aboveThreshold = true;  
+  double eps = 1E-25;
+
+  // Loop over energy groups 
+  for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+  {
+    // Check to see if current at location is greater than some eps
+    groupCurrent = mgqd->SGQDs[iEnergyGroup]->currentZ(iZ,iR);
+    aboveThreshold = aboveThreshold and (abs(groupCurrent) > eps); 
+  }
+
+  if (aboveThreshold)
+    return 0.0;
+  else
+    return eps;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Check if radial current is zero in every group and return a biasing factor 
+/// to prevent division by zero   
+///
+double MGQDToMPQDCoupling::checkForZeroRadialCurrent(int iZ,int iR)
+{
+
+  double groupCurrent;
+  bool aboveThreshold = true;  
+  double eps = 1E-25;
+
+  // Loop over energy groups 
+  for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+  {
+    // Check to see if current at location is greater than some eps
+    groupCurrent = mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR);
+    aboveThreshold = aboveThreshold and (abs(groupCurrent) > eps); 
+  }
+
+  if (aboveThreshold)
+    return 0.0;
+  else
+    return eps;
+
+};
+//==============================================================================
+
+
+
