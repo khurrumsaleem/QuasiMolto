@@ -204,7 +204,8 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL,\
+    mgqdCurrent,mgqdNeutV;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -235,7 +236,20 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iSF]) += zetaL;
 
   // formulate RHS entry
-  (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iSC])/(v*deltaT));
+  if (GGQD->useMGQDPastCurrents)
+  {
+    for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
+    {
+      mgqdCurrent = GGQD->mgqd->SGQDs[iGroup]->currentZPrev(iZ+1,iR); 
+      mgqdNeutV = materials->neutV(iGroup); 
+      (*b)(iEq) -= (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
+    }
+  }
+  else
+  {
+    (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iSC])/(v*deltaT));
+  }
+
 };
 //==============================================================================
 
@@ -253,7 +267,8 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL,\
+    mgqdCurrent,mgqdNeutV;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -284,7 +299,19 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iNF]) += coeff*zetaL;
 
   // formulate RHS entry
-  (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iNC])/(v*deltaT));
+  if (GGQD->useMGQDPastCurrents)
+  {
+    for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
+    {
+      mgqdCurrent = GGQD->mgqd->SGQDs[iGroup]->currentZPrev(iZ,iR); 
+      mgqdNeutV = materials->neutV(iGroup); 
+      (*b)(iEq) -= (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
+    }
+  }
+  else
+  {
+    (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iNC])/(v*deltaT));
+  }
 };
 //==============================================================================
 
@@ -303,7 +330,7 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;
-  double hCent,hDown;
+  double hCent,hDown,mgqdCurrent,mgqdNeutV;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -336,7 +363,20 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iWF]) += coeff*zetaL;
 
   // formulate RHS entry
-  (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iWC])/(v*deltaT));
+  if (GGQD->useMGQDPastCurrents)
+  {
+    for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
+    {
+      mgqdCurrent = GGQD->mgqd->SGQDs[iGroup]->currentRPrev(iZ,iR); 
+      mgqdNeutV = materials->neutV(iGroup); 
+      (*b)(iEq) -= (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
+    }
+  }
+  else
+  {
+    (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iWC])/(v*deltaT));
+  }
+
 };
 //==============================================================================
 
@@ -355,7 +395,7 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;  
-  double hCent,hUp;
+  double hCent,hUp,mgqdCurrent,mgqdNeutV;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -388,7 +428,20 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iEF]) += coeff*zetaL;
 
   // formulate RHS entry
-  (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iEC])/(v*deltaT));
+  if (GGQD->useMGQDPastCurrents)
+  {
+    for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
+    {
+      mgqdCurrent = GGQD->mgqd->SGQDs[iGroup]->currentRPrev(iZ,iR+1); 
+      mgqdNeutV = materials->neutV(iGroup); 
+      (*b)(iEq) -= (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
+    }
+  }
+  else
+  {
+    (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iEC])/(v*deltaT));  
+  }
+
 };
 //==============================================================================
 
@@ -452,7 +505,8 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff,zetaL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff,\
+    zetaL,mgqdCurrent,mgqdNeutV; 
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -483,7 +537,20 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iSF]) += zetaL;
 
   // formulate RHS entry
-  d(iEq) = coeff*(currPast(indices[iSC])/(v*deltaT));
+  if (GGQD->useMGQDPastCurrents)
+  {
+    for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
+    {
+      mgqdCurrent = GGQD->mgqd->SGQDs[iGroup]->currentZPrev(iZ+1,iR); 
+      mgqdNeutV = materials->neutV(iGroup); 
+      d(iEq) += (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
+    }
+  }
+  else
+  {
+    d(iEq) = coeff*(currPast(indices[iSC])/(v*deltaT));
+  }
+
 };
 //==============================================================================
 
@@ -499,8 +566,8 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff,zetaL; 
-
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff,\
+    zetaL,mgqdCurrent,mgqdNeutV;
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
@@ -530,7 +597,20 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iNF]) += zetaL;
 
   // formulate RHS entry
-  d(iEq) = coeff*(currPast(indices[iNC])/(v*deltaT));
+  if (GGQD->useMGQDPastCurrents)
+  {
+    for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
+    {
+      mgqdCurrent = GGQD->mgqd->SGQDs[iGroup]->currentZPrev(iZ,iR); 
+      mgqdNeutV = materials->neutV(iGroup); 
+      d(iEq) += (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
+    }
+  }
+  else
+  {
+    d(iEq) = coeff*(currPast(indices[iNC])/(v*deltaT));  
+  }
+
 };
 //==============================================================================
 
@@ -547,7 +627,7 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
-  double hCent,hDown,zetaL;
+  double hCent,hDown,zetaL,mgqdCurrent,mgqdNeutV;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -577,10 +657,23 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrL/(hDown*deltaR);
 
   // Enforce zeta coefficient
-  C.coeffRef(iEq,indices[iSF]) += zetaL;
+  C.coeffRef(iEq,indices[iWF]) += zetaL;
 
   // formulate RHS entry
-  d(iEq) = coeff*(currPast(indices[iWC])/(v*deltaT));
+  if (GGQD->useMGQDPastCurrents)
+  {
+    for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
+    {
+      mgqdCurrent = GGQD->mgqd->SGQDs[iGroup]->currentRPrev(iZ,iR); 
+      mgqdNeutV = materials->neutV(iGroup); 
+      d(iEq) += (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
+    }
+  }
+  else
+  {
+    d(iEq) = coeff*(currPast(indices[iWC])/(v*deltaT));
+  }
+
 };
 //==============================================================================
 
@@ -597,7 +690,7 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   double v = materials->oneGroupXS->neutV(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
-  double hCent,hUp,zetaL;
+  double hCent,hUp,zetaL,mgqdCurrent,mgqdNeutV;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -630,7 +723,20 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iEF]) += zetaL;
 
   // formulate RHS entry
-  d(iEq) = coeff*(currPast(indices[iEC])/(v*deltaT));
+  if (GGQD->useMGQDPastCurrents)
+  {
+    for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
+    {
+      mgqdCurrent = GGQD->mgqd->SGQDs[iGroup]->currentRPrev(iZ,iR+1); 
+      mgqdNeutV = materials->neutV(iGroup); 
+      d(iEq) += (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
+    }
+  }
+  else
+  {
+    d(iEq) = coeff*(currPast(indices[iEC])/(v*deltaT));
+  }
+
 };
 //==============================================================================
 
