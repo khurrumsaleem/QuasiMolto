@@ -18,6 +18,7 @@ CollapsedCrossSections::CollapsedCrossSections(int nZ,int nR)
   // Initialize matrices holding one-group cross sections
   sigT.setZero(nZ,nR);  
   sigS.setZero(nZ,nR);  
+  sigF.setZero(nZ,nR);  
   rSigTR.setZero(nZ,nR+1);  
   zSigTR.setZero(nZ+1,nR);  
   neutV.setZero(nZ,nR);  
@@ -65,8 +66,6 @@ void CollapsedCrossSections::resetData()
   sigF.setZero();  
   rSigTR.setZero();  
   zSigTR.setZero();  
-  chiP.setZero();  
-  chiD.setZero();  
   neutV.setZero();  
   rNeutV.setZero();  
   zNeutV.setZero();  
@@ -79,7 +78,6 @@ void CollapsedCrossSections::resetData()
   zZeta2.setZero();  
   zZeta.setZero();  
   rZeta.setZero();  
-  nu.setZero();  
   qdFluxCoeff.setZero();  
 
   // Reset dnpFluxCoeff
