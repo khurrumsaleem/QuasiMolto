@@ -206,5 +206,13 @@ void CollapsedCrossSections::print()
     cout << endl;
   }
 
+  // Print dnpFluxCoeff
+  cout << "groupSigS: " << endl;
+  for (int iScatter= 0; iScatter < groupSigS.size(); iScatter++)
+  {
+    cout << groupSigS[iScatter] << endl;
+    cout << endl;
+  }
+
 };
 //==============================================================================
