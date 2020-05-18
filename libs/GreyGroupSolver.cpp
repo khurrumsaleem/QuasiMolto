@@ -202,8 +202,8 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->oneGroupXS->neutV(iZ,iR);
-  double sigT = materials->oneGroupXS->sigT(iZ,iR);
+  double v = materials->oneGroupXS->zNeutV(iZ+1,iR);
+  double sigT = materials->oneGroupXS->zSigTR(iZ+1,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL,\
     mgqdCurrent,mgqdNeutV;  
 
@@ -265,8 +265,8 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->oneGroupXS->neutV(iZ,iR);
-  double sigT = materials->oneGroupXS->sigT(iZ,iR);
+  double v = materials->oneGroupXS->zNeutV(iZ,iR);
+  double sigT = materials->oneGroupXS->zSigTR(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL,\
     mgqdCurrent,mgqdNeutV;  
 
@@ -327,8 +327,8 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->oneGroupXS->neutV(iZ,iR);
-  double sigT = materials->oneGroupXS->sigT(iZ,iR);
+  double v = materials->oneGroupXS->rNeutV(iZ,iR);
+  double sigT = materials->oneGroupXS->rSigTR(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;
   double hCent,hDown,mgqdCurrent,mgqdNeutV;
 
@@ -392,8 +392,8 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->oneGroupXS->neutV(iZ,iR);
-  double sigT = materials->oneGroupXS->sigT(iZ,iR);
+  double v = materials->oneGroupXS->rNeutV(iZ+1,iR);
+  double sigT = materials->oneGroupXS->rSigTR(iZ+1,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;  
   double hCent,hUp,mgqdCurrent,mgqdNeutV;
 
@@ -503,8 +503,8 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->oneGroupXS->neutV(iZ,iR);
-  double sigT = materials->oneGroupXS->sigT(iZ,iR);
+  double v = materials->oneGroupXS->zNeutV(iZ+1,iR);
+  double sigT = materials->oneGroupXS->zSigTR(iZ+1,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff,\
     zetaL,mgqdCurrent,mgqdNeutV; 
 
@@ -564,8 +564,8 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->oneGroupXS->neutV(iZ,iR);
-  double sigT = materials->oneGroupXS->sigT(iZ,iR);
+  double v = materials->oneGroupXS->zNeutV(iZ,iR);
+  double sigT = materials->oneGroupXS->zSigTR(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff,\
     zetaL,mgqdCurrent,mgqdNeutV;
   // calculate geometric values
@@ -624,8 +624,8 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->oneGroupXS->neutV(iZ,iR);
-  double sigT = materials->oneGroupXS->sigT(iZ,iR);
+  double v = materials->oneGroupXS->rNeutV(iZ,iR);
+  double sigT = materials->oneGroupXS->rSigTR(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
   double hCent,hDown,zetaL,mgqdCurrent,mgqdNeutV;
 
@@ -687,8 +687,8 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->oneGroupXS->neutV(iZ,iR);
-  double sigT = materials->oneGroupXS->sigT(iZ,iR);
+  double v = materials->oneGroupXS->rNeutV(iZ+1,iR);
+  double sigT = materials->oneGroupXS->rSigTR(iZ+1,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
   double hCent,hUp,zetaL,mgqdCurrent,mgqdNeutV;
 
