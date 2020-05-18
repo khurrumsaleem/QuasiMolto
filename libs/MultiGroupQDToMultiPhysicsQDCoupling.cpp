@@ -172,9 +172,13 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
           = mats->oneGroupXS->groupDNPFluxCoeff[iDNPGroup](iZ,iR)\
           /fluxAccum; 
       }
-
     }
   }
+
+  // Set eddington factors in grey group object 
+  mpqd->ggqd->Ezz = mats->oneGroupXS->Ezz;
+  mpqd->ggqd->Erz = mats->oneGroupXS->Erz;
+  mpqd->ggqd->Err = mats->oneGroupXS->Err;
 
 };
 //==============================================================================
