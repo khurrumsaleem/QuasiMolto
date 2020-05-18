@@ -84,7 +84,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
   // Temporary accumulator variables
   double fluxAccum;
   double flux,beta,nu;
-  double mySigT,mySigS,mySigF,myNeutV,myErr,myEzz,myErz;
+  double mySigT,mySigS,mySigF,myNeutV,myErr,myEzz,myErz,myGroupSigS;
 
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR; iR++)
@@ -124,6 +124,13 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
         // Flux weighted sigS
         mats->oneGroupXS->sigS(iZ,iR) += mySigS*flux;
 
+        // Flux weighted groupSigS
+        for (int iScat = 0; iScat < mats->nGroups; iScat++)
+        {
+          myGroupSigS = mats->sigS(iZ,iR,iEnergyGroup,iScat); 
+          mats->oneGroupXS->groupSigS[iScat](iZ,iR) += myGroupSigS*flux;
+        }
+
         // Flux weighted sigF
         mats->oneGroupXS->sigF(iZ,iR) += mySigF*flux;
 
@@ -160,6 +167,11 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
       // Divide data by accumulated values
       mats->oneGroupXS->sigT(iZ,iR) = mats->oneGroupXS->sigT(iZ,iR)/fluxAccum;
       mats->oneGroupXS->sigS(iZ,iR) = mats->oneGroupXS->sigS(iZ,iR)/fluxAccum;
+      for (int iScat = 0; iScat < mats->nGroups; iScat++)
+      {
+        mats->oneGroupXS->groupSigS[iScat](iZ,iR)\
+          = mats->oneGroupXS->groupSigS[iScat](iZ,iR)/fluxAccum;
+      }
       mats->oneGroupXS->sigF(iZ,iR) = mats->oneGroupXS->sigF(iZ,iR)/fluxAccum;
       mats->oneGroupXS->neutV(iZ,iR) = fluxAccum/mats->oneGroupXS->neutV(iZ,iR);
       mats->oneGroupXS->Ezz(iZ,iR) = mats->oneGroupXS->Ezz(iZ,iR)/fluxAccum;
