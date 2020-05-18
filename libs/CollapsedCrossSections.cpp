@@ -12,7 +12,7 @@ using namespace arma;
 ///
 /// @param [in] nZ number of axial cells
 /// @param [in] nR number of radial cells
-CollapsedCrossSections::CollapsedCrossSections(int nZ,int nR)
+CollapsedCrossSections::CollapsedCrossSections(int nZ,int nR,int nEnergyGroups)
 {
   
   // Initialize matrices holding one-group cross sections
@@ -37,6 +37,11 @@ CollapsedCrossSections::CollapsedCrossSections(int nZ,int nR)
   zZeta.setZero(nZ+1,nR);  
   qdFluxCoeff.setZero(nZ,nR);  
 
+  // Set size of matrices contained in groupSigS 
+  groupSigS.resize(nEnergyGroups);
+  for (int iGroup = 0; iGroup < groupSigS.size(); iGroup++)
+    groupSigS[iGroup].setZero(nZ,nR);
+
 };
 //==============================================================================
 
@@ -53,6 +58,21 @@ double CollapsedCrossSections::dnpFluxCoeff(int iZ,int iR,int dnpID)
 
 };
 //==============================================================================
+
+///==============================================================================
+/// Return scattering cross section into neutron energy group eID at location
+
+/// @param [in] nZ number of axial cells
+/// @param [in] nR number of radial cells
+/// @param [in] eID energy group index 
+double CollapsedCrossSections::groupScatterXS(int iZ,int iR,int eIdx)
+{
+
+  return groupSigS[eIdx](iZ,iR);
+
+};
+//==============================================================================
+
 
 ///==============================================================================
 /// Reset collapsed nuclear data 
@@ -82,9 +102,11 @@ void CollapsedCrossSections::resetData()
 
   // Reset dnpFluxCoeff
   for (int iDNPGroup = 0; iDNPGroup < groupDNPFluxCoeff.size(); iDNPGroup++)
-  {
     groupDNPFluxCoeff[iDNPGroup].setZero();
-  }
+ 
+  // Reset group scattering cross sections 
+  for (int iGroup = 0; iGroup < groupSigS.size(); iGroup++)
+    groupSigS[iGroup].setZero();
 
 };
 //==============================================================================

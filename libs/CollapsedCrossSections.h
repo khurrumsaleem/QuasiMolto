@@ -14,16 +14,21 @@ class CollapsedCrossSections
   public:
     
     // Constructor
-    CollapsedCrossSections(int nZ,int nR);
+    CollapsedCrossSections(int nZ,int nR,int nEnergyGroups);
     
     // Variables
+    // sigS is the flux weighted one group scattering cross section
+    // groupSigS is the flux weighted one group to group scattering cross 
+    // section
     Eigen::MatrixXd sigT,sigS,sigF,rSigTR,zSigTR,neutV,rNeutV,\
       rNeutVPast,zNeutV,zNeutVPast,qdFluxCoeff,Ezz,Err,Erz,rZeta1,rZeta2,\
       rZeta,zZeta1,zZeta2,zZeta; 
     vector<Eigen::MatrixXd> groupDNPFluxCoeff; 
+    vector<Eigen::MatrixXd> groupSigS; 
   
     // Functions 
     double dnpFluxCoeff(int iZ,int iR,int dnpID);
+    double groupScatterXS(int iZ,int iR,int dnpID);
     void print();
     void resetData();
 };
