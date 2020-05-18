@@ -124,6 +124,9 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
         // Flux weighted sigS
         mats->oneGroupXS->sigS(iZ,iR) += mySigS*flux;
 
+        // Flux weighted sigF
+        mats->oneGroupXS->sigF(iZ,iR) += mySigF*flux;
+
         // Flux weighted neutron velocity
         mats->oneGroupXS->neutV(iZ,iR) += flux/myNeutV;
 
@@ -157,6 +160,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
       // Divide data by accumulated values
       mats->oneGroupXS->sigT(iZ,iR) = mats->oneGroupXS->sigT(iZ,iR)/fluxAccum;
       mats->oneGroupXS->sigS(iZ,iR) = mats->oneGroupXS->sigS(iZ,iR)/fluxAccum;
+      mats->oneGroupXS->sigF(iZ,iR) = mats->oneGroupXS->sigF(iZ,iR)/fluxAccum;
       mats->oneGroupXS->neutV(iZ,iR) = fluxAccum/mats->oneGroupXS->neutV(iZ,iR);
       mats->oneGroupXS->Ezz(iZ,iR) = mats->oneGroupXS->Ezz(iZ,iR)/fluxAccum;
       mats->oneGroupXS->Err(iZ,iR) = mats->oneGroupXS->Err(iZ,iR)/fluxAccum;
