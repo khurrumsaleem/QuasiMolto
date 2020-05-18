@@ -1010,11 +1010,8 @@ double GreyGroupSolver::calcScatterAndFissionCoeff(int iR,int iZ)
   double localFissionSource,localSigF,localNu,localChiP,localSigS,\
     sourceCoefficient;
 
-  localSigF = materials->oneGroupXS->sigF(iZ,iR);
-  localNu = materials->oneGroupXS->nu(iZ,iR);
   localSigS = materials->oneGroupXS->sigS(iZ,iR);
   localFissionSource = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
-  //sourceCoefficient = localSigS + (1-beta)*localNu*localSigF;
   sourceCoefficient = localSigS + localFissionSource;
 
   return sourceCoefficient;
