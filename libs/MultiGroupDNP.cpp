@@ -149,7 +149,7 @@ void MultiGroupDNP::readInput()
       for (int iZ = 0; iZ < mesh->nZ; iZ++)
       {
 
-        tempVal = DNPs[iDNPGroup]->beta(0)*mats->oneGroupXS->nu(iZ,iR)\
+        tempVal = DNPs[iDNPGroup]->beta(0)*mats->nu(iZ,iR,0)\
                   *mats->oneGroupXS->sigF(iZ,iR);  
         mats->oneGroupXS->groupDNPFluxCoeff[iDNPGroup](iZ,iR) = tempVal;
 
@@ -162,7 +162,7 @@ void MultiGroupDNP::readInput()
     for (int iZ = 0; iZ < mesh->nZ; iZ++)
     {
 
-      tempVal = (1-beta(0))*mats->oneGroupXS->nu(iZ,iR)\
+      tempVal = (1-beta(0))*mats->nu(iZ,iR,0)\
                 *mats->oneGroupXS->sigF(iZ,iR);  
       mats->oneGroupXS->qdFluxCoeff(iZ,iR) = tempVal;
 
