@@ -29,6 +29,9 @@ MGQDToMPQDCoupling::MGQDToMPQDCoupling(Mesh * myMesh,\
   mpqd = myMPQD;
   mgqd = myMGQD;
 
+  // Assign MGQD pointer in grey group solver
+  mpqd->ggqd->assignMGQDPointer(mgqd);
+
   // Initialize collapsed nuclear data based on initial values stored on MGQD
   // objects 
   initCollapsedNuclearData();
