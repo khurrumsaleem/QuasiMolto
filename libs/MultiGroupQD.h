@@ -3,6 +3,7 @@
 
 #include "Mesh.h"
 #include "QuasidiffusionSolver.h"
+#include "MultiPhysicsCoupledQD.h"
 
 // ToDo: this class should only refer to POINTERS of the forward declared type,
 // but that is not the case. To work around in, the SingleGroupQD.h is included
@@ -31,6 +32,7 @@ class MultiGroupQD
     void setInitialCondition();
     void solveMGQDOnly();
     void getFluxes();
+    void assignMultiPhysicsCoupledQDPointer(MultiPhysicsCoupledQD * myMPQD);
     void writeFluxes();
 
   private:

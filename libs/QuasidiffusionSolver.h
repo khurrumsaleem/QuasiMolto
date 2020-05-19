@@ -3,6 +3,7 @@
 
 #include "Mesh.h"
 #include "Materials.h"
+#include "MultiPhysicsCoupledQD.h"
 
 class SingleGroupQD;
 
@@ -118,6 +119,8 @@ class QDSolver
     int energyGroups,nR,nZ,nGroupUnknowns,nGroupCurrentUnknowns;
     bool reflectingBCs = false;
     bool goldinBCs = false;
+    bool useMPQDSources = false;
+    MultiPhysicsCoupledQD * mpqd;
 
   private:
     // private variables

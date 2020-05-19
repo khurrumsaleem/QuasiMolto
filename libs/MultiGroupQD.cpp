@@ -143,6 +143,17 @@ void MultiGroupQD::getFluxes()
 //==============================================================================
 
 //==============================================================================
+/// Extracts fluxes and currents from solution vector into 2D matrices 
+void MultiGroupQD::assignMultiPhysicsCoupledQDPointer\
+       (MultiPhysicsCoupledQD * myMPQD)
+{
+  QDSolve->mpqd = myMPQD;
+  QDSolve->useMPQDSources = true;
+}
+//==============================================================================
+
+
+//==============================================================================
 /// Wrapper over SGQDs to write flux present in each
 void MultiGroupQD::writeFluxes()
 {
