@@ -973,7 +973,7 @@ double QDSolver::calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
 //==============================================================================
 
 //==============================================================================
-/// Impose scattering and fission source 
+/// Impose scattering and fission source from grey group values 
 /// 
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
