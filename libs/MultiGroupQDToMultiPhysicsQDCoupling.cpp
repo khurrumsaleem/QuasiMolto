@@ -44,6 +44,24 @@ MGQDToMPQDCoupling::MGQDToMPQDCoupling(Mesh * myMesh,\
 //==============================================================================
 /// Collapse nuclear data with flux and current weighting 
 ///
+void MGQDToMPQDCoupling::solveMGQD()
+{
+
+  mgqd->setInitialCondition();
+  mgqd->buildLinearSystem();
+  mgqd->solveLinearSystem();
+  mgqd->buildBackCalcSystem();
+  mgqd->backCalculateCurrent();
+  mgqd->getFluxes();
+
+  collapseNuclearData();
+};
+//==============================================================================
+
+
+//==============================================================================
+/// Collapse nuclear data with flux and current weighting 
+///
 void MGQDToMPQDCoupling::initCollapsedNuclearData()
 {
   
@@ -467,7 +485,7 @@ void MGQDToMPQDCoupling::calculateRadialCurrentWeightedData()
       {
         // Get flux and currents in this cell and energy group
         rCurrent = abs(mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR) + eps); 
-
+        cout << "rCurrent( " << iZ << "," << iR << "):"<< rCurrent<< endl;
         // Get nuclear data at these locations and energy groups
         if (iR == 0)
           mySigT = mats->sigT(iZ,iR,iEnergyGroup);

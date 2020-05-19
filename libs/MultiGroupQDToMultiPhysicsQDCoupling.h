@@ -22,6 +22,7 @@ class MGQDToMPQDCoupling
         MultiPhysicsCoupledQD * myMPQD,\
         MultiGroupQD * myMGQD);
   void initCollapsedNuclearData();
+  void solveMGQD();
   void collapseNuclearData();
   void calculateFluxWeightedData();
   void calculateFluxWeightedBCData();
