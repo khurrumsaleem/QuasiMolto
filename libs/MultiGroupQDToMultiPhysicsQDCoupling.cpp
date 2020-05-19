@@ -132,6 +132,9 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
         {
           myGroupSigS = mats->sigS(iZ,iR,iEnergyGroup,iScat); 
           mats->oneGroupXS->groupSigS[iScat](iZ,iR) += myGroupSigS*flux;
+          if (iScat < iEnergyGroup) 
+            mats->oneGroupXS->groupUpscatterCoeff[iScat](iZ,iR)\
+              += myGroupSigS*flux;
         }
 
         // Flux weighted sigF
@@ -174,6 +177,8 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
       {
         mats->oneGroupXS->groupSigS[iScat](iZ,iR)\
           = mats->oneGroupXS->groupSigS[iScat](iZ,iR)/fluxAccum;
+        mats->oneGroupXS->groupUpscatterCoeff[iScat](iZ,iR)\
+          = mats->oneGroupXS->groupUpscatterCoeff[iScat](iZ,iR)/fluxAccum;
       }
       mats->oneGroupXS->sigF(iZ,iR) = mats->oneGroupXS->sigF(iZ,iR)/fluxAccum;
       mats->oneGroupXS->neutV(iZ,iR) = fluxAccum/mats->oneGroupXS->neutV(iZ,iR);

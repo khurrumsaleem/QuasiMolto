@@ -39,8 +39,12 @@ CollapsedCrossSections::CollapsedCrossSections(int nZ,int nR,int nEnergyGroups)
 
   // Set size of matrices contained in groupSigS 
   groupSigS.resize(nEnergyGroups);
+  groupUpscatterCoeff.resize(nEnergyGroups);
   for (int iGroup = 0; iGroup < groupSigS.size(); iGroup++)
+  {
     groupSigS[iGroup].setZero(nZ,nR);
+    groupUpscatterCoeff[iGroup].setZero(nZ,nR);
+  }
 
 };
 //==============================================================================
@@ -64,7 +68,7 @@ double CollapsedCrossSections::dnpFluxCoeff(int iZ,int iR,int dnpID)
 
 /// @param [in] nZ number of axial cells
 /// @param [in] nR number of radial cells
-/// @param [in] eID energy group index 
+/// @param [in] eIdx energy group index 
 double CollapsedCrossSections::groupScatterXS(int iZ,int iR,int eIdx)
 {
 
@@ -72,6 +76,21 @@ double CollapsedCrossSections::groupScatterXS(int iZ,int iR,int eIdx)
 
 };
 //==============================================================================
+
+///==============================================================================
+/// Return scattering cross section into neutron energy group eID at location
+
+/// @param [in] nZ number of axial cells
+/// @param [in] nR number of radial cells
+/// @param [in] eIdx energy group index 
+double CollapsedCrossSections::upscatterCoeff(int iZ,int iR,int eIdx)
+{
+
+  return groupUpscatterCoeff[eIdx](iZ,iR);
+
+};
+//==============================================================================
+
 
 
 ///==============================================================================
@@ -106,7 +125,10 @@ void CollapsedCrossSections::resetData()
  
   // Reset group scattering cross sections 
   for (int iGroup = 0; iGroup < groupSigS.size(); iGroup++)
+  {
     groupSigS[iGroup].setZero();
+    groupUpscatterCoeff[iGroup].setZero();
+  }
 
 };
 //==============================================================================
@@ -206,13 +228,22 @@ void CollapsedCrossSections::print()
     cout << endl;
   }
 
-  // Print dnpFluxCoeff
+  // Print groupSigS 
   cout << "groupSigS: " << endl;
   for (int iScatter= 0; iScatter < groupSigS.size(); iScatter++)
   {
     cout << groupSigS[iScatter] << endl;
     cout << endl;
   }
+
+  // Print groupUpscatterCoeff 
+  cout << "groupUpscatterCoeff: " << endl;
+  for (int iScatter= 0; iScatter < groupUpscatterCoeff.size(); iScatter++)
+  {
+    cout << groupUpscatterCoeff[iScatter] << endl;
+    cout << endl;
+  }
+
 
 };
 //==============================================================================

@@ -25,10 +25,12 @@ class CollapsedCrossSections
       rZeta,zZeta1,zZeta2,zZeta; 
     vector<Eigen::MatrixXd> groupDNPFluxCoeff; 
     vector<Eigen::MatrixXd> groupSigS; 
+    vector<Eigen::MatrixXd> groupUpscatterCoeff; 
   
     // Functions 
     double dnpFluxCoeff(int iZ,int iR,int dnpID);
     double groupScatterXS(int iZ,int iR,int dnpID);
+    double upscatterCoeff(int iZ,int iR,int dnpID);
     void print();
     void resetData();
 };
