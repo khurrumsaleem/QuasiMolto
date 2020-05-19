@@ -32,8 +32,8 @@ class MultiGroupQD
     void setInitialCondition();
     void solveMGQDOnly();
     void getFluxes();
-    void assignMultiPhysicsCoupledQDPointer(MultiPhysicsCoupledQD * myMPQD);
     void writeFluxes();
+    void assignMultiPhysicsCoupledQDPointer(MultiPhysicsCoupledQD * myMPQD);
 
   private:
     YAML::Node * input;
