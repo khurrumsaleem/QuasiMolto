@@ -91,8 +91,6 @@ double CollapsedCrossSections::upscatterCoeff(int iZ,int iR,int eIdx)
 };
 //==============================================================================
 
-
-
 ///==============================================================================
 /// Reset collapsed nuclear data 
 ///
