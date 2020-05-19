@@ -983,7 +983,8 @@ void QDSolver::greyGroupSources(int iR,int iZ,int iEq,int toEnergyGroup,\
     vector<double> geoParams)
 {
 
-  double localChiP,localSigS,localFissionCoeff,localFlux,localUpscatterCoeff;
+  double localChiP,localSigS,localFissionCoeff,localFlux,localUpscatterCoeff,\
+    localChiD,localDNPSource;
   vector<int> indices;
 
   for (int iFromEnergyGroup = 0; iFromEnergyGroup <= toEnergyGroup;\
@@ -994,13 +995,16 @@ void QDSolver::greyGroupSources(int iR,int iZ,int iEq,int toEnergyGroup,\
     A.insert(iEq,indices[iCF]) = -geoParams[iCF] * localSigS;
   }
 
+  localChiD = materials->chiD(iZ,iR,toEnergyGroup);
+  localDNPSource = mpqd->mgdnp->dnpSource(iZ,iR); 
   localChiP = materials->chiP(iZ,iR,toEnergyGroup);
   localUpscatterCoeff = materials->oneGroupXS->upscatterCoeff(iZ,iR,\
       toEnergyGroup);
   localFissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
   localFlux = mpqd->ggqd->sFlux(iZ,iR); 
 
-  b(iEq) += (localUpscatterCoeff + localChiP*localFissionCoeff)*localFlux;
+  b(iEq) += (localUpscatterCoeff + localChiP*localFissionCoeff)*localFlux\
+            + localChiD*localDNPSource;
 };
 //==============================================================================
 

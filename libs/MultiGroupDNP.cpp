@@ -48,6 +48,9 @@ void MultiGroupDNP::readInput()
 
   // Set size of beta vector
   beta.setZero(mats->nGroups);
+  
+  // set size of cumulative DNP decay source 
+  dnpSource.setZero(mesh->nZ,mesh->nR);
 
   // Check if DNP data are specified in input
   if ((*input)["delayed neutron precursors"]["betas"] and\
@@ -206,6 +209,21 @@ void MultiGroupDNP::getCoreDNPConc()
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
     DNPs[iGroup]->getCoreConc();
+  }
+
+  getCumulativeDNPDecaySource();
+};
+//==============================================================================
+
+//==============================================================================
+/// Update matrix holding cumulative DNP decay source 
+///
+void MultiGroupDNP::getCumulativeDNPDecaySource()
+{
+  dnpSource.setZero();
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    dnpSource += DNPs[iGroup]->lambda*DNPs[iGroup]->dnpConc;
   }
 };
 //==============================================================================

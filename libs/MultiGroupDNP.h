@@ -21,6 +21,7 @@ class MultiGroupDNP
     vector< shared_ptr<SingleGroupDNP> > DNPs; 
     Eigen::VectorXd recircb,recircx;
     Eigen::SparseMatrix<double> recircA;
+    Eigen::MatrixXd dnpSource;
     MultiGroupDNP(Materials * myMats,\
         Mesh * myMesh,\
         YAML::Node * myInput,\
@@ -30,6 +31,7 @@ class MultiGroupDNP
     void buildRecircLinearSystem();
     void buildCoreLinearSystem();
     void getCoreDNPConc();
+    void getCumulativeDNPDecaySource();
     void setCoreDNPConc();
     void printCoreDNPConc();
     void getRecircDNPConc();
