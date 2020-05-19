@@ -6,6 +6,7 @@
 #include "MultiPhysicsCoupledQD.h"
 
 class SingleGroupQD;
+class GreyGroupQD;
 
 using namespace std; 
 
@@ -97,6 +98,8 @@ class QDSolver
 
     double calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
         int fromEnergyGroup);
+    void greyGroupSources(int iR,int iZ,int iEq,int toEnergyGroup,\
+        vector<double> geoParams);
     double calcIntegratingFactor(int iR,int iZ,double rEval,SingleGroupQD * SGQD);
 
     // function to solve linear system

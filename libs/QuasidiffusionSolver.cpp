@@ -4,6 +4,7 @@
 
 #include "QuasidiffusionSolver.h"
 #include "SingleGroupQD.h"
+#include "GreyGroupQD.h"
 
 using namespace std; 
 
@@ -163,11 +164,16 @@ void QDSolver::assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\
 
   // populate entries representing sources from scattering and fission in 
   // this and other energy groups
-  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup)
+  if (useMPQDSources)
+    greyGroupSources(iR,iZ,iEq,energyGroup,geoParams);
+  else
   {
-    indices = getIndices(iR,iZ,iGroup);
-    groupSourceCoeff = calcScatterAndFissionCoeff(iR,iZ,energyGroup,iGroup);
-    A.insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
+    for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup)
+    {
+      indices = getIndices(iR,iZ,iGroup);
+      groupSourceCoeff = calcScatterAndFissionCoeff(iR,iZ,energyGroup,iGroup);
+      A.insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
+    }
   }
 
   // populate entries representing streaming and reaction terms
@@ -965,6 +971,39 @@ double QDSolver::calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
   return sourceCoefficient;
 };
 //==============================================================================
+
+//==============================================================================
+/// Impose scattering and fission source 
+/// 
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] toEnergyGroup energy group of sourcing group
+/// @param [in] fromEnergyGroup energy group of source group
+void QDSolver::greyGroupSources(int iR,int iZ,int iEq,int toEnergyGroup,\
+    vector<double> geoParams)
+{
+
+  double localChiP,localSigS,localFissionCoeff,localFlux,localUpscatterCoeff;
+  vector<int> indices;
+
+  for (int iFromEnergyGroup = 0; iFromEnergyGroup <= toEnergyGroup;\
+      ++iFromEnergyGroup)
+  {
+    indices = getIndices(iR,iZ,iFromEnergyGroup);
+    localSigS = materials->sigS(iZ,iR,iFromEnergyGroup,toEnergyGroup);
+    A.insert(iEq,indices[iCF]) = -geoParams[iCF] * localSigS;
+  }
+
+  localChiP = materials->chiP(iZ,iR,toEnergyGroup);
+  localUpscatterCoeff = materials->oneGroupXS->upscatterCoeff(iZ,iR,\
+      toEnergyGroup);
+  localFissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
+  localFlux = mpqd->ggqd->sFlux(iZ,iR); 
+
+  b(iEq) += (localUpscatterCoeff + localChiP*localFissionCoeff)*localFlux;
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Form a portion of the linear system that belongs to SGQD 
