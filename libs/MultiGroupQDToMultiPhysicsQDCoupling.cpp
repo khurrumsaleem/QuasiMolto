@@ -55,6 +55,8 @@ void MGQDToMPQDCoupling::solveMGQD()
   mgqd->getFluxes();
 
   collapseNuclearData();
+  mpqd->buildLinearSystem();
+  mpqd->solveLinearSystem();
 };
 //==============================================================================
 
