@@ -485,7 +485,7 @@ void MGQDToMPQDCoupling::calculateRadialCurrentWeightedData()
       {
         // Get flux and currents in this cell and energy group
         rCurrent = abs(mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR) + eps); 
-        cout << "rCurrent( " << iZ << "," << iR << "):"<< rCurrent<< endl;
+
         // Get nuclear data at these locations and energy groups
         if (iR == 0)
           mySigT = mats->sigT(iZ,iR,iEnergyGroup);
@@ -537,7 +537,7 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
   {
     for (int iZ = 0; iZ < mesh->nZ; iZ++)
     {
-
+      
       // Reset accumulators
       fluxAccum = 0.0;
       pastSum = 0.0;
@@ -610,7 +610,6 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
   double mySigT,mySigTR,myNeutV,myZNeutV,myZNeutVPast;
   double timeDerivative,sigTDiff,pastSum,presentSum; 
 
-
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR; iR++)
   {
@@ -648,12 +647,12 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
         myZNeutV = mats->oneGroupXS->zNeutV(iZ,iR);
         myZNeutVPast = mats->oneGroupXS->zNeutVPast(iZ,iR);
 
-        // Radial current weighted zeta1
+        // Axial current weighted zeta1
         pastSum = pastSum + (1.0/myNeutV-1.0/myZNeutVPast)*zCurrentPast;
         presentSum = presentSum + (1.0/myNeutV-1.0/myZNeutV)*zCurrent;
 
-        // Radial current weighted zeta2
-        sigTDiff = sigTDiff + (mySigT-mySigTR)*zCurrent;       
+        // Axial current weighted zeta2
+        sigTDiff += (mySigT-mySigTR)*zCurrent;       
 
         // Accumulate absolute radial current
         fluxAccum = fluxAccum + flux;
@@ -678,28 +677,118 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
 //==============================================================================
 
 //==============================================================================
+/// Check if flux is zero in every group and return a biasing factor 
+/// to prevent division by zero   
+///
+/// @param [in] iZ axial cell index 
+/// @param [in] iR radial cell index 
+/// @param [out] eps bias factor 
+double MGQDToMPQDCoupling::checkForZeroFlux(int iZ,int iR)
+{
+
+  double groupFlux;
+  bool aboveThreshold = true;  
+
+  // Loop over energy groups 
+  for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+  {
+    // Check to see if current at location is greater than some eps
+    groupFlux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,iR);
+    aboveThreshold = aboveThreshold and (abs(groupFlux) > biasEps); 
+  }
+
+  if (aboveThreshold)
+    return 0.0;
+  else
+    return biasEps;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Check if radial flux is zero in every group and return a biasing factor 
+/// to prevent division by zero   
+///
+/// @param [in] iZ axial cell index 
+/// @param [in] iR radial cell index 
+/// @param [out] eps bias factor 
+double MGQDToMPQDCoupling::checkForZeroRadialFlux(int iZ,int iR)
+{
+
+  double groupFlux;
+  bool aboveThreshold = true;  
+
+  // Loop over energy groups 
+  for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+  {
+    // Check to see if current at location is greater than some eps
+    groupFlux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR);
+    aboveThreshold = aboveThreshold and (abs(groupFlux) > biasEps); 
+  }
+
+  if (aboveThreshold)
+    return 0.0;
+  else
+    return biasEps;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Check if axial flux is zero in every group and return a biasing factor 
+/// to prevent division by zero   
+///
+/// @param [in] iZ axial cell index 
+/// @param [in] iR radial cell index 
+/// @param [out] eps bias factor 
+double MGQDToMPQDCoupling::checkForZeroAxialFlux(int iZ,int iR)
+{
+
+  double groupFlux;
+  bool aboveThreshold = true;  
+
+  // Loop over energy groups 
+  for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+  {
+    // Check to see if current at location is greater than some eps
+    groupFlux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(iZ,iR);
+    aboveThreshold = aboveThreshold and (abs(groupFlux) > biasEps); 
+  }
+
+  if (aboveThreshold)
+    return 0.0;
+  else
+    return biasEps;
+
+};
+//==============================================================================
+
+//==============================================================================
 /// Check if axial current is zero in every group and return a biasing factor 
 /// to prevent division by zero   
 ///
+/// @param [in] iZ axial cell index 
+/// @param [in] iR radial cell index 
+/// @param [out] eps bias factor 
 double MGQDToMPQDCoupling::checkForZeroAxialCurrent(int iZ,int iR)
 {
 
   double groupCurrent;
   bool aboveThreshold = true;  
-  double eps = 1E-25;
+  double eps = 1E-14;
 
   // Loop over energy groups 
   for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
   {
     // Check to see if current at location is greater than some eps
     groupCurrent = mgqd->SGQDs[iEnergyGroup]->currentZ(iZ,iR);
-    aboveThreshold = aboveThreshold and (abs(groupCurrent) > eps); 
+    aboveThreshold = aboveThreshold and (abs(groupCurrent) > biasEps); 
   }
 
   if (aboveThreshold)
     return 0.0;
   else
-    return eps;
+    return biasEps;
 
 };
 //==============================================================================
@@ -708,25 +797,27 @@ double MGQDToMPQDCoupling::checkForZeroAxialCurrent(int iZ,int iR)
 /// Check if radial current is zero in every group and return a biasing factor 
 /// to prevent division by zero   
 ///
+/// @param [in] iZ axial cell index 
+/// @param [in] iR radial cell index 
+/// @param [out] eps bias factor 
 double MGQDToMPQDCoupling::checkForZeroRadialCurrent(int iZ,int iR)
 {
 
   double groupCurrent;
   bool aboveThreshold = true;  
-  double eps = 1E-25;
 
   // Loop over energy groups 
   for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
   {
     // Check to see if current at location is greater than some eps
     groupCurrent = mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR);
-    aboveThreshold = aboveThreshold and (abs(groupCurrent) > eps); 
+    aboveThreshold = aboveThreshold and (abs(groupCurrent) > biasEps); 
   }
 
   if (aboveThreshold)
     return 0.0;
   else
-    return eps;
+    return biasEps;
 
 };
 //==============================================================================

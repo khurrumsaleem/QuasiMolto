@@ -30,8 +30,12 @@ class MGQDToMPQDCoupling
   void calculateRadialCurrentWeightedData();
   void calculateRadialZetaFactors();
   void calculateAxialZetaFactors();
+  double checkForZeroFlux(int iZ,int iR);
+  double checkForZeroRadialFlux(int iZ,int iR);
+  double checkForZeroAxialFlux(int iZ,int iR);
   double checkForZeroRadialCurrent(int iZ,int iR);
   double checkForZeroAxialCurrent(int iZ,int iR);
+  double biasEps = 1E-25;
 
   private:
     Mesh * mesh; 
