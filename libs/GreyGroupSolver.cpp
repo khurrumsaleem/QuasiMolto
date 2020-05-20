@@ -392,8 +392,8 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->oneGroupXS->rNeutV(iZ+1,iR);
-  double sigT = materials->oneGroupXS->rSigTR(iZ+1,iR);
+  double v = materials->oneGroupXS->rNeutV(iZ,iR+1);
+  double sigT = materials->oneGroupXS->rSigTR(iZ,iR+1);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;  
   double hCent,hUp,mgqdCurrent,mgqdNeutV;
 
@@ -687,8 +687,8 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->oneGroupXS->rNeutV(iZ+1,iR);
-  double sigT = materials->oneGroupXS->rSigTR(iZ+1,iR);
+  double v = materials->oneGroupXS->rNeutV(iZ,iR+1);
+  double sigT = materials->oneGroupXS->rSigTR(iZ,iR+1);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
   double hCent,hUp,zetaL,mgqdCurrent,mgqdNeutV;
 
