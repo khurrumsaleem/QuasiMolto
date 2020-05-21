@@ -69,10 +69,7 @@ mgqd->setInitialCondition();
     cout << (xCurrentIter-xPrevIter).norm() << endl; 
   }
 
-  mpqd->ggqd->GGSolver->getFlux();
-  cout << "Flux:" << endl; 
-  cout << mpqd->ggqd->sFlux << endl; 
-  cout << endl;
+  mpqd->updateVarsAfterConvergence();
   cout << "Residual" << endl; 
   cout << (xCurrentIter-xPrevIter).norm() << endl; 
   cout << endl;
