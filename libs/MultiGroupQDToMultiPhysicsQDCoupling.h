@@ -31,6 +31,9 @@ class MGQDToMPQDCoupling
   void calculateRadialZetaFactors();
   void calculateAxialZetaFactors();
   double checkForZeroFlux(int iZ,int iR);
+  double checkForZeroInwardFluxSouthBC(int iR);
+  double checkForZeroInwardFluxNorthBC(int iR);
+  double checkForZeroInwardFluxEastBC(int iZ);
   double checkForZeroRadialFlux(int iZ,int iR);
   double checkForZeroAxialFlux(int iZ,int iR);
   double checkForZeroRadialCurrent(int iZ,int iR);

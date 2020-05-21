@@ -47,16 +47,38 @@ MGQDToMPQDCoupling::MGQDToMPQDCoupling(Mesh * myMesh,\
 void MGQDToMPQDCoupling::solveMGQD()
 {
 
-  mgqd->setInitialCondition();
-  mgqd->buildLinearSystem();
-  mgqd->solveLinearSystem();
-  mgqd->buildBackCalcSystem();
-  mgqd->backCalculateCurrent();
-  mgqd->getFluxes();
+Eigen::VectorXd xCurrentIter,xPrevIter;
 
-  collapseNuclearData();
-  mpqd->buildLinearSystem();
-  mpqd->solveLinearSystem();
+
+mgqd->setInitialCondition();
+
+  for (int iStep = 0; iStep < 100; iStep++)
+  {
+    mgqd->buildLinearSystem();
+    mgqd->solveLinearSystem();
+    mgqd->buildBackCalcSystem();
+    mgqd->backCalculateCurrent();
+    mgqd->getFluxes();
+
+    collapseNuclearData();
+    xPrevIter = mpqd->x;
+    mpqd->buildLinearSystem();
+    mpqd->solveLinearSystem();
+    xCurrentIter = mpqd->x;
+    cout << "Residual" << endl; 
+    cout << (xCurrentIter-xPrevIter).norm() << endl; 
+  }
+
+  mpqd->ggqd->GGSolver->getFlux();
+  cout << "Flux:" << endl; 
+  cout << mpqd->ggqd->sFlux << endl; 
+  cout << endl;
+  cout << "Residual" << endl; 
+  cout << (xCurrentIter-xPrevIter).norm() << endl; 
+  cout << endl;
+  cout << "Residual vector" << endl; 
+  cout << (xCurrentIter-xPrevIter) << endl; 
+  cout << endl;
 };
 //==============================================================================
 
@@ -66,7 +88,7 @@ void MGQDToMPQDCoupling::solveMGQD()
 ///
 void MGQDToMPQDCoupling::initCollapsedNuclearData()
 {
-  
+
   collapseNuclearData();
   mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;
   mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;
@@ -126,7 +148,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
       {
         // Get flux and currents in this cell and energy group
         flux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,iR); 
-      
+
         // Get beta and nu for this energy group 
         beta = mpqd->mgdnp->beta(iEnergyGroup); 
         nu = mats->nu(iZ,iR,iEnergyGroup); 
@@ -190,7 +212,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
 
         // Accumulate flux
         fluxAccum = fluxAccum + flux;
-        
+
       }
 
       // Divide data by accumulated values
@@ -241,7 +263,8 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
   double sFluxAccum,sFlux,sInwardFlux,sInwardFluxAccum,sRatio;
   double eFluxAccum,eFlux,eInwardFlux,eInwardFluxAccum,eRatio;
   double nInwardCurrent,sInwardCurrent,eInwardCurrent;
-  double eps = 1E-25;
+  double nBias,sBias,eBias;
+  double nInwardBias,sInwardBias,eInwardBias;
 
   // Reset ratios
   mpqd->ggqd->nOutwardCurrToFluxRatioBC.setZero();
@@ -255,7 +278,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
   mpqd->ggqd->nInwardFluxBC.setZero();
   mpqd->ggqd->sInwardFluxBC.setZero();
   mpqd->ggqd->eInwardFluxBC.setZero();
-  
+
   mpqd->ggqd->nInwardCurrentBC.setZero();
   mpqd->ggqd->sInwardCurrentBC.setZero();
   mpqd->ggqd->eInwardCurrentBC.setZero();
@@ -263,6 +286,11 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR; iR++)
   {
+    // Set biases
+    nBias = checkForZeroAxialFlux(0,iR);
+    nInwardBias = checkForZeroInwardFluxNorthBC(iR);
+    sBias = checkForZeroAxialFlux(mesh->nZ,iR);
+    sInwardBias = checkForZeroInwardFluxSouthBC(iR);
 
     // Reset accumulators
     nFluxAccum = 0.0;
@@ -276,11 +304,11 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
     {
 
       // Get flux in these cells and energy group
-      nFlux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(0,iR); 
-      sFlux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(mesh->nZ,iR); 
+      nFlux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(0,iR) + nBias; 
+      sFlux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(mesh->nZ,iR) + sBias; 
 
-      nInwardFlux = mgqd->SGQDs[iEnergyGroup]->nInwardFluxBC(iR); 
-      sInwardFlux = mgqd->SGQDs[iEnergyGroup]->sInwardFluxBC(iR); 
+      nInwardFlux = mgqd->SGQDs[iEnergyGroup]->nInwardFluxBC(iR) + nInwardBias; 
+      sInwardFlux = mgqd->SGQDs[iEnergyGroup]->sInwardFluxBC(iR) + sInwardBias; 
 
       nInwardCurrent = mgqd->SGQDs[iEnergyGroup]->nInwardCurrentBC(iR); 
       sInwardCurrent = mgqd->SGQDs[iEnergyGroup]->sInwardCurrentBC(iR); 
@@ -305,22 +333,10 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
       nInwardFluxAccum += nInwardFlux;
       sInwardFluxAccum += sInwardFlux;
 
-      mpqd->ggqd->nInwardFluxBC(iR) += nInwardFlux;
-      mpqd->ggqd->sInwardFluxBC(iR) += sInwardFlux;
-
       mpqd->ggqd->nInwardCurrentBC(iR) += nInwardCurrent;
       mpqd->ggqd->sInwardCurrentBC(iR) += sInwardCurrent;
 
     }
-
-    // Check for zero values in accumulators to prevent division by zero
-    if (abs(nFluxAccum) < eps) nFluxAccum = eps; 
-
-    if (abs(sFluxAccum) < eps) sFluxAccum = eps; 
-
-    if (abs(nInwardFluxAccum) < eps) nInwardFluxAccum = eps; 
-
-    if (abs(sInwardFluxAccum) < eps) sInwardFluxAccum = eps; 
 
     // Divide data by accumulated values
     mpqd->ggqd->nOutwardCurrToFluxRatioBC(iR)\
@@ -335,11 +351,22 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
       = mpqd->ggqd->sOutwardCurrToFluxRatioInwardWeightedBC(iR)\
       /sInwardFluxAccum;
 
+    // Set flux boundaries
+    mpqd->ggqd->nFluxBC(iR) = nFluxAccum - mats->nGroups*nBias;
+    mpqd->ggqd->sFluxBC(iR) = sFluxAccum - mats->nGroups*sBias;
+
+    mpqd->ggqd->nInwardFluxBC(iR) = nInwardFluxAccum - mats->nGroups*nInwardBias; 
+    mpqd->ggqd->sInwardFluxBC(iR) = sInwardFluxAccum - mats->nGroups*sInwardBias; 
+
   }
 
   // Loop over spatial mesh
   for (int iZ = 0; iZ < mesh->nZ; iZ++)
   {
+
+    // Set biases
+    eBias = checkForZeroRadialFlux(iZ,mesh->nR);
+    eInwardBias = checkForZeroInwardFluxEastBC(iZ);
 
     // Reset accumulators
     eFluxAccum = 0.0;
@@ -351,9 +378,9 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
     {
 
       // Get flux in these cells and energy group
-      eFlux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,mesh->nR); 
+      eFlux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,mesh->nR) + eBias; 
 
-      eInwardFlux = mgqd->SGQDs[iEnergyGroup]->eInwardFluxBC(iZ); 
+      eInwardFlux = mgqd->SGQDs[iEnergyGroup]->eInwardFluxBC(iZ) + eInwardBias; 
 
       eInwardCurrent = mgqd->SGQDs[iEnergyGroup]->eInwardCurrentBC(iZ); 
 
@@ -361,26 +388,18 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
       eRatio = mgqd->SGQDs[iEnergyGroup]->eOutwardCurrToFluxRatioBC(iZ); 
 
       // Flux weighted quasidiffusion coefficient
-      mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ) += eRatio*nFlux;
+      mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ) += eRatio*eFlux;
 
       mpqd->ggqd->eOutwardCurrToFluxRatioInwardWeightedBC(iZ)\
-        += eRatio*nInwardFlux;
+        += eRatio*eInwardFlux;
 
       // Accumulate fluxes and currents 
       eFluxAccum = eFluxAccum + eFlux;
-      
-      eInwardFluxAccum += eInwardFlux;
 
-      mpqd->ggqd->eInwardFluxBC(iZ) += eInwardFlux;
+      eInwardFluxAccum += eInwardFlux;
 
       mpqd->ggqd->eInwardCurrentBC(iZ) += eInwardCurrent;
     }
-
-    // Check for zero values in accumulators to prevent division by zero
-    if (abs(eFluxAccum) < eps) eFluxAccum = eps; 
-
-    if (abs(eInwardFluxAccum) < eps) eInwardFluxAccum = eps; 
-
 
     // Divide data by accumulated values
     mpqd->ggqd->eOutwardCurrToFluxRatioBC(iZ)\
@@ -389,6 +408,12 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
     mpqd->ggqd->eOutwardCurrToFluxRatioInwardWeightedBC(iZ)\
       = mpqd->ggqd->eOutwardCurrToFluxRatioInwardWeightedBC(iZ)\
       /eInwardFluxAccum;
+
+    // Set flux boundaries
+    mpqd->ggqd->eFluxBC(iZ) = eFluxAccum - mats->nGroups*eBias;
+
+    mpqd->ggqd->eInwardFluxBC(iZ) = eInwardFluxAccum\
+                                    - mats->nGroups*eInwardBias;
   }
 
 };
@@ -539,7 +564,7 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
   {
     for (int iZ = 0; iZ < mesh->nZ; iZ++)
     {
-      
+
       // Reset accumulators
       fluxAccum = 0.0;
       pastSum = 0.0;
@@ -675,6 +700,93 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
                                        + mats->oneGroupXS->zZeta2(iZ,iR); 
     }
   }
+};
+//==============================================================================
+
+//==============================================================================
+/// Check if flux is zero in every group and return a biasing factor 
+/// to prevent division by zero   
+///
+/// @param [in] iZ axial cell index 
+/// @param [in] iR radial cell index 
+/// @param [out] eps bias factor 
+double MGQDToMPQDCoupling::checkForZeroInwardFluxSouthBC(int iR)
+{
+
+  double groupFlux;
+  bool aboveThreshold = true;  
+
+  // Loop over energy groups 
+  for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+  {
+    // Check to see if current at location is greater than some eps
+    groupFlux = mgqd->SGQDs[iEnergyGroup]->sInwardFluxBC(iR);
+    aboveThreshold = aboveThreshold and (abs(groupFlux) > biasEps); 
+  }
+
+  if (aboveThreshold)
+    return 0.0;
+  else
+    return biasEps;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Check if flux is zero in every group and return a biasing factor 
+/// to prevent division by zero   
+///
+/// @param [in] iZ axial cell index 
+/// @param [in] iR radial cell index 
+/// @param [out] eps bias factor 
+double MGQDToMPQDCoupling::checkForZeroInwardFluxNorthBC(int iR)
+{
+
+  double groupFlux;
+  bool aboveThreshold = true;  
+
+  // Loop over energy groups 
+  for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+  {
+    // Check to see if current at location is greater than some eps
+    groupFlux = mgqd->SGQDs[iEnergyGroup]->nInwardFluxBC(iR);
+    aboveThreshold = aboveThreshold and (abs(groupFlux) > biasEps); 
+  }
+
+  if (aboveThreshold)
+    return 0.0;
+  else
+    return biasEps;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Check if flux is zero in every group and return a biasing factor 
+/// to prevent division by zero   
+///
+/// @param [in] iZ axial cell index 
+/// @param [in] iR radial cell index 
+/// @param [out] eps bias factor 
+double MGQDToMPQDCoupling::checkForZeroInwardFluxEastBC(int iZ)
+{
+
+  double groupFlux;
+  bool aboveThreshold = true;  
+
+  // Loop over energy groups 
+  for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+  {
+    // Check to see if current at location is greater than some eps
+    groupFlux = mgqd->SGQDs[iEnergyGroup]->eInwardFluxBC(iZ);
+    aboveThreshold = aboveThreshold and (abs(groupFlux) > biasEps); 
+  }
+
+  if (aboveThreshold)
+    return 0.0;
+  else
+    return biasEps;
+
 };
 //==============================================================================
 
