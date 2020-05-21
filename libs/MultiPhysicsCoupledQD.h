@@ -32,6 +32,7 @@ class MultiPhysicsCoupledQD
     void buildLinearSystem();
     void solveLinearSystem();
     void solveTransient();
+    void updateVarsAfterConvergence();
     HeatTransfer * heat;
     MultiGroupDNP * mgdnp;
     GreyGroupQD * ggqd;

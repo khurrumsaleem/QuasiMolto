@@ -161,6 +161,15 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
 
   mgdnp->solveRecircLinearSystem();
 
+};
+//==============================================================================
+
+//==============================================================================
+/// Run transient with multiple solves 
+///
+void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
+{
+
   // Read solutions from 1D vector to 2D matrices 
   ggqd->GGSolver->getFlux();
   cout << "flux" << endl; 
@@ -184,6 +193,7 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
 
   // Set xPast 
   xPast = x; 
+
 };
 //==============================================================================
 
@@ -192,13 +202,14 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
 ///
 void MultiPhysicsCoupledQD::solveTransient()
 {
- 
+
   initializeXPast();
- 
+
   for (int iT = 0; iT < mesh->dts.size(); iT++)
   {
     buildLinearSystem();
     solveLinearSystem();   
+    updateVarsAfterConvergence();
   }
 };
 //==============================================================================
