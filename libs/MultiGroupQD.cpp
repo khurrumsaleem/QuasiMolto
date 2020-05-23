@@ -31,6 +31,9 @@ MultiGroupQD::MultiGroupQD(Materials * myMaterials,\
 
   QDSolve = std::make_shared<QDSolver>(mesh,materials,input);
 
+  // Initialize variables
+  setInitialCondition();
+
 };
 //==============================================================================
 
@@ -139,6 +142,18 @@ void MultiGroupQD::getFluxes()
   {
     SGQDs[iGroup]->getFlux();
   }
+}
+//==============================================================================
+
+//==============================================================================
+/// Solve a transient problem without any transport coupling using diffusion
+/// values for the Eddington factors
+void MultiGroupQD::updateVarsAfterConvergence()
+{
+  QDSolve->xPast = QDSolve->x;
+  buildBackCalcSystem();
+  backCalculateCurrent();
+  getFluxes();
 }
 //==============================================================================
 

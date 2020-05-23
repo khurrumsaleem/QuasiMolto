@@ -32,6 +32,7 @@ class MultiGroupQD
     void setInitialCondition();
     void solveMGQDOnly();
     void getFluxes();
+    void updateVarsAfterConvergence();
     void writeFluxes();
     void assignMultiPhysicsCoupledQDPointer(MultiPhysicsCoupledQD * myMPQD);
 
