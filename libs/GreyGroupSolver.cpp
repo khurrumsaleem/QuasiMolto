@@ -1177,6 +1177,13 @@ void GreyGroupSolver::getFlux()
       GGQD->sFluxZ(iZ,iR) = xFlux(indices[iNF]);
       GGQD->sFluxZ(iZ+1,iR) = xFlux(indices[iSF]);
 
+      // Get cell currents 
+      GGQD->currentR(iZ,iR) = currPast(indices[iWC]);
+      GGQD->currentR(iZ,iR+1) = currPast(indices[iEC]);
+      GGQD->currentZ(iZ,iR) = currPast(indices[iNC]);
+      GGQD->currentZ(iZ+1,iR) = currPast(indices[iSC]);
+
+
     }
   } 
 
