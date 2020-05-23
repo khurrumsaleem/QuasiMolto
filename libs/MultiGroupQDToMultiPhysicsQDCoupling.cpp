@@ -38,6 +38,7 @@ MGQDToMPQDCoupling::MGQDToMPQDCoupling(Mesh * myMesh,\
   // Initialize collapsed nuclear data based on initial values stored on MGQD
   // objects 
   initCollapsedNuclearData();
+
 };
 //==============================================================================
 
@@ -77,10 +78,6 @@ bool MGQDToMPQDCoupling::solveOneStep()
     residual = residualVec.norm();
     cout << "Residual: " << residual <<endl; 
     cout << endl;
-    cout << "xCurrent: " << xCurrentIter <<endl; 
-    cout << endl;
-    cout << "residualVec: " << residualVec <<endl; 
-    cout << endl;
     if (residual < 1E-10)
     {
       mgqd->updateVarsAfterConvergence(); 
@@ -88,10 +85,9 @@ bool MGQDToMPQDCoupling::solveOneStep()
       return true; 
     }
     mpqd->ggqd->GGSolver->getFlux();
+    mpqd->mgdnp->getCumulativeDNPDecaySource();
   }
 
-  cout << "Residual vector: " <<endl; 
-  cout << (xCurrentIter-xPrevIter)<<endl; 
   return false;
 
 };
