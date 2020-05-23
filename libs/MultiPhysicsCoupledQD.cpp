@@ -44,7 +44,10 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   A.resize(nUnknowns,nUnknowns); 
   x.setZero(nUnknowns); 
   xPast.setOnes(nUnknowns); 
-  b.setZero(nUnknowns); 
+  b.setZero(nUnknowns);
+
+  // Initialize xPast 
+  initializeXPast();
 
 };
 //==============================================================================
@@ -99,23 +102,18 @@ void MultiPhysicsCoupledQD::buildLinearSystem()
   A.setZero();
   x.setZero();
   b.setZero();
-  cout << "Reset linear system" << endl; 
 
   // Build QD system
   ggqd->buildLinearSystem();
-  cout << "Built GGQD" << endl; 
 
   // Build heat transfer system
   heat->buildLinearSystem();
-  cout << "Built heat" << endl; 
 
   // Build delayed neutron precursor balance system in core
   mgdnp->buildCoreLinearSystem();  
-  cout << "Built DNP" << endl; 
 
   // Build delayed neutron precursor balance system in recirculation loop
   mgdnp->buildRecircLinearSystem();  
-  cout << "Built recirc DNP" << endl; 
 
 };
 //==============================================================================
@@ -172,19 +170,19 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
 
   // Read solutions from 1D vector to 2D matrices 
   ggqd->GGSolver->getFlux();
-  cout << "flux" << endl; 
+  cout << "Flux:" << endl; 
   cout << ggqd->sFlux << endl; 
 
   heat->getTemp();
-  cout << "temp" << endl; 
+  cout << "Temperature:" << endl; 
   cout << heat->temp << endl; 
 
   mgdnp->getCoreDNPConc();
-  cout << "DNP conc" << endl; 
+  cout << "Core DNP concentration:" << endl; 
   mgdnp->printCoreDNPConc();
 
   mgdnp->getRecircDNPConc();
-  cout << "DNP conc" << endl; 
+  cout << "Recirc DNP concentration:" << endl; 
   mgdnp->printRecircDNPConc();
 
   // Back calculate currents
