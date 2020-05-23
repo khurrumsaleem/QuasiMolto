@@ -171,7 +171,7 @@ void MultiGroupDNP::readInput()
 
     }
   } 
-
+  getCumulativeDNPDecaySource();
 };
 //==============================================================================
 
