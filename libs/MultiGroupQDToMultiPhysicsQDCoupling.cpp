@@ -206,7 +206,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
         mySigS= 0; 
         for (int iScat = 0; iScat < mats->nGroups; iScat++)
         {
-          mySigS = mySigS + mats->sigS(iZ,iR,0,iScat); 
+          mySigS += mats->sigS(iZ,iR,iEnergyGroup,iScat); 
         }
         mySigF = mats->sigF(iZ,iR,iEnergyGroup);
         myNeutV = mats->neutV(iEnergyGroup);
