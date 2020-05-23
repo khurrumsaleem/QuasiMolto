@@ -50,10 +50,6 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   inletcP.setZero(mesh->nR);
   
   assignBoundaryIndices();
-  cout << "Initialized HeatTransfer object." << endl;
-  cout << "wallTemp: " << wallT << endl;
-  cout << "inletTemp: " << inletT << endl;
-  cout << getIndex(4,4) << endl; 
 };
 //==============================================================================
 
@@ -250,9 +246,6 @@ void HeatTransfer::calcDiracs()
 
   }
   
-  cout << "calculated diracs" << endl;
-  cout << dirac << endl;
-  
 };
 //==============================================================================
 
@@ -311,9 +304,6 @@ void HeatTransfer::calcFluxes()
     }
   }
   
-  cout << "calculated fluxes" << endl;
-  cout << flux << endl;
-
 };
 //==============================================================================
 
@@ -411,7 +401,6 @@ void HeatTransfer::updateBoundaryConditions()
   // Update variables that require looping to access   
   for (int iR = 0; iR < mesh->nR; iR++)
   {
-    cout << iR << endl;
     inletDensity(iR) = mats->density(coreInletIndex,iR);
     inletcP(iR) = mats->cP(coreInletIndex,iR);
   }
