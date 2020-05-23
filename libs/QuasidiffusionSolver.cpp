@@ -1003,8 +1003,8 @@ void QDSolver::greyGroupSources(int iR,int iZ,int iEq,int toEnergyGroup,\
   localFissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
   localFlux = mpqd->ggqd->sFlux(iZ,iR); 
 
-  b(iEq) += (localUpscatterCoeff + localChiP*localFissionCoeff)*localFlux\
-            + localChiD*localDNPSource;
+  b(iEq) += geoParams[iCF]*((localUpscatterCoeff\
+      + localChiP*localFissionCoeff)*localFlux + localChiD*localDNPSource);
 };
 //==============================================================================
 
@@ -1177,7 +1177,17 @@ void QDSolver::getFlux(SingleGroupQD * SGQD)
       SGQD->currentZ(iZ+1,iR) = currPast(indices[iSC]);
 
     }
-  }  
+  } 
+
+  cout << "Flux, Group " << SGQD->energyGroup << ":" << endl; 
+  cout << SGQD->sFlux << endl;
+  cout << endl;
+  cout << "Axial Current, Group " << SGQD->energyGroup << ":" << endl; 
+  cout << SGQD->currentZ << endl;
+  cout << endl;
+  cout << "Radial Current, Group " << SGQD->energyGroup << ":" << endl; 
+  cout << SGQD->currentR << endl;
+  cout << endl;
 
 };
 //==============================================================================
