@@ -79,7 +79,8 @@ void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
 /// @param [in] coeff coefficient of dnp source
 void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
 {
-  int index,groupBeta,groupLambda,indexOffset;
+  int index,indexOffset;
+  double groupLambda;
 
   for (int iGroup = 0; iGroup < mgdnp->DNPs.size(); ++iGroup)
   {
