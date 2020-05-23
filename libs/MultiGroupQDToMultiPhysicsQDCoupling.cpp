@@ -44,13 +44,16 @@ MGQDToMPQDCoupling::MGQDToMPQDCoupling(Mesh * myMesh,\
 //==============================================================================
 /// Collapse nuclear data with flux and current weighting 
 ///
-void MGQDToMPQDCoupling::solveMGQD()
+bool MGQDToMPQDCoupling::solveOneStep()
 {
 
-Eigen::VectorXd xCurrentIter,xPrevIter;
+  Eigen::VectorXd xCurrentIter,xPrevIter,ones,residualVec;
+  double residual;
+  double min = 1E-12;
 
+  ones.setOnes(mpqd->x.size());
 
-mgqd->setInitialCondition();
+  mgqd->setInitialCondition();
 
   for (int iStep = 0; iStep < 100; iStep++)
   {
@@ -65,20 +68,68 @@ mgqd->setInitialCondition();
     mpqd->buildLinearSystem();
     mpqd->solveLinearSystem();
     xCurrentIter = mpqd->x;
-    cout << "Residual" << endl; 
-    cout << (xCurrentIter-xPrevIter).norm() << endl; 
+    for (int index = 0; index < xCurrentIter.size(); index++)
+    {
+      if (abs(xCurrentIter(index)) < min ) xCurrentIter(index) = 1.0;
+      if (abs(xPrevIter(index)) < min ) xPrevIter(index) = 1.0;
+    }
+    residualVec = (ones- (xCurrentIter.cwiseQuotient(xPrevIter)));
+    residual = residualVec.norm();
+    cout << "Residual: " << residual <<endl; 
+    cout << endl;
+    cout << "xCurrent: " << xCurrentIter <<endl; 
+    cout << endl;
+    cout << "residualVec: " << residualVec <<endl; 
+    cout << endl;
+    if (residual < 1E-10)
+    {
+      mgqd->updateVarsAfterConvergence(); 
+      mpqd->updateVarsAfterConvergence();
+      return true; 
+    }
+    mpqd->ggqd->GGSolver->getFlux();
   }
 
-  mpqd->updateVarsAfterConvergence();
-  cout << "Residual" << endl; 
-  cout << (xCurrentIter-xPrevIter).norm() << endl; 
-  cout << endl;
-  cout << "Residual vector" << endl; 
-  cout << (xCurrentIter-xPrevIter) << endl; 
-  cout << endl;
+  cout << "Residual vector: " <<endl; 
+  cout << (xCurrentIter-xPrevIter)<<endl; 
+  return false;
+
 };
 //==============================================================================
 
+//==============================================================================
+/// Collapse nuclear data with flux and current weighting 
+///
+void MGQDToMPQDCoupling::solveTransient()
+{
+
+  bool converged; 
+
+  for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
+  {
+    converged = solveOneStep();  
+    if (not converged)
+    {
+      cout << "Multigroup A: " << endl;
+      cout << mgqd->QDSolve->A << endl;
+      cout << endl;
+      cout << "Multigroup b: " << endl;
+      cout << mgqd->QDSolve->b << endl;
+      cout << endl;
+      cout << "Grey group A: " << endl;
+      cout << mpqd->A << endl;
+      cout << endl;
+      cout << "Grey group b: " << endl;
+      cout << mpqd->b << endl;
+      cout << endl;
+      mgqd->updateVarsAfterConvergence(); 
+      mpqd->updateVarsAfterConvergence();
+      break;
+    } 
+  }
+
+};
+//==============================================================================
 
 //==============================================================================
 /// Collapse nuclear data with flux and current weighting 
