@@ -167,7 +167,6 @@ void MultiGroupDNP::readInput()
 
     }
   } 
-  getCumulativeDNPDecaySource();
 };
 //==============================================================================
 
@@ -216,10 +215,22 @@ void MultiGroupDNP::getCoreDNPConc()
 ///
 void MultiGroupDNP::getCumulativeDNPDecaySource()
 {
+  double groupLambda,localGroupConc;
+  int groupOffset; 
   dnpSource.setZero();
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
-    dnpSource += DNPs[iGroup]->lambda*DNPs[iGroup]->dnpConc;
+    groupLambda = DNPs[iGroup]->lambda;
+    groupOffset = DNPs[iGroup]->coreIndexOffset;
+    for (int iR = 0; iR < mesh->nR; iR++)
+    {
+      for (int iZ = 0; iZ < mesh->nZ; iZ++)
+      {
+        localGroupConc = mpqd->x(DNPs[iGroup]->getIndex(iZ,iR,groupOffset)); 
+        dnpSource(iZ,iR) += groupLambda*localGroupConc;  
+      }
+    }
+    //dnpSource += DNPs[iGroup]->lambda*DNPs[iGroup]->dnpConc;
   }
 };
 //==============================================================================
