@@ -135,6 +135,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
 
       // Iterate equation count
       iEq = iEq + 1;
+      
 
     }
   }
@@ -242,9 +243,6 @@ Eigen::MatrixXd SingleGroupDNP::calcDiracs(Eigen::MatrixXd dnpConc,\
 
   }
 
-  cout << "calculated diracs" << endl;
-  cout << myDirac << endl;
-
   return myDirac;
 
 };
@@ -324,9 +322,6 @@ Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
 
     }
   }
-
-  cout << "calculated fluxes" << endl;
-  cout << myFlux << endl;
 
   return myFlux;
 
@@ -631,10 +626,6 @@ void SingleGroupDNP::assignBoundaryIndices()
 ///
 void SingleGroupDNP::updateBoundaryConditions()
 {
-  cout << "inletConc:"<<inletConc << endl;
-  cout << "recircInletConc: "<<recircInletConc << endl;
-  cout << "coreInletIndex: " << coreInletIndex << endl;
-  cout << "recircInletIndex: " << recircInletIndex << endl;
 
   // Update variables with array splicing
   if (mats->posVelocity)
@@ -650,9 +641,6 @@ void SingleGroupDNP::updateBoundaryConditions()
     recircInletConc = dnpConc(Eigen::seq(recircInletIndex,recircInletIndex+1),\
         Eigen::all);
   }
-
-  cout << "inletConc:"<<inletConc << endl;
-  cout << "recircInletConc: "<<recircInletConc << endl;
 
   outletConc = recircConc.row(coreOutletIndex);   
   inletVelocity = mats->flowVelocity.row(recircInletIndex);
