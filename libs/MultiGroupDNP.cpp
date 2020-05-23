@@ -41,6 +41,7 @@ void MultiGroupDNP::readInput()
   int nGroupCoreUnknowns,nGroupRecircUnknowns,coreIndexOffset,recircIndexOffset;
   double tempVal;  
 
+
   // Temporary vector for beta and lambda input params
   vector<double> betaInp,lambdaInp;
   Eigen::VectorXd lambdas;
@@ -66,15 +67,10 @@ void MultiGroupDNP::readInput()
               .as<vector<double>>();
     betas.setZero(mats->nGroups,lambdaInp.size());
 
-    cout << "read inputs" << endl;
-    cout << "betas size: " <<  betaInp.size()<<endl;
-    cout << "lambdas size: " <<  lambdaInp.size()<<endl;
-
     for (int iDNPGroup = 0; iDNPGroup < lambdaInp.size(); iDNPGroup++)
     {
       lambdas(iDNPGroup) = lambdaInp[iDNPGroup];
     } 
-
     // If the size of the beta input matches that of the lambda input, then
     // assume the same set of betas is used in each neutron energy group
     if (lambdaInp.size() == betaInp.size())
