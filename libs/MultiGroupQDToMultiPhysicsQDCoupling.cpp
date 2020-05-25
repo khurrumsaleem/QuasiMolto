@@ -75,7 +75,7 @@ bool MGQDToMPQDCoupling::solveOneStep()
       if (abs(xPrevIter(index)) < min ) xPrevIter(index) = 1.0;
     }
     residualVec = (ones- (xCurrentIter.cwiseQuotient(xPrevIter)));
-    residual = residualVec.norm();
+    residual = (1.0/residualVec.size())*residualVec.norm();
     cout << "Residual: " << residual <<endl; 
     cout << endl;
     if (residual < 1E-10)
