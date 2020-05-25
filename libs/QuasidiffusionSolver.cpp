@@ -1105,7 +1105,7 @@ vector<double> QDSolver::calcGeoParams(int iR,int iZ)
 
   // get boundaries of this cell
   rDown = mesh->rCornerEdge(iR); rUp = mesh->rCornerEdge(iR+1);
-  zDown = mesh->zCornerEdge(iR); zUp = mesh->zCornerEdge(iR+1);
+  zDown = mesh->zCornerEdge(iZ); zUp = mesh->zCornerEdge(iZ+1);
 
   // calculate geometry parameters
   volume = M_PI*(rUp*rUp-rDown*rDown)*(zUp-zDown);
