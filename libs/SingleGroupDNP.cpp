@@ -127,8 +127,10 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
 
       // Flux source term 
       if (fluxSource)
+      {
         coeff = -mesh->dt*mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
-      mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
+        mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
+      }
 
       // Advection term
       (*myb)(iEq) += (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
@@ -139,7 +141,6 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
 
     }
   }
-
 };
 //==============================================================================
 
