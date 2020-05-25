@@ -135,9 +135,6 @@ void MultiPhysicsCoupledQD::initializeXPast()
   mgdnp->setCoreDNPConc();  
   mgdnp->setRecircDNPConc();  
 
-  cout << "xPast" << endl;
-  cout << xPast << endl;
-
   // Calculate currents consistent with fluxes in xPast
   x = xPast; // getFlux() pulls from x
   ggqd->GGSolver->getFlux();
@@ -201,8 +198,6 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
 ///
 void MultiPhysicsCoupledQD::solveTransient()
 {
-
-  initializeXPast();
 
   for (int iT = 0; iT < mesh->dts.size(); iT++)
   {
