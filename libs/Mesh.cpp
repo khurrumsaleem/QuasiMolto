@@ -482,15 +482,15 @@ void Mesh::calcRecircMesh(){
   
   // Resize cell center location in each dimension
   zCornerCentRecirc.zeros(nCornersZ);
-
+  
   // Populate vectors holding corner boundaries in each dimension
-  for (int iEdge = 1; iEdge < zCornerEdge.n_elem; ++iEdge){
+  for (int iEdge = 1; iEdge < zCornerEdgeRecirc.n_elem; ++iEdge){
     zCornerEdgeRecirc(iEdge) = zCornerEdgeRecirc(iEdge-1) + \
       dzsCornerRecirc(iEdge-1);
   }
   
   // Populate vectors holding corner center location in each dimension
-  for (int iCent = 0; iCent < zCornerCent.n_elem; ++iCent){
+  for (int iCent = 0; iCent < zCornerCentRecirc.n_elem; ++iCent){
     zCornerCentRecirc(iCent) = (zCornerEdgeRecirc(iCent) + \
       zCornerEdgeRecirc(iCent+1))/2.0;
   }
@@ -693,7 +693,7 @@ vector<double> Mesh::getGeoParams(int iR,int iZ)
   double rDown,rUp,zDown,zUp,volume,wFaceSA,eFaceSA,nFaceSA,sFaceSA;
   // get boundaries of this cell
   rDown = rCornerEdge(iR); rUp = rCornerEdge(iR+1);
-  zDown = zCornerEdge(iR); zUp = zCornerEdge(iR+1);
+  zDown = zCornerEdge(iZ); zUp = zCornerEdge(iZ+1);
   // calculate geometry parameters
   volume = M_PI*(rUp*rUp-rDown*rDown)*(zUp-zDown);
   nFaceSA = M_PI*(rUp*rUp-rDown*rDown);
@@ -721,7 +721,7 @@ vector<double> Mesh::getRecircGeoParams(int iR,int iZ)
   double rDown,rUp,zDown,zUp,volume,wFaceSA,eFaceSA,nFaceSA,sFaceSA;
   // get boundaries of this cell
   rDown = rCornerEdge(iR); rUp = rCornerEdge(iR+1);
-  zDown = zCornerEdgeRecirc(iR); zUp = zCornerEdgeRecirc(iR+1);
+  zDown = zCornerEdgeRecirc(iZ); zUp = zCornerEdgeRecirc(iZ+1);
   // calculate geometry parameters
   volume = M_PI*(rUp*rUp-rDown*rDown)*(zUp-zDown);
   nFaceSA = M_PI*(rUp*rUp-rDown*rDown);
