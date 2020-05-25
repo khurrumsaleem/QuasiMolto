@@ -485,6 +485,18 @@ void Materials::initCollapsedXS()
       oneGroupXS->zNeutV(iZ,iR) = neutV(0);      
     }
   }
+  
+  for (int iR = 0; iR < mesh->nR; ++iR)
+  {
+      oneGroupXS->zSigTR(mesh->nZ,iR) = sigT(mesh->nZ-1,iR,0);      
+      oneGroupXS->zNeutV(mesh->nZ,iR) = neutV(0);      
+  }
+  
+  for (int iZ = 0; iZ < mesh->nZ; ++iZ)
+  {
+      oneGroupXS->rSigTR(iZ,mesh->nR) = sigT(iZ,mesh->nR-1,0);      
+      oneGroupXS->rNeutV(iZ,mesh->nR) = neutV(0);      
+  }
 
 };
 //==============================================================================
