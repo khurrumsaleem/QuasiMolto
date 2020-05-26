@@ -23,6 +23,20 @@ class WriteData
 
     // Functions
     void makeDirectory(string myDirName); 
+    void write(string myDirName,\
+        string parameterName,\
+        Eigen::MatrixXd myData);
+    void write(string myDirName,\
+        string parameterName,\
+        Eigen::VectorXd myData);
+    void write(string myDirName,\
+        string parameterName,\
+        double myData);
+    void write(string myDirName,\
+        string parameterName,\
+        int myData);
+    string getOutputPath(string myDirName); 
+
 };
 
 //==============================================================================
