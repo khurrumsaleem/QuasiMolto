@@ -5,6 +5,7 @@
 #include "Materials.h"
 #include "GreyGroupSolver.h"
 #include "SingleGroupDNP.h"
+#include "WriteData.h"
 
 using namespace std;
 
@@ -20,12 +21,17 @@ class GreyGroupQD;
 class MultiPhysicsCoupledQD
 {
   public:
+    // Constructor
     MultiPhysicsCoupledQD(Materials * myMats,\
         Mesh * myMesh,\
         YAML::Node * myInput);
 
+    // Variables
     Eigen::SparseMatrix<double> A;
     Eigen::VectorXd x,xPast,b;
+    string outputDir = "MPQD/";
+   
+    // Functions 
     void fluxSource(int iZ,int iR,int iEq,double coeff);
     void dnpSource(int iZ,int iR,int iEq,double coeff);
     void initializeXPast();
@@ -33,6 +39,9 @@ class MultiPhysicsCoupledQD
     void solveLinearSystem();
     void solveTransient();
     void updateVarsAfterConvergence();
+    void writeVars();
+
+    // Pointers
     HeatTransfer * heat;
     MultiGroupDNP * mgdnp;
     GreyGroupQD * ggqd;
