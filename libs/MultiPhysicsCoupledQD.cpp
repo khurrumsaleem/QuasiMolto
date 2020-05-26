@@ -196,6 +196,21 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
 //==============================================================================
 /// Run transient with multiple solves 
 ///
+void MultiPhysicsCoupledQD::writeVars()
+{
+
+  // Scalar flux
+  mesh->output->write(outputDir,"Flux",ggqd->sFlux);
+
+  // Temperature
+  mesh->output->write(outputDir,"Temperature",heat->temp);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Run transient with multiple solves 
+///
 void MultiPhysicsCoupledQD::solveTransient()
 {
 
