@@ -7,6 +7,7 @@
 #include "MultiGroupQD.h"
 #include "SingleGroupQD.h"
 #include "GreyGroupQD.h"
+#include "WriteData.h"
 
 using namespace std;
 

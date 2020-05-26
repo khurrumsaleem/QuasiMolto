@@ -121,7 +121,9 @@ void MGQDToMPQDCoupling::solveTransient()
       mgqd->updateVarsAfterConvergence(); 
       mpqd->updateVarsAfterConvergence();
       break;
-    } 
+    }
+    mpqd->writeVars(); 
+    mesh->advanceOneTimeStep();
   }
 
 };
