@@ -7,6 +7,9 @@
 
 using namespace std; 
 
+const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision,\
+    Eigen::DontAlignCols,",","\n");
+
 //==============================================================================
 /// WriteData class object constructor
 ///
@@ -52,13 +55,14 @@ void WriteData::write(string myDirName,\
   // Declare output stream.
   ofstream outputFile;
 
-  // Form directory and file names. 
+  // Form directory and file names, and create directory. 
+  makeDirectory(myDirName);
   string dir = getOutputPath(myDirName);
-  string fileName = dir + parameterName;
-  
+  string fileName = dir + parameterName + ".csv";
+   
   // Open output file, write myData to it, and close.
   outputFile.open(fileName);
-  outputFile << myData << endl;
+  outputFile << myData.format(CSVFormat) << endl;
   outputFile.close();
  
 };
@@ -79,12 +83,13 @@ void WriteData::write(string myDirName,\
   ofstream outputFile;
 
   // Form directory and file names. 
+  makeDirectory(myDirName);
   string dir = getOutputPath(myDirName);
-  string fileName = dir + parameterName;
+  string fileName = dir + parameterName + ".csv";
   
   // Open output file, write myData to it, and close.
   outputFile.open(fileName);
-  outputFile << myData << endl;
+  outputFile << myData.format(CSVFormat) << endl;
   outputFile.close();
  
 };
@@ -105,8 +110,9 @@ void WriteData::write(string myDirName,\
   ofstream outputFile;
 
   // Form directory and file names. 
+  makeDirectory(myDirName);
   string dir = getOutputPath(myDirName);
-  string fileName = dir + parameterName;
+  string fileName = dir + parameterName + ".csv";
   
   // Open output file, write myData to it, and close.
   outputFile.open(fileName);
@@ -131,8 +137,9 @@ void WriteData::write(string myDirName,\
   ofstream outputFile;
 
   // Form directory and file names. 
+  makeDirectory(myDirName);
   string dir = getOutputPath(myDirName);
-  string fileName = dir + parameterName;
+  string fileName = dir + parameterName + ".csv";
   
   // Open output file, write myData to it, and close.
   outputFile.open(fileName);
