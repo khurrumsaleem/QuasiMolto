@@ -83,7 +83,7 @@ Mesh::Mesh(YAML::Node * myInput){
   calcQuadSet();
   calcNumAnglesTotalWeight();
   calcTimeMesh();
-  
+ 
   output = new WriteData(this);
 }
 //==============================================================================

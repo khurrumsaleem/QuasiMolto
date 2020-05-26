@@ -1,10 +1,9 @@
 #ifndef WRITEDATA_H
 #define WRITEDATA_H 
 
-
-using namespace std; 
-
 class Mesh; // forward declaration
+
+using namespace std;
 
 //==============================================================================
 //! Class to write out data  
@@ -14,8 +13,16 @@ class WriteData
   public:
     
     // Constructor
-    WriteData(Mesh * myMesh); 
+    WriteData(Mesh * myMesh);
+
+    // Variables
+    string outputDirectory = "output/";    
+
+    // Pointers 
     Mesh * mesh; 
+
+    // Functions
+    void makeDirectory(string myDirName); 
 };
 
 //==============================================================================
