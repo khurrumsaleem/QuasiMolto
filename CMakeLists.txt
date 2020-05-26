@@ -48,7 +48,8 @@ add_executable(QuasiMolto
                ${PROJECT_SOURCE_DIR}/libs/MultiPhysicsCoupledQD.cpp
                ${PROJECT_SOURCE_DIR}/libs/HeatTransfer.cpp
                ${PROJECT_SOURCE_DIR}/libs/GreyGroupSolver.cpp
-               ${PROJECT_SOURCE_DIR}/libs/CollapsedCrossSections.cpp)
+               ${PROJECT_SOURCE_DIR}/libs/CollapsedCrossSections.cpp
+               ${PROJECT_SOURCE_DIR}/libs/WriteData.cpp)
 
 target_link_libraries(
     QuasiMolto

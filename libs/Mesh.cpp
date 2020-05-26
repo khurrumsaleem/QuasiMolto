@@ -4,13 +4,8 @@
 // Author: Aaron James Reynolds
 // Date: October 9, 2019
 
-#include <iostream>
-#include <cmath>
-#include <vector>
-#include <iomanip>
-#include <armadillo>
 #include "Mesh.h"
-#include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
+#include "WriteData.h"
 
 using namespace std;
 using namespace arma;
@@ -88,7 +83,8 @@ Mesh::Mesh(YAML::Node * myInput){
   calcQuadSet();
   calcNumAnglesTotalWeight();
   calcTimeMesh();
-
+  
+  output = new WriteData(this);
 }
 //==============================================================================
 

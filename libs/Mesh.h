@@ -12,6 +12,8 @@
 using namespace std;
 using namespace arma;
 
+class WriteData; // forward declaration
+
 class qdCell
 {
 
@@ -69,6 +71,7 @@ class Mesh
         rowvec zCornerCent;
         vector<quadLevel> quadrature;
 	vector<qdCell> qdCells; 
+        WriteData * output;
 
         // Recirculation loop parameters
         double dzCornerRecirc,recircZ;
