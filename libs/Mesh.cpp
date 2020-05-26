@@ -678,6 +678,18 @@ void Mesh::calcTimeMesh(){
 }
 //==============================================================================
 
+//==============================================================================
+/// Calculate time mesh
+
+void Mesh::advanceOneTimeStep()
+{
+  // Iterate on state and get new dt
+  state += 1;        
+  dt = dts[state-1];
+}
+//==============================================================================
+
+
 //==============================================================================   /// Return geometry parameters for the cell located at (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell

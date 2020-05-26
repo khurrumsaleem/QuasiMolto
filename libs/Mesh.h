@@ -52,7 +52,7 @@ class Mesh
 	Mesh(YAML::Node * myInput);  	
   	int n,nAngles,nR,nZ;		
         double dz,dr,drCorner,dzCorner,Z,R,dt,T,totalWeight; 
-        int state = 0; 
+        int state = 1; 
   	vector< vector<double> > quadSet;
   	vector< vector<double> > alpha;
         vector< vector<double> > tau;
@@ -84,6 +84,7 @@ class Mesh
   	vector<int> getQDCellIndices(int iR, int iZ);
   	vector<double> getGeoParams(int iR, int iZ);
   	vector<double> getRecircGeoParams(int iR, int iZ);
+  	void advanceOneTimeStep();
   	void calcQuadSet();
 	void printQuadSet();
 	
