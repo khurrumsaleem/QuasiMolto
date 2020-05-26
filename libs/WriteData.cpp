@@ -90,6 +90,58 @@ void WriteData::write(string myDirName,\
 };
 //==============================================================================
 
+//===============================================================================
+/// Write a double variable to a file
+///
+/// @param [in] myDirName relative path of directory to be made 
+/// @param [in] parameterName label for variable being written
+/// @param [in] myData data to write
+void WriteData::write(string myDirName,\
+    string parameterName,\
+    double myData)
+{
+
+  // Declare output stream.
+  ofstream outputFile;
+
+  // Form directory and file names. 
+  string dir = getOutputPath(myDirName);
+  string fileName = dir + parameterName;
+  
+  // Open output file, write myData to it, and close.
+  outputFile.open(fileName);
+  outputFile << myData << endl;
+  outputFile.close();
+ 
+};
+//==============================================================================
+
+//===============================================================================
+/// Write a integer variable to a file
+///
+/// @param [in] myDirName relative path of directory to be made 
+/// @param [in] parameterName label for variable being written
+/// @param [in] myData data to write
+void WriteData::write(string myDirName,\
+    string parameterName,\
+    int myData)
+{
+
+  // Declare output stream.
+  ofstream outputFile;
+
+  // Form directory and file names. 
+  string dir = getOutputPath(myDirName);
+  string fileName = dir + parameterName;
+  
+  // Open output file, write myData to it, and close.
+  outputFile.open(fileName);
+  outputFile << myData << endl;
+  outputFile.close();
+ 
+};
+//==============================================================================
+
 //==============================================================================
 /// Get path of output directory 
 ///
