@@ -211,6 +211,11 @@ void MultiPhysicsCoupledQD::writeVars()
   // Currents
   mesh->output->write(outputDir,"Current_Radial",ggqd->currentR);
   mesh->output->write(outputDir,"Current_Axial",ggqd->currentZ);
+  
+  // Eddington factors
+  mesh->output->write(outputDir,"Err",ggqd->Err);
+  mesh->output->write(outputDir,"Ezz",ggqd->Ezz);
+  mesh->output->write(outputDir,"Erz",ggqd->Erz);
  
   // DNP concentrations
   for (int iDNP = 0; iDNP < mgdnp->DNPs.size(); iDNP++)
