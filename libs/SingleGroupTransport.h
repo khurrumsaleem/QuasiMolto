@@ -3,6 +3,7 @@
 
 #include "Mesh.h"
 #include "Materials.h"
+#include "GreyGroupQD.h"
 
 using namespace std; 
 using namespace arma;
@@ -35,6 +36,7 @@ class SingleGroupTransport
     double calcSource(string calcType="FS"); 
     double calcFissionSource(); 
     double calcScatterSource(); 
+    Eigen::MatrixXd calcMPQDSource(); 
     double calcFlux();
     double calcAlpha();
     void writeFlux();

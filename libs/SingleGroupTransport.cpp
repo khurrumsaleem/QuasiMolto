@@ -132,19 +132,29 @@ double SingleGroupTransport::calcSource(string calcType)
   double residual; 
   Eigen::MatrixXd q_old = q;
 
+  // Check is grey group sources should be used
+  if (MGT->useMPQDSources)
+  {         
+    q = calcMPQDSource();
+  }
+  // Otherwise, use transport sources
+  else
+  {
+    if (calcType=="s" or calcType=="S")
+    {
 
-  if (calcType=="s" or calcType=="S"){
+      // Just re-evaluate scattering source
+      calcScatterSource();
+      q = scatterSource + fissionSource;
 
-    // Just re-evaluate scattering source
-    calcScatterSource();
-    q = scatterSource + fissionSource;
+    } else if (calcType == "fs" or calcType == "FS")
+    {
 
-  } else if (calcType == "fs" or calcType == "FS"){
-
-    // Re-evaluate scattering and fission source
-    calcScatterSource();
-    calcFissionSource();
-    q = scatterSource+fissionSource;
+      // Re-evaluate scattering and fission source
+      calcScatterSource();
+      calcFissionSource();
+      q = scatterSource+fissionSource;
+    }
   }
 
   // Calculate residual
@@ -241,6 +251,48 @@ double SingleGroupTransport::calcScatterSource()
 };
 
 //==============================================================================
+
+//==============================================================================
+/// Calculate the grey group source 
+///
+Eigen::MatrixXd SingleGroupTransport::calcMPQDSource()
+{  
+
+  double localSigS, localChiP, localChiD, localFissionCoeff, localFlux,\
+    localDNPSource;
+  double weight = 1.0/mesh->totalWeight; 
+  Eigen::MatrixXd mpqdSource;
+
+  // Initialize size of source matrix
+  mpqdSource.setZero(sFlux.rows(),sFlux.cols());
+
+  for (int iR = 0; iR < mpqdSource.cols(); iR++)
+  {
+    for (int iZ = 0; iZ < mpqdSource.rows(); iZ++)
+    {
+      localSigS = mats->oneGroupXS->groupScatterXS(iZ,iR,energyGroup);
+      localFissionCoeff = mats->oneGroupXS->qdFluxCoeff(iZ,iR);
+      localChiP = mats->chiP(iZ,iR,energyGroup);
+      localChiD = mats->chiD(iZ,iR,energyGroup);
+      localFlux = MGT->mpqd->ggqd->sFlux(iZ,iR); 
+      localDNPSource = MGT->mpqd->mgdnp->dnpSource(iZ,iR); 
+
+      // Scattering source
+      mpqdSource(iZ,iR) = weight*localSigS*localFlux;
+
+      // Fission source
+      mpqdSource(iZ,iR) += weight*localChiP*localFissionCoeff*localFlux;
+
+      // DNP source
+      mpqdSource(iZ,iR) += weight*localChiD*localDNPSource;
+    }
+  }
+
+  return mpqdSource;
+};
+
+//==============================================================================
+
 
 
 //==============================================================================
