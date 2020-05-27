@@ -158,7 +158,7 @@ void MultiGroupQD::updateVarsAfterConvergence()
 //==============================================================================
 
 //==============================================================================
-/// Extracts fluxes and currents from solution vector into 2D matrices 
+/// Assigning pointer to object containing grey group sources 
 void MultiGroupQD::assignMultiPhysicsCoupledQDPointer\
        (MultiPhysicsCoupledQD * myMPQD)
 {
