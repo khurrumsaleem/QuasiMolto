@@ -199,9 +199,30 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
 void MultiPhysicsCoupledQD::writeVars()
 {
 
+  string name; 
+
   // Scalar flux
   mesh->output->write(outputDir,"Flux",ggqd->sFlux);
+  
+  // Face fluxes
+  mesh->output->write(outputDir,"Flux_Radial",ggqd->sFluxR);
+  mesh->output->write(outputDir,"Flux_Axial",ggqd->sFluxZ);
 
+  // Currents
+  mesh->output->write(outputDir,"Current_Radial",ggqd->currentR);
+  mesh->output->write(outputDir,"Current_Axial",ggqd->currentZ);
+ 
+  // DNP concentrations
+  for (int iDNP = 0; iDNP < mgdnp->DNPs.size(); iDNP++)
+  {
+    name =  "Core_DNP_Concentration_Group_"\
+             + to_string(mgdnp->DNPs[iDNP]->dnpID);
+    mesh->output->write(outputDir,name,mgdnp->DNPs[iDNP]->dnpConc); 
+    name =  "Recirculation_DNP_Concentration_Group_"\
+             + to_string(mgdnp->DNPs[iDNP]->dnpID);
+    mesh->output->write(outputDir,name,mgdnp->DNPs[iDNP]->recircConc); 
+  }
+ 
   // Temperature
   mesh->output->write(outputDir,"Temperature",heat->temp);
 
