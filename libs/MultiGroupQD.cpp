@@ -167,6 +167,42 @@ void MultiGroupQD::assignMultiPhysicsCoupledQDPointer\
 }
 //==============================================================================
 
+//==============================================================================
+/// Wrapper over SGQDs to write flux present in each
+void MultiGroupQD::writeVars()
+{
+
+  string name; 
+
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
+    
+    // Fluxes 
+    name =  "Flux_Group_" + to_string(iGroup);
+    mesh->output->write(outputDir,name,SGQDs[iGroup]->sFlux);
+
+    // Face fluxes 
+    name =  "Flux_Radial_Group_" + to_string(iGroup);
+    mesh->output->write(outputDir,name,SGQDs[iGroup]->sFluxR);
+    name =  "Flux_Axial_Group_" + to_string(iGroup);
+    mesh->output->write(outputDir,name,SGQDs[iGroup]->sFluxZ);
+
+    // Currents 
+    name =  "Current_Radial_Group_" + to_string(iGroup);
+    mesh->output->write(outputDir,name,SGQDs[iGroup]->currentR);
+    name =  "Current_Axial_Group_" + to_string(iGroup);
+    mesh->output->write(outputDir,name,SGQDs[iGroup]->currentZ);
+
+    // Eddington factors
+    name =  "Err_Group_" + to_string(iGroup);
+    mesh->output->write(outputDir,name,SGQDs[iGroup]->Err);
+    name =  "Ezz_Group_" + to_string(iGroup);
+    mesh->output->write(outputDir,name,SGQDs[iGroup]->Ezz);
+    name =  "Erz_Group_" + to_string(iGroup);
+    mesh->output->write(outputDir,name,SGQDs[iGroup]->Erz);
+  }
+
+}
+//==============================================================================
 
 //==============================================================================
 /// Wrapper over SGQDs to write flux present in each

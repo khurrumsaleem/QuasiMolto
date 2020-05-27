@@ -34,7 +34,9 @@ class MultiGroupQD
     void getFluxes();
     void updateVarsAfterConvergence();
     void writeFluxes();
+    void writeVars();
     void assignMultiPhysicsCoupledQDPointer(MultiPhysicsCoupledQD * myMPQD);
+    string outputDir = "MGQD/";
 
   private:
     YAML::Node * input;
