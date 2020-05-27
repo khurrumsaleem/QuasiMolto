@@ -406,7 +406,6 @@ void MultiGroupTransport::printDividers()
 
 //==============================================================================
 
-
 //==============================================================================
 /// Wrapper over SGTs to write flux present in each
 
@@ -418,4 +417,15 @@ void MultiGroupTransport::writeFluxes()
 };
 
 //==============================================================================
+
+//==============================================================================
+/// Extracts fluxes and currents from solution vector into 2D matrices 
+void MultiGroupTransport::assignMultiPhysicsCoupledQDPointer\
+       (MultiPhysicsCoupledQD * myMPQD)
+{
+  mpqd = myMPQD;
+  useMPQDSources = true;
+}
+//==============================================================================
+
 

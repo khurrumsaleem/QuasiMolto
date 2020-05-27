@@ -3,6 +3,7 @@
 
 #include "Mesh.h"
 #include "Materials.h"
+#include "MultiPhysicsCoupledQD.h"
 
 using namespace std; 
 
@@ -33,6 +34,12 @@ class MultiGroupTransport
     double sourceMaxIter=500;
     double powerMaxIter=10000;
 
+    // Boolean to determine use of grey group sources
+    bool useMPQDSources = false;    
+ 
+    // Pointers
+    MultiPhysicsCoupledQD * mpqd;
+
     // public functions
     void solveStartAngles();
     void solveSCBs();
@@ -45,6 +52,7 @@ class MultiGroupTransport
     void solveTransportOnly();
     void printDividers();
     void writeFluxes();
+    void assignMultiPhysicsCoupledQDPointer(MultiPhysicsCoupledQD * myMPQD);
 
   private:
     YAML::Node * input;
