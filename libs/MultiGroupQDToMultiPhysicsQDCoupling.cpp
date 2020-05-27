@@ -123,6 +123,7 @@ void MGQDToMPQDCoupling::solveTransient()
       break;
     }
     mpqd->writeVars(); 
+    mgqd->writeVars(); 
     mesh->advanceOneTimeStep();
   }
 
