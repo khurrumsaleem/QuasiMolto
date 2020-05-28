@@ -56,9 +56,9 @@ bool TransportToQDCoupling::calcEddingtonFactors()
     MGQD->SGQDs[iGroup]->ErrPrev = MGQD->SGQDs[iGroup]->Err;
     MGQD->SGQDs[iGroup]->ErzPrev = MGQD->SGQDs[iGroup]->Erz;
 
-    for (int iR = 0; iR < rows; iR++)
+    for (int iR = 0; iR < cols; iR++)
     {
-      for (int iZ = 0; iZ < cols; iZ++)
+      for (int iZ = 0; iZ < rows; iZ++)
       {
 
         // reset accumulators
@@ -128,23 +128,25 @@ void TransportToQDCoupling::calcBCs()
 {
   int rows = MGT->SGTs[0]->sFlux.rows();
   int cols = MGT->SGTs[0]->sFlux.cols();
-  int eIdx = rows - 1,sIdx = cols - 1;
+  int eIdx = cols - 1,sIdx = rows - 1;
   int angIdx,xiIdx=0,muIdx=1,etaIdx=2,weightIdx = 3;  
   double angFlux,angFluxN,angFluxS,mu,xi,weight;
   double inwardJrE,inwardJzN,inwardJzS;
   double inwardFluxE,inwardFluxN,inwardFluxS;
   double outwardJrE,outwardJzN,outwardJzS;
   double outwardFluxE,outwardFluxN,outwardFluxS;
+  double localScalarFluxE, localScalarFluxN, localScalarFluxS;
   
   for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
   {
-      for (int iZ = 0; iZ < cols; iZ++)
+      for (int iZ = 0; iZ < rows; iZ++)
       {
         // reset accumulators
         inwardJrE = 0.0;
         inwardFluxE = 0.0;
         outwardJrE = 0.0;
         outwardFluxE = 0.0;
+        localScalarFluxE = 0.0;
 
         // loop over quadrature
         for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
@@ -157,6 +159,8 @@ void TransportToQDCoupling::calcBCs()
             weight = mesh->quadrature[iXi].quad[iMu][weightIdx];
  
             angFlux = MGT->SGTs[iGroup]->aFlux(iZ,eIdx,angIdx);
+            
+            localScalarFluxE += angFlux;
 
             // only accumulate inward facing angular fluxes on the the 
             // outside radial (east) boundary 
@@ -183,7 +187,7 @@ void TransportToQDCoupling::calcBCs()
           = outwardJrE/outwardFluxE;
 
         // set eastern flux bc
-        MGQD->SGQDs[iGroup]->eFluxBC(iZ) = MGT->SGTs[iGroup]->sFlux(iZ,eIdx);
+        MGQD->SGQDs[iGroup]->eFluxBC(iZ) = localScalarFluxE; 
         MGQD->SGQDs[iGroup]->eCurrentRBC(iZ) = outwardJrE+inwardJrE;
 
         // set absolute current
@@ -201,6 +205,8 @@ void TransportToQDCoupling::calcBCs()
         outwardJzS = 0.0;
         outwardFluxN = 0.0;
         outwardFluxS = 0.0;
+        localScalarFluxN = 0.0;
+        localScalarFluxS = 0.0;
 
         // loop over quadrature
         for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
@@ -215,6 +221,9 @@ void TransportToQDCoupling::calcBCs()
             angFluxN = MGT->SGTs[iGroup]->aFlux(0,iR,angIdx);
             angFluxS = MGT->SGTs[iGroup]->aFlux(sIdx,iR,angIdx);
   
+            localScalarFluxN += angFluxN;
+            localScalarFluxS += angFluxS;
+
             // accumulate outward and inward angular fluxes in separate
             // variables on the north face
             if (xi > 0) 
@@ -256,8 +265,8 @@ void TransportToQDCoupling::calcBCs()
           = outwardJzS/outwardFluxS;
         
         // set flux BCs
-        MGQD->SGQDs[iGroup]->nFluxBC(iR) = MGT->SGTs[iGroup]->sFlux(0,iR);
-        MGQD->SGQDs[iGroup]->sFluxBC(iR) = MGT->SGTs[iGroup]->sFlux(sIdx,iR);
+        MGQD->SGQDs[iGroup]->nFluxBC(iR) = localScalarFluxN;
+        MGQD->SGQDs[iGroup]->sFluxBC(iR) = localScalarFluxS;
         MGQD->SGQDs[iGroup]->nCurrentZBC(iR) = outwardJzN+inwardJzN;
         MGQD->SGQDs[iGroup]->sCurrentZBC(iR) = outwardJzS+inwardJzS;
         
