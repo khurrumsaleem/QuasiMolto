@@ -420,9 +420,10 @@ void MultiGroupTransport::writeFluxes()
 
 //==============================================================================
 /// Extracts fluxes and currents from solution vector into 2D matrices 
-void MultiGroupTransport::assignMultiPhysicsCoupledQDPointer\
-       (MultiPhysicsCoupledQD * myMPQD)
+void MultiGroupTransport::assignMultiPhysicsCoupledQDPointers\
+       (MultiGroupQD * myMGQD, MultiPhysicsCoupledQD * myMPQD)
 {
+  mgqd = myMGQD;
   mpqd = myMPQD;
   useMPQDSources = true;
 }

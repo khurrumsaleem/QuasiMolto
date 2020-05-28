@@ -4,6 +4,7 @@
 #include "Mesh.h"
 #include "Materials.h"
 #include "MultiPhysicsCoupledQD.h"
+#include "MultiGroupQD.h"
 
 using namespace std; 
 
@@ -39,6 +40,7 @@ class MultiGroupTransport
  
     // Pointers
     MultiPhysicsCoupledQD * mpqd;
+    MultiGroupQD * mgqd;
 
     // public functions
     void solveStartAngles();
@@ -52,7 +54,8 @@ class MultiGroupTransport
     void solveTransportOnly();
     void printDividers();
     void writeFluxes();
-    void assignMultiPhysicsCoupledQDPointer(MultiPhysicsCoupledQD * myMPQD);
+    void assignMultiPhysicsCoupledQDPointers(MultiGroupQD * myMGQD,\
+        MultiPhysicsCoupledQD * myMPQD);
 
   private:
     YAML::Node * input;
