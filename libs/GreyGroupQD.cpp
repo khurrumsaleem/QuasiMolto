@@ -123,6 +123,17 @@ void GreyGroupQD::buildLinearSystem()
 ///
 void GreyGroupQD::printBCParams()
 {
+cout << "eFluxBC: " << endl;
+cout << eFluxBC << endl;
+cout << endl;
+
+cout << "nFluxBC: " << endl;
+cout << nFluxBC << endl;
+cout << endl;
+
+cout << "sFluxBC: " << endl;
+cout << sFluxBC << endl;
+cout << endl;
 
 cout << "eInwardCurrentBC: " << endl;
 cout << eInwardCurrentBC << endl;
@@ -140,11 +151,11 @@ cout << "eInwardFluxBC: " << endl;
 cout << eInwardFluxBC << endl;
 cout << endl;
 
-cout << "eInwardFluxBC: " << endl;
+cout << "nInwardFluxBC: " << endl;
 cout << nInwardFluxBC << endl;
 cout << endl;
 
-cout << "eInwardFluxBC: " << endl;
+cout << "sInwardFluxBC: " << endl;
 cout << sInwardFluxBC << endl;
 cout << endl;
 
