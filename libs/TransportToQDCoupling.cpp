@@ -160,7 +160,7 @@ void TransportToQDCoupling::calcBCs()
  
             angFlux = MGT->SGTs[iGroup]->aFlux(iZ,eIdx,angIdx);
             
-            localScalarFluxE += angFlux;
+            localScalarFluxE += angFlux*weight;
 
             // only accumulate inward facing angular fluxes on the the 
             // outside radial (east) boundary 
@@ -221,8 +221,8 @@ void TransportToQDCoupling::calcBCs()
             angFluxN = MGT->SGTs[iGroup]->aFlux(0,iR,angIdx);
             angFluxS = MGT->SGTs[iGroup]->aFlux(sIdx,iR,angIdx);
   
-            localScalarFluxN += angFluxN;
-            localScalarFluxS += angFluxS;
+            localScalarFluxN += angFluxN*weight;
+            localScalarFluxS += angFluxS*weight;
 
             // accumulate outward and inward angular fluxes in separate
             // variables on the north face
