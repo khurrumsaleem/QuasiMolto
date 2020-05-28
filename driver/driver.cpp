@@ -17,6 +17,7 @@
 #include "../libs/SingleGroupDNP.h"
 #include "../libs/MultiPhysicsCoupledQD.h"
 #include "../libs/MultiGroupQDToMultiPhysicsQDCoupling.h"
+#include "../libs/MultilevelCoupling.h"
 #include "../libs/MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
@@ -31,6 +32,9 @@ void testMultiPhysicsCoupledQD(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
 void testMultiGroupToGreyGroupCoupling(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input);
+void testMultilevelCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
 
@@ -97,6 +101,8 @@ int main(int argc, char** argv) {
       testMultiPhysicsCoupledQD(myMaterials,myMesh,input);
     else if (solveType == "testMultiGroupToGreyGroupCoupling")
       testMultiGroupToGreyGroupCoupling(myMaterials,myMesh,input);
+    else if (solveType == "testMultilevelCoupling")
+      testMultilevelCoupling(myMaterials,myMesh,input);
     else
       myMGT->solveTransportOnly();
   }
@@ -220,4 +226,37 @@ void testMultiGroupToGreyGroupCoupling(Materials * myMaterials,\
   myMPQD->ggqd->printBCParams();
   
   cout << "Collapsed nuclear data" << endl;
+}
+
+void testMultilevelCoupling(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input){
+  
+  // initialize multigroup transport object
+  MultiGroupTransport * myMGT; 
+  myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
+
+  // initialize multigroup quasidiffusion object
+  MultiGroupQD * myMGQD; 
+  myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
+
+  // Initialize MultiPhysicsCoupledQD
+  MultiPhysicsCoupledQD * myMPQD; 
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+
+  cout << "size of mpqd->x: " << myMPQD->x.size() << endl;
+
+  // Initialize MultiPhysicsCoupledQD
+  MultilevelCoupling * myMLCoupling; 
+  myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
+      myMPQD);
+
+  cout << "Initialized multilevel coupling" << endl;
+
+  myMLCoupling->solveOneStep();
+  
+  cout << "Completed multilevel solve" << endl;
+  
+  myMaterials->oneGroupXS->print();
+  myMPQD->ggqd->printBCParams();
 }
