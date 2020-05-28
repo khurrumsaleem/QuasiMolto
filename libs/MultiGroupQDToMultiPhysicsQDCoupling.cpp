@@ -54,8 +54,6 @@ bool MGQDToMPQDCoupling::solveOneStep()
 
   ones.setOnes(mpqd->x.size());
 
-  mgqd->setInitialCondition();
-
   for (int iStep = 0; iStep < 100; iStep++)
   {
     mgqd->buildLinearSystem();
@@ -80,8 +78,6 @@ bool MGQDToMPQDCoupling::solveOneStep()
     cout << endl;
     if (residual < 1E-10)
     {
-      mgqd->updateVarsAfterConvergence(); 
-      mpqd->updateVarsAfterConvergence();
       return true; 
     }
     mpqd->ggqd->GGSolver->getFlux();
@@ -122,6 +118,8 @@ void MGQDToMPQDCoupling::solveTransient()
       mpqd->updateVarsAfterConvergence();
       break;
     }
+    mgqd->updateVarsAfterConvergence(); 
+    mpqd->updateVarsAfterConvergence();
     mpqd->writeVars(); 
     mgqd->writeVars(); 
     mesh->advanceOneTimeStep();
