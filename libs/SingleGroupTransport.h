@@ -4,6 +4,7 @@
 #include "Mesh.h"
 #include "Materials.h"
 #include "GreyGroupQD.h"
+#include "QuasidiffusionSolver.h"
 
 using namespace std; 
 using namespace arma;

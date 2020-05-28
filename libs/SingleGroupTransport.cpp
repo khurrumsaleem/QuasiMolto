@@ -346,19 +346,37 @@ double SingleGroupTransport::calcFlux()
 double SingleGroupTransport::calcAlpha()
 {  
 
-  double residual,deltaT = mesh->dt;
+  double localFlux,localFluxPrev,residual,deltaT = mesh->dt;
+  vector<int> indices;
   Eigen::MatrixXd alpha_old = alpha;
   Eigen::MatrixXd alphaDiff;
 
   // Set alpha to zero
   alpha.setZero();
 
-  // Calculate alphas
-  for (int iZ = 0; iZ < alpha.rows(); ++iZ){
-    for (int iR = 0; iR < alpha.cols(); ++iR){
-      alpha(iZ,iR) = (1.0/deltaT)*log(sFlux(iZ,iR)/sFluxPrev(iZ,iR));
-    } // iR
-  } // iZ
+  if (MGT->useMPQDSources)
+  {
+    for (int iZ = 0; iZ < alpha.rows(); ++iZ){
+      for (int iR = 0; iR < alpha.cols(); ++iR){
+        
+        // Get local values
+        indices = MGT->mgqd->QDSolve->getIndices(iR,iZ,energyGroup); 
+        localFlux = MGT->mgqd->QDSolve->x(indices[0]);
+        localFluxPrev = MGT->mgqd->QDSolve->xPast(indices[0]);
+        alpha(iZ,iR) = (1.0/deltaT)*log(localFlux/localFluxPrev);
+
+      } // iR
+    } // iZ
+  }
+  else
+  {
+    // Calculate alphas
+    for (int iZ = 0; iZ < alpha.rows(); ++iZ){
+      for (int iR = 0; iR < alpha.cols(); ++iR){
+        alpha(iZ,iR) = (1.0/deltaT)*log(sFlux(iZ,iR)/sFluxPrev(iZ,iR));
+      } // iR
+    } // iZ
+  }
 
 
   alphaDiff = (alpha_old-alpha);
