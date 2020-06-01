@@ -244,8 +244,6 @@ void testMultilevelCoupling(Materials * myMaterials,\
   MultiPhysicsCoupledQD * myMPQD; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
 
-  cout << "size of mpqd->x: " << myMPQD->x.size() << endl;
-
   // Initialize MultiPhysicsCoupledQD
   MultilevelCoupling * myMLCoupling; 
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
@@ -253,7 +251,7 @@ void testMultilevelCoupling(Materials * myMaterials,\
 
   cout << "Initialized multilevel coupling" << endl;
 
-  myMLCoupling->solveOneStep();
+  myMLCoupling->solveTransient();
   
   cout << "Completed multilevel solve" << endl;
   
