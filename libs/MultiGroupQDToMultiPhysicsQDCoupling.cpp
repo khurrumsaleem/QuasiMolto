@@ -50,9 +50,6 @@ bool MGQDToMPQDCoupling::solveOneStep()
 
   Eigen::VectorXd xCurrentIter,xPrevIter,ones,residualVec;
   double residual;
-  double min = 1E-12;
-
-  ones.setOnes(mpqd->x.size());
 
   for (int iStep = 0; iStep < 100; iStep++)
   {
@@ -67,15 +64,9 @@ bool MGQDToMPQDCoupling::solveOneStep()
     mpqd->buildLinearSystem();
     mpqd->solveLinearSystem();
     xCurrentIter = mpqd->x;
-    for (int index = 0; index < xCurrentIter.size(); index++)
-    {
-      if (abs(xCurrentIter(index)) < min ) xCurrentIter(index) = 1.0;
-      if (abs(xPrevIter(index)) < min ) xPrevIter(index) = 1.0;
-    }
-    residualVec = (ones- (xCurrentIter.cwiseQuotient(xPrevIter)));
-    residual = (1.0/residualVec.size())*residualVec.norm();
-    cout << "Residual: " << residual <<endl; 
-    cout << endl;
+    residual = calcResidual(xPrevIter,xCurrentIter);
+    cout << "          "; 
+    cout << "MGQD->MPQD Residual: " << residual <<endl; 
     if (residual < 1E-10)
     {
       return true; 
@@ -981,5 +972,30 @@ double MGQDToMPQDCoupling::checkForZeroRadialCurrent(int iZ,int iR)
 };
 //==============================================================================
 
+//==============================================================================
+/// Calculate residual between two vectors 
+///
+double MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
+    Eigen::VectorXd vector2)
+{
+  
+  Eigen::VectorXd ones,residualVec;
+  double residual;
+  double min = 1E-12;
+
+  ones.setOnes(vector1.size());
+
+  for (int index = 0; index < vector1.size(); index++)
+  {
+    if (abs(vector1(index)) < min ) vector1(index) = 1.0;
+    if (abs(vector2(index)) < min ) vector2(index) = 1.0;
+  }
+  residualVec = (ones-(vector2.cwiseQuotient(vector1)));
+  residual = (1.0/residualVec.size())*residualVec.norm();
+
+  return residual;
+  
+};
+//==============================================================================
 
 
