@@ -58,6 +58,7 @@ bool MultilevelCoupling::solveOneStep()
 
   Eigen::VectorXd xCurrentIter, xLastIter, residualVector;
   double residual;
+  bool eddingtonConverged;
 
   for (int iStep = 0; iStep < 100; iStep++)
   {
@@ -74,7 +75,7 @@ bool MultilevelCoupling::solveOneStep()
     mgt->solveSCBs();
 
     // Calculate Eddington factors for MGQD problem
-    MGTToMGQD->calcEddingtonFactors();
+    eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
 
     // Calculate BCs for MGQD problem 
     MGTToMGQD->calcBCs();
@@ -93,7 +94,7 @@ bool MultilevelCoupling::solveOneStep()
     cout << endl; 
     cout << "MGT->MGQD->MPQD Residual: " << residual << endl;
     cout << endl;
-    if (residual < 1E-10) 
+    if (residual < 1E-10 and eddingtonConverged) 
     {
       cout << "Solve converged." << endl;
       mgt->writeFluxes();
