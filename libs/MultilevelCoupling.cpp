@@ -58,82 +58,50 @@ bool MultilevelCoupling::solveOneStep()
 
   Eigen::VectorXd xCurrentIter, xLastIter, residualVector;
   double residual;
-  bool converged;
-
-  // Initialize solve 
-  cout << "About to enter MGQDToMPQD::solveOneStep" << endl;
-  converged = MGQDToMPQD->solveOneStep();
-
-  cout << "Initial solve completed." << endl;
-  cout << endl;
 
   for (int iStep = 0; iStep < 100; iStep++)
   {
     // Calculate transport sources
     mgt->calcSources();
 
-    cout << "Calculated transport sources." << endl;
-
     // Calculate transport alphas
     mgt->calcAlphas();
   
-    cout << "Calculated alphas." << endl;
-    cout << endl;
-
     // Solve starting angle transport problem
     mgt->solveStartAngles();
-
-    cout << "Solved for starting angles." << endl;
-    cout << endl;
 
     // Solve all angle transport problem
     mgt->solveSCBs();
 
-    cout << "Solved for all angles." << endl;
-    cout << endl;
-    
     // Calculate Eddington factors for MGQD problem
     MGTToMGQD->calcEddingtonFactors();
 
-    cout << "Calculated Eddington factors." << endl;
-    cout << endl;
-    
     // Calculate BCs for MGQD problem 
     MGTToMGQD->calcBCs();
 
-    cout << "Calculated MGQD boundary conditions." << endl;
-    cout << endl;
-    
     // Store xLastIter = MPQD->x
     xLastIter = mpqd->x;
 
-    cout << "Stored xLastIter." << endl;
-    cout << endl;
-    
     // Solve MGQD and MPQD problem to convergence
     MGQDToMPQD->solveOneStep();
 
-    cout << "Solved coupled MGQD and MPQD problem." << endl;
-    cout << endl;
-    
     // Store xCurrentIter = MPQD->x
     xCurrentIter = mpqd->x;
 
-    cout << "Stored xCurrentIter." << endl;
-    cout << endl;
-    
     // Repeat until ||xCurrentIter - xLastIter|| < eps 
-    residualVector = xCurrentIter - xLastIter;
-    residual = (1.0/xCurrentIter.size())*residualVector.norm();
-    cout << "Multilevel Residual: " << residual << endl;
+    residual = MGQDToMPQD->calcResidual(xLastIter,xCurrentIter);
+    cout << endl; 
+    cout << "MGT->MGQD->MPQD Residual: " << residual << endl;
+    cout << endl;
     if (residual < 1E-10) 
     {
-      cout << "solve converged!" << endl;
+      cout << "Solve converged." << endl;
       mgt->writeFluxes();
-      break;
+      return true;
     }
   }
 
+  return false;
 
 };
 //==============================================================================
@@ -143,6 +111,33 @@ bool MultilevelCoupling::solveOneStep()
 ///
 void MultilevelCoupling::solveTransient()
 {
+
+  // Initialize solve 
+  cout << "Computing initial solve..." << endl;
+  cout << endl;
+  MGQDToMPQD->solveOneStep();
+  cout << "Initial solve completed." << endl;
+  cout << endl;
+  
+  for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
+  {
+  cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
+  cout << endl;
+    if(solveOneStep())
+    {
+      mgqd->updateVarsAfterConvergence(); 
+      mpqd->updateVarsAfterConvergence(); 
+      mgqd->writeVars();
+      mpqd->writeVars();
+      mesh->advanceOneTimeStep();
+    }  
+    else 
+    {
+    cout << "Solve not converged." << endl;
+    cout << "Transient aborted." << endl;
+    break;
+    }
+  } 
 
 };
 //==============================================================================
