@@ -1178,17 +1178,6 @@ void QDSolver::getFlux(SingleGroupQD * SGQD)
 
     }
   } 
-
-  cout << "Flux, Group " << SGQD->energyGroup << ":" << endl; 
-  cout << SGQD->sFlux << endl;
-  cout << endl;
-  cout << "Axial Current, Group " << SGQD->energyGroup << ":" << endl; 
-  cout << SGQD->currentZ << endl;
-  cout << endl;
-  cout << "Radial Current, Group " << SGQD->energyGroup << ":" << endl; 
-  cout << SGQD->currentR << endl;
-  cout << endl;
-
 };
 //==============================================================================
 
