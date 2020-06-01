@@ -106,6 +106,17 @@ bool TransportToQDCoupling::calcEddingtonFactors()
     residualRz = ((MGQD->SGQDs[iGroup]->Erz - MGQD->SGQDs[iGroup]->ErzPrev)\
       .cwiseQuotient(MGQD->SGQDs[iGroup]->Erz)).norm();
     
+    residualZz = calcResidual(MGQD->SGQDs[iGroup]->EzzPrev,\
+        MGQD->SGQDs[iGroup]->Ezz);
+    residualRr = calcResidual(MGQD->SGQDs[iGroup]->ErrPrev,\
+        MGQD->SGQDs[iGroup]->Err);
+    residualRz = calcResidual(MGQD->SGQDs[iGroup]->ErzPrev,\
+        MGQD->SGQDs[iGroup]->Erz);
+  
+    cout << "residualZz: " << residualZz << endl;
+    cout << "residualRr: " << residualRr << endl;
+    cout << "residualRz: " << residualRz << endl;
+ 
     if (residualZz < epsEddington and residualRr < epsEddington and 
       residualRz < epsEddington)
       allConverged = allConverged and true;
@@ -344,6 +355,35 @@ void TransportToQDCoupling::solveTransportWithQDAcceleration()
   }
 }
 //==============================================================================
+
+//==============================================================================
+/// Calculate residual between two matrices 
+///
+double TransportToQDCoupling::calcResidual(Eigen::MatrixXd matrix1,\
+    Eigen::MatrixXd matrix2)
+{
+  
+  Eigen::MatrixXd ones,residualMatrix;
+  double residual;
+  double min = 1E-12;
+
+  ones.setOnes(matrix1.rows(),matrix1.cols());
+
+  for (int iRow = 0; iRow < matrix1.rows(); iRow++)
+  {
+    for (int iCol = 0; iCol < matrix1.cols(); iCol++)
+    {
+      if (matrix1(iRow,iCol) < min ) matrix1(iRow,iCol) = 1.0;
+      if (matrix2(iRow,iCol) < min ) matrix2(iRow,iCol) = 1.0;
+    }
+  }
+  residualMatrix = (ones-(matrix2.cwiseQuotient(matrix1)));
+  residual = (1.0/residualMatrix.size())*residualMatrix.squaredNorm();
+  return residual;
+  
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Update the transport fluxes with those in the quasidiffusion objects
