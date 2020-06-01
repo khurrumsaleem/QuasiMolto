@@ -205,6 +205,36 @@ void MultiGroupQD::writeVars()
 //==============================================================================
 
 //==============================================================================
+/// Print fluxes and currents 
+/// 
+void MultiGroupQD::printVars()
+{
+
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup)
+  {
+    cout << "Flux, Group " << SGQDs[iGroup]->energyGroup << ":" << endl; 
+    cout << SGQDs[iGroup]->sFlux << endl;
+    cout << endl;
+    cout << "Axial Flux, Group " << SGQDs[iGroup]->energyGroup << ":" << endl; 
+    cout << SGQDs[iGroup]->sFluxZ << endl;
+    cout << endl;
+    cout << "Radial Flux, Group " << SGQDs[iGroup]->energyGroup << ":" << endl; 
+    cout << SGQDs[iGroup]->sFluxR << endl;
+    cout << endl;
+    cout << "Axial Current, Group " << SGQDs[iGroup]->energyGroup\
+      << ":" << endl; 
+    cout << SGQDs[iGroup]->currentZ << endl;
+    cout << endl;
+    cout << "Radial Current, Group " << SGQDs[iGroup]->energyGroup\
+      << ":" << endl; 
+    cout << SGQDs[iGroup]->currentR << endl;
+    cout << endl;
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
 /// Wrapper over SGQDs to write flux present in each
 void MultiGroupQD::writeFluxes()
 {

@@ -35,6 +35,7 @@ class MultiGroupQD
     void updateVarsAfterConvergence();
     void writeFluxes();
     void writeVars();
+    void printVars();
     void assignMultiPhysicsCoupledQDPointer(MultiPhysicsCoupledQD * myMPQD);
     string outputDir = "MGQD/";
 
