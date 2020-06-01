@@ -105,10 +105,6 @@ bool TransportToQDCoupling::calcEddingtonFactors()
       .cwiseQuotient(MGQD->SGQDs[iGroup]->Err)).norm();
     residualRz = ((MGQD->SGQDs[iGroup]->Erz - MGQD->SGQDs[iGroup]->ErzPrev)\
       .cwiseQuotient(MGQD->SGQDs[iGroup]->Erz)).norm();
-    cout << "eddington residual" << endl; 
-    cout << residualZz << endl;
-    cout << residualRr << endl;
-    cout << residualRz << endl;
     
     if (residualZz < epsEddington and residualRr < epsEddington and 
       residualRz < epsEddington)
@@ -158,8 +154,18 @@ void TransportToQDCoupling::calcBCs()
             mu = mesh->quadrature[iXi].quad[iMu][muIdx]; 
             weight = mesh->quadrature[iXi].quad[iMu][weightIdx];
  
-            angFlux = MGT->SGTs[iGroup]->aFlux(iZ,eIdx,angIdx);
-            
+            // Get angular fluxes. If at a location where there is a boundary
+            // condition for the angular flux, use that. If not, grab the 
+            // cell-average angular flux of the nearest cell. 
+            if (mu < 0)
+            {
+              angFlux = MGT->SCBSolve->outerBC[iGroup];           
+            }
+            else
+            {
+              angFlux = MGT->SGTs[iGroup]->aFlux(iZ,eIdx,angIdx);
+            } 
+ 
             localScalarFluxE += angFlux*weight;
 
             // only accumulate inward facing angular fluxes on the the 
@@ -217,13 +223,21 @@ void TransportToQDCoupling::calcBCs()
             angIdx=mesh->quadrature[iXi].ordIdx[iMu];
             mu = mesh->quadrature[iXi].quad[iMu][muIdx]; 
             weight = mesh->quadrature[iXi].quad[iMu][weightIdx];
- 
-            angFluxN = MGT->SGTs[iGroup]->aFlux(0,iR,angIdx);
-            angFluxS = MGT->SGTs[iGroup]->aFlux(sIdx,iR,angIdx);
-  
-            localScalarFluxN += angFluxN*weight;
-            localScalarFluxS += angFluxS*weight;
 
+            // Get angular fluxes. If at a location where there is a boundary
+            // condition for the angular flux, use that. If not, grab the 
+            // cell-average angular flux of the nearest cell. 
+            if (xi > 0)
+            {
+              angFluxN = MGT->SCBSolve->lowerBC[iGroup];           
+              angFluxS = MGT->SGTs[iGroup]->aFlux(sIdx,iR,angIdx);
+            }
+            else
+            {
+              angFluxN = MGT->SGTs[iGroup]->aFlux(0,iR,angIdx);
+              angFluxS = MGT->SCBSolve->upperBC[iGroup];           
+            } 
+  
             // accumulate outward and inward angular fluxes in separate
             // variables on the north face
             if (xi > 0) 
