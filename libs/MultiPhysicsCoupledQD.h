@@ -40,6 +40,7 @@ class MultiPhysicsCoupledQD
     void solveTransient();
     void updateVarsAfterConvergence();
     void writeVars();
+    void printVars();
 
     // Pointers
     HeatTransfer * heat;

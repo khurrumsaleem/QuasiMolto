@@ -168,20 +168,12 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
 
   // Read solutions from 1D vector to 2D matrices 
   ggqd->GGSolver->getFlux();
-  cout << "Flux:" << endl; 
-  cout << ggqd->sFlux << endl; 
 
   heat->getTemp();
-  cout << "Temperature:" << endl; 
-  cout << heat->temp << endl; 
 
   mgdnp->getCoreDNPConc();
-  cout << "Core DNP concentration:" << endl; 
-  mgdnp->printCoreDNPConc();
 
   mgdnp->getRecircDNPConc();
-  cout << "Recirc DNP concentration:" << endl; 
-  mgdnp->printRecircDNPConc();
 
   // Back calculate currents
   ggqd->GGSolver->formBackCalcSystem();
@@ -230,6 +222,28 @@ void MultiPhysicsCoupledQD::writeVars()
  
   // Temperature
   mesh->output->write(outputDir,"Temperature",heat->temp);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Run transient with multiple solves 
+///
+void MultiPhysicsCoupledQD::printVars()
+{
+
+  // Read solutions from 1D vector to 2D matrices 
+  cout << "Flux:" << endl; 
+  cout << ggqd->sFlux << endl; 
+
+  cout << "Temperature:" << endl; 
+  cout << heat->temp << endl; 
+
+  cout << "Core DNP concentration:" << endl; 
+  mgdnp->printCoreDNPConc();
+
+  cout << "Recirc DNP concentration:" << endl; 
+  mgdnp->printRecircDNPConc();
 
 };
 //==============================================================================
