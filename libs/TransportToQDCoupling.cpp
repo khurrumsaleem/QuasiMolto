@@ -16,10 +16,10 @@ using namespace std;
 /// @param [in] myMGT Multigroup transport object for the simulation
 /// @param [in] myMGQD Multigroup quasidiffusion object for the simulation
 TransportToQDCoupling::TransportToQDCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * myInput,\
-  MultiGroupTransport * myMGT,\
-  MultiGroupQD * myMGQD)
+    Mesh * myMesh,\
+    YAML::Node * myInput,\
+    MultiGroupTransport * myMGT,\
+    MultiGroupQD * myMGQD)
 {
   // Assign pointers for materials, mesh, input objects, multigroup transport
   // and quasidiffusion objects
@@ -28,7 +28,7 @@ TransportToQDCoupling::TransportToQDCoupling(Materials * myMaterials,\
   input = myInput;
   MGT = myMGT;
   MGQD = myMGQD;
-  
+
   // Check for optional parameters
   checkOptionalParams(); 
 
@@ -48,7 +48,7 @@ bool TransportToQDCoupling::calcEddingtonFactors()
   double numeratorEzz,numeratorErr,numeratorErz,denominator;
   double residualZz,residualRr,residualRz;
   bool allConverged=true;
-  
+
   for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
   {
     // store past eddington factors
@@ -87,38 +87,41 @@ bool TransportToQDCoupling::calcEddingtonFactors()
             numeratorErz = numeratorErz + ErzCoef*angFlux*weight;
 
             denominator = denominator + angFlux*weight;
-          
+
           } //iMu
         } //iXi 
- 
+
         MGQD->SGQDs[iGroup]->Ezz(iZ,iR) = numeratorEzz/denominator;
         MGQD->SGQDs[iGroup]->Err(iZ,iR) = numeratorErr/denominator;
         MGQD->SGQDs[iGroup]->Erz(iZ,iR) = numeratorErz/denominator;
 
       } //iZ
     } //iR
-   
+
     // measure the residual for each Eddington factors 
     residualZz = ((MGQD->SGQDs[iGroup]->Ezz - MGQD->SGQDs[iGroup]->EzzPrev)\
-      .cwiseQuotient(MGQD->SGQDs[iGroup]->Ezz)).norm();
+        .cwiseQuotient(MGQD->SGQDs[iGroup]->Ezz)).norm();
     residualRr = ((MGQD->SGQDs[iGroup]->Err - MGQD->SGQDs[iGroup]->ErrPrev)\
-      .cwiseQuotient(MGQD->SGQDs[iGroup]->Err)).norm();
+        .cwiseQuotient(MGQD->SGQDs[iGroup]->Err)).norm();
     residualRz = ((MGQD->SGQDs[iGroup]->Erz - MGQD->SGQDs[iGroup]->ErzPrev)\
-      .cwiseQuotient(MGQD->SGQDs[iGroup]->Erz)).norm();
-    
+        .cwiseQuotient(MGQD->SGQDs[iGroup]->Erz)).norm();
+
     residualZz = calcResidual(MGQD->SGQDs[iGroup]->EzzPrev,\
         MGQD->SGQDs[iGroup]->Ezz);
     residualRr = calcResidual(MGQD->SGQDs[iGroup]->ErrPrev,\
         MGQD->SGQDs[iGroup]->Err);
     residualRz = calcResidual(MGQD->SGQDs[iGroup]->ErzPrev,\
         MGQD->SGQDs[iGroup]->Erz);
-  
+
     cout << "residualZz: " << residualZz << endl;
+    cout << endl;
     cout << "residualRr: " << residualRr << endl;
+    cout << endl;
     cout << "residualRz: " << residualRz << endl;
- 
+    cout << endl;
+
     if (residualZz < epsEddington and residualRr < epsEddington and 
-      residualRz < epsEddington)
+        residualRz < epsEddington)
       allConverged = allConverged and true;
     else
       allConverged = allConverged and false;
@@ -143,164 +146,165 @@ void TransportToQDCoupling::calcBCs()
   double outwardJrE,outwardJzN,outwardJzS;
   double outwardFluxE,outwardFluxN,outwardFluxS;
   double localScalarFluxE, localScalarFluxN, localScalarFluxS;
-  
+
   for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
   {
-      for (int iZ = 0; iZ < rows; iZ++)
+    for (int iZ = 0; iZ < rows; iZ++)
+    {
+      // reset accumulators
+      inwardJrE = 0.0;
+      inwardFluxE = 0.0;
+      outwardJrE = 0.0;
+      outwardFluxE = 0.0;
+      localScalarFluxE = 0.0;
+
+      // loop over quadrature
+      for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
       {
-        // reset accumulators
-        inwardJrE = 0.0;
-        inwardFluxE = 0.0;
-        outwardJrE = 0.0;
-        outwardFluxE = 0.0;
-        localScalarFluxE = 0.0;
-
-        // loop over quadrature
-        for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
+        xi = mesh->quadrature[iXi].quad[0][xiIdx];
+        for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu)
         {
-          xi = mesh->quadrature[iXi].quad[0][xiIdx];
-          for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu)
+          angIdx=mesh->quadrature[iXi].ordIdx[iMu];
+          mu = mesh->quadrature[iXi].quad[iMu][muIdx]; 
+          weight = mesh->quadrature[iXi].quad[iMu][weightIdx];
+
+          // Get angular fluxes. If at a location where there is a boundary
+          // condition for the angular flux, use that. If not, grab the 
+          // cell-average angular flux of the nearest cell. 
+          if (mu < 0)
           {
-            angIdx=mesh->quadrature[iXi].ordIdx[iMu];
-            mu = mesh->quadrature[iXi].quad[iMu][muIdx]; 
-            weight = mesh->quadrature[iXi].quad[iMu][weightIdx];
- 
-            // Get angular fluxes. If at a location where there is a boundary
-            // condition for the angular flux, use that. If not, grab the 
-            // cell-average angular flux of the nearest cell. 
-            if (mu < 0)
-            {
-              angFlux = MGT->SCBSolve->outerBC[iGroup];           
-            }
-            else
-            {
-              angFlux = MGT->SGTs[iGroup]->aFlux(iZ,eIdx,angIdx);
-            } 
- 
-            localScalarFluxE += angFlux*weight;
+            angFlux = MGT->SCBSolve->outerBC[iGroup];           
+          }
+          else
+          {
+            angFlux = MGT->SGTs[iGroup]->aFlux(iZ,eIdx,angIdx);
+          } 
 
-            // only accumulate inward facing angular fluxes on the the 
-            // outside radial (east) boundary 
-            if (mu < 0) 
-            {
-              inwardJrE = inwardJrE + mu*angFlux*weight;
-              inwardFluxE = inwardFluxE + angFlux*weight;
-            } else
-            {
-              outwardJrE = outwardJrE + mu*angFlux*weight;
-              outwardFluxE = outwardFluxE + angFlux*weight;
-            }
-          } //iMu
-        } //iXi 
+          localScalarFluxE += angFlux*weight;
 
-        // set inward current in SGQD object 
-        MGQD->SGQDs[iGroup]->eInwardCurrentBC(iZ) = inwardJrE;
+          // only accumulate inward facing angular fluxes on the the 
+          // outside radial (east) boundary 
+          if (mu < 0) 
+          {
+            inwardJrE = inwardJrE + mu*angFlux*weight;
+            inwardFluxE = inwardFluxE + angFlux*weight;
+          } else
+          {
+            outwardJrE = outwardJrE + mu*angFlux*weight;
+            outwardFluxE = outwardFluxE + angFlux*weight;
+          }
+        } //iMu
+      } //iXi 
 
-        // set inward flux in SGQD object 
-        MGQD->SGQDs[iGroup]->eInwardFluxBC(iZ) = inwardFluxE;
+      // set inward current in SGQD object 
+      MGQD->SGQDs[iGroup]->eInwardCurrentBC(iZ) = inwardJrE;
 
-        // set outward current to flux ratio in SGQD object 
-        MGQD->SGQDs[iGroup]->eOutwardCurrToFluxRatioBC(iZ)\
-          = outwardJrE/outwardFluxE;
+      // set inward flux in SGQD object 
+      MGQD->SGQDs[iGroup]->eInwardFluxBC(iZ) = inwardFluxE;
 
-        // set eastern flux bc
-        MGQD->SGQDs[iGroup]->eFluxBC(iZ) = localScalarFluxE; 
-        MGQD->SGQDs[iGroup]->eCurrentRBC(iZ) = outwardJrE+inwardJrE;
+      // set outward current to flux ratio in SGQD object 
+      MGQD->SGQDs[iGroup]->eOutwardCurrToFluxRatioBC(iZ)\
+        = outwardJrE/outwardFluxE;
 
-        // set absolute current
-        MGQD->SGQDs[iGroup]->eAbsCurrentBC(iZ) = outwardJrE - inwardJrE;
-      
-        } //iZ
-      for (int iR = 0; iR < cols; iR++)
+      // set eastern flux bc
+      MGQD->SGQDs[iGroup]->eFluxBC(iZ) = localScalarFluxE; 
+      MGQD->SGQDs[iGroup]->eCurrentRBC(iZ) = outwardJrE+inwardJrE;
+
+      // set absolute current
+      MGQD->SGQDs[iGroup]->eAbsCurrentBC(iZ) = outwardJrE - inwardJrE;
+
+    } //iZ
+
+    for (int iR = 0; iR < cols; iR++)
+    {
+      // reset accumulators
+      inwardJzN = 0.0;
+      inwardJzS = 0.0;
+      inwardFluxN = 0.0;
+      inwardFluxS = 0.0;
+      outwardJzN = 0.0;
+      outwardJzS = 0.0;
+      outwardFluxN = 0.0;
+      outwardFluxS = 0.0;
+      localScalarFluxN = 0.0;
+      localScalarFluxS = 0.0;
+
+      // loop over quadrature
+      for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
       {
-        // reset accumulators
-        inwardJzN = 0.0;
-        inwardJzS = 0.0;
-        inwardFluxN = 0.0;
-        inwardFluxS = 0.0;
-        outwardJzN = 0.0;
-        outwardJzS = 0.0;
-        outwardFluxN = 0.0;
-        outwardFluxS = 0.0;
-        localScalarFluxN = 0.0;
-        localScalarFluxS = 0.0;
-
-        // loop over quadrature
-        for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
+        xi = mesh->quadrature[iXi].quad[0][xiIdx];
+        for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu)
         {
-          xi = mesh->quadrature[iXi].quad[0][xiIdx];
-          for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu)
+          angIdx=mesh->quadrature[iXi].ordIdx[iMu];
+          mu = mesh->quadrature[iXi].quad[iMu][muIdx]; 
+          weight = mesh->quadrature[iXi].quad[iMu][weightIdx];
+
+          // Get angular fluxes. If at a location where there is a boundary
+          // condition for the angular flux, use that. If not, grab the 
+          // cell-average angular flux of the nearest cell. 
+          if (xi > 0)
           {
-            angIdx=mesh->quadrature[iXi].ordIdx[iMu];
-            mu = mesh->quadrature[iXi].quad[iMu][muIdx]; 
-            weight = mesh->quadrature[iXi].quad[iMu][weightIdx];
+            angFluxN = MGT->SCBSolve->lowerBC[iGroup];           
+            angFluxS = MGT->SGTs[iGroup]->aFlux(sIdx,iR,angIdx);
+          }
+          else
+          {
+            angFluxN = MGT->SGTs[iGroup]->aFlux(0,iR,angIdx);
+            angFluxS = MGT->SCBSolve->upperBC[iGroup];           
+          } 
 
-            // Get angular fluxes. If at a location where there is a boundary
-            // condition for the angular flux, use that. If not, grab the 
-            // cell-average angular flux of the nearest cell. 
-            if (xi > 0)
-            {
-              angFluxN = MGT->SCBSolve->lowerBC[iGroup];           
-              angFluxS = MGT->SGTs[iGroup]->aFlux(sIdx,iR,angIdx);
-            }
-            else
-            {
-              angFluxN = MGT->SGTs[iGroup]->aFlux(0,iR,angIdx);
-              angFluxS = MGT->SCBSolve->upperBC[iGroup];           
-            } 
-  
-            // accumulate outward and inward angular fluxes in separate
-            // variables on the north face
-            if (xi > 0) 
-            {
-              inwardJzN = inwardJzN + xi*angFluxN*weight;
-              inwardFluxN = inwardFluxN + angFluxN*weight;
-            } else
-            {
-              outwardJzN = outwardJzN + xi*angFluxN*weight;
-              outwardFluxN = outwardFluxN + angFluxN*weight;
-            }
-            // accumulate outward and inward angular fluxes in separate
-            // variables on the south face
-            if (xi < 0)
-            {
-              inwardJzS = inwardJzS + xi*angFluxS*weight;
-              inwardFluxS = inwardFluxS + angFluxS*weight;
-            } else
-            {
-              outwardJzS = outwardJzS + xi*angFluxS*weight;
-              outwardFluxS = outwardFluxS + angFluxS*weight;
-            }
-          
-          } //iMu
-        } //iXi 
+          // accumulate outward and inward angular fluxes in separate
+          // variables on the north face
+          if (xi > 0) 
+          {
+            inwardJzN = inwardJzN + xi*angFluxN*weight;
+            inwardFluxN = inwardFluxN + angFluxN*weight;
+          } else
+          {
+            outwardJzN = outwardJzN + xi*angFluxN*weight;
+            outwardFluxN = outwardFluxN + angFluxN*weight;
+          }
+          // accumulate outward and inward angular fluxes in separate
+          // variables on the south face
+          if (xi < 0)
+          {
+            inwardJzS = inwardJzS + xi*angFluxS*weight;
+            inwardFluxS = inwardFluxS + angFluxS*weight;
+          } else
+          {
+            outwardJzS = outwardJzS + xi*angFluxS*weight;
+            outwardFluxS = outwardFluxS + angFluxS*weight;
+          }
 
-        // set inward current in SGQD object 
-        MGQD->SGQDs[iGroup]->nInwardCurrentBC(iR) = inwardJzN;
-        MGQD->SGQDs[iGroup]->sInwardCurrentBC(iR) = inwardJzS;
-        
-        // set inward flux in SGQD object 
-        MGQD->SGQDs[iGroup]->nInwardFluxBC(iR) = inwardFluxN;
-        MGQD->SGQDs[iGroup]->sInwardFluxBC(iR) = inwardFluxS;
-  
-        // set outward current to flux ratio in SGQD object
-        MGQD->SGQDs[iGroup]->nOutwardCurrToFluxRatioBC(iR)\
-          = outwardJzN/outwardFluxN;
-        MGQD->SGQDs[iGroup]->sOutwardCurrToFluxRatioBC(iR)\
-          = outwardJzS/outwardFluxS;
-        
-        // set flux BCs
-        MGQD->SGQDs[iGroup]->nFluxBC(iR) = localScalarFluxN;
-        MGQD->SGQDs[iGroup]->sFluxBC(iR) = localScalarFluxS;
-        MGQD->SGQDs[iGroup]->nCurrentZBC(iR) = outwardJzN+inwardJzN;
-        MGQD->SGQDs[iGroup]->sCurrentZBC(iR) = outwardJzS+inwardJzS;
-        
-        // set absolute currents
-        MGQD->SGQDs[iGroup]->nAbsCurrentBC(iR) = outwardJzN - inwardJzN;
-        MGQD->SGQDs[iGroup]->sAbsCurrentBC(iR) = outwardJzS - inwardJzS;
+        } //iMu
+      } //iXi 
 
-      } //iR 
-  
+      // set inward current in SGQD object 
+      MGQD->SGQDs[iGroup]->nInwardCurrentBC(iR) = inwardJzN;
+      MGQD->SGQDs[iGroup]->sInwardCurrentBC(iR) = inwardJzS;
+
+      // set inward flux in SGQD object 
+      MGQD->SGQDs[iGroup]->nInwardFluxBC(iR) = inwardFluxN;
+      MGQD->SGQDs[iGroup]->sInwardFluxBC(iR) = inwardFluxS;
+
+      // set outward current to flux ratio in SGQD object
+      MGQD->SGQDs[iGroup]->nOutwardCurrToFluxRatioBC(iR)\
+        = outwardJzN/outwardFluxN;
+      MGQD->SGQDs[iGroup]->sOutwardCurrToFluxRatioBC(iR)\
+        = outwardJzS/outwardFluxS;
+
+      // set flux BCs
+      MGQD->SGQDs[iGroup]->nFluxBC(iR) = localScalarFluxN;
+      MGQD->SGQDs[iGroup]->sFluxBC(iR) = localScalarFluxS;
+      MGQD->SGQDs[iGroup]->nCurrentZBC(iR) = outwardJzN+inwardJzN;
+      MGQD->SGQDs[iGroup]->sCurrentZBC(iR) = outwardJzS+inwardJzS;
+
+      // set absolute currents
+      MGQD->SGQDs[iGroup]->nAbsCurrentBC(iR) = outwardJzN - inwardJzN;
+      MGQD->SGQDs[iGroup]->sAbsCurrentBC(iR) = outwardJzS - inwardJzS;
+
+    } //iR 
+
   } //iGroup
 
 }
@@ -318,11 +322,11 @@ void TransportToQDCoupling::solveTransportWithQDAcceleration()
   bool alphaConverged=false,eddingtonConverged=false,sourcesConverged=false;
 
   MGQD->setInitialCondition();
-  
+
   // loop over time steps
   for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
   {
- 
+
     MGQD->buildLinearSystem();
     MGQD->solveLinearSystem();
     updateTransportFluxes();
@@ -344,7 +348,7 @@ void TransportToQDCoupling::solveTransportWithQDAcceleration()
       if (sourcesConverged) alphaConverged = MGT->calcAlphas("print");
       if (alphaConverged and eddingtonConverged and sourcesConverged) break;
     }
-  
+
     MGQD->writeFluxes();
     MGT->calcFluxes();
     MGT->writeFluxes();
@@ -362,7 +366,7 @@ void TransportToQDCoupling::solveTransportWithQDAcceleration()
 double TransportToQDCoupling::calcResidual(Eigen::MatrixXd matrix1,\
     Eigen::MatrixXd matrix2)
 {
-  
+
   Eigen::MatrixXd ones,residualMatrix;
   double residual;
   double min = 1E-12;
@@ -373,14 +377,17 @@ double TransportToQDCoupling::calcResidual(Eigen::MatrixXd matrix1,\
   {
     for (int iCol = 0; iCol < matrix1.cols(); iCol++)
     {
-      if (matrix1(iRow,iCol) < min ) matrix1(iRow,iCol) = 1.0;
-      if (matrix2(iRow,iCol) < min ) matrix2(iRow,iCol) = 1.0;
+      if (matrix1(iRow,iCol) < min and matrix2(iRow,iCol) < min) 
+      {
+        matrix1(iRow,iCol) = 1.0;
+        matrix2(iRow,iCol) = 1.0;
+      }
     }
   }
   residualMatrix = (ones-(matrix2.cwiseQuotient(matrix1)));
   residual = (1.0/residualMatrix.size())*residualMatrix.squaredNorm();
   return residual;
-  
+
 };
 //==============================================================================
 
