@@ -250,33 +250,10 @@ void QDSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   deltaR = rUp-rDown; deltaZ = zUp-zAvg;
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
-  
-  // get local Eddington factors
   EzzC = SGQD->Ezz(iZ,iR);
   EzzS = getSouthEzz(iZ,iR,SGQD); 
   ErzW = getWestErz(iZ,iR,SGQD); 
   ErzE = getEastErz(iZ,iR,SGQD); 
-//  if (iZ == mesh->nZ-1)
-//    EzzS = SGQD->Ezz(iZ,iR);
-//  else
-//    EzzS = 2.0/(1.0/SGQD->Ezz(iZ,iR) + 1.0/SGQD->Ezz(iZ+1,iR));
-//  if (iR == 0)
-//    ErzW = SGQD->Erz(iZ,iR);
-//  else
-//  {
-//    ErzW = 2.0/(1.0/SGQD->Erz(iZ,iR-1) + 1.0/SGQD->Erz(iZ,iR));
-//    //ErzW = SGQD->Erz(iZ,iR);
-//  }
-//  if (iR == mesh->nR-1)
-//    ErzE = SGQD->Erz(iZ,iR);
-//  else
-//  {
-//    ErzE = 2.0/(1.0/SGQD->Erz(iZ,iR) + 1.0/SGQD->Erz(iZ,iR+1));
-//    //ErzE = SGQD->Erz(iZ,iR);
-//  }
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
@@ -321,38 +298,10 @@ void QDSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   deltaR = rUp-rDown; deltaZ = zAvg-zDown;
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
-
-  // get local Eddington factors
   EzzC = SGQD->Ezz(iZ,iR);
   EzzN = getNorthEzz(iZ,iR,SGQD); 
   ErzW = getWestErz(iZ,iR,SGQD); 
   ErzE = getEastErz(iZ,iR,SGQD); 
-//  if (iZ == 0)
-//    EzzN = SGQD->Ezz(iZ,iR);
-//  else
-//  {
-//    EzzN = (SGQD->Ezz(iZ-1,iR) + SGQD->Ezz(iZ,iR))/2.0;
-//    EzzN = 2.0/(1.0/SGQD->Ezz(iZ-1,iR) + 1.0/SGQD->Ezz(iZ,iR));
-//  }
-//  if (iR == 0)
-//    ErzW = SGQD->Erz(iZ,iR);
-//  else
-//  {
-//    ErzW = (SGQD->Erz(iZ,iR-1) + SGQD->Erz(iZ,iR))/2.0;
-//    ErzW =2.0/(1.0/SGQD->Erz(iZ,iR-1) + 1.0/SGQD->Erz(iZ,iR));
-//    //ErzW = SGQD->Erz(iZ,iR);
-//  }
-//  if (iR == mesh->nR-1)
-//    ErzE = SGQD->Erz(iZ,iR);
-//  else
-//  {
-//    ErzE = (SGQD->Erz(iZ,iR) + SGQD->Erz(iZ,iR+1))/2.0;
-//    ErzE = 2.0/(1.0/SGQD->Erz(iZ,iR) + 1.0/SGQD->Erz(iZ,iR+1));
-//    //ErzE = SGQD->Erz(iZ,iR);
-//  } 
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
@@ -400,39 +349,10 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
-
-  // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
   ErrW = getWestErr(iZ,iR,SGQD); 
   ErzN = getNorthErz(iZ,iR,SGQD); 
   ErzS = getSouthErz(iZ,iR,SGQD); 
-//  if (iZ == 0)
-//    ErzN = SGQD->Erz(iZ,iR);
-//  else
-//  {
-//    ErzN = (SGQD->Erz(iZ-1,iR) + SGQD->Erz(iZ,iR))/2.0;
-//    ErzN = 2.0/(1.0/SGQD->Erz(iZ-1,iR) + 1.0/SGQD->Erz(iZ,iR));
-//    //ErzN = SGQD->Erz(iZ,iR);
-//  }
-//  if (iZ == mesh->nZ - 1) 
-//    ErzS = SGQD->Erz(iZ,iR);
-//  else
-//  {
-//    ErzS = (SGQD->Erz(iZ,iR) + SGQD->Erz(iZ+1,iR))/2.0;
-//    ErzS = 2.0/(1.0/SGQD->Erz(iZ,iR) + 1.0/SGQD->Erz(iZ+1,iR));
-//    //ErzS = SGQD->Erz(iZ,iR);
-//  }
-//  if (iR == 0)
-//    ErrW = SGQD->Err(iZ,iR);
-//  else
-//  {
-//    ErrW = (SGQD->Err(iZ,iR-1) + SGQD->Err(iZ,iR))/2.0;
-//    ErrW = 2.0/(1.0/SGQD->Err(iZ,iR-1) + 1.0/SGQD->Err(iZ,iR));
-//  }
-//  ErrW = getWestErr(iZ,iR,SGQD);
   
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
@@ -479,40 +399,11 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
   hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
 
-  // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
-
   // get local Eddington factors// get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
   ErrE = getEastErr(iZ,iR,SGQD); 
   ErzN = getNorthErz(iZ,iR,SGQD); 
   ErzS = getSouthErz(iZ,iR,SGQD); 
-//  if (iZ == 0)
-//    ErzN = SGQD->Erz(iZ,iR);
-//  else
-//  {
-//    ErzN = (SGQD->Erz(iZ-1,iR) + SGQD->Erz(iZ,iR))/2.0;
-//    ErzN = 2.0/(1.0/SGQD->Erz(iZ-1,iR) + 1.0/SGQD->Erz(iZ,iR));
-//    //ErzN = SGQD->Erz(iZ,iR);
-//  }
-//  if (iZ == mesh->nZ - 1) 
-//    ErzS = SGQD->Erz(iZ,iR);
-//  else
-//  {
-//    ErzS = (SGQD->Erz(iZ,iR) + SGQD->Erz(iZ+1,iR))/2.0;
-//    ErzS = 2.0/(1.0/SGQD->Erz(iZ,iR) + 1.0/SGQD->Erz(iZ+1,iR));
-//    //ErzS = SGQD->Erz(iZ,iR);
-//  }
-//  ErrC = SGQD->Err(iZ,iR);
-//  if(iR == mesh->nR-1)
-//    ErrE = SGQD->Err(iZ,iR);
-//  else
-//  {
-//    ErrE = (SGQD->Err(iZ,iR) + SGQD->Err(iZ,iR+1))/2.0;
-//    ErrE = 2.0/(1.0/SGQD->Err(iZ,iR) + 1.0/SGQD->Err(iZ,iR+1));
-//  }
   
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
