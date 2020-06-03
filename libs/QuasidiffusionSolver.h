@@ -29,6 +29,16 @@ class QDSolver
     // functions to calculate geometry parameters
     double calcVolAvgR(double rDown,double rUp);
     vector<double> calcGeoParams(int iR,int iZ);
+    
+    // functions to get Eddington factors
+    double getWestErr(int iZ,int iR, SingleGroupQD * SGQD);
+    double getWestErz(int iZ,int iR, SingleGroupQD * SGQD);
+    double getEastErr(int iZ,int iR, SingleGroupQD * SGQD);
+    double getEastErz(int iZ,int iR, SingleGroupQD * SGQD);
+    double getNorthEzz(int iZ,int iR, SingleGroupQD * SGQD);
+    double getNorthErz(int iZ,int iR, SingleGroupQD * SGQD);
+    double getSouthEzz(int iZ,int iR, SingleGroupQD * SGQD);
+    double getSouthErz(int iZ,int iR, SingleGroupQD * SGQD);
 
     // functions to enforce governing equations
     void assertZerothMoment(int iR,int iZ,int iEq,int energyGroup,\

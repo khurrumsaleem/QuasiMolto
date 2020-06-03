@@ -241,6 +241,7 @@ void QDSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double EzzC,EzzS,ErzW,ErzE;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -252,19 +253,43 @@ void QDSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   ErrL = SGQD->Err(iZ,iR);
   EzzL = SGQD->Ezz(iZ,iR);
   ErzL = SGQD->Erz(iZ,iR);
+  
+  // get local Eddington factors
+  EzzC = SGQD->Ezz(iZ,iR);
+  EzzS = getSouthEzz(iZ,iR,SGQD); 
+  ErzW = getWestErz(iZ,iR,SGQD); 
+  ErzE = getEastErz(iZ,iR,SGQD); 
+//  if (iZ == mesh->nZ-1)
+//    EzzS = SGQD->Ezz(iZ,iR);
+//  else
+//    EzzS = 2.0/(1.0/SGQD->Ezz(iZ,iR) + 1.0/SGQD->Ezz(iZ+1,iR));
+//  if (iR == 0)
+//    ErzW = SGQD->Erz(iZ,iR);
+//  else
+//  {
+//    ErzW = 2.0/(1.0/SGQD->Erz(iZ,iR-1) + 1.0/SGQD->Erz(iZ,iR));
+//    //ErzW = SGQD->Erz(iZ,iR);
+//  }
+//  if (iR == mesh->nR-1)
+//    ErzE = SGQD->Erz(iZ,iR);
+//  else
+//  {
+//    ErzE = 2.0/(1.0/SGQD->Erz(iZ,iR) + 1.0/SGQD->Erz(iZ,iR+1));
+//    //ErzE = SGQD->Erz(iZ,iR);
+//  }
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-  A.coeffRef(iEq,indices[iSF]) -= coeff*EzzL/deltaZ;
+  A.coeffRef(iEq,indices[iSF]) -= coeff*EzzS/deltaZ;
 
-  A.coeffRef(iEq,indices[iCF]) += coeff*EzzL/deltaZ;
+  A.coeffRef(iEq,indices[iCF]) += coeff*EzzC/deltaZ;
 
-  A.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
+  A.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
 
-  A.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+  A.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
 
   // formulate RHS entry
   b(iEq) = b(iEq) - coeff*(currPast(indices[iSC])/(v*deltaT));
@@ -287,6 +312,7 @@ void QDSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double EzzC,EzzN,ErzW,ErzE;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -299,18 +325,47 @@ void QDSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   EzzL = SGQD->Ezz(iZ,iR);
   ErzL = SGQD->Erz(iZ,iR);
 
+  // get local Eddington factors
+  EzzC = SGQD->Ezz(iZ,iR);
+  EzzN = getNorthEzz(iZ,iR,SGQD); 
+  ErzW = getWestErz(iZ,iR,SGQD); 
+  ErzE = getEastErz(iZ,iR,SGQD); 
+//  if (iZ == 0)
+//    EzzN = SGQD->Ezz(iZ,iR);
+//  else
+//  {
+//    EzzN = (SGQD->Ezz(iZ-1,iR) + SGQD->Ezz(iZ,iR))/2.0;
+//    EzzN = 2.0/(1.0/SGQD->Ezz(iZ-1,iR) + 1.0/SGQD->Ezz(iZ,iR));
+//  }
+//  if (iR == 0)
+//    ErzW = SGQD->Erz(iZ,iR);
+//  else
+//  {
+//    ErzW = (SGQD->Erz(iZ,iR-1) + SGQD->Erz(iZ,iR))/2.0;
+//    ErzW =2.0/(1.0/SGQD->Erz(iZ,iR-1) + 1.0/SGQD->Erz(iZ,iR));
+//    //ErzW = SGQD->Erz(iZ,iR);
+//  }
+//  if (iR == mesh->nR-1)
+//    ErzE = SGQD->Erz(iZ,iR);
+//  else
+//  {
+//    ErzE = (SGQD->Erz(iZ,iR) + SGQD->Erz(iZ,iR+1))/2.0;
+//    ErzE = 2.0/(1.0/SGQD->Erz(iZ,iR) + 1.0/SGQD->Erz(iZ,iR+1));
+//    //ErzE = SGQD->Erz(iZ,iR);
+//  } 
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-  A.coeffRef(iEq,indices[iNF]) += coeff*EzzL/deltaZ;
+  A.coeffRef(iEq,indices[iNF]) += coeff*EzzN/deltaZ;
 
-  A.coeffRef(iEq,indices[iCF]) -= coeff*EzzL/deltaZ;
+  A.coeffRef(iEq,indices[iCF]) -= coeff*EzzC/deltaZ;
 
-  A.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
+  A.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
 
-  A.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+  A.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
 
   // formulate RHS entry
   b(iEq) = b(iEq) - coeff*(currPast(indices[iNC])/(v*deltaT));
@@ -334,6 +389,7 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   double sigT = materials->sigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
   double hCent,hDown;
+  double ErzN,ErzS,ErrC,ErrW;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -348,18 +404,48 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   EzzL = SGQD->Ezz(iZ,iR);
   ErzL = SGQD->Erz(iZ,iR);
 
+  // get local Eddington factors
+  ErrC = SGQD->Err(iZ,iR);
+  ErrW = getWestErr(iZ,iR,SGQD); 
+  ErzN = getNorthErz(iZ,iR,SGQD); 
+  ErzS = getSouthErz(iZ,iR,SGQD); 
+//  if (iZ == 0)
+//    ErzN = SGQD->Erz(iZ,iR);
+//  else
+//  {
+//    ErzN = (SGQD->Erz(iZ-1,iR) + SGQD->Erz(iZ,iR))/2.0;
+//    ErzN = 2.0/(1.0/SGQD->Erz(iZ-1,iR) + 1.0/SGQD->Erz(iZ,iR));
+//    //ErzN = SGQD->Erz(iZ,iR);
+//  }
+//  if (iZ == mesh->nZ - 1) 
+//    ErzS = SGQD->Erz(iZ,iR);
+//  else
+//  {
+//    ErzS = (SGQD->Erz(iZ,iR) + SGQD->Erz(iZ+1,iR))/2.0;
+//    ErzS = 2.0/(1.0/SGQD->Erz(iZ,iR) + 1.0/SGQD->Erz(iZ+1,iR));
+//    //ErzS = SGQD->Erz(iZ,iR);
+//  }
+//  if (iR == 0)
+//    ErrW = SGQD->Err(iZ,iR);
+//  else
+//  {
+//    ErrW = (SGQD->Err(iZ,iR-1) + SGQD->Err(iZ,iR))/2.0;
+//    ErrW = 2.0/(1.0/SGQD->Err(iZ,iR-1) + 1.0/SGQD->Err(iZ,iR));
+//  }
+//  ErrW = getWestErr(iZ,iR,SGQD);
+  
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-  A.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
+  A.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
 
-  A.coeffRef(iEq,indices[iNF]) += coeff*ErzL/deltaZ;
+  A.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
 
-  A.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrL/(hDown*deltaR);
+  A.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
 
-  A.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrL/(hDown*deltaR);
+  A.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
 
   // formulate RHS entry
   b(iEq) = b(iEq) - coeff*(currPast(indices[iWC])/(v*deltaT));
@@ -383,6 +469,7 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   double sigT = materials->sigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
   double hCent,hUp;
+  double ErzN,ErzS,ErrC,ErrE;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -397,18 +484,48 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   EzzL = SGQD->Ezz(iZ,iR);
   ErzL = SGQD->Erz(iZ,iR);
 
+  // get local Eddington factors// get local Eddington factors
+  ErrC = SGQD->Err(iZ,iR);
+  ErrE = getEastErr(iZ,iR,SGQD); 
+  ErzN = getNorthErz(iZ,iR,SGQD); 
+  ErzS = getSouthErz(iZ,iR,SGQD); 
+//  if (iZ == 0)
+//    ErzN = SGQD->Erz(iZ,iR);
+//  else
+//  {
+//    ErzN = (SGQD->Erz(iZ-1,iR) + SGQD->Erz(iZ,iR))/2.0;
+//    ErzN = 2.0/(1.0/SGQD->Erz(iZ-1,iR) + 1.0/SGQD->Erz(iZ,iR));
+//    //ErzN = SGQD->Erz(iZ,iR);
+//  }
+//  if (iZ == mesh->nZ - 1) 
+//    ErzS = SGQD->Erz(iZ,iR);
+//  else
+//  {
+//    ErzS = (SGQD->Erz(iZ,iR) + SGQD->Erz(iZ+1,iR))/2.0;
+//    ErzS = 2.0/(1.0/SGQD->Erz(iZ,iR) + 1.0/SGQD->Erz(iZ+1,iR));
+//    //ErzS = SGQD->Erz(iZ,iR);
+//  }
+//  ErrC = SGQD->Err(iZ,iR);
+//  if(iR == mesh->nR-1)
+//    ErrE = SGQD->Err(iZ,iR);
+//  else
+//  {
+//    ErrE = (SGQD->Err(iZ,iR) + SGQD->Err(iZ,iR+1))/2.0;
+//    ErrE = 2.0/(1.0/SGQD->Err(iZ,iR) + 1.0/SGQD->Err(iZ,iR+1));
+//  }
+  
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-  A.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
+  A.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
 
-  A.coeffRef(iEq,indices[iNF]) += coeff*ErzL/deltaZ;
+  A.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
 
-  A.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrL/(hUp*deltaR);
+  A.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrC/(hUp*deltaR);
 
-  A.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrL/(hUp*deltaR);
+  A.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
 
   // formulate RHS entry
   b(iEq) = b(iEq) - coeff*(currPast(indices[iEC])/(v*deltaT));
@@ -1137,6 +1254,222 @@ double QDSolver::calcVolAvgR(double rDown,double rUp)
   double volAvgR = (2.0/3.0)*(pow(rUp,3) - pow(rDown,3))/(pow(rUp,2)-pow(rDown,2));
 
   return volAvgR;
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Err on west interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double QDSolver::getWestErr(int iZ,int iR,SingleGroupQD * SGQD)
+{
+
+  double volLeft,volRight,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the west
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iR == 0)
+    return SGQD->Err(iZ,iR);
+  else
+  { 
+    volLeft = calcGeoParams(iR-1,iZ)[iCF];
+    volRight = calcGeoParams(iR,iZ)[iCF];
+    totalVol = volLeft + volRight;
+    return (totalVol)/(volLeft/SGQD->Err(iZ,iR-1) + volRight/SGQD->Err(iZ,iR));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Erz on west interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double QDSolver::getWestErz(int iZ,int iR,SingleGroupQD * SGQD)
+{
+
+  double volLeft,volRight,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the west
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iR == 0)
+    return SGQD->Erz(iZ,iR);
+  else
+  { 
+    volLeft = calcGeoParams(iR-1,iZ)[iCF];
+    volRight = calcGeoParams(iR,iZ)[iCF];
+    totalVol = volLeft + volRight;
+    return (totalVol)/(volLeft/SGQD->Erz(iZ,iR-1) + volRight/SGQD->Erz(iZ,iR));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Err on east interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double QDSolver::getEastErr(int iZ,int iR,SingleGroupQD * SGQD)
+{
+
+  double volLeft,volRight,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the east
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iR == mesh->nR - 1)
+    return SGQD->Err(iZ,iR);
+  else
+  { 
+    volLeft = calcGeoParams(iR,iZ)[iCF];
+    volRight = calcGeoParams(iR+1,iZ)[iCF];
+    totalVol = volLeft + volRight;
+    return (totalVol)/(volLeft/SGQD->Err(iZ,iR) + volRight/SGQD->Err(iZ,iR+1));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Erz on east interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double QDSolver::getEastErz(int iZ,int iR,SingleGroupQD * SGQD)
+{
+
+  double volLeft,volRight,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the east
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iR == mesh->nR - 1)
+    return SGQD->Erz(iZ,iR);
+  else
+  { 
+    volLeft = calcGeoParams(iR,iZ)[iCF];
+    volRight = calcGeoParams(iR+1,iZ)[iCF];
+    totalVol = volLeft + volRight;
+    return (totalVol)/(volLeft/SGQD->Erz(iZ,iR) + volRight/SGQD->Erz(iZ,iR+1));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Ezz on north interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double QDSolver::getNorthEzz(int iZ,int iR,SingleGroupQD * SGQD)
+{
+
+  double volDown,volUp,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the north
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iZ == 0)
+    return SGQD->Ezz(iZ,iR);
+  else
+  { 
+    volDown = calcGeoParams(iR,iZ-1)[iCF];
+    volUp = calcGeoParams(iR,iZ)[iCF];
+    totalVol = volUp + volDown;
+    return (totalVol)/(volDown/SGQD->Ezz(iZ-1,iR) + volUp/SGQD->Ezz(iZ,iR));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Erz on north interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double QDSolver::getNorthErz(int iZ,int iR,SingleGroupQD * SGQD)
+{
+
+  double volDown,volUp,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the north
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iZ == 0)
+    return SGQD->Erz(iZ,iR);
+  else
+  { 
+    volDown = calcGeoParams(iR,iZ-1)[iCF];
+    volUp = calcGeoParams(iR,iZ)[iCF];
+    totalVol = volUp + volDown;
+    return (totalVol)/(volDown/SGQD->Erz(iZ-1,iR) + volUp/SGQD->Erz(iZ,iR));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Ezz on south interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double QDSolver::getSouthEzz(int iZ,int iR,SingleGroupQD * SGQD)
+{
+
+  double volDown,volUp,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the south
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iZ == mesh->nZ-1)
+    return SGQD->Ezz(iZ,iR);
+  else
+  { 
+    volDown = calcGeoParams(iR,iZ)[iCF];
+    volUp = calcGeoParams(iR,iZ+1)[iCF];
+    totalVol = volUp + volDown;
+    return (totalVol)/(volDown/SGQD->Ezz(iZ,iR) + volUp/SGQD->Ezz(iZ+1,iR));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Erz on south interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double QDSolver::getSouthErz(int iZ,int iR,SingleGroupQD * SGQD)
+{
+
+  double volDown,volUp,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the south
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iZ == mesh->nZ-1)
+    return SGQD->Erz(iZ,iR);
+  else
+  { 
+    volDown = calcGeoParams(iR,iZ)[iCF];
+    volUp = calcGeoParams(iR,iZ+1)[iCF];
+    totalVol = volUp + volDown;
+    return (totalVol)/(volDown/SGQD->Erz(iZ,iR) + volUp/SGQD->Erz(iZ+1,iR));
+  }
+
 };
 //==============================================================================
 
