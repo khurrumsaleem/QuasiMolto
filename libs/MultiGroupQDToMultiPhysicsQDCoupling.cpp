@@ -987,11 +987,14 @@ double MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
 
   for (int index = 0; index < vector1.size(); index++)
   {
-    if (abs(vector1(index)) < min ) vector1(index) = 1.0;
-    if (abs(vector2(index)) < min ) vector2(index) = 1.0;
+    if (abs(vector1(index)) < min  and abs(vector2(index)) < min ) 
+    {
+      vector1(index) = 1.0;
+      vector2(index) = 1.0;
+    }
   }
   residualVec = (ones-(vector2.cwiseQuotient(vector1)));
-  residual = (1.0/residualVec.size())*residualVec.norm();
+  residual = (1.0/residualVec.size())*residualVec.squaredNorm();
 
   return residual;
   
