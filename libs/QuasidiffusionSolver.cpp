@@ -240,7 +240,7 @@ void QDSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double EzzC,EzzS,ErzW,ErzE;
 
   // calculate geometric values
@@ -288,7 +288,7 @@ void QDSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double EzzC,EzzN,ErzW,ErzE;
 
   // calculate geometric values
@@ -336,7 +336,7 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double hCent,hDown;
   double ErzN,ErzS,ErrC,ErrW;  
 
@@ -387,7 +387,7 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double hCent,hUp;
   double ErzN,ErzS,ErrC,ErrE;  
 
@@ -399,7 +399,7 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
   hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
 
-  // get local Eddington factors// get local Eddington factors
+  // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
   ErrE = getEastErr(iZ,iR,SGQD); 
   ErzN = getNorthErz(iZ,iR,SGQD); 
@@ -482,7 +482,8 @@ void QDSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double EzzC,EzzS,ErzW,ErzE;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -491,22 +492,23 @@ void QDSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
   deltaR = rUp-rDown; deltaZ = zUp-zAvg;
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
-
+  EzzC = SGQD->Ezz(iZ,iR);
+  EzzS = getSouthEzz(iZ,iR,SGQD); 
+  ErzW = getWestErz(iZ,iR,SGQD); 
+  ErzE = getEastErz(iZ,iR,SGQD); 
+  
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
   coeff = 1/((1/(v*deltaT))+sigT); 
 
-  C.coeffRef(iEq,indices[iSF]) -= coeff*EzzL/deltaZ;
+  C.coeffRef(iEq,indices[iSF]) -= coeff*EzzS/deltaZ;
 
-  C.coeffRef(iEq,indices[iCF]) += coeff*EzzL/deltaZ;
+  C.coeffRef(iEq,indices[iCF]) += coeff*EzzC/deltaZ;
 
-  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
+  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
 
-  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
 
   // formulate RHS entry
   d(iEq) = coeff*(currPast(indices[iSC])/(v*deltaT));
@@ -528,7 +530,8 @@ void QDSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double EzzC,EzzN,ErzW,ErzE;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -537,22 +540,23 @@ void QDSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
   deltaR = rUp-rDown; deltaZ = zAvg-zDown;
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  EzzC = SGQD->Ezz(iZ,iR);
+  EzzN = getNorthEzz(iZ,iR,SGQD); 
+  ErzW = getWestErz(iZ,iR,SGQD); 
+  ErzE = getEastErz(iZ,iR,SGQD); 
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
   coeff = 1/((1/(v*deltaT))+sigT); 
 
-  C.coeffRef(iEq,indices[iNF]) += coeff*EzzL/deltaZ;
+  C.coeffRef(iEq,indices[iNF]) += coeff*EzzN/deltaZ;
 
-  C.coeffRef(iEq,indices[iCF]) -= coeff*EzzL/deltaZ;
+  C.coeffRef(iEq,indices[iCF]) -= coeff*EzzC/deltaZ;
 
-  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
+  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
 
-  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
 
   // formulate RHS entry
   d(iEq) = coeff*(currPast(indices[iNC])/(v*deltaT));
@@ -574,8 +578,9 @@ void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double hCent,hDown;
+  double ErzN,ErzS,ErrC,ErrW;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -586,22 +591,23 @@ void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
   hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  ErrC = SGQD->Err(iZ,iR);
+  ErrW = getWestErr(iZ,iR,SGQD); 
+  ErzN = getNorthErz(iZ,iR,SGQD); 
+  ErzS = getSouthErz(iZ,iR,SGQD); 
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
   coeff = 1/((1/(v*deltaT))+sigT); 
 
-  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
+  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
 
-  C.coeffRef(iEq,indices[iNF]) += coeff*ErzL/deltaZ;
+  C.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
 
-  C.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrL/(hDown*deltaR);
+  C.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
 
-  C.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrL/(hDown*deltaR);
+  C.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
 
   // formulate RHS entry
   d(iEq) = coeff*(currPast(indices[iWC])/(v*deltaT));
@@ -623,8 +629,9 @@ void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
   double deltaT = mesh->dt;
   double v = materials->neutV(energyGroup);
   double sigT = materials->sigT(iZ,iR,energyGroup);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double hCent,hUp;
+  double ErzN,ErzS,ErrC,ErrE;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -635,22 +642,23 @@ void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
   hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
 
   // get local Eddington factors
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
+  ErrC = SGQD->Err(iZ,iR);
+  ErrE = getEastErr(iZ,iR,SGQD); 
+  ErzN = getNorthErz(iZ,iR,SGQD); 
+  ErzS = getSouthErz(iZ,iR,SGQD); 
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
   coeff = 1/((1/(v*deltaT))+sigT); 
 
-  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
+  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
 
-  C.coeffRef(iEq,indices[iNF]) += coeff*ErzL/deltaZ;
+  C.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
 
-  C.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrL/(hUp*deltaR);
+  C.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrC/(hUp*deltaR);
 
-  C.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrL/(hUp*deltaR);
+  C.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
 
   // formulate RHS entry
   d(iEq) = coeff*(currPast(indices[iEC])/(v*deltaT));
