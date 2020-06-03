@@ -31,6 +31,16 @@ class GreyGroupSolver
     double calcVolAvgR(double rDown,double rUp);
     vector<double> calcGeoParams(int iR,int iZ);
 
+    // functions to get Eddington factors
+    double getWestErr(int iZ,int iR);
+    double getWestErz(int iZ,int iR);
+    double getEastErr(int iZ,int iR);
+    double getEastErz(int iZ,int iR);
+    double getNorthEzz(int iZ,int iR);
+    double getNorthErz(int iZ,int iR);
+    double getSouthEzz(int iZ,int iR);
+    double getSouthErz(int iZ,int iR);
+
     // functions to enforce governing equations
     void assertZerothMoment(int iR,int iZ,int iEq);
     void applyRadialBoundary(int iR,int iZ,int iEq);

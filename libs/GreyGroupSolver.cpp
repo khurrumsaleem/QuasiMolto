@@ -47,7 +47,7 @@ GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
 //==============================================================================
 
 //==============================================================================
-/// Form a portion of the linear system that belongs to SGQD 
+/// Form a portion of the linear system  
 
 void GreyGroupSolver::formLinearSystem()	      
 {
@@ -204,8 +204,9 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->zNeutV(iZ+1,iR);
   double sigT = materials->oneGroupXS->zSigTR(iZ+1,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL,\
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL,\
     mgqdCurrent,mgqdNeutV;  
+  double EzzC,EzzS,ErzW,ErzE;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -214,9 +215,10 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   deltaR = rUp-rDown; deltaZ = zUp-zAvg;
 
   // get local Eddington factors
-  ErrL = GGQD->Err(iZ,iR);
-  EzzL = GGQD->Ezz(iZ,iR);
-  ErzL = GGQD->Erz(iZ,iR);
+  EzzC = GGQD->Ezz(iZ,iR);
+  EzzS = getSouthEzz(iZ,iR); 
+  ErzW = getWestErz(iZ,iR); 
+  ErzE = getEastErz(iZ,iR); 
   zetaL = materials->oneGroupXS->zZeta(iZ+1,iR);
 
   // populate entries representing streaming and reaction terms
@@ -224,13 +226,13 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-  A->coeffRef(iEq,indices[iSF]) -= coeff*EzzL/deltaZ;
+  A->coeffRef(iEq,indices[iSF]) -= coeff*EzzS/deltaZ;
 
-  A->coeffRef(iEq,indices[iCF]) += coeff*EzzL/deltaZ;
+  A->coeffRef(iEq,indices[iCF]) += coeff*EzzC/deltaZ;
 
-  A->coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
+  A->coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
 
-  A->coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+  A->coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
 
   // Enforce zeta coefficient
   A->coeffRef(iEq,indices[iSF]) += zetaL;
@@ -268,8 +270,9 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->zNeutV(iZ,iR);
   double sigT = materials->oneGroupXS->zSigTR(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL,\
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL,\
     mgqdCurrent,mgqdNeutV;  
+  double EzzC,EzzN,ErzW,ErzE;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -278,9 +281,10 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
   deltaR = rUp-rDown; deltaZ = zAvg-zDown;
 
   // get local Eddington factors
-  ErrL = GGQD->Err(iZ,iR);
-  EzzL = GGQD->Ezz(iZ,iR);
-  ErzL = GGQD->Erz(iZ,iR);
+  EzzC = GGQD->Ezz(iZ,iR);
+  EzzN = getNorthEzz(iZ,iR); 
+  ErzW = getWestErz(iZ,iR); 
+  ErzE = getEastErz(iZ,iR); 
   zetaL = materials->oneGroupXS->zZeta(iZ,iR);
 
   // populate entries representing streaming and reaction terms
@@ -288,13 +292,13 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-  A->coeffRef(iEq,indices[iNF]) += coeff*EzzL/deltaZ;
+  A->coeffRef(iEq,indices[iNF]) += coeff*EzzN/deltaZ;
 
-  A->coeffRef(iEq,indices[iCF]) -= coeff*EzzL/deltaZ;
+  A->coeffRef(iEq,indices[iCF]) -= coeff*EzzC/deltaZ;
 
-  A->coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
+  A->coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
 
-  A->coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+  A->coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
 
   // Enforce zeta coefficient
   A->coeffRef(iEq,indices[iNF]) += coeff*zetaL;
@@ -331,8 +335,9 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->rNeutV(iZ,iR);
   double sigT = materials->oneGroupXS->rSigTR(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL;
   double hCent,hDown,mgqdCurrent,mgqdNeutV;
+  double ErzN,ErzS,ErrC,ErrW;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -343,9 +348,10 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   hDown = calcIntegratingFactor(iR,iZ,rDown);
 
   // get local Eddington factors
-  ErrL = GGQD->Err(iZ,iR);
-  EzzL = GGQD->Ezz(iZ,iR);
-  ErzL = GGQD->Erz(iZ,iR);
+  ErrC = GGQD->Err(iZ,iR);
+  ErrW = getWestErr(iZ,iR); 
+  ErzN = getNorthErz(iZ,iR); 
+  ErzS = getSouthErz(iZ,iR); 
   zetaL = materials->oneGroupXS->rZeta(iZ,iR);
 
   // populate entries representing streaming and reaction terms
@@ -353,13 +359,13 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-  A->coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
+  A->coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
 
-  A->coeffRef(iEq,indices[iNF]) += coeff*ErzL/deltaZ;
+  A->coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
 
-  A->coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrL/(hDown*deltaR);
+  A->coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
 
-  A->coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrL/(hDown*deltaR);
+  A->coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
 
   // Enforce zeta coefficient
   A->coeffRef(iEq,indices[iWF]) += coeff*zetaL;
@@ -397,8 +403,9 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->rNeutV(iZ,iR+1);
   double sigT = materials->oneGroupXS->rSigTR(iZ,iR+1);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,zetaL;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL;  
   double hCent,hUp,mgqdCurrent,mgqdNeutV;
+  double ErzN,ErzS,ErrC,ErrE;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -409,9 +416,10 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   hUp = calcIntegratingFactor(iR,iZ,rUp);
 
   // get local Eddington factors
-  ErrL = GGQD->Err(iZ,iR);
-  EzzL = GGQD->Ezz(iZ,iR);
-  ErzL = GGQD->Erz(iZ,iR);
+  ErrC = GGQD->Err(iZ,iR);
+  ErrE = getEastErr(iZ,iR); 
+  ErzN = getNorthErz(iZ,iR); 
+  ErzS = getSouthErz(iZ,iR); 
   zetaL = materials->oneGroupXS->rZeta(iZ,iR+1);
 
   // populate entries representing streaming and reaction terms
@@ -419,13 +427,13 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-  A->coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
+  A->coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
 
-  A->coeffRef(iEq,indices[iNF]) += coeff*ErzL/deltaZ;
+  A->coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
 
-  A->coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrL/(hUp*deltaR);
+  A->coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrC/(hUp*deltaR);
 
-  A->coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrL/(hUp*deltaR);
+  A->coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
 
   // Enforce zeta coefficient
   A->coeffRef(iEq,indices[iEF]) += coeff*zetaL;
@@ -509,8 +517,9 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->zNeutV(iZ+1,iR);
   double sigT = materials->oneGroupXS->zSigTR(iZ+1,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff,\
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff,\
     zetaL,mgqdCurrent,mgqdNeutV; 
+  double EzzC,EzzS,ErzW,ErzE;
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -519,9 +528,10 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
   deltaR = rUp-rDown; deltaZ = zUp-zAvg;
 
   // get local Eddington factors
-  ErrL = GGQD->Err(iZ,iR);
-  EzzL = GGQD->Ezz(iZ,iR);
-  ErzL = GGQD->Erz(iZ,iR);
+  EzzC = GGQD->Ezz(iZ,iR);
+  EzzS = getSouthEzz(iZ,iR); 
+  ErzW = getWestErz(iZ,iR); 
+  ErzE = getEastErz(iZ,iR); 
   zetaL = materials->oneGroupXS->zZeta(iZ+1,iR);
 
   // populate entries representing streaming and reaction terms
@@ -529,13 +539,13 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
 
   coeff = 1/((1/(v*deltaT))+sigT); 
 
-  C.coeffRef(iEq,indices[iSF]) -= coeff*EzzL/deltaZ;
+  C.coeffRef(iEq,indices[iSF]) -= coeff*EzzS/deltaZ;
 
-  C.coeffRef(iEq,indices[iCF]) += coeff*EzzL/deltaZ;
+  C.coeffRef(iEq,indices[iCF]) += coeff*EzzC/deltaZ;
 
-  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
+  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
 
-  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
 
   // Enforce zeta coefficient
   C.coeffRef(iEq,indices[iSF]) += zetaL;
@@ -571,8 +581,10 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->zNeutV(iZ,iR);
   double sigT = materials->oneGroupXS->zSigTR(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff,\
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff,\
     zetaL,mgqdCurrent,mgqdNeutV;
+  double EzzC,EzzN,ErzW,ErzE;
+
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
@@ -580,9 +592,11 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
   deltaR = rUp-rDown; deltaZ = zAvg-zDown;
 
   // get local Eddington factors
-  ErrL = GGQD->Err(iZ,iR);
-  EzzL = GGQD->Ezz(iZ,iR);
-  ErzL = GGQD->Erz(iZ,iR);
+  EzzC = GGQD->Ezz(iZ,iR);
+  EzzN = getNorthEzz(iZ,iR); 
+  ErzW = getWestErz(iZ,iR); 
+  ErzE = getEastErz(iZ,iR); 
+
   zetaL = materials->oneGroupXS->zZeta(iZ,iR);
 
   // populate entries representing streaming and reaction terms
@@ -590,13 +604,13 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
 
   coeff = 1/((1/(v*deltaT))+sigT); 
 
-  C.coeffRef(iEq,indices[iNF]) += coeff*EzzL/deltaZ;
+  C.coeffRef(iEq,indices[iNF]) += coeff*EzzN/deltaZ;
 
-  C.coeffRef(iEq,indices[iCF]) -= coeff*EzzL/deltaZ;
+  C.coeffRef(iEq,indices[iCF]) -= coeff*EzzC/deltaZ;
 
-  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzL/(rAvg*deltaR));
+  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
 
-  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzL/(rAvg*deltaR);
+  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
 
   // Enforce zeta coefficient
   C.coeffRef(iEq,indices[iNF]) += zetaL;
@@ -632,8 +646,9 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->rNeutV(iZ,iR);
   double sigT = materials->oneGroupXS->rSigTR(iZ,iR);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double hCent,hDown,zetaL,mgqdCurrent,mgqdNeutV;
+  double ErzN,ErzS,ErrC,ErrW;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -644,9 +659,10 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
   hDown = calcIntegratingFactor(iR,iZ,rDown);
 
   // get local Eddington factors
-  ErrL = GGQD->Err(iZ,iR);
-  EzzL = GGQD->Ezz(iZ,iR);
-  ErzL = GGQD->Erz(iZ,iR);
+  ErrC = GGQD->Err(iZ,iR);
+  ErrW = getWestErr(iZ,iR); 
+  ErzN = getNorthErz(iZ,iR); 
+  ErzS = getSouthErz(iZ,iR); 
   zetaL = materials->oneGroupXS->rZeta(iZ,iR);
 
   // populate entries representing streaming and reaction terms
@@ -654,13 +670,13 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
 
   coeff = 1/((1/(v*deltaT))+sigT); 
 
-  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
+  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
 
-  C.coeffRef(iEq,indices[iNF]) += coeff*ErzL/deltaZ;
+  C.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
 
-  C.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrL/(hDown*deltaR);
+  C.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
 
-  C.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrL/(hDown*deltaR);
+  C.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
 
   // Enforce zeta coefficient
   C.coeffRef(iEq,indices[iWF]) += zetaL;
@@ -696,8 +712,9 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->rNeutV(iZ,iR+1);
   double sigT = materials->oneGroupXS->rSigTR(iZ,iR+1);
-  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,ErrL,EzzL,ErzL,coeff;  
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double hCent,hUp,zetaL,mgqdCurrent,mgqdNeutV;
+  double ErzN,ErzS,ErrC,ErrE;  
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -708,9 +725,11 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   hUp = calcIntegratingFactor(iR,iZ,rUp);
 
   // get local Eddington factors
-  ErrL = GGQD->Err(iZ,iR);
-  EzzL = GGQD->Ezz(iZ,iR);
-  ErzL = GGQD->Erz(iZ,iR);
+  ErrC = GGQD->Err(iZ,iR);
+  ErrE = getEastErr(iZ,iR); 
+  ErzN = getNorthErz(iZ,iR); 
+  ErzS = getSouthErz(iZ,iR); 
+
   zetaL = materials->oneGroupXS->rZeta(iZ,iR+1);
 
   // populate entries representing streaming and reaction terms
@@ -718,13 +737,13 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
 
   coeff = 1/((1/(v*deltaT))+sigT); 
 
-  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzL/deltaZ;
+  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
 
-  C.coeffRef(iEq,indices[iNF]) += coeff*ErzL/deltaZ;
+  C.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
 
-  C.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrL/(hUp*deltaR);
+  C.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrC/(hUp*deltaR);
 
-  C.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrL/(hUp*deltaR);
+  C.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
 
   // Enforce zeta coefficient
   C.coeffRef(iEq,indices[iEF]) += zetaL;
@@ -1149,6 +1168,223 @@ double GreyGroupSolver::calcVolAvgR(double rDown,double rUp)
   return volAvgR;
 };
 //==============================================================================
+
+//==============================================================================
+/// Get Err on west interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double GreyGroupSolver::getWestErr(int iZ,int iR)
+{
+
+  double volLeft,volRight,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the west
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iR == 0)
+    return GGQD->Err(iZ,iR);
+  else
+  { 
+    volLeft = calcGeoParams(iR-1,iZ)[iCF];
+    volRight = calcGeoParams(iR,iZ)[iCF];
+    totalVol = volLeft + volRight;
+    return (totalVol)/(volLeft/GGQD->Err(iZ,iR-1) + volRight/GGQD->Err(iZ,iR));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Erz on west interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double GreyGroupSolver::getWestErz(int iZ,int iR)
+{
+
+  double volLeft,volRight,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the west
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iR == 0)
+    return GGQD->Erz(iZ,iR);
+  else
+  { 
+    volLeft = calcGeoParams(iR-1,iZ)[iCF];
+    volRight = calcGeoParams(iR,iZ)[iCF];
+    totalVol = volLeft + volRight;
+    return (totalVol)/(volLeft/GGQD->Erz(iZ,iR-1) + volRight/GGQD->Erz(iZ,iR));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Err on east interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double GreyGroupSolver::getEastErr(int iZ,int iR)
+{
+
+  double volLeft,volRight,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the east
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iR == mesh->nR - 1)
+    return GGQD->Err(iZ,iR);
+  else
+  { 
+    volLeft = calcGeoParams(iR,iZ)[iCF];
+    volRight = calcGeoParams(iR+1,iZ)[iCF];
+    totalVol = volLeft + volRight;
+    return (totalVol)/(volLeft/GGQD->Err(iZ,iR) + volRight/GGQD->Err(iZ,iR+1));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Erz on east interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double GreyGroupSolver::getEastErz(int iZ,int iR)
+{
+
+  double volLeft,volRight,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the east
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iR == mesh->nR - 1)
+    return GGQD->Erz(iZ,iR);
+  else
+  { 
+    volLeft = calcGeoParams(iR,iZ)[iCF];
+    volRight = calcGeoParams(iR+1,iZ)[iCF];
+    totalVol = volLeft + volRight;
+    return (totalVol)/(volLeft/GGQD->Erz(iZ,iR) + volRight/GGQD->Erz(iZ,iR+1));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Ezz on north interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double GreyGroupSolver::getNorthEzz(int iZ,int iR)
+{
+
+  double volDown,volUp,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the north
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iZ == 0)
+    return GGQD->Ezz(iZ,iR);
+  else
+  { 
+    volDown = calcGeoParams(iR,iZ-1)[iCF];
+    volUp = calcGeoParams(iR,iZ)[iCF];
+    totalVol = volUp + volDown;
+    return (totalVol)/(volDown/GGQD->Ezz(iZ-1,iR) + volUp/GGQD->Ezz(iZ,iR));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Erz on north interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double GreyGroupSolver::getNorthErz(int iZ,int iR)
+{
+
+  double volDown,volUp,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the north
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iZ == 0)
+    return GGQD->Erz(iZ,iR);
+  else
+  { 
+    volDown = calcGeoParams(iR,iZ-1)[iCF];
+    volUp = calcGeoParams(iR,iZ)[iCF];
+    totalVol = volUp + volDown;
+    return (totalVol)/(volDown/GGQD->Erz(iZ-1,iR) + volUp/GGQD->Erz(iZ,iR));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Ezz on south interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double GreyGroupSolver::getSouthEzz(int iZ,int iR)
+{
+
+  double volDown,volUp,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the south
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iZ == mesh->nZ-1)
+    return GGQD->Ezz(iZ,iR);
+  else
+  { 
+    volDown = calcGeoParams(iR,iZ)[iCF];
+    volUp = calcGeoParams(iR,iZ+1)[iCF];
+    totalVol = volUp + volDown;
+    return (totalVol)/(volDown/GGQD->Ezz(iZ,iR) + volUp/GGQD->Ezz(iZ+1,iR));
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Get Erz on south interface 
+///
+/// @param [in] iZ axial coordinate 
+/// @param [in] iR radial coordinate 
+/// @param [out] Eddington value to use at interface 
+double GreyGroupSolver::getSouthErz(int iZ,int iR)
+{
+
+  double volDown,volUp,totalVol;
+
+  // Return the harmonic average of the Eddingtons on either side of the south
+  // interface, unless on a boundary. In that case, simply return the cell
+  // center Eddington.
+  if (iZ == mesh->nZ-1)
+    return GGQD->Erz(iZ,iR);
+  else
+  { 
+    volDown = calcGeoParams(iR,iZ)[iCF];
+    volUp = calcGeoParams(iR,iZ+1)[iCF];
+    totalVol = volUp + volDown;
+    return (totalVol)/(volDown/GGQD->Erz(iZ,iR) + volUp/GGQD->Erz(iZ+1,iR));
+  }
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Extract cell average values from solution vector and store
