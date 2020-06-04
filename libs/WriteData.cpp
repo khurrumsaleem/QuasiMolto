@@ -26,11 +26,11 @@ WriteData::WriteData(Mesh * myMesh)
 /// Make a directory where QM is running 
 ///
 /// @param [in] dirName relative path of directory to be made 
-void WriteData::makeDirectory(string myDirName)
+void WriteData::makeDirectory(string myDirName,bool noTimeLabel)
 {
  
   // Get time at present state
-  string dir = getOutputPath(myDirName); 
+  string dir = getOutputPath(myDirName,noTimeLabel); 
  
   // Parse system command
   string command = "mkdir -p " + dir;  
@@ -49,15 +49,16 @@ void WriteData::makeDirectory(string myDirName)
 /// @param [in] myData data to write
 void WriteData::write(string myDirName,\
     string parameterName,\
-    Eigen::MatrixXd myData)
+    Eigen::MatrixXd myData,\
+    bool noTimeLabel)
 {
 
   // Declare output stream.
   ofstream outputFile;
 
   // Form directory and file names, and create directory. 
-  makeDirectory(myDirName);
-  string dir = getOutputPath(myDirName);
+  makeDirectory(myDirName,noTimeLabel);
+  string dir = getOutputPath(myDirName,noTimeLabel);
   string fileName = dir + parameterName + ".csv";
    
   // Open output file, write myData to it, and close.
@@ -76,15 +77,16 @@ void WriteData::write(string myDirName,\
 /// @param [in] myData data to write
 void WriteData::write(string myDirName,\
     string parameterName,\
-    Eigen::VectorXd myData)
+    Eigen::VectorXd myData,\
+    bool noTimeLabel)
 {
 
   // Declare output stream.
   ofstream outputFile;
 
   // Form directory and file names. 
-  makeDirectory(myDirName);
-  string dir = getOutputPath(myDirName);
+  makeDirectory(myDirName,noTimeLabel);
+  string dir = getOutputPath(myDirName,noTimeLabel);
   string fileName = dir + parameterName + ".csv";
   
   // Open output file, write myData to it, and close.
@@ -103,15 +105,16 @@ void WriteData::write(string myDirName,\
 /// @param [in] myData data to write
 void WriteData::write(string myDirName,\
     string parameterName,\
-    double myData)
+    double myData,\
+    bool noTimeLabel)
 {
 
   // Declare output stream.
   ofstream outputFile;
 
   // Form directory and file names. 
-  makeDirectory(myDirName);
-  string dir = getOutputPath(myDirName);
+  makeDirectory(myDirName,noTimeLabel);
+  string dir = getOutputPath(myDirName,noTimeLabel);
   string fileName = dir + parameterName + ".csv";
   
   // Open output file, write myData to it, and close.
@@ -130,15 +133,16 @@ void WriteData::write(string myDirName,\
 /// @param [in] myData data to write
 void WriteData::write(string myDirName,\
     string parameterName,\
-    int myData)
+    int myData,\
+    bool noTimeLabel)
 {
 
   // Declare output stream.
   ofstream outputFile;
 
   // Form directory and file names. 
-  makeDirectory(myDirName);
-  string dir = getOutputPath(myDirName);
+  makeDirectory(myDirName,noTimeLabel);
+  string dir = getOutputPath(myDirName,noTimeLabel);
   string fileName = dir + parameterName + ".csv";
   
   // Open output file, write myData to it, and close.
@@ -153,13 +157,22 @@ void WriteData::write(string myDirName,\
 /// Get path of output directory 
 ///
 /// @param [in] dirName relative path of directory to be made 
-string WriteData::getOutputPath(string myDirName)
+string WriteData::getOutputPath(string myDirName, bool noTimeLabel)
 {
- 
-  // Get time at present state
-  string dir = outputDirectory + to_string(mesh->ts[mesh->state]) + "/"\
-               + myDirName;
 
+  string dir;
+  
+  if (noTimeLabel)
+  {
+    // Get name of directory
+    dir = outputDirectory + myDirName;
+  }
+  else
+  {
+    // Get name of directory at current time
+    dir = outputDirectory + to_string(mesh->ts[mesh->state]) + "/"\
+               + myDirName;
+  }
   return dir; 
 
 };

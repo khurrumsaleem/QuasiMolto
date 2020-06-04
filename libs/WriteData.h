@@ -22,20 +22,26 @@ class WriteData
     Mesh * mesh; 
 
     // Functions
-    void makeDirectory(string myDirName); 
+    void makeDirectory(string myDirName,\
+        bool noTimeLabel = false); 
     void write(string myDirName,\
         string parameterName,\
-        Eigen::MatrixXd myData);
+        Eigen::MatrixXd myData,\
+        bool noTimeLabel = false);
     void write(string myDirName,\
         string parameterName,\
-        Eigen::VectorXd myData);
+        Eigen::VectorXd myData,\
+        bool noTimeLabel = false);
     void write(string myDirName,\
         string parameterName,\
-        double myData);
+        double myData,\
+        bool noTimeLabel = false);
     void write(string myDirName,\
         string parameterName,\
-        int myData);
-    string getOutputPath(string myDirName); 
+        int myData,\
+        bool noTimeLabel = false);
+    string getOutputPath(string myDirName,\
+        bool noTimeLabel = false); 
 
 };
 
