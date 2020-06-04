@@ -112,6 +112,8 @@ bool MultilevelCoupling::solveOneStep()
 ///
 void MultilevelCoupling::solveTransient()
 {
+  // Write mesh info
+  mesh->writeVars();
 
   // Initialize solve 
   cout << "Computing initial solve..." << endl;
