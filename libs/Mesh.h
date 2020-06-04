@@ -72,6 +72,7 @@ class Mesh
         rowvec zCornerCent;
         vector<quadLevel> quadrature;
 	vector<qdCell> qdCells; 
+        string outputDir = "mesh/";
         WriteData * output;
 
         // Recirculation loop parameters
@@ -86,6 +87,7 @@ class Mesh
   	vector<double> getRecircGeoParams(int iR, int iZ);
   	void advanceOneTimeStep();
   	void calcQuadSet();
+        void writeVars();
 	void printQuadSet();
 	
         private:

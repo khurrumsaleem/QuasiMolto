@@ -823,6 +823,68 @@ int Mesh::getQDCellIndex(int iR, int iZ){
 }
 //==============================================================================
 
+//==============================================================================
+/// Run transient with multiple solves 
+///
+void Mesh::writeVars()
+{
+  
+  // Read standard vectors into eigen types.
+  Eigen::VectorXd zCent;
+  zCent.setZero(zCornerCent.size());
+  Eigen::VectorXd rCent;
+  rCent.setZero(rCornerCent.size());
+  Eigen::VectorXd zEdge; 
+  zEdge.setZero(zCornerEdge.size());
+  Eigen::VectorXd rEdge; 
+  rEdge.setZero(rCornerEdge.size());
+
+  // Load radial mesh values  
+  for (int iR = 0; iR < rCent.size(); iR++)
+  { 
+    rCent(iR) = rCornerCent[iR]; 
+    rEdge(iR) = rCornerEdge[iR]; 
+  }
+  rEdge(rEdge.size()-1) = rCornerEdge(rEdge.size()-1); 
+
+  // Load axial mesh values  
+  for (int iZ = 0; iZ < zCent.size(); iZ++)
+  { 
+    zCent(iZ) = zCornerCent[iZ]; 
+    zEdge(iZ) = zCornerEdge[iZ]; 
+  }
+  zEdge(zEdge.size()-1) = zCornerEdge(zEdge.size()-1); 
+
+  // Face fluxes
+  output->write(outputDir,"zCent",zCent,true);
+  output->write(outputDir,"rCent",rCent,true);
+  output->write(outputDir,"zEdge",zEdge,true);
+  output->write(outputDir,"rEdge",rEdge,true);
+
+  // Do the same for recirculation mesh
+
+  // Read standard vectors into eigen types.
+  zCent.setZero(zCornerCentRecirc.size());
+  zEdge.setZero(zCornerEdgeRecirc.size());
+
+  // Load axial mesh values  
+  for (int iZ = 0; iZ < zCent.size(); iZ++)
+  { 
+    zCent(iZ) = zCornerCentRecirc[iZ]; 
+    zEdge(iZ) = zCornerEdgeRecirc[iZ]; 
+  }
+  zEdge(zEdge.size()-1) = zCornerEdgeRecirc(zEdge.size()-1); 
+
+  // Face fluxes
+  output->write(outputDir,"zCentRecirc",zCent,true);
+  output->write(outputDir,"rCentRecirc",rCent,true);
+  output->write(outputDir,"zEdgeRecirc",zEdge,true);
+  output->write(outputDir,"rEdgeRecirc",rEdge,true);
+
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Prints out quadrature set, differencing coefficients, and tau coefficients
