@@ -124,8 +124,8 @@ void MultilevelCoupling::solveTransient()
   
   for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
   {
-  cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
-  cout << endl;
+    cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
+    cout << endl;
     if(solveOneStep())
     {
       mgqd->updateVarsAfterConvergence(); 
@@ -136,9 +136,9 @@ void MultilevelCoupling::solveTransient()
     }  
     else 
     {
-    cout << "Solve not converged." << endl;
-    cout << "Transient aborted." << endl;
-    break;
+      cout << "Solve not converged." << endl;
+      cout << "Transient aborted." << endl;
+      break;
     }
   } 
 
