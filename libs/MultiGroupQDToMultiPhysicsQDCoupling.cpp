@@ -925,7 +925,6 @@ double MGQDToMPQDCoupling::checkForZeroAxialCurrent(int iZ,int iR)
 
   double groupCurrent;
   bool aboveThreshold = true;  
-  double eps = 1E-14;
 
   // Loop over energy groups 
   for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
