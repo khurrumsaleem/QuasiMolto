@@ -235,7 +235,7 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
 
   // Enforce zeta coefficient
-  A->coeffRef(iEq,indices[iSF]) += zetaL;
+  A->coeffRef(iEq,indices[iSF]) += coeff*zetaL;
 
   // formulate RHS entry
   if (GGQD->useMGQDPastCurrents)
@@ -548,7 +548,7 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
 
   // Enforce zeta coefficient
-  C.coeffRef(iEq,indices[iSF]) += zetaL;
+  C.coeffRef(iEq,indices[iSF]) += coeff*zetaL;
 
   // formulate RHS entry
   if (GGQD->useMGQDPastCurrents)
@@ -613,7 +613,7 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
 
   // Enforce zeta coefficient
-  C.coeffRef(iEq,indices[iNF]) += zetaL;
+  C.coeffRef(iEq,indices[iNF]) += coeff*zetaL;
 
   // formulate RHS entry
   if (GGQD->useMGQDPastCurrents)
@@ -679,7 +679,7 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
 
   // Enforce zeta coefficient
-  C.coeffRef(iEq,indices[iWF]) += zetaL;
+  C.coeffRef(iEq,indices[iWF]) += coeff*zetaL;
 
   // formulate RHS entry
   if (GGQD->useMGQDPastCurrents)
@@ -746,7 +746,7 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
 
   // Enforce zeta coefficient
-  C.coeffRef(iEq,indices[iEF]) += zetaL;
+  C.coeffRef(iEq,indices[iEF]) += coeff*zetaL;
 
   // formulate RHS entry
   if (GGQD->useMGQDPastCurrents)
