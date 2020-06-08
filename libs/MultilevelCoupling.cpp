@@ -131,7 +131,8 @@ void MultilevelCoupling::solveTransient()
       mgqd->updateVarsAfterConvergence(); 
       mpqd->updateVarsAfterConvergence(); 
       mgqd->writeVars();
-      mpqd->writeVars();
+      mpqd->writeVars(); 
+      mats->oneGroupXS->writeVars();
       mesh->advanceOneTimeStep();
     }  
     else 
