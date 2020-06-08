@@ -251,9 +251,9 @@ void QDSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 
   // get local Eddington factors
   EzzC = SGQD->Ezz(iZ,iR);
-  EzzS = getSouthEzz(iZ,iR,SGQD); 
-  ErzW = getWestErz(iZ,iR,SGQD); 
-  ErzE = getEastErz(iZ,iR,SGQD); 
+  EzzS = SGQD->EzzAxial(iZ+1,iR); 
+  ErzW = SGQD->ErzRadial(iZ,iR);
+  ErzE = SGQD->ErzRadial(iZ,iR+1);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
@@ -299,9 +299,9 @@ void QDSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 
   // get local Eddington factors
   EzzC = SGQD->Ezz(iZ,iR);
-  EzzN = getNorthEzz(iZ,iR,SGQD); 
-  ErzW = getWestErz(iZ,iR,SGQD); 
-  ErzE = getEastErz(iZ,iR,SGQD); 
+  EzzN = SGQD->EzzAxial(iZ,iR); 
+  ErzW = SGQD->ErzRadial(iZ,iR);
+  ErzE = SGQD->ErzRadial(iZ,iR+1);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
@@ -350,9 +350,9 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
-  ErrW = getWestErr(iZ,iR,SGQD); 
-  ErzN = getNorthErz(iZ,iR,SGQD); 
-  ErzS = getSouthErz(iZ,iR,SGQD); 
+  ErrW = SGQD->ErrRadial(iZ,iR); 
+  ErzN = SGQD->ErzAxial(iZ,iR);
+  ErzS = SGQD->ErzAxial(iZ+1,iR);
   
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
@@ -401,9 +401,9 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
-  ErrE = getEastErr(iZ,iR,SGQD); 
-  ErzN = getNorthErz(iZ,iR,SGQD); 
-  ErzS = getSouthErz(iZ,iR,SGQD); 
+  ErrE = SGQD->ErrRadial(iZ,iR+1); 
+  ErzN = SGQD->ErzAxial(iZ,iR);
+  ErzS = SGQD->ErzAxial(iZ+1,iR);
   
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
@@ -493,9 +493,9 @@ void QDSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
 
   // get local Eddington factors
   EzzC = SGQD->Ezz(iZ,iR);
-  EzzS = getSouthEzz(iZ,iR,SGQD); 
-  ErzW = getWestErz(iZ,iR,SGQD); 
-  ErzE = getEastErz(iZ,iR,SGQD); 
+  EzzS = SGQD->EzzAxial(iZ+1,iR); 
+  ErzW = SGQD->ErzRadial(iZ,iR);
+  ErzE = SGQD->ErzRadial(iZ,iR+1);
   
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
@@ -541,9 +541,9 @@ void QDSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
 
   // get local Eddington factors
   EzzC = SGQD->Ezz(iZ,iR);
-  EzzN = getNorthEzz(iZ,iR,SGQD); 
-  ErzW = getWestErz(iZ,iR,SGQD); 
-  ErzE = getEastErz(iZ,iR,SGQD); 
+  EzzN = SGQD->EzzAxial(iZ,iR); 
+  ErzW = SGQD->ErzRadial(iZ,iR);
+  ErzE = SGQD->ErzRadial(iZ,iR+1);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
@@ -592,9 +592,9 @@ void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
-  ErrW = getWestErr(iZ,iR,SGQD); 
-  ErzN = getNorthErz(iZ,iR,SGQD); 
-  ErzS = getSouthErz(iZ,iR,SGQD); 
+  ErrW = SGQD->ErrRadial(iZ,iR); 
+  ErzN = SGQD->ErzAxial(iZ,iR);
+  ErzS = SGQD->ErzAxial(iZ+1,iR);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
@@ -643,9 +643,9 @@ void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
-  ErrE = getEastErr(iZ,iR,SGQD); 
-  ErzN = getNorthErz(iZ,iR,SGQD); 
-  ErzS = getSouthErz(iZ,iR,SGQD); 
+  ErrE = SGQD->ErrRadial(iZ,iR+1); 
+  ErzN = SGQD->ErzAxial(iZ,iR);
+  ErzS = SGQD->ErzAxial(iZ+1,iR);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);

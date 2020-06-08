@@ -216,9 +216,9 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
 
   // get local Eddington factors
   EzzC = GGQD->Ezz(iZ,iR);
-  EzzS = getSouthEzz(iZ,iR); 
-  ErzW = getWestErz(iZ,iR); 
-  ErzE = getEastErz(iZ,iR); 
+  EzzS = GGQD->EzzAxial(iZ+1,iR); 
+  ErzW = GGQD->ErzRadial(iZ,iR);
+  ErzE = GGQD->ErzRadial(iZ,iR+1);
   zetaL = materials->oneGroupXS->zZeta(iZ+1,iR);
 
   // populate entries representing streaming and reaction terms
@@ -282,9 +282,9 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
 
   // get local Eddington factors
   EzzC = GGQD->Ezz(iZ,iR);
-  EzzN = getNorthEzz(iZ,iR); 
-  ErzW = getWestErz(iZ,iR); 
-  ErzE = getEastErz(iZ,iR); 
+  EzzN = GGQD->EzzAxial(iZ,iR); 
+  ErzW = GGQD->ErzRadial(iZ,iR);
+  ErzE = GGQD->ErzRadial(iZ,iR+1);
   zetaL = materials->oneGroupXS->zZeta(iZ,iR);
 
   // populate entries representing streaming and reaction terms
@@ -349,9 +349,9 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
 
   // get local Eddington factors
   ErrC = GGQD->Err(iZ,iR);
-  ErrW = getWestErr(iZ,iR); 
-  ErzN = getNorthErz(iZ,iR); 
-  ErzS = getSouthErz(iZ,iR); 
+  ErrW = GGQD->ErrRadial(iZ,iR); 
+  ErzN = GGQD->ErzAxial(iZ,iR);
+  ErzS = GGQD->ErzAxial(iZ+1,iR);
   zetaL = materials->oneGroupXS->rZeta(iZ,iR);
 
   // populate entries representing streaming and reaction terms
@@ -417,9 +417,9 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
 
   // get local Eddington factors
   ErrC = GGQD->Err(iZ,iR);
-  ErrE = getEastErr(iZ,iR); 
-  ErzN = getNorthErz(iZ,iR); 
-  ErzS = getSouthErz(iZ,iR); 
+  ErrE = GGQD->ErrRadial(iZ,iR+1); 
+  ErzN = GGQD->ErzAxial(iZ,iR);
+  ErzS = GGQD->ErzAxial(iZ+1,iR);
   zetaL = materials->oneGroupXS->rZeta(iZ,iR+1);
 
   // populate entries representing streaming and reaction terms
@@ -529,9 +529,9 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
 
   // get local Eddington factors
   EzzC = GGQD->Ezz(iZ,iR);
-  EzzS = getSouthEzz(iZ,iR); 
-  ErzW = getWestErz(iZ,iR); 
-  ErzE = getEastErz(iZ,iR); 
+  EzzS = GGQD->EzzAxial(iZ+1,iR); 
+  ErzW = GGQD->ErzRadial(iZ,iR);
+  ErzE = GGQD->ErzRadial(iZ,iR+1);
   zetaL = materials->oneGroupXS->zZeta(iZ+1,iR);
 
   // populate entries representing streaming and reaction terms
@@ -593,9 +593,9 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
 
   // get local Eddington factors
   EzzC = GGQD->Ezz(iZ,iR);
-  EzzN = getNorthEzz(iZ,iR); 
-  ErzW = getWestErz(iZ,iR); 
-  ErzE = getEastErz(iZ,iR); 
+  EzzN = GGQD->EzzAxial(iZ,iR); 
+  ErzW = GGQD->ErzRadial(iZ,iR);
+  ErzE = GGQD->ErzRadial(iZ,iR+1);
 
   zetaL = materials->oneGroupXS->zZeta(iZ,iR);
 
@@ -660,9 +660,9 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
 
   // get local Eddington factors
   ErrC = GGQD->Err(iZ,iR);
-  ErrW = getWestErr(iZ,iR); 
-  ErzN = getNorthErz(iZ,iR); 
-  ErzS = getSouthErz(iZ,iR); 
+  ErrW = GGQD->ErrRadial(iZ,iR); 
+  ErzN = GGQD->ErzAxial(iZ,iR);
+  ErzS = GGQD->ErzAxial(iZ+1,iR);
   zetaL = materials->oneGroupXS->rZeta(iZ,iR);
 
   // populate entries representing streaming and reaction terms
@@ -726,9 +726,9 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
 
   // get local Eddington factors
   ErrC = GGQD->Err(iZ,iR);
-  ErrE = getEastErr(iZ,iR); 
-  ErzN = getNorthErz(iZ,iR); 
-  ErzS = getSouthErz(iZ,iR); 
+  ErrE = GGQD->ErrRadial(iZ,iR+1); 
+  ErzN = GGQD->ErzAxial(iZ,iR);
+  ErzS = GGQD->ErzAxial(iZ+1,iR);
 
   zetaL = materials->oneGroupXS->rZeta(iZ,iR+1);
 
