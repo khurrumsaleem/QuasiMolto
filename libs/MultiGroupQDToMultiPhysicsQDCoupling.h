@@ -27,6 +27,7 @@ class MGQDToMPQDCoupling
   void solveTransient();
   void collapseNuclearData();
   void calculateFluxWeightedData();
+  void calculateFluxWeightedInterfaceEddingtons();
   void calculateFluxWeightedBCData();
   void calculateAxialCurrentWeightedData();
   void calculateRadialCurrentWeightedData();

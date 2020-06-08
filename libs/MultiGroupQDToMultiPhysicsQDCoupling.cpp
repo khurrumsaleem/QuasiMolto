@@ -64,6 +64,8 @@ bool MGQDToMPQDCoupling::solveOneStep()
     mpqd->buildLinearSystem();
     mpqd->solveLinearSystem();
     xCurrentIter = mpqd->x;
+    //cout << "xCurrentIter:" << endl;
+    //cout << xCurrentIter << endl;
     residual = calcResidual(xPrevIter,xCurrentIter);
     cout << "          "; 
     cout << "MGQD->MPQD Residual: " << residual <<endl; 
@@ -285,8 +287,113 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
   mpqd->ggqd->Erz = mats->oneGroupXS->Erz;
   mpqd->ggqd->Err = mats->oneGroupXS->Err;
 
+  // Calculate interface Eddington factors
+  calculateFluxWeightedInterfaceEddingtons();
+
 };
 //==============================================================================
+
+//==============================================================================
+/// Collapse interface Eddingtons with flux weighting 
+///
+void MGQDToMPQDCoupling::calculateFluxWeightedInterfaceEddingtons()
+{
+
+  // Temporary accumulator variables
+  double fluxAccum;
+  double flux;
+  double myErr,myEzz,myErz;
+
+  // Reset Eddington factors
+  mpqd->ggqd->EzzRadial.setZero();
+  mpqd->ggqd->ErrRadial.setZero();
+  mpqd->ggqd->ErzRadial.setZero();
+  mpqd->ggqd->EzzAxial.setZero();
+  mpqd->ggqd->ErrAxial.setZero();
+  mpqd->ggqd->ErzAxial.setZero();
+
+  // Loop over radial interface mesh
+  for (int iR = 0; iR < mesh->rCornerEdge.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->nZ; iZ++)
+    {
+
+      // Reset accumulators
+      fluxAccum = 0.0;
+
+      // Loop over neutron energy groups
+      for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+      {
+        // Get flux and currents in this cell and energy group
+        flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR); 
+
+        myErr = mgqd->SGQDs[iEnergyGroup]->ErrRadial(iZ,iR);
+        myEzz = mgqd->SGQDs[iEnergyGroup]->EzzRadial(iZ,iR);
+        myErz = mgqd->SGQDs[iEnergyGroup]->ErzRadial(iZ,iR);
+
+        // Flux weighted Ezz
+        mpqd->ggqd->EzzRadial(iZ,iR) += myEzz*flux;
+
+        // Flux weighted Err
+        mpqd->ggqd->ErrRadial(iZ,iR) += myErr*flux;
+
+        // Flux weighted Erz
+        mpqd->ggqd->ErzRadial(iZ,iR) += myErz*flux;
+
+        // Accumulate flux
+        fluxAccum = fluxAccum + flux;
+
+      }
+
+      mpqd->ggqd->EzzRadial(iZ,iR) = mpqd->ggqd->EzzRadial(iZ,iR)/fluxAccum;
+      mpqd->ggqd->ErrRadial(iZ,iR) = mpqd->ggqd->ErrRadial(iZ,iR)/fluxAccum;
+      mpqd->ggqd->ErzRadial(iZ,iR) = mpqd->ggqd->ErzRadial(iZ,iR)/fluxAccum;
+
+    }
+  }
+
+  // Loop over radial interface mesh
+  for (int iR = 0; iR < mesh->nR; iR++)
+  {
+    for (int iZ = 0; iZ < mesh->zCornerEdge.size(); iZ++)
+    {
+
+      // Reset accumulators
+      fluxAccum = 0.0;
+
+      // Loop over neutron energy groups
+      for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+      {
+        // Get flux and currents in this cell and energy group
+        flux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(iZ,iR); 
+
+        myErr = mgqd->SGQDs[iEnergyGroup]->ErrAxial(iZ,iR);
+        myEzz = mgqd->SGQDs[iEnergyGroup]->EzzAxial(iZ,iR);
+        myErz = mgqd->SGQDs[iEnergyGroup]->ErzAxial(iZ,iR);
+
+        // Flux weighted Ezz
+        mpqd->ggqd->EzzAxial(iZ,iR) += myEzz*flux;
+
+        // Flux weighted Err
+        mpqd->ggqd->ErrAxial(iZ,iR) += myErr*flux;
+
+        // Flux weighted Erz
+        mpqd->ggqd->ErzAxial(iZ,iR) += myErz*flux;
+
+        // Accumulate flux
+        fluxAccum = fluxAccum + flux;
+
+      }
+
+      mpqd->ggqd->EzzAxial(iZ,iR) = mpqd->ggqd->EzzAxial(iZ,iR)/fluxAccum;
+      mpqd->ggqd->ErrAxial(iZ,iR) = mpqd->ggqd->ErrAxial(iZ,iR)/fluxAccum;
+      mpqd->ggqd->ErzAxial(iZ,iR) = mpqd->ggqd->ErzAxial(iZ,iR)/fluxAccum;
+
+    }
+  }
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Collapse boundary condition data 
@@ -993,6 +1100,8 @@ double MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
     }
   }
   residualVec = (ones-(vector2.cwiseQuotient(vector1)));
+  //cout << "ResidualVec:" << endl;
+  //cout << residualVec << endl;
   residual = (1.0/residualVec.size())*residualVec.squaredNorm();
 
   return residual;

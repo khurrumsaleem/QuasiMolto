@@ -34,6 +34,12 @@ class GreyGroupQD
     Eigen::MatrixXd Err,ErrPrev;
     Eigen::MatrixXd Ezz,EzzPrev;
     Eigen::MatrixXd Erz,ErzPrev;
+    Eigen::MatrixXd ErrAxial;
+    Eigen::MatrixXd EzzAxial;
+    Eigen::MatrixXd ErzAxial;
+    Eigen::MatrixXd ErrRadial;
+    Eigen::MatrixXd EzzRadial;
+    Eigen::MatrixXd ErzRadial;
 
     // flux boundary conditions  
     Eigen::VectorXd wFluxBC;
