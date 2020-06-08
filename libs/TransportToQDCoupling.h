@@ -25,6 +25,7 @@ class TransportToQDCoupling
     MultiGroupTransport * myMGT,\
     MultiGroupQD * myMGQD);
   bool calcEddingtonFactors();
+  bool calcInterfaceEddingtonFactors();
   void calcBCs();
   void solveTransportWithQDAcceleration();
   double calcResidual(Eigen::MatrixXd matrix1,Eigen::MatrixXd matrix2);

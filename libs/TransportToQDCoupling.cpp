@@ -47,7 +47,7 @@ bool TransportToQDCoupling::calcEddingtonFactors()
   double angFlux,mu,xi,weight,EzzCoef,ErrCoef,ErzCoef;
   double numeratorEzz,numeratorErr,numeratorErz,denominator;
   double residualZz,residualRr,residualRz;
-  bool allConverged=true;
+  bool interfaceConverged,cellAvgConverged=true;
 
   for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
   {
@@ -122,10 +122,184 @@ bool TransportToQDCoupling::calcEddingtonFactors()
 
     if (residualZz < epsEddington and residualRr < epsEddington and 
         residualRz < epsEddington)
+      cellAvgConverged = cellAvgConverged and true;
+    else
+      cellAvgConverged = cellAvgConverged and false;
+  } //iGroup
+
+  interfaceConverged = calcInterfaceEddingtonFactors(); 
+
+  return (cellAvgConverged and interfaceConverged);
+}
+//==============================================================================
+
+//==============================================================================
+/// Calculate interfaceEddington factors using angular fluxes from transport 
+///     objects
+/// @param [out] allConverged boolean indicating if the residual on the 
+/// Eddington factors passes the convergence criteria
+bool TransportToQDCoupling::calcInterfaceEddingtonFactors()
+{
+  int rows = MGT->SGTs[0]->sFlux.rows();
+  int cols = MGT->SGTs[0]->sFlux.cols();
+  int angIdx,xiIdx=0,muIdx=1,etaIdx=2,weightIdx = 3;  
+  double angFlux,mu,xi,weight,EzzCoef,ErrCoef,ErzCoef;
+  double numeratorEzz,numeratorErr,numeratorErz,denominator;
+  double residualZz,residualRr,residualRz;
+  bool allConverged=true;
+
+  Eigen::MatrixXd ErzAxialPrev,ErrAxialPrev,EzzAxialPrev; 
+  Eigen::MatrixXd ErzRadialPrev,ErrRadialPrev,EzzRadialPrev;
+
+  for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
+  {
+    
+    // store past eddington factors
+    EzzRadialPrev = MGQD->SGQDs[iGroup]->EzzRadial;
+    ErzRadialPrev = MGQD->SGQDs[iGroup]->ErzRadial;
+    ErrRadialPrev = MGQD->SGQDs[iGroup]->ErrRadial;
+
+    for (int iR = 0; iR < cols+1; iR++)
+    {
+      for (int iZ = 0; iZ < rows; iZ++)
+      {
+
+        // reset accumulators
+        numeratorEzz = 0.0;
+        numeratorErr = 0.0;
+        numeratorErz = 0.0;
+        denominator = 0.0;
+
+        // loop over quadrature
+        for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
+        {
+          xi = mesh->quadrature[iXi].quad[0][xiIdx];
+          for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu)
+          {
+            angIdx=mesh->quadrature[iXi].ordIdx[iMu];
+            mu = mesh->quadrature[iXi].quad[iMu][muIdx]; 
+            weight = mesh->quadrature[iXi].quad[iMu][weightIdx]; 
+            if (iR == 0) 
+              angFlux = MGT->SGTs[iGroup]->aFlux(iZ,iR,angIdx);
+            else if (iR == cols) 
+              angFlux = MGT->SGTs[iGroup]->aFlux(iZ,iR-1,angIdx);
+            else
+              angFlux = (MGT->SGTs[iGroup]->aFlux(iZ,iR-1,angIdx)\
+                  + MGT->SGTs[iGroup]->aFlux(iZ,iR,angIdx))/2.0;
+
+            EzzCoef = xi*xi;
+            ErrCoef = mu*mu;
+            ErzCoef = mu*xi;
+
+            numeratorEzz = numeratorEzz + EzzCoef*angFlux*weight;
+            numeratorErr = numeratorErr + ErrCoef*angFlux*weight;
+            numeratorErz = numeratorErz + ErzCoef*angFlux*weight;
+
+            denominator = denominator + angFlux*weight;
+
+          } //iMu
+        } //iXi 
+
+        MGQD->SGQDs[iGroup]->EzzRadial(iZ,iR) = numeratorEzz/denominator;
+        MGQD->SGQDs[iGroup]->ErrRadial(iZ,iR) = numeratorErr/denominator;
+        MGQD->SGQDs[iGroup]->ErzRadial(iZ,iR) = numeratorErz/denominator;
+
+      } //iZ
+    } //iR
+
+    residualZz = calcResidual(EzzRadialPrev, MGQD->SGQDs[iGroup]->EzzRadial);
+    residualRr = calcResidual(ErrRadialPrev, MGQD->SGQDs[iGroup]->ErrRadial);
+    residualRz = calcResidual(ErzRadialPrev, MGQD->SGQDs[iGroup]->ErzRadial);
+
+    cout << "residualZzRadial: " << residualZz << endl;
+    cout << endl;
+    cout << "residualRrRadial: " << residualRr << endl;
+    cout << endl;
+    cout << "residualRzRadial: " << residualRz << endl;
+    cout << endl;
+
+    if (residualZz < epsEddington and residualRr < epsEddington and 
+        residualRz < epsEddington)
       allConverged = allConverged and true;
     else
       allConverged = allConverged and false;
   } //iGroup
+
+  for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
+  {
+    
+    // store past eddington factors
+    EzzAxialPrev = MGQD->SGQDs[iGroup]->EzzAxial;
+    ErzAxialPrev = MGQD->SGQDs[iGroup]->ErzAxial;
+    ErrAxialPrev = MGQD->SGQDs[iGroup]->ErrAxial;
+
+    for (int iR = 0; iR < cols; iR++)
+    {
+      for (int iZ = 0; iZ < rows+1; iZ++)
+      {
+
+        // reset accumulators
+        numeratorEzz = 0.0;
+        numeratorErr = 0.0;
+        numeratorErz = 0.0;
+        denominator = 0.0;
+
+        // loop over quadrature
+        for (int iXi = 0; iXi < mesh->quadrature.size(); ++iXi)
+        {
+          xi = mesh->quadrature[iXi].quad[0][xiIdx];
+          for (int iMu = 0; iMu < mesh->quadrature[iXi].nOrd; ++iMu)
+          {
+            angIdx=mesh->quadrature[iXi].ordIdx[iMu];
+            mu = mesh->quadrature[iXi].quad[iMu][muIdx]; 
+            weight = mesh->quadrature[iXi].quad[iMu][weightIdx]; 
+            if (iZ == 0) 
+              angFlux = MGT->SGTs[iGroup]->aFlux(iZ,iR,angIdx);
+            else if (iZ == rows) 
+              angFlux = MGT->SGTs[iGroup]->aFlux(iZ-1,iR,angIdx);
+            else
+              angFlux = (MGT->SGTs[iGroup]->aFlux(iZ-1,iR,angIdx)\
+                  + MGT->SGTs[iGroup]->aFlux(iZ,iR,angIdx))/2.0;
+
+            EzzCoef = xi*xi;
+            ErrCoef = mu*mu;
+            ErzCoef = mu*xi;
+
+            numeratorEzz = numeratorEzz + EzzCoef*angFlux*weight;
+            numeratorErr = numeratorErr + ErrCoef*angFlux*weight;
+            numeratorErz = numeratorErz + ErzCoef*angFlux*weight;
+
+            denominator = denominator + angFlux*weight;
+
+          } //iMu
+        } //iXi 
+
+        MGQD->SGQDs[iGroup]->EzzAxial(iZ,iR) = numeratorEzz/denominator;
+        MGQD->SGQDs[iGroup]->ErrAxial(iZ,iR) = numeratorErr/denominator;
+        MGQD->SGQDs[iGroup]->ErzAxial(iZ,iR) = numeratorErz/denominator;
+
+      } //iZ
+    } //iR
+
+    // measure the residual for each Eddington factors 
+    residualZz = calcResidual(EzzAxialPrev, MGQD->SGQDs[iGroup]->EzzAxial);
+    residualRr = calcResidual(ErrAxialPrev, MGQD->SGQDs[iGroup]->ErrAxial);
+    residualRz = calcResidual(ErzAxialPrev, MGQD->SGQDs[iGroup]->ErzAxial);
+
+    cout << "residualZzAxial: " << residualZz << endl;
+    cout << endl;
+    cout << "residualRrAxial: " << residualRr << endl;
+    cout << endl;
+    cout << "residualRzAxial: " << residualRz << endl;
+    cout << endl;
+
+    if (residualZz < epsEddington and residualRr < epsEddington and 
+        residualRz < epsEddington)
+      allConverged = allConverged and true;
+    else
+      allConverged = allConverged and false;
+  } //iGroup
+
 
   return allConverged;
 }
