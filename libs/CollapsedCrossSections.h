@@ -2,6 +2,7 @@
 #define COLLAPSEDCROSSSECTIONS_H
 
 #include "Mesh.h"
+#include "WriteData.h"
 
 using namespace std; 
 using namespace arma;
@@ -14,7 +15,7 @@ class CollapsedCrossSections
   public:
     
     // Constructor
-    CollapsedCrossSections(int nZ,int nR,int nEnergyGroups);
+    CollapsedCrossSections(Mesh * myMesh,int nEnergyGroups);
     
     // Variables
     // sigS is the flux weighted one group scattering cross section
@@ -26,12 +27,15 @@ class CollapsedCrossSections
     vector<Eigen::MatrixXd> groupDNPFluxCoeff; 
     vector<Eigen::MatrixXd> groupSigS; 
     vector<Eigen::MatrixXd> groupUpscatterCoeff; 
+    string outputDir = "1GXS/";
+    Mesh * mesh;
   
     // Functions 
     double dnpFluxCoeff(int iZ,int iR,int dnpID);
     double groupScatterXS(int iZ,int iR,int dnpID);
     double upscatterCoeff(int iZ,int iR,int dnpID);
     void print();
+    void writeVars();
     void resetData();
 };
 

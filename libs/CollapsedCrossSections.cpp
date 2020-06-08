@@ -12,9 +12,16 @@ using namespace arma;
 ///
 /// @param [in] nZ number of axial cells
 /// @param [in] nR number of radial cells
-CollapsedCrossSections::CollapsedCrossSections(int nZ,int nR,int nEnergyGroups)
+CollapsedCrossSections::CollapsedCrossSections(Mesh * myMesh, int nEnergyGroups)
 {
-  
+
+  // Assign pointer 
+  mesh = myMesh;
+
+  // Declare initialization variables 
+  int nZ = mesh->nZ;
+  int nR = mesh->nR;
+
   // Initialize matrices holding one-group cross sections
   sigT.setZero(nZ,nR);  
   sigS.setZero(nZ,nR);  
@@ -132,6 +139,69 @@ void CollapsedCrossSections::resetData()
 //==============================================================================
 
 ///==============================================================================
+/// Write variables to output directory 
+///
+void CollapsedCrossSections::writeVars()
+{
+  
+  string varName;
+
+  // Write all simple 1GXS variables 
+  mesh->output->write(outputDir,"sigT",sigT);
+
+  mesh->output->write(outputDir,"sigS",sigS);
+
+  mesh->output->write(outputDir,"sigF",sigF);
+
+  mesh->output->write(outputDir,"rSigTR",rSigTR);
+
+  mesh->output->write(outputDir,"zSigTR",zSigTR);
+
+  mesh->output->write(outputDir,"neutV",neutV);
+
+  mesh->output->write(outputDir,"rNeutV",rNeutV);
+
+  mesh->output->write(outputDir,"zNeutV",zNeutV);
+
+  mesh->output->write(outputDir,"rZeta1",rZeta1);
+
+  mesh->output->write(outputDir,"rZeta2",rZeta2);
+
+  mesh->output->write(outputDir,"rZeta",rZeta);
+
+  mesh->output->write(outputDir,"zZeta1",rZeta1);
+
+  mesh->output->write(outputDir,"zZeta2",rZeta2);
+
+  mesh->output->write(outputDir,"zZeta",rZeta);
+
+  mesh->output->write(outputDir,"qdFluxCoeff",qdFluxCoeff);
+
+  // Write dnpFluxCoeff
+  for (int iDNPGroup = 0; iDNPGroup < groupDNPFluxCoeff.size(); iDNPGroup++)
+  {
+    varName = "DNPFluxCoeff_Group_" + to_string(iDNPGroup);
+    mesh->output->write(outputDir,varName,groupDNPFluxCoeff[iDNPGroup]);
+  }
+
+  // Write groupSigS 
+  for (int iScatter= 0; iScatter < groupSigS.size(); iScatter++)
+  {
+    varName = "SigS_Group_" + to_string(iScatter);
+    mesh->output->write(outputDir,varName,groupSigS[iScatter]);
+  }
+
+  // Write groupUpscatterCoeff 
+  for (int iScatter= 0; iScatter < groupUpscatterCoeff.size(); iScatter++)
+  {
+    varName = "UpscatterCoeff_Group__" + to_string(iScatter);
+    mesh->output->write(outputDir,varName,groupUpscatterCoeff[iScatter]);
+  }
+
+};
+//==============================================================================
+
+///==============================================================================
 /// Print collapsed nuclear data 
 ///
 void CollapsedCrossSections::print()
@@ -241,7 +311,6 @@ void CollapsedCrossSections::print()
     cout << groupUpscatterCoeff[iScatter] << endl;
     cout << endl;
   }
-
 
 };
 //==============================================================================
