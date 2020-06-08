@@ -35,6 +35,15 @@ class SingleGroupQD
     Eigen::MatrixXd Ezz,EzzPrev;
     Eigen::MatrixXd Erz,ErzPrev;
 
+    // Interface Eddington factors
+    Eigen::MatrixXd ErrAxial;
+    Eigen::MatrixXd EzzAxial;
+    Eigen::MatrixXd ErzAxial;
+    Eigen::MatrixXd ErrRadial;
+    Eigen::MatrixXd EzzRadial;
+    Eigen::MatrixXd ErzRadial;
+
+
     // flux boundary conditions  
     Eigen::VectorXd wFluxBC;
     Eigen::VectorXd eFluxBC;

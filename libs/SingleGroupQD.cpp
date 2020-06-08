@@ -38,6 +38,13 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   Ezz = (1.0/3.0)*Ezz;
   Erz.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
   Erz = 0.0*Erz;
+  ErrAxial.setConstant(mesh->nZ+1,mesh->nR,1.0/3.0);
+  EzzAxial.setConstant(mesh->nZ+1,mesh->nR,1.0/3.0);
+  ErzAxial.setZero(mesh->nZ+1,mesh->nR);
+  ErrRadial.setConstant(mesh->nZ,mesh->nR+1,1.0/3.0);
+  EzzRadial.setConstant(mesh->nZ,mesh->nR+1,1.0/3.0);
+  ErzRadial.setZero(mesh->nZ,mesh->nR+1);
+
 
   // initialize previous Eddington factors
   ErrPrev = Err;
