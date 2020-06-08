@@ -71,7 +71,7 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
   }
 
   // Initialize 1GXS
-  oneGroupXS = new CollapsedCrossSections(mesh->nZ,mesh->nR,nGroups);
+  oneGroupXS = new CollapsedCrossSections(mesh,nGroups);
 
   // Initialize data in collapsed cross sections class
   initCollapsedXS();
