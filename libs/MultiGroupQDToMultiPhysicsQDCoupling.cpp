@@ -1085,8 +1085,58 @@ double MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
     Eigen::VectorXd vector2)
 {
   
-  Eigen::VectorXd residualVec,diff;
+  Eigen::VectorXd ones,residualVec,diff;
   double residual;
+  double min,minScale = 1E-12;
+  int fluxBeginIdx,fluxEndIdx,heatBeginIdx,heatEndIdx,dnpBeginIdx,dnpEndIdx; 
+
+  // Set flux indices
+  fluxBeginIdx = 0; 
+  fluxEndIdx = mpqd->ggqd->nUnknowns;
+  
+  // Set temp indices
+  heatBeginIdx = mpqd->heat->indexOffset;
+  heatEndIdx = mpqd->heat->nUnknowns;
+  
+  // Set DNP indices
+  dnpBeginIdx = mpqd->mgdnp->indexOffset;
+  dnpEndIdx = vector1.size()-1;
+
+  ones.setOnes(vector1.size());
+ 
+  // Check for small values in flux 
+  min = minScale*vector1(Eigen::seqN(fluxBeginIdx,fluxEndIdx)).mean();
+  for (int index = 0; index < mpqd->ggqd->nUnknowns; index++)
+  {
+    if (abs(vector1(index)) < min and abs(vector2(index)) < min ) 
+    {
+      vector1(index) = 1.0;
+      vector2(index) = 1.0;
+    }
+  }
+
+  // Check for small values in temperature 
+  min = minScale*vector1(Eigen::seqN(heatBeginIdx,heatEndIdx)).mean();
+  for (int index = heatBeginIdx; index < dnpBeginIdx;\
+      index++)
+  {
+    if (abs(vector1(index)) < min and abs(vector2(index)) < min ) 
+    {
+      vector1(index) = 1.0;
+      vector2(index) = 1.0;
+    }
+  }
+
+  // Check for small values in DNP concentrations 
+  min = minScale*vector1(Eigen::seq(dnpBeginIdx,dnpEndIdx)).mean();
+  for (int index = dnpBeginIdx; index < vector1.size(); index++)
+  {
+    if (abs(vector1(index)) < min and abs(vector2(index)) < min ) 
+    {
+      vector1(index) = 1.0;
+      vector2(index) = 1.0;
+    }
+  }
 
   diff = (vector1-vector2);
   residualVec = diff.cwiseQuotient(vector1);
