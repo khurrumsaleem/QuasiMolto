@@ -113,12 +113,12 @@ bool TransportToQDCoupling::calcEddingtonFactors()
     residualRz = calcResidual(MGQD->SGQDs[iGroup]->ErzPrev,\
         MGQD->SGQDs[iGroup]->Erz);
 
-    cout << "residualZz: " << residualZz << endl;
-    cout << endl;
-    cout << "residualRr: " << residualRr << endl;
-    cout << endl;
-    cout << "residualRz: " << residualRz << endl;
-    cout << endl;
+   // cout << "residualZz: " << residualZz << endl;
+   // cout << endl;
+   // cout << "residualRr: " << residualRr << endl;
+   // cout << endl;
+   // cout << "residualRz: " << residualRz << endl;
+   // cout << endl;
 
     if (residualZz < epsEddington and residualRr < epsEddington and 
         residualRz < epsEddington)
@@ -211,12 +211,12 @@ bool TransportToQDCoupling::calcInterfaceEddingtonFactors()
     residualRr = calcResidual(ErrRadialPrev, MGQD->SGQDs[iGroup]->ErrRadial);
     residualRz = calcResidual(ErzRadialPrev, MGQD->SGQDs[iGroup]->ErzRadial);
 
-    cout << "residualZzRadial: " << residualZz << endl;
-    cout << endl;
-    cout << "residualRrRadial: " << residualRr << endl;
-    cout << endl;
-    cout << "residualRzRadial: " << residualRz << endl;
-    cout << endl;
+   // cout << "residualZzRadial: " << residualZz << endl;
+   // cout << endl;
+   // cout << "residualRrRadial: " << residualRr << endl;
+   // cout << endl;
+   // cout << "residualRzRadial: " << residualRz << endl;
+   // cout << endl;
 
     if (residualZz < epsEddington and residualRr < epsEddington and 
         residualRz < epsEddington)
@@ -286,12 +286,12 @@ bool TransportToQDCoupling::calcInterfaceEddingtonFactors()
     residualRr = calcResidual(ErrAxialPrev, MGQD->SGQDs[iGroup]->ErrAxial);
     residualRz = calcResidual(ErzAxialPrev, MGQD->SGQDs[iGroup]->ErzAxial);
 
-    cout << "residualZzAxial: " << residualZz << endl;
-    cout << endl;
-    cout << "residualRrAxial: " << residualRr << endl;
-    cout << endl;
-    cout << "residualRzAxial: " << residualRz << endl;
-    cout << endl;
+   // cout << "residualZzAxial: " << residualZz << endl;
+   // cout << endl;
+   // cout << "residualRrAxial: " << residualRr << endl;
+   // cout << endl;
+   // cout << "residualRzAxial: " << residualRz << endl;
+   // cout << endl;
 
     if (residualZz < epsEddington and residualRr < epsEddington and 
         residualRz < epsEddington)
