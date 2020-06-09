@@ -94,7 +94,7 @@ bool MultilevelCoupling::solveOneStep()
     cout << endl; 
     cout << "MGT->MGQD->MPQD Residual: " << residual << endl;
     cout << endl;
-    if (residual < 1E-10 and eddingtonConverged) 
+    if (residual < mpqd->epsMPQD and eddingtonConverged) 
     {
       cout << "Solve converged." << endl;
       mgt->writeFluxes();

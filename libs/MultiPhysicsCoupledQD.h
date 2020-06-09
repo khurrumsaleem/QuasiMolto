@@ -30,6 +30,7 @@ class MultiPhysicsCoupledQD
     Eigen::SparseMatrix<double> A;
     Eigen::VectorXd x,xPast,b;
     string outputDir = "MPQD/";
+    double epsMPQD = 1E-6;
    
     // Functions 
     void fluxSource(int iZ,int iR,int iEq,double coeff);
@@ -41,6 +42,7 @@ class MultiPhysicsCoupledQD
     void updateVarsAfterConvergence();
     void writeVars();
     void printVars();
+    void checkOptionalParams();
 
     // Pointers
     HeatTransfer * heat;

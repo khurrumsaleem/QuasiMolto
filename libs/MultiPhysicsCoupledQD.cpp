@@ -49,6 +49,8 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   // Initialize xPast 
   initializeXPast();
 
+  // Check optional parameters
+  checkOptionalParams();
 };
 //==============================================================================
 
@@ -261,4 +263,15 @@ void MultiPhysicsCoupledQD::solveTransient()
     updateVarsAfterConvergence();
   }
 };
+//==============================================================================
+
+//==============================================================================
+/// Check for optional input parameters of relevance to this object
+void MultiPhysicsCoupledQD::checkOptionalParams()
+{
+  if ((*input)["parameters"]["epsMPQD"])
+  {
+    epsMPQD=(*input)["parameters"]["epsMPQD"].as<double>();
+  }
+}
 //==============================================================================
