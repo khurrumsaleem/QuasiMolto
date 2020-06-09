@@ -6,7 +6,6 @@
 #include "MultiPhysicsCoupledQD.h"
 #include "MultiGroupQD.h"
 #include "SingleGroupQD.h"
-#include "HeatTransfer.h"
 #include "GreyGroupQD.h"
 #include "WriteData.h"
 
