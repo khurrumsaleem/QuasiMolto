@@ -146,6 +146,7 @@ bool TransportToQDCoupling::calcInterfaceEddingtonFactors()
   double angFlux,mu,xi,weight,EzzCoef,ErrCoef,ErzCoef;
   double numeratorEzz,numeratorErr,numeratorErz,denominator;
   double residualZz,residualRr,residualRz;
+  double volLeft,volRight,volUp,volDown;
   bool allConverged=true;
 
   Eigen::MatrixXd ErzAxialPrev,ErrAxialPrev,EzzAxialPrev; 
@@ -184,8 +185,13 @@ bool TransportToQDCoupling::calcInterfaceEddingtonFactors()
             else if (iR == cols) 
               angFlux = MGT->SGTs[iGroup]->aFlux(iZ,iR-1,angIdx);
             else
-              angFlux = (MGT->SGTs[iGroup]->aFlux(iZ,iR-1,angIdx)\
-                  + MGT->SGTs[iGroup]->aFlux(iZ,iR,angIdx))/2.0;
+            {
+              volLeft = mesh->getGeoParams(iR-1,iZ)[0]; 
+              volRight = mesh->getGeoParams(iR,iZ)[0];
+              angFlux = (volLeft*MGT->SGTs[iGroup]->aFlux(iZ,iR-1,angIdx)\
+                  + volRight*MGT->SGTs[iGroup]->aFlux(iZ,iR,angIdx))\
+                        /(volLeft+volRight);
+            }
 
             EzzCoef = xi*xi;
             ErrCoef = mu*mu;
@@ -258,8 +264,13 @@ bool TransportToQDCoupling::calcInterfaceEddingtonFactors()
             else if (iZ == rows) 
               angFlux = MGT->SGTs[iGroup]->aFlux(iZ-1,iR,angIdx);
             else
-              angFlux = (MGT->SGTs[iGroup]->aFlux(iZ-1,iR,angIdx)\
-                  + MGT->SGTs[iGroup]->aFlux(iZ,iR,angIdx))/2.0;
+            {
+              volDown = mesh->getGeoParams(iR,iZ-1)[0]; 
+              volUp = mesh->getGeoParams(iR,iZ)[0];
+              angFlux = (volDown*MGT->SGTs[iGroup]->aFlux(iZ-1,iR,angIdx)\
+                  + volUp*MGT->SGTs[iGroup]->aFlux(iZ,iR,angIdx))\
+                        /(volUp+volDown);
+            }
 
             EzzCoef = xi*xi;
             ErrCoef = mu*mu;
