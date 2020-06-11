@@ -147,6 +147,10 @@ void HeatTransfer::buildLinearSystem()
       // Flux source term 
       coeff = -mesh->dt*mats->omega(iZ,iR)*mats->oneGroupXS->sigF(iZ,iR);
       mpqd->fluxSource(iZ,iR,iEq,coeff);
+      
+      // Gamma source term 
+      coeff = -mesh->dt;
+      gammaSource(iZ,iR,iEq,coeff);
 
       // Advection term
       mpqd->b(iEq) += (mesh->dt/mesh->dzsCorner(iZ))*(flux(iZ,iR)-flux(iZ+1,iR));
@@ -159,6 +163,44 @@ void HeatTransfer::buildLinearSystem()
    
 };
 //==============================================================================
+
+//==============================================================================
+/// Assert a energy deposition term from gamma rays
+///
+/// @param [in] iZ axial index 
+/// @param [in] iR radial index 
+/// @param [in] iEq equation index 
+/// @param [in] coeff Coefficient to multiple gamma source term by  
+void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff)
+{
+  
+  int myIndex;
+  double localVolume,totalVolume;
+  double localGamma,localSigF,localOmega,gammaSourceCoeff;
+  localGamma = mats->gamma(iZ,iR);
+ 
+  totalVolume = M_PI*mesh->R*mesh->R*mesh->Z;
+ 
+  for (int iR = 0; iR < temp.cols(); iR++)
+  {
+    for (int iZ = 0; iZ < temp.rows(); iZ++)
+    {
+      // Get local parameters
+      localSigF = mats->oneGroupXS->sigF(iZ,iR);
+      localOmega = mats->omega(iZ,iR);
+      localVolume = mesh->getGeoParams(iR,iZ)[0];
+ 
+      // Calculate gamma source coefficient 
+      gammaSourceCoeff = coeff*localGamma*localOmega*localSigF;
+      gammaSourceCoeff = localVolume*gammaSourceCoeff/totalVolume; 
+      mpqd->fluxSource(iZ,iR,iEq,gammaSourceCoeff);
+      
+    }
+  }
+   
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Calculate energy diracs

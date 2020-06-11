@@ -28,6 +28,7 @@ class HeatTransfer
   Eigen::VectorXd inletDensity,inletVelocity,inletcP,outletTemp;        
   int getIndex(int iZ,int iR);
   void buildLinearSystem();
+  void gammaSource(int iZ,int iR,int iEq,double coeff);
   void calcDiracs();
   void calcFluxes();
   void getTemp();
