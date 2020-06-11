@@ -238,7 +238,7 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iSF]) += coeff*zetaL;
 
   // formulate RHS entry
-  if (GGQD->useMGQDPastCurrents)
+  if (GGQD->useMGQDSources)
   {
     for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
     {
@@ -304,7 +304,7 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iNF]) += coeff*zetaL;
 
   // formulate RHS entry
-  if (GGQD->useMGQDPastCurrents)
+  if (GGQD->useMGQDSources)
   {
     for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
     {
@@ -371,7 +371,7 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iWF]) += coeff*zetaL;
 
   // formulate RHS entry
-  if (GGQD->useMGQDPastCurrents)
+  if (GGQD->useMGQDSources)
   {
     for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
     {
@@ -439,7 +439,7 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   A->coeffRef(iEq,indices[iEF]) += coeff*zetaL;
 
   // formulate RHS entry
-  if (GGQD->useMGQDPastCurrents)
+  if (GGQD->useMGQDSources)
   {
     for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
     {
@@ -551,7 +551,7 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iSF]) += coeff*zetaL;
 
   // formulate RHS entry
-  if (GGQD->useMGQDPastCurrents)
+  if (GGQD->useMGQDSources)
   {
     for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
     {
@@ -616,7 +616,7 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iNF]) += coeff*zetaL;
 
   // formulate RHS entry
-  if (GGQD->useMGQDPastCurrents)
+  if (GGQD->useMGQDSources)
   {
     for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
     {
@@ -682,7 +682,7 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iWF]) += coeff*zetaL;
 
   // formulate RHS entry
-  if (GGQD->useMGQDPastCurrents)
+  if (GGQD->useMGQDSources)
   {
     for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
     {
@@ -749,7 +749,7 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   C.coeffRef(iEq,indices[iEF]) += coeff*zetaL;
 
   // formulate RHS entry
-  if (GGQD->useMGQDPastCurrents)
+  if (GGQD->useMGQDSources)
   {
     for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
     {
