@@ -198,7 +198,7 @@ void GreyGroupQD::assignMGQDPointer(MultiGroupQD * myMGQD)
 {
 
   mgqd = myMGQD;
-  useMGQDPastCurrents = true; 
+  useMGQDSources = true; 
 
 };
 //==============================================================================

@@ -74,7 +74,7 @@ class GreyGroupQD
     Eigen::VectorXd nAbsCurrentBC;
     Eigen::VectorXd sAbsCurrentBC;
 
-    bool useMGQDPastCurrents = false;
+    bool useMGQDSources = false;
 
     MultiPhysicsCoupledQD * mpqd; 
     MultiGroupQD * mgqd;
