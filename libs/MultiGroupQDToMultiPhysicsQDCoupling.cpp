@@ -75,6 +75,7 @@ bool MGQDToMPQDCoupling::solveOneStep()
     }
     mpqd->ggqd->GGSolver->getFlux();
     mpqd->mgdnp->getCumulativeDNPDecaySource();
+    mats->updateTemperature(mpqd->heat->returnCurrentTemp());
   }
 
   return false;

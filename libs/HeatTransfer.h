@@ -33,6 +33,7 @@ class HeatTransfer
   void calcFluxes();
   void getTemp();
   void setTemp();
+  Eigen::MatrixXd returnCurrentTemp();
   void assignBoundaryIndices();
   void updateBoundaryConditions();
   double calcPhi(double theta,string fluxLimiter);

@@ -474,16 +474,32 @@ int HeatTransfer::getIndex(int iZ, int iR)
 void HeatTransfer::getTemp()
 {
 
+  temp = returnCurrentTemp();
+  
+};
+//==============================================================================
+
+//==============================================================================
+/// Map 2D coordinates to index of temperature in the 1D solution vector
+///
+Eigen::MatrixXd HeatTransfer::returnCurrentTemp()
+{
+  Eigen::MatrixXd currentTemp; 
+
+  currentTemp.setZero(mesh->nZ,mesh->nR);
+  
   for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
   {
     for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
     { 
     
-      temp(iZ,iR) = mpqd->x(getIndex(iZ,iR));   
+      currentTemp(iZ,iR) = mpqd->x(getIndex(iZ,iR));   
     
     }
   }
-  
+ 
+
+  return currentTemp; 
 };
 //==============================================================================
 
