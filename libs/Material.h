@@ -14,8 +14,7 @@ class Material
         public:
 	int matID;
 	string name;
- 	Eigen::VectorXd sigT,sigF,chiP,chiD,nu;
-	Eigen::MatrixXd sigS;
+ 	Eigen::VectorXd chiP,chiD,nu;
         double density; // density of the material
         double gamma; // fraction of energy deposited from gamma rays
         double k; // thermal conductivity
@@ -26,9 +25,9 @@ class Material
         // public functions
 	Material(int myMatID,\
 		string name,\
-		Eigen::VectorXd mySigT,\
-		Eigen::MatrixXd mySigS,\
-		Eigen::VectorXd mySigF,\
+                vector<Eigen::MatrixXd> mySigT,\
+                vector<Eigen::MatrixXd> mySigS,\
+                vector<Eigen::MatrixXd> mySigF,\
                 Eigen::VectorXd myChiP,\
                 Eigen::VectorXd myChiD,\
 		Eigen::VectorXd myNu,\
@@ -38,8 +37,15 @@ class Material
                 double mycP,\
                 double myOmega,\
                 bool myStationary);
+        double getSigT(int eIdx,double temp);
+        double getSigF(int eIdx,double temp);
+        double getSigS(int eIdxPrime,int eIdx,double temp);
+        double interpolateParameter(Eigen::MatrixXd param,double temp);
         void checkMat();
 	void edit();
+
+        private:
+        vector<Eigen::MatrixXd> sigT,sigF,sigS;
 
 };
 

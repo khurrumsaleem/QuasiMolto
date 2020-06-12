@@ -17,6 +17,7 @@ class Materials
         CollapsedCrossSections * oneGroupXS;
 	Eigen::MatrixXi matMap; //resized later
 	Eigen::MatrixXd flowVelocity; 
+	Eigen::MatrixXd temperature; 
 	Eigen::MatrixXd recircFlowVelocity; 
         Eigen::VectorXd neutV;
         int nGroups;
@@ -39,6 +40,8 @@ class Materials
 	double k(int zIdx,int rIdx);
 	double cP(int zIdx,int rIdx);
 	double omega(int zIdx,int rIdx);
+        void updateTemperature(Eigen::MatrixXd myTemp);
+        vector<Eigen::MatrixXd> readTempDependentYaml(string file);
         void checkMats();
         void initCollapsedXS();
         void edit();

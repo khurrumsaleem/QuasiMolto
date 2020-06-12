@@ -27,6 +27,9 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
 
   // Initialize flow velocity matrix in core 
   flowVelocity.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
+  
+  // Initialize temperature in core 
+  temperature.setConstant(mesh->nZ,mesh->nR,922.0);
 
   // Initialize flow velocity matrix in recirculation loop
   recircFlowVelocity.setZero(mesh->nZrecirc,mesh->rCornerCent.size());
@@ -127,15 +130,16 @@ void Materials::readMats()
   YAML::Node mats = (*input)["materials"];
   string name;
   vector<double> sigTInp,sigSInp,sigFInp,chiPInp,chiDInp,nuInp;
-  Eigen::VectorXd sigT,sigF,chiP,chiD,nu; 
-  Eigen::MatrixXd sigS;
+  vector<Eigen::MatrixXd> sigT,sigS,sigF;
+  Eigen::VectorXd chiP,chiD,nu; 
   int ID,size;
   double density,gamma,k,cP,omega;
   bool stationary;
 
   int iCount=0;
   for (YAML::const_iterator it=mats.begin(); it!=mats.end(); ++it){
-
+    cout << iCount << endl;
+    
     // reset boolean
     stationary = true;
 
@@ -143,10 +147,55 @@ void Materials::readMats()
     mat2idx.insert(pair<string,int>(it->first.as<string>(),iCount));
     name = it->first.as<string>();
 
-    // Pull values from input
-    sigTInp = it->second["sigT"].as<vector<double>>();
-    sigSInp = it->second["sigS"].as<vector<double>>();
-    sigFInp = it->second["sigF"].as<vector<double>>();
+    // Pull sigT values from input
+    if (it->second["sigTFile"])
+      sigT=readTempDependentYaml(it->second["sigTFile"].as<string>());
+    else
+    {
+      sigTInp = it->second["sigT"].as<vector<double>>();
+      sigT.resize(sigTInp.size()); 
+
+      for (int iSig = 0; iSig < sigT.size(); ++iSig){
+        sigT[iSig].setZero(1,2);
+        sigT[iSig](0,1) = sigTInp[iSig];
+      }
+    }
+    size = sigT.size();
+
+    // Pull sigF values from input
+    if (it->second["sigFFile"])
+      sigF=readTempDependentYaml(it->second["sigFFile"].as<string>());
+    else
+    {
+      sigFInp = it->second["sigF"].as<vector<double>>();
+      sigF.resize(size); 
+
+      for (int iSig = 0; iSig < size; ++iSig){
+        sigF[iSig].setZero(1,2);
+        sigF[iSig](0,1) = sigFInp[iSig];
+      }
+    }
+
+    cout << "sig F good" << endl;
+    // Pull sigS values from input
+    if (it->second["sigSFile"])
+      sigS=readTempDependentYaml(it->second["sigSFile"].as<string>());
+    else
+    {
+      sigSInp = it->second["sigS"].as<vector<double>>();
+      sigS.resize(sigSInp.size());
+
+      for (int iSig = 0; iSig < size; ++iSig){
+        
+        for(int iGroup = 0; iGroup < size; ++iGroup){
+          sigS[iSig*size+iGroup].setZero(1,2);
+          sigS[iSig*size+iGroup](0,1) = sigSInp[iSig*size+iGroup];
+        }
+      }
+    }
+    
+    cout << "sig S good" << endl;
+
     chiPInp = it->second["chiP"].as<vector<double>>();
     chiDInp = it->second["chiD"].as<vector<double>>();
     nuInp = it->second["nu"].as<vector<double>>();
@@ -155,23 +204,18 @@ void Materials::readMats()
     k = it->second["k"].as<double>();
     cP = it->second["cP"].as<double>();
     omega = it->second["omega"].as<double>();
+    
     if (it->second["stationary"]) 
       stationary = it->second["stationary"].as<bool>();
 
     // Set size of Eigen vectors
-    size = sigTInp.size();
-    sigT.setZero(size); 
-    sigF.setZero(size);
     chiP.setZero(size);
     chiD.setZero(size);
     nu.setZero(size);
-    sigS.setZero(size,size);
 
     // Load vector inputs into Eigen vectors
     for (int iSig = 0; iSig < size; ++iSig){
 
-      sigT(iSig) = sigTInp[iSig];
-      sigF(iSig) = sigFInp[iSig];
       chiP(iSig) = chiPInp[iSig];
       chiD(iSig) = chiDInp[iSig];
 
@@ -180,10 +224,6 @@ void Materials::readMats()
         nu(iSig) = nuInp[iSig];
       else
         nu(iSig) = nuInp[0];
-
-      for(int iGroup = 0; iGroup < size; ++iGroup){
-        sigS(iSig,iGroup) = sigSInp[iSig*size+iGroup];
-      }
     }
 
     // Add material to bank
@@ -283,10 +323,8 @@ void Materials::setMatRegion(int myIndex,double rIn,double rOut,double zLow,doub
 /// @param [out] sigT Total cross section of the inquired location 
 double Materials::sigT(int zIdx,int rIdx,int eIdx){
 
-  double sigT = matBank[matMap(zIdx,rIdx)]->sigT(eIdx);
-
-  // Eventually there will need to be some manipulation here that 
-  // extrapolates the cross section based on temperature
+  double temp = temperature(zIdx,rIdx);
+  double sigT = matBank[matMap(zIdx,rIdx)]->getSigT(eIdx,temp);
 
   return sigT;
 };
@@ -301,10 +339,8 @@ double Materials::sigT(int zIdx,int rIdx,int eIdx){
 /// @param [out] sigS Scattering cross section of the inquired location 
 double Materials::sigS(int zIdx,int rIdx,int gprime,int g){
 
-  double sigS = matBank[matMap(zIdx,rIdx)]->sigS(gprime,g);
-
-  // Eventually there will need to be some manipulation here that 
-  // extrapolates the cross section based on temperature
+  double temp = temperature(zIdx,rIdx);
+  double sigS = matBank[matMap(zIdx,rIdx)]->getSigS(gprime,g,temp);
 
   return sigS;
 };
@@ -319,10 +355,8 @@ double Materials::sigS(int zIdx,int rIdx,int gprime,int g){
 /// @param [out] sigF Fission cross section of the inquired location 
 double Materials::sigF(int zIdx,int rIdx,int eIndx){
 
-  double sigF = matBank[matMap(zIdx,rIdx)]->sigF(eIndx);
-
-  // Eventually there will need to be some manipulation here that 
-  // extrapolates the cross section based on temperature
+  double temp = temperature(zIdx,rIdx);
+  double sigF = matBank[matMap(zIdx,rIdx)]->getSigF(eIndx,temp);
 
   return sigF;
 };
@@ -455,6 +489,47 @@ double Materials::omega(int zIdx,int rIdx){
 //==============================================================================
 
 //==============================================================================
+/// Update temperatures used to evaluate cross sections 
+///
+void Materials::updateTemperature(Eigen::MatrixXd myTemp)
+{
+  temperature = myTemp;
+};
+//==============================================================================
+
+//==============================================================================
+/// Read in temperature dependent data from a YAML file 
+///
+vector<Eigen::MatrixXd> Materials::readTempDependentYaml(string fileName)
+{
+  
+  vector<Eigen::MatrixXd> params;
+  vector<double> myTemps,myXSs;
+  double myTemp,myXS;
+  Eigen::MatrixXd myMatrix;
+  
+  YAML::Node input;
+  input = YAML::LoadFile(fileName);
+  for (YAML::const_iterator energy=input.begin();energy!=input.end();++energy) 
+  {
+      myTemps = energy->second["temperature"].as<vector<double>>();
+      myXSs = energy->second["xs"].as<vector<double>>();
+      myMatrix.setZero(myTemps.size(),2);
+      
+      for (int iRow = 0; iRow < myMatrix.rows(); iRow++)
+      {
+        myMatrix(iRow,0) = myTemps[iRow];
+        myMatrix(iRow,1) = myXSs[iRow];
+      }
+      cout << myMatrix << endl;
+      params.push_back(myMatrix);
+  }
+  return params;
+};
+//==============================================================================
+
+
+//==============================================================================
 /// Check to see if nuclear data defined on each group is sensible
 
 void Materials::checkMats()
@@ -501,7 +576,6 @@ void Materials::initCollapsedXS()
 };
 //==============================================================================
 
-
 //==============================================================================
 /// Print out material map and all entries in material bank
 
@@ -513,8 +587,6 @@ void Materials::edit()
   for (int iCount = 0; iCount < matBank.size(); ++iCount){
     matBank[iCount]->edit();
   }
+
 };
 //==============================================================================
-
-
-
