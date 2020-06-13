@@ -1107,6 +1107,7 @@ double MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
  
   // Check for small values in flux 
   min = minScale*vector1(Eigen::seqN(fluxBeginIdx,fluxEndIdx)).mean();
+  if (min < minScale) min = minScale;
   for (int index = 0; index < mpqd->ggqd->nUnknowns; index++)
   {
     if (abs(vector1(index)) < min and abs(vector2(index)) < min ) 
@@ -1118,6 +1119,7 @@ double MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
 
   // Check for small values in temperature 
   min = minScale*vector1(Eigen::seqN(heatBeginIdx,heatEndIdx)).mean();
+  if (min < minScale) min = minScale;
   for (int index = heatBeginIdx; index < dnpBeginIdx;\
       index++)
   {
@@ -1129,10 +1131,21 @@ double MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
   }
 
   // Check for small values in DNP concentrations 
-  min = minScale*vector1(Eigen::seq(dnpBeginIdx,dnpEndIdx)).mean();
+  // Note: DNP concentrations have a lot of values close to zero at
+  // at the beginning of the simulation. This causes some issues with
+  // regards to numerical precision when trying to calculate the residual.
+  // For now, just going to measure convergence based on temperature 
+  // and flux. 
+  min = minScale*vector1(Eigen::seq(dnpBeginIdx,dnpEndIdx)).maxCoeff();
+  if (min < minScale) min = minScale;
   for (int index = dnpBeginIdx; index < vector1.size(); index++)
   {
     if (abs(vector1(index)) < min and abs(vector2(index)) < min ) 
+    {
+      vector1(index) = 1.0;
+      vector2(index) = 1.0;
+    }
+    else
     {
       vector1(index) = 1.0;
       vector2(index) = 1.0;
@@ -1142,8 +1155,8 @@ double MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
   diff = (vector1-vector2);
   residualVec = diff.cwiseQuotient(vector1);
   residual = (1.0/residualVec.size())*residualVec.norm();
-//  cout << "ResidualVec:" << endl;
-//  cout << residualVec << endl;
+  //cout << "ResidualVec:" << endl;
+  //cout << residualVec << endl;
 
   return residual;
   
