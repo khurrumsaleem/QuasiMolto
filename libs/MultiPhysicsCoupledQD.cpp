@@ -183,8 +183,11 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
   ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
 
-  // Set xPast 
-  xPast = x; 
+  // Set xPast and past neutron velocities 
+  xPast = x;
+  mats->oneGroupXS->neutVPast = mats->oneGroupXS->neutV;  
+  mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;  
+  mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;  
 
 };
 //==============================================================================
