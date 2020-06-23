@@ -29,6 +29,7 @@ CollapsedCrossSections::CollapsedCrossSections(Mesh * myMesh, int nEnergyGroups)
   rSigTR.setZero(nZ,nR+1);  
   zSigTR.setZero(nZ+1,nR);  
   neutV.setZero(nZ,nR);  
+  neutVPast.setZero(nZ,nR);  
   rNeutV.setZero(nZ,nR+1);  
   rNeutVPast.setZero(nZ,nR+1);  
   zNeutV.setZero(nZ+1,nR);  

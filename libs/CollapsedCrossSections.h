@@ -21,7 +21,7 @@ class CollapsedCrossSections
     // sigS is the flux weighted one group scattering cross section
     // groupSigS is the flux weighted one group to group scattering cross 
     // section
-    Eigen::MatrixXd sigT,sigS,sigF,rSigTR,zSigTR,neutV,rNeutV,\
+    Eigen::MatrixXd sigT,sigS,sigF,rSigTR,zSigTR,neutV,neutVPast,rNeutV,\
       rNeutVPast,zNeutV,zNeutVPast,qdFluxCoeff,Ezz,Err,Erz,rZeta1,rZeta2,\
       rZeta,zZeta1,zZeta2,zZeta; 
     vector<Eigen::MatrixXd> groupDNPFluxCoeff; 
