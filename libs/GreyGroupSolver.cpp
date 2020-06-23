@@ -1385,7 +1385,6 @@ double GreyGroupSolver::getSouthErz(int iZ,int iR)
 };
 //==============================================================================
 
-
 //==============================================================================
 /// Extract cell average values from solution vector and store
 void GreyGroupSolver::getFlux()
@@ -1413,12 +1412,30 @@ void GreyGroupSolver::getFlux()
       GGQD->sFluxZ(iZ,iR) = xFlux(indices[iNF]);
       GGQD->sFluxZ(iZ+1,iR) = xFlux(indices[iSF]);
 
+    }
+  } 
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Extract cell average values from solution vector and store
+void GreyGroupSolver::getCurrent()
+{
+  vector<int> indices;
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+      indices = getIndices(iR,iZ);
+
       // Get cell currents 
       GGQD->currentR(iZ,iR) = currPast(indices[iWC]);
       GGQD->currentR(iZ,iR+1) = currPast(indices[iEC]);
       GGQD->currentZ(iZ,iR) = currPast(indices[iNC]);
       GGQD->currentZ(iZ+1,iR) = currPast(indices[iSC]);
-
 
     }
   } 

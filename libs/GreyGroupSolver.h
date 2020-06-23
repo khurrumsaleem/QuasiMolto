@@ -93,6 +93,7 @@ class GreyGroupSolver
 
     // function to parse solution vector
     void getFlux();
+    void getCurrent();
     void setFlux();
     Eigen::VectorXd getFluxSolutionVector();
     Eigen::VectorXd getCurrentSolutionVector();
