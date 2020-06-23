@@ -133,6 +133,7 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->neutV(iZ,iR);
+  double vPast = materials->oneGroupXS->neutVPast(iZ,iR);
   double sigT = materials->oneGroupXS->sigT(iZ,iR);
   double groupSourceCoeff;
 
@@ -160,7 +161,7 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
 
   // formulate RHS entry
   (*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
-              ( ((*xPast)(indices[iCF])/(v*deltaT)) + GGQD->q(iZ,iR));
+              ( ((*xPast)(indices[iCF])/(vPast*deltaT)) + GGQD->q(iZ,iR));
 };
 //==============================================================================
 
@@ -203,6 +204,7 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->zNeutV(iZ+1,iR);
+  double vPast = materials->oneGroupXS->zNeutVPast(iZ+1,iR);
   double sigT = materials->oneGroupXS->zSigTR(iZ+1,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL,\
     mgqdCurrent,mgqdNeutV;  
@@ -250,7 +252,7 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
   }
   else
   {
-    (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iSC])/(v*deltaT));
+    (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iSC])/(vPast*deltaT));
   }
 
 };
@@ -269,6 +271,7 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->zNeutV(iZ,iR);
+  double vPast = materials->oneGroupXS->zNeutVPast(iZ,iR);
   double sigT = materials->oneGroupXS->zSigTR(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL,\
     mgqdCurrent,mgqdNeutV;  
@@ -316,7 +319,7 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
   }
   else
   {
-    (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iNC])/(v*deltaT));
+    (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iNC])/(vPast*deltaT));
   }
 };
 //==============================================================================
@@ -334,6 +337,7 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->rNeutV(iZ,iR);
+  double vPast = materials->oneGroupXS->rNeutVPast(iZ,iR);
   double sigT = materials->oneGroupXS->rSigTR(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL;
   double hCent,hDown,mgqdCurrent,mgqdNeutV;
@@ -402,6 +406,7 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->rNeutV(iZ,iR+1);
+  double vPast = materials->oneGroupXS->rNeutVPast(iZ,iR+1);
   double sigT = materials->oneGroupXS->rSigTR(iZ,iR+1);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL;  
   double hCent,hUp,mgqdCurrent,mgqdNeutV;
@@ -451,7 +456,7 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   }
   else
   {
-    (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iEC])/(v*deltaT));  
+    (*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iEC])/(vPast*deltaT));  
   }
 
 };
@@ -516,6 +521,7 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->zNeutV(iZ+1,iR);
+  double vPast = materials->oneGroupXS->zNeutVPast(iZ+1,iR);
   double sigT = materials->oneGroupXS->zSigTR(iZ+1,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff,\
     zetaL,mgqdCurrent,mgqdNeutV; 
@@ -563,7 +569,7 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
   }
   else
   {
-    d(iEq) = coeff*(currPast(indices[iSC])/(v*deltaT));
+    d(iEq) = coeff*(currPast(indices[iSC])/(vPast*deltaT));
   }
 
 };
@@ -580,6 +586,7 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->zNeutV(iZ,iR);
+  double vPast = materials->oneGroupXS->zNeutVPast(iZ,iR);
   double sigT = materials->oneGroupXS->zSigTR(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff,\
     zetaL,mgqdCurrent,mgqdNeutV;
@@ -628,7 +635,7 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
   }
   else
   {
-    d(iEq) = coeff*(currPast(indices[iNC])/(v*deltaT));  
+    d(iEq) = coeff*(currPast(indices[iNC])/(vPast*deltaT));  
   }
 
 };
@@ -645,6 +652,7 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->rNeutV(iZ,iR);
+  double vPast = materials->oneGroupXS->rNeutVPast(iZ,iR);
   double sigT = materials->oneGroupXS->rSigTR(iZ,iR);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double hCent,hDown,zetaL,mgqdCurrent,mgqdNeutV;
@@ -694,7 +702,7 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
   }
   else
   {
-    d(iEq) = coeff*(currPast(indices[iWC])/(v*deltaT));
+    d(iEq) = coeff*(currPast(indices[iWC])/(vPast*deltaT));
   }
 
 };
@@ -711,6 +719,7 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->oneGroupXS->rNeutV(iZ,iR+1);
+  double vPast = materials->oneGroupXS->rNeutVPast(iZ,iR+1);
   double sigT = materials->oneGroupXS->rSigTR(iZ,iR+1);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double hCent,hUp,zetaL,mgqdCurrent,mgqdNeutV;
@@ -761,7 +770,7 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   }
   else
   {
-    d(iEq) = coeff*(currPast(indices[iEC])/(v*deltaT));
+    d(iEq) = coeff*(currPast(indices[iEC])/(vPast*deltaT));
   }
 
 };
