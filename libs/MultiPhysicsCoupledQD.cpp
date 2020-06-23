@@ -142,6 +142,7 @@ void MultiPhysicsCoupledQD::initializeXPast()
   ggqd->GGSolver->getFlux();
   ggqd->GGSolver->formBackCalcSystem();
   ggqd->GGSolver->backCalculateCurrent();
+  ggqd->GGSolver->getCurrent();
   x.setZero(); // Reset x
 };
 //==============================================================================
@@ -180,6 +181,7 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
   // Back calculate currents
   ggqd->GGSolver->formBackCalcSystem();
   ggqd->GGSolver->backCalculateCurrent();
+  ggqd->GGSolver->getCurrent();
 
   // Set xPast 
   xPast = x; 
