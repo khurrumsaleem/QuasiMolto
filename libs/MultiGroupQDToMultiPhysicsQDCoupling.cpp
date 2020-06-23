@@ -129,6 +129,7 @@ void MGQDToMPQDCoupling::initCollapsedNuclearData()
 {
 
   collapseNuclearData();
+  mats->oneGroupXS->neutVPast = mats->oneGroupXS->neutV;
   mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;
   mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;
 
@@ -141,10 +142,6 @@ void MGQDToMPQDCoupling::initCollapsedNuclearData()
 ///
 void MGQDToMPQDCoupling::collapseNuclearData()
 {
-
-  // Store past values
-  mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;
-  mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;
 
   // Reset collapsed nuclear data
   mats->oneGroupXS->resetData();
