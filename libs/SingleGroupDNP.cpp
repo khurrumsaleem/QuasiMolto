@@ -55,6 +55,7 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
     inpConc0=(*(mgdnp->input))["parameters"]["initial dnp concentration"]\
              .as<double>();
 
+    //dnpConc = getInitialConc(inpConc0);
     dnpConc.setConstant(inpConc0);
 
   }
@@ -621,6 +622,32 @@ void SingleGroupDNP::assignBoundaryIndices()
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Update boundary conditions 
+///
+Eigen::MatrixXd SingleGroupDNP::getInitialConc(double initConc)
+{
+ 
+  Eigen::MatrixXd conc; 
+ 
+  conc.setZero(mesh->nZ,mesh->nR);    
+
+  // Check if a material is stationary. If so, assume it has no initial 
+  // precursor concentration.  
+  for (int iR = 0; iR < mesh->nR; iR++)
+  {
+    for (int iZ = 0; iZ < mesh->nZ; iZ++)
+    {
+      //if(not mats->matBank[mats->matMap(iZ,iR)]->stationary) 
+      // conc(iZ,iR) = initConc; 
+    }
+  }
+
+  return conc;
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Update boundary conditions 

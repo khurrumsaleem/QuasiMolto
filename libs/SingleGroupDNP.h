@@ -46,6 +46,7 @@ class SingleGroupDNP
         rowvec dzs,\
         int myIndexOffset,
         bool fluxSource = true);
+    Eigen::MatrixXd getInitialConc(double initConc);
     Eigen::MatrixXd calcDiracs(Eigen::MatrixXd dnpConc,\
         Eigen::MatrixXd inletConc,\
         Eigen::VectorXd outletConc);
