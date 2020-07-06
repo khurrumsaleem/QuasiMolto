@@ -28,6 +28,7 @@ class MultilevelCoupling
         MultiGroupQD * myMGQD,\
         MultiPhysicsCoupledQD * myMPQD);
     bool solveOneStep();
+    bool solveOneStepLagged();
     void solveTransient();
 
   private:
