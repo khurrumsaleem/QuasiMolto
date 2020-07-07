@@ -42,7 +42,7 @@ class MGQDToMPQDCoupling
   double checkForZeroAxialFlux(int iZ,int iR);
   double checkForZeroRadialCurrent(int iZ,int iR);
   double checkForZeroAxialCurrent(int iZ,int iR);
-  double calcResidual(Eigen::VectorXd vector1, Eigen::VectorXd vector2);
+  vector<double> calcResidual(Eigen::VectorXd vector1, Eigen::VectorXd vector2);
   double biasEps = 1E-25;
 
   private:

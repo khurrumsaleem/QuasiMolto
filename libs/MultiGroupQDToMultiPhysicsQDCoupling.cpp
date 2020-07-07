@@ -49,7 +49,7 @@ bool MGQDToMPQDCoupling::solveOneStep()
 {
 
   Eigen::VectorXd xCurrentIter,xPrevIter,ones,residualVec;
-  double residual;
+  vector<double> residual;
 
   for (int iStep = 0; iStep < 100; iStep++)
   {
@@ -68,8 +68,8 @@ bool MGQDToMPQDCoupling::solveOneStep()
     //cout << xCurrentIter << endl;
     residual = calcResidual(xPrevIter,xCurrentIter);
     cout << "          "; 
-    cout << "MGQD->MPQD Residual: " << residual <<endl; 
-    if (residual < mpqd->epsMPQD)
+    cout << "MGQD->MPQD Residual: " << residual[0] <<", " << residual[1] <<endl; 
+    if (residual[0] < mpqd->epsMPQD and residual[1] < mpqd->epsMPQD)
     {
       return true; 
     }
@@ -1079,12 +1079,14 @@ double MGQDToMPQDCoupling::checkForZeroRadialCurrent(int iZ,int iR)
 //==============================================================================
 /// Calculate residual between two vectors 
 ///
-double MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
+vector<double> MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
     Eigen::VectorXd vector2)
 {
   
-  Eigen::VectorXd ones,residualVec,diff;
-  double residual;
+  Eigen::VectorXd ones, residualVec, diff;
+  Eigen::VectorXd fluxResidualVec, tempResidualVec, dnpResidualVec; 
+  vector<double> multiphysicsResiduals;
+  double residual, fluxResidual, tempResidual, dnpResidual;
   double min,minScale = 1E-12;
   int fluxBeginIdx,fluxEndIdx,heatBeginIdx,heatEndIdx,dnpBeginIdx,dnpEndIdx; 
 
@@ -1101,7 +1103,7 @@ double MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
   dnpEndIdx = vector1.size()-1;
 
   ones.setOnes(vector1.size());
- 
+
   // Check for small values in flux 
   min = minScale*vector1(Eigen::seqN(fluxBeginIdx,fluxEndIdx)).mean();
   if (min < minScale) min = minScale;
@@ -1154,8 +1156,20 @@ double MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
   residual = (1.0/residualVec.size())*residualVec.norm();
   //cout << "ResidualVec:" << endl;
   //cout << residualVec << endl;
+  
+  fluxResidualVec = residualVec(Eigen::seqN(fluxBeginIdx,fluxEndIdx));
+  tempResidualVec = residualVec(Eigen::seqN(heatBeginIdx,heatEndIdx));
+  dnpResidualVec = residualVec(Eigen::seq(dnpBeginIdx,dnpEndIdx));
 
-  return residual;
+  fluxResidual = (1.0/fluxResidualVec.size())*fluxResidualVec.norm(); 
+  tempResidual = (1.0/tempResidualVec.size())*tempResidualVec.norm(); 
+  dnpResidual = (1.0/dnpResidualVec.size())*dnpResidualVec.norm(); 
+
+  multiphysicsResiduals.push_back(fluxResidual);
+  multiphysicsResiduals.push_back(tempResidual);
+  multiphysicsResiduals.push_back(dnpResidual);
+  
+  return multiphysicsResiduals;
   
 };
 //==============================================================================
