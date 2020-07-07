@@ -46,6 +46,8 @@ MultilevelCoupling::MultilevelCoupling(Mesh * myMesh,\
   // Create MGQD to MPQD coupling object
   MGQDToMPQD = new MGQDToMPQDCoupling(mesh,mats,input,mpqd,mgqd);
   
+  // Check for optional input parameters 
+  checkOptionalParameters();
 
 };
 //==============================================================================
@@ -57,7 +59,7 @@ bool MultilevelCoupling::solveOneStep()
 {
 
   Eigen::VectorXd xCurrentIter, xLastIter, residualVector;
-  double residual;
+  vector<double> residual;
   bool eddingtonConverged;
 
   for (int iStep = 0; iStep < 100; iStep++)
@@ -92,9 +94,11 @@ bool MultilevelCoupling::solveOneStep()
     // Repeat until ||xCurrentIter - xLastIter|| < eps 
     residual = MGQDToMPQD->calcResidual(xLastIter,xCurrentIter);
     cout << endl; 
-    cout << "MGT->MGQD->MPQD Residual: " << residual << endl;
+    cout << "MGT->MGQD->MPQD Residual: " << residual[0] << endl;
     cout << endl;
-    if (residual < mpqd->epsMPQD and eddingtonConverged) 
+    if (residual[0] < mpqd->epsMPQD\
+        and residual[1] < mpqd->epsMPQD\
+        and eddingtonConverged) 
     {
       cout << "Solve converged." << endl;
       mgt->writeFluxes();
@@ -110,20 +114,286 @@ bool MultilevelCoupling::solveOneStep()
 //==============================================================================
 /// Collapse nuclear data with flux and current weighting 
 ///
+bool MultilevelCoupling::initialSolve()
+{
+
+  Eigen::VectorXd xCurrentIter, xLastMGLOQDIter,xLastELOTIter,residualVector;
+  vector<double> residualMGLOQD = {1,1,1}, residualELOT = {1,1,1};
+  bool eddingtonConverged;
+  bool convergedMGLOQD=false, convergedELOT=false;
+  int itersMGLOQD = 0, itersELOT = 0;
+
+  while (not convergedMGLOQD){
+
+    /////////////////////
+    // MGLOQD SOLUTION //
+    /////////////////////
+
+    // Solve MGLOQD problem
+    solveMGLOQD();
+
+    // Get group fluxes to use in group collapse
+    mgqd->getFluxes();
+
+    // Store last iterate of ELOT solution used in MGLOQD level
+    xLastMGLOQDIter = mpqd->x;
+  
+    cout << endl;
+    
+    while (not convergedELOT) {
+
+      ///////////////////
+      // ELOT SOLUTION //
+      ///////////////////
+
+      // Calculate collapsed nuclear data
+      MGQDToMPQD->collapseNuclearData();
+
+      // Store last iterate of ELOT solution used in ELOT level
+      xLastELOTIter = mpqd->x;
+
+      // Solve ELOT problem
+      solveELOT();
+
+      // Store newest iterate 
+      xCurrentIter = mpqd->x;
+
+      // Repeat until ||xCurrentIter - xLastIter|| < eps 
+      residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
+      cout << "        ";
+      cout << "ELOT Residual: " << residualELOT[0]; 
+      cout << ", " << residualELOT[1] << endl;
+      itersELOT++;
+      
+      // Calculate collapnuclear data at new temperature
+      mats->updateTemperature(mpqd->heat->returnCurrentTemp());
+
+      // Check if residuals are too big 
+      if (residualELOT[0] > maxResidual or\
+          residualELOT[1] > maxResidual) 
+      {
+        // Jump back to MGLOQD level
+        break;
+      }
+
+      // Check converge criteria 
+      if (epsELOT(residualMGLOQD[0]) > residualELOT[0] and\
+          epsELOT(residualMGLOQD[1]) > residualELOT[1]) 
+      {
+        // ELOT solve is converged
+        convergedELOT = true;
+      }
+
+    } // ELOT
+      
+    cout << endl;
+
+    // Reset ELOT residual
+    convergedELOT = false; 
+
+    // Store one group fluxes and DNPs for MGHOT and MGLOQD sources 
+    mpqd->ggqd->GGSolver->getFlux();
+    mpqd->mgdnp->getCumulativeDNPDecaySource();
+
+    // Calculate MGLOQD residual 
+    residualMGLOQD = MGQDToMPQD->calcResidual(xLastMGLOQDIter,xCurrentIter);
+    cout << "    ";
+    cout << "MGLOQD Residual: " << residualMGLOQD[0];
+    cout << ", " << residualMGLOQD[1] << endl;
+    itersMGLOQD++;
+
+    // Check converge criteria 
+    if (epsELOT(mpqd->epsMPQD) > residualMGLOQD[0] and\
+        epsELOT(mpqd->epsMPQD) > residualMGLOQD[1])
+    { 
+      convergedMGLOQD = true;
+    }
+
+  } // MGLOQD
+    
+  cout << endl;
+  cout << "MGLOQD iterations: " << itersMGLOQD << endl;
+  cout << "ELOT iterations: " << itersELOT << endl;
+
+  return true;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Collapse nuclear data with flux and current weighting 
+///
 bool MultilevelCoupling::solveOneStepLagged()
 {
 
   Eigen::VectorXd xCurrentIter, xLastMGHOTIter, xLastMGLOQDIter,xLastELOTIter,\
     residualVector;
-  double residualMGHOT=1,residualMGLOQD=2,residualELOT=3;
-  bool eddingtonConverged,convergedMGHOT,convergedMGLOQD,convergedELOT;
+  vector<double> residualMGHOT = {1,1,1}, residualMGLOQD = {1,1,1},\
+    residualELOT = {1,1,1};
+  bool eddingtonConverged;
+  bool convergedMGHOT=false, convergedMGLOQD=false, convergedELOT=false;
   int itersMGHOT = 0, itersMGLOQD = 0, itersELOT = 0;
 
-  while (mpqd->epsMPQD < residualMGHOT){ 
+  while (not convergedMGHOT){ 
 
     //////////////////////// 
     // TRANSPORT SOLUTION // 
     //////////////////////// 
+
+    // Solve MGHOT problem
+    solveMGHOT();
+
+    // Calculate Eddington factors for MGQD problem
+    eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
+
+    // Calculate BCs for MGQD problem 
+    MGTToMGQD->calcBCs();
+
+    // Store last iterate of ELOT solution used in MGHOT level
+    xLastMGHOTIter = mpqd->x;
+    
+    //while (mpqd->epsMPQD < residualMGLOQD){
+    while (not convergedMGLOQD){
+
+      /////////////////////
+      // MGLOQD SOLUTION //
+      /////////////////////
+
+      // Solve MGLOQD problem
+      solveMGLOQD();
+
+      // Get group fluxes to use in group collapse
+      mgqd->getFluxes();
+      
+      // Store last iterate of ELOT solution used in MGLOQD level
+      xLastMGLOQDIter = mpqd->x;
+    
+      //while (mpqd->epsMPQD < residualELOT){
+      while (not convergedELOT) {
+        
+        ///////////////////
+        // ELOT SOLUTION //
+        ///////////////////
+
+        // Calculate collapsed nuclear data
+        MGQDToMPQD->collapseNuclearData();
+        
+        // Store last iterate of ELOT solution used in ELOT level
+        xLastELOTIter = mpqd->x;
+      
+        // Solve ELOT problem
+        solveELOT();
+
+        // Store newest iterate 
+        xCurrentIter = mpqd->x;
+
+        // Calculate and print ELOT residual  
+        residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
+        cout << "        ";
+        cout << "ELOT Residual: " << residualELOT[0]; 
+        cout << ", " << residualELOT[1] << endl;
+        itersELOT++;
+ 
+        // Calculate collapsed nuclear data at new temperature
+        mats->updateTemperature(mpqd->heat->returnCurrentTemp());
+
+        // Check if residuals are too big 
+        if (residualELOT[0] > maxResidual or\
+            residualELOT[1] > maxResidual) 
+        {
+          // Jump back to MGLOQD level
+          break;
+        }
+       
+        // Check converge criteria 
+        if (epsELOT(residualMGLOQD[0]) > residualELOT[0] and\
+            epsELOT(residualMGLOQD[1]) > residualELOT[1]) 
+        {
+          convergedELOT = true;
+        }
+
+      } // ELOT
+    
+      // Reset convergence indicator
+      convergedELOT = false; 
+      
+      // Store one group fluxes and DNPs for MGHOT and MGLOQD sources 
+      mpqd->ggqd->GGSolver->getFlux();
+      mpqd->mgdnp->getCumulativeDNPDecaySource();
+     
+      // Calculate and print MGLOQD residual 
+      residualMGLOQD = MGQDToMPQD->calcResidual(xLastMGLOQDIter,xCurrentIter);
+      cout << endl;
+      cout << "    ";
+      cout << "MGLOQD Residual: " << residualMGLOQD[0];
+      cout << ", " << residualMGLOQD[1] << endl;
+      cout << endl;
+      itersMGLOQD++;
+
+      // Check converge criteria 
+      if (epsELOT(mpqd->epsMPQD) > residualMGLOQD[0] and\
+          epsELOT(mpqd->epsMPQD) > residualMGLOQD[1])
+      { 
+        convergedMGLOQD = true;
+      }
+
+    } // MGLOQD
+    
+    
+    // Reset convergence indicator
+    convergedMGLOQD = false;
+     
+    // Calculate and print MGHOT residual 
+    residualMGHOT = MGQDToMPQD->calcResidual(xLastMGHOTIter,xCurrentIter);
+    cout << "MGHOT Residual: " << residualMGHOT[0];
+    cout << ", " << residualMGHOT[1] << endl;
+    cout << endl;
+    itersMGHOT++;
+      
+    // Check converge criteria 
+    if (epsELOT(mpqd->epsMPQD) > residualMGHOT[0] and\
+        epsELOT(mpqd->epsMPQD) > residualMGHOT[1]) 
+    {
+      convergedMGHOT = true;
+    }
+
+  } //MGHOT
+    
+  cout << endl;
+    
+  cout << "MGHOT iterations: " << itersMGHOT << endl;
+  cout << "MGLOQD iterations: " << itersMGLOQD << endl;
+  cout << "ELOT iterations: " << itersELOT << endl;
+
+  return true;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Dynamically determines a convergence threshold 
+///
+double MultilevelCoupling::epsELOT(double residual)
+{
+
+  double epsELOT;
+  
+  if (residual*overSolveThreshold > mpqd->epsMPQD)
+    epsELOT = residual*overSolveThreshold;
+  else
+    epsELOT = mpqd->epsMPQD; 
+  
+  return epsELOT;
+
+};
+//==============================================================================
+
+
+//==============================================================================
+/// Perform a solve at the MGHOT level 
+///
+void MultilevelCoupling::solveMGHOT()
+{
 
     // Calculate transport sources
     mgt->calcSources();
@@ -137,108 +407,41 @@ bool MultilevelCoupling::solveOneStepLagged()
     // Solve all angle transport problem
     mgt->solveSCBs();
 
-    // Calculate Eddington factors for MGQD problem
-    eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
+};
+//==============================================================================
 
-    // Calculate BCs for MGQD problem 
-    MGTToMGQD->calcBCs();
+//==============================================================================
+/// Perform a solve at the MGLOQD level 
+///
+void MultilevelCoupling::solveMGLOQD()
+{
 
-    // Store last iterate of ELOT solution used in MGHOT level
-    xLastMGHOTIter = mpqd->x;
-    
-    //while (mpqd->epsMPQD < residualMGLOQD){
-    while (mpqd->epsMPQD < residualMGLOQD){
+  // Build flux system
+  mgqd->buildLinearSystem();
 
-      /////////////////////
-      // MGLOQD SOLUTION //
-      /////////////////////
+  // Solve flux system
+  mgqd->solveLinearSystem();
 
-      // Build flux system
-      mgqd->buildLinearSystem();
-      
-      // Solve flux system
-      mgqd->solveLinearSystem();
+  // Build neutron current system
+  mgqd->buildBackCalcSystem();
 
-      // Build neutron current system
-      mgqd->buildBackCalcSystem();
+  // Solve neutron current system
+  mgqd->backCalculateCurrent();
 
-      // Solve neutron current system
-      mgqd->backCalculateCurrent();
+};
+//==============================================================================
 
-      // Get group fluxes to use in group collapse
-      mgqd->getFluxes();
-      
-      // Store last iterate of ELOT solution used in MGLOQD level
-      xLastMGLOQDIter = mpqd->x;
-    
-      //while (mpqd->epsMPQD < residualELOT){
-      while ((residualMGLOQD*1E-5 < residualELOT\
-          and mpqd->epsMPQD < residualELOT)){
-        
-        ///////////////////
-        // ELOT SOLUTION //
-        ///////////////////
+//==============================================================================
+/// Perform a solve at the ELOT level 
+///
+void MultilevelCoupling::solveELOT()
+{
 
-        // Calculate collapsed nuclear data
-        MGQDToMPQD->collapseNuclearData();
-        
-        // Store last iterate of ELOT solution used in ELOT level
-        xLastELOTIter = mpqd->x;
+  // Build ELOT system
+  mpqd->buildLinearSystem();
 
-        // Build ELOT system
-        mpqd->buildLinearSystem();
-
-        // Solve ELOT system
-        mpqd->solveLinearSystem();
-
-        // Store newest iterate 
-        xCurrentIter = mpqd->x;
-
-        // Repeat until ||xCurrentIter - xLastIter|| < eps 
-        residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
-        cout << endl; 
-        cout << "        ELOT Residual: " << residualELOT << endl;
-        cout << endl;
-        itersELOT++;
-        
-        // Calculate collapsed nuclear data at new temperature
-        mats->updateTemperature(mpqd->heat->returnCurrentTemp());
-
-      } // ELOT
-     
-      // Reset ELOT residual
-      residualELOT = 3; 
-      
-      // Store one group fluxes and DNPs for MGHOT and MGLOQD sources 
-      mpqd->ggqd->GGSolver->getFlux();
-      mpqd->mgdnp->getCumulativeDNPDecaySource();
-     
-      // Calculate MGLOQD residual 
-      residualMGLOQD = MGQDToMPQD->calcResidual(xLastMGLOQDIter,xCurrentIter);
-      cout << endl; 
-      cout << "    MGLOQD Residual: " << residualMGLOQD << endl;
-      cout << endl;
-      itersMGLOQD++;
-
-    } // MGLOQD
-    
-    // Reset MGLOQD residual
-    residualMGLOQD = 2; 
-     
-    // Calculate MGHOT residual 
-    residualMGHOT = MGQDToMPQD->calcResidual(xLastMGHOTIter,xCurrentIter);
-    cout << endl; 
-    cout << "MGHOT Residual: " << residualMGHOT << endl;
-    cout << endl;
-    itersMGHOT++;
-
-  } //MGHOT
-    
-  cout << "MGHOT iterations: " << itersMGHOT << endl;
-  cout << "MGLOQD iterations: " << itersMGLOQD << endl;
-  cout << "ELOT iterations: " << itersELOT << endl;
-
-  return true;
+  // Solve ELOT system
+  mpqd->solveLinearSystem();
 
 };
 //==============================================================================
@@ -255,7 +458,8 @@ void MultilevelCoupling::solveTransient()
   // Initialize solve 
   cout << "Computing initial solve..." << endl;
   cout << endl;
-  MGQDToMPQD->solveOneStep();
+  //MGQDToMPQD->solveOneStep();
+  initialSolve();
   cout << "Initial solve completed." << endl;
   cout << endl;
   
@@ -283,3 +487,19 @@ void MultilevelCoupling::solveTransient()
 };
 //==============================================================================
 
+//==============================================================================
+/// Read in optional parameters that might be specified in the input 
+///
+void MultilevelCoupling::checkOptionalParameters()
+{
+
+  // Check for overSolveThreshold specification..
+  if ((*input)["parameters"]["overSolveThreshold"])
+    overSolveThreshold=(*input)["parameters"]["overSolveThreshold"].as<double>();
+
+  // Check for maxResidual specification.
+  if ((*input)["parameters"]["maxResidual"])
+    maxResidual=(*input)["parameters"]["maxResidual"].as<double>();
+
+};
+//==============================================================================

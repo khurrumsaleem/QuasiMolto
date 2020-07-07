@@ -27,9 +27,17 @@ class MultilevelCoupling
         MultiGroupTransport * myMGT,\
         MultiGroupQD * myMGQD,\
         MultiPhysicsCoupledQD * myMPQD);
+    double maxResidual = 5E-2, overSolveThreshold = 3E-4;
     bool solveOneStep();
     bool solveOneStepLagged();
+    bool initialSolve();
+    void solveMGHOT();
+    void solveMGLOQD();
+    void solveELOT();
     void solveTransient();
+    double epsELOT(double residual);
+    void checkOptionalParameters();
+    
 
   private:
     Mesh * mesh; 
