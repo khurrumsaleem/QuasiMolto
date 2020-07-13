@@ -110,7 +110,7 @@ bool TransportToQDCoupling::calcEddingtonFactors()
         MGQD->SGQDs[iGroup]->Ezz);
     residualRr = calcResidual(MGQD->SGQDs[iGroup]->ErrPrev,\
         MGQD->SGQDs[iGroup]->Err);
-    residualRz = calcResidual(MGQD->SGQDs[iGroup]->ErzPrev,\
+    //residualRz = calcResidual(MGQD->SGQDs[iGroup]->ErzPrev,\
         MGQD->SGQDs[iGroup]->Erz);
 
    // cout << "residualZz: " << residualZz << endl;
@@ -120,8 +120,9 @@ bool TransportToQDCoupling::calcEddingtonFactors()
    // cout << "residualRz: " << residualRz << endl;
    // cout << endl;
 
-    if (residualZz < epsEddington and residualRr < epsEddington and 
-        residualRz < epsEddington)
+    //if (residualZz < epsEddington and residualRr < epsEddington and 
+    //    residualRz < epsEddington)
+    if (residualZz < epsEddington and residualRr < epsEddington)
       cellAvgConverged = cellAvgConverged and true;
     else
       cellAvgConverged = cellAvgConverged and false;
@@ -215,7 +216,7 @@ bool TransportToQDCoupling::calcInterfaceEddingtonFactors()
 
     residualZz = calcResidual(EzzRadialPrev, MGQD->SGQDs[iGroup]->EzzRadial);
     residualRr = calcResidual(ErrRadialPrev, MGQD->SGQDs[iGroup]->ErrRadial);
-    residualRz = calcResidual(ErzRadialPrev, MGQD->SGQDs[iGroup]->ErzRadial);
+    //residualRz = calcResidual(ErzRadialPrev, MGQD->SGQDs[iGroup]->ErzRadial);
 
    // cout << "residualZzRadial: " << residualZz << endl;
    // cout << endl;
@@ -224,8 +225,9 @@ bool TransportToQDCoupling::calcInterfaceEddingtonFactors()
    // cout << "residualRzRadial: " << residualRz << endl;
    // cout << endl;
 
-    if (residualZz < epsEddington and residualRr < epsEddington and 
-        residualRz < epsEddington)
+    //if (residualZz < epsEddington and residualRr < epsEddington and 
+    //    residualRz < epsEddington)
+    if (residualZz < epsEddington and residualRr < epsEddington)
       allConverged = allConverged and true;
     else
       allConverged = allConverged and false;
@@ -295,7 +297,7 @@ bool TransportToQDCoupling::calcInterfaceEddingtonFactors()
     // measure the residual for each Eddington factors 
     residualZz = calcResidual(EzzAxialPrev, MGQD->SGQDs[iGroup]->EzzAxial);
     residualRr = calcResidual(ErrAxialPrev, MGQD->SGQDs[iGroup]->ErrAxial);
-    residualRz = calcResidual(ErzAxialPrev, MGQD->SGQDs[iGroup]->ErzAxial);
+    //residualRz = calcResidual(ErzAxialPrev, MGQD->SGQDs[iGroup]->ErzAxial);
 
    // cout << "residualZzAxial: " << residualZz << endl;
    // cout << endl;
@@ -304,8 +306,9 @@ bool TransportToQDCoupling::calcInterfaceEddingtonFactors()
    // cout << "residualRzAxial: " << residualRz << endl;
    // cout << endl;
 
-    if (residualZz < epsEddington and residualRr < epsEddington and 
-        residualRz < epsEddington)
+    //if (residualZz < epsEddington and residualRr < epsEddington and 
+    //    residualRz < epsEddington)
+    if (residualZz < epsEddington and residualRr < epsEddington)
       allConverged = allConverged and true;
     else
       allConverged = allConverged and false;
