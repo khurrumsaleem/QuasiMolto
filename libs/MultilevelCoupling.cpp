@@ -118,7 +118,8 @@ bool MultilevelCoupling::initialSolve()
 {
 
   Eigen::VectorXd xCurrentIter, xLastMGLOQDIter,xLastELOTIter,residualVector;
-  vector<double> residualMGLOQD = {1,1,1}, residualELOT = {1,1,1};
+  vector<double> lastResidualELOT, residualMGLOQD = {1,1,1},\
+    residualELOT = {1,1,1};
   bool eddingtonConverged;
   bool convergedMGLOQD=false, convergedELOT=false;
   int itersMGLOQD = 0, itersELOT = 0;
@@ -157,6 +158,9 @@ bool MultilevelCoupling::initialSolve()
 
       // Store newest iterate 
       xCurrentIter = mpqd->x;
+     
+      // Store last residual   
+      lastResidualELOT = residualELOT; 
 
       // Repeat until ||xCurrentIter - xLastIter|| < eps 
       residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
@@ -169,16 +173,19 @@ bool MultilevelCoupling::initialSolve()
       mats->updateTemperature(mpqd->heat->returnCurrentTemp());
 
       // Check if residuals are too big 
-      if (residualELOT[0] > maxResidual or\
-          residualELOT[1] > maxResidual) 
+     // if (residualELOT[0] > maxResidual or\
+     //     residualELOT[1] > maxResidual) 
+     // {
+      if (residualELOT[0] > lastResidualELOT[0] or\
+          residualELOT[1] > lastResidualELOT[1]) 
       {
         // Jump back to MGLOQD level
         break;
       }
 
       // Check converge criteria 
-      if (epsELOT(residualMGLOQD[0]) > residualELOT[0] and\
-          epsELOT(residualMGLOQD[1]) > residualELOT[1]) 
+      if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
+          eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1]) 
       {
         // ELOT solve is converged
         convergedELOT = true;
@@ -203,8 +210,8 @@ bool MultilevelCoupling::initialSolve()
     itersMGLOQD++;
 
     // Check converge criteria 
-    if (epsELOT(mpqd->epsMPQD) > residualMGLOQD[0] and\
-        epsELOT(mpqd->epsMPQD) > residualMGLOQD[1])
+    if (eps(mpqd->epsMPQD) > residualMGLOQD[0] and\
+        eps(mpqd->epsMPQD) > residualMGLOQD[1])
     { 
       convergedMGLOQD = true;
     }
@@ -228,17 +235,17 @@ bool MultilevelCoupling::solveOneStepLagged()
 
   Eigen::VectorXd xCurrentIter, xLastMGHOTIter, xLastMGLOQDIter,xLastELOTIter,\
     residualVector;
-  vector<double> residualMGHOT = {1,1,1}, residualMGLOQD = {1,1,1},\
-    residualELOT = {1,1,1};
+  vector<double> lastResidualELOT, lastResidualMGLOQD, residualMGHOT = {1,1,1},\
+    residualMGLOQD = {1,1,1}, residualELOT = {1,1,1};
   bool eddingtonConverged;
   bool convergedMGHOT=false, convergedMGLOQD=false, convergedELOT=false;
   int itersMGHOT = 0, itersMGLOQD = 0, itersELOT = 0;
 
   while (not convergedMGHOT){ 
 
-    //////////////////////// 
-    // TRANSPORT SOLUTION // 
-    //////////////////////// 
+    ////////////////////
+    // MGHOT SOLUTION // 
+    ////////////////////
 
     // Solve MGHOT problem
     solveMGHOT();
@@ -252,7 +259,6 @@ bool MultilevelCoupling::solveOneStepLagged()
     // Store last iterate of ELOT solution used in MGHOT level
     xLastMGHOTIter = mpqd->x;
     
-    //while (mpqd->epsMPQD < residualMGLOQD){
     while (not convergedMGLOQD){
 
       /////////////////////
@@ -268,7 +274,6 @@ bool MultilevelCoupling::solveOneStepLagged()
       // Store last iterate of ELOT solution used in MGLOQD level
       xLastMGLOQDIter = mpqd->x;
     
-      //while (mpqd->epsMPQD < residualELOT){
       while (not convergedELOT) {
         
         ///////////////////
@@ -287,27 +292,35 @@ bool MultilevelCoupling::solveOneStepLagged()
         // Store newest iterate 
         xCurrentIter = mpqd->x;
 
+        lastResidualELOT = residualELOT; 
+
         // Calculate and print ELOT residual  
         residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
         cout << "        ";
         cout << "ELOT Residual: " << residualELOT[0]; 
         cout << ", " << residualELOT[1] << endl;
         itersELOT++;
- 
+
         // Calculate collapsed nuclear data at new temperature
         mats->updateTemperature(mpqd->heat->returnCurrentTemp());
 
-        // Check if residuals are too big 
-        if (residualELOT[0] > maxResidual or\
-            residualELOT[1] > maxResidual) 
-        {
+        // Check if residuals are too big or if the residuals have increased
+        // from the last MGLOQD residual 
+//        if (residualELOT[0] > maxResidual or\
+//            residualELOT[1] > maxResidual or\
+//            residualELOT[0] > lastResidualELOT[0] or\
+//            residualELOT[1] > lastResidualELOT[1]) 
+//        {
+          if (residualELOT[0]/lastResidualELOT[0] > maxResidual or\
+              residualELOT[1]/lastResidualELOT[1] > maxResidual) 
+          {
           // Jump back to MGLOQD level
           break;
         }
        
         // Check converge criteria 
-        if (epsELOT(residualMGLOQD[0]) > residualELOT[0] and\
-            epsELOT(residualMGLOQD[1]) > residualELOT[1]) 
+        if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
+            eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1]) 
         {
           convergedELOT = true;
         }
@@ -320,7 +333,9 @@ bool MultilevelCoupling::solveOneStepLagged()
       // Store one group fluxes and DNPs for MGHOT and MGLOQD sources 
       mpqd->ggqd->GGSolver->getFlux();
       mpqd->mgdnp->getCumulativeDNPDecaySource();
-     
+    
+      lastResidualMGLOQD = residualMGLOQD;
+ 
       // Calculate and print MGLOQD residual 
       residualMGLOQD = MGQDToMPQD->calcResidual(xLastMGLOQDIter,xCurrentIter);
       cout << endl;
@@ -330,15 +345,31 @@ bool MultilevelCoupling::solveOneStepLagged()
       cout << endl;
       itersMGLOQD++;
 
+      // Check if residuals are too big or if the residuals have increased
+      // from the last MGLOQD residual 
+     // if (residualELOT[0] > maxResidual or\
+     //     residualELOT[1] > maxResidual or\
+     //     residualELOT[0] > lastResidualELOT[0] or\
+     //     residualELOT[1] > lastResidualELOT[1]) 
+     // {
+      if (residualELOT[0]/lastResidualELOT[0] > maxResidual or\
+          residualELOT[1]/lastResidualELOT[1] > maxResidual) 
+      {
+        // Jump back to MGHOT level
+        break;
+      }
+
+
       // Check converge criteria 
-      if (epsELOT(mpqd->epsMPQD) > residualMGLOQD[0] and\
+      //if (epsELOT(mpqd->epsMPQD) > residualMGLOQD[0] and\
           epsELOT(mpqd->epsMPQD) > residualMGLOQD[1])
+      if (eps(residualMGHOT[0],relaxTolMGLOQD) > residualMGLOQD[0] and\
+          eps(residualMGHOT[1],relaxTolMGLOQD) > residualMGLOQD[1])
       { 
         convergedMGLOQD = true;
       }
 
     } // MGLOQD
-    
     
     // Reset convergence indicator
     convergedMGLOQD = false;
@@ -351,8 +382,8 @@ bool MultilevelCoupling::solveOneStepLagged()
     itersMGHOT++;
       
     // Check converge criteria 
-    if (epsELOT(mpqd->epsMPQD) > residualMGHOT[0] and\
-        epsELOT(mpqd->epsMPQD) > residualMGHOT[1]) 
+    if (eps(mpqd->epsMPQD) > residualMGHOT[0] and\
+        eps(mpqd->epsMPQD) > residualMGHOT[1]) 
     {
       convergedMGHOT = true;
     }
@@ -373,17 +404,17 @@ bool MultilevelCoupling::solveOneStepLagged()
 //==============================================================================
 /// Dynamically determines a convergence threshold 
 ///
-double MultilevelCoupling::epsELOT(double residual)
+double MultilevelCoupling::eps(double residual, double relaxationTolerance)
 {
 
-  double epsELOT;
+  double eps;
   
-  if (residual*overSolveThreshold > mpqd->epsMPQD)
-    epsELOT = residual*overSolveThreshold;
+  if (residual*relaxationTolerance > mpqd->epsMPQD)
+    eps = residual*relaxationTolerance;
   else
-    epsELOT = mpqd->epsMPQD; 
+    eps = mpqd->epsMPQD; 
   
-  return epsELOT;
+  return eps;
 
 };
 //==============================================================================
@@ -493,9 +524,13 @@ void MultilevelCoupling::solveTransient()
 void MultilevelCoupling::checkOptionalParameters()
 {
 
-  // Check for overSolveThreshold specification..
-  if ((*input)["parameters"]["overSolveThreshold"])
-    overSolveThreshold=(*input)["parameters"]["overSolveThreshold"].as<double>();
+  // Check for relaxTolELOT specification..
+  if ((*input)["parameters"]["relaxTolELOT"])
+    relaxTolELOT=(*input)["parameters"]["relaxTolELOT"].as<double>();
+
+  // Check for relaxTolMGLOQD specification.
+  if ((*input)["parameters"]["relaxTolELOT"])
+    relaxTolMGLOQD=(*input)["parameters"]["relaxTolMGLOQD"].as<double>();
 
   // Check for maxResidual specification.
   if ((*input)["parameters"]["maxResidual"])
