@@ -255,6 +255,6 @@ void testMultilevelCoupling(Materials * myMaterials,\
   
   cout << "Completed multilevel solve" << endl;
   
-  myMaterials->oneGroupXS->print();
-  myMPQD->ggqd->printBCParams();
+//  myMaterials->oneGroupXS->print();
+//  myMPQD->ggqd->printBCParams();
 }
