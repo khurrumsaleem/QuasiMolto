@@ -27,7 +27,7 @@ class MultilevelCoupling
         MultiGroupTransport * myMGT,\
         MultiGroupQD * myMGQD,\
         MultiPhysicsCoupledQD * myMPQD);
-    double maxResidual = 5E-2, relaxTolELOT = 3E-4, relaxTolMGLOQD = 3E-4;
+    double resetThreshold = 1E100, relaxTolELOT = 3E-4, relaxTolMGLOQD = 3E-4;
     bool solveOneStep();
     bool solveOneStepLagged();
     bool initialSolve();
@@ -37,6 +37,7 @@ class MultilevelCoupling
     void solveTransient();
     double eps(double residual, double relaxationTolerance = 1E-14);
     void checkOptionalParameters();
+    string outputDir = "Solve_Metrics/";
     
 
   private:

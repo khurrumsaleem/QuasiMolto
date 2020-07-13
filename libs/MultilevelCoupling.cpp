@@ -173,11 +173,8 @@ bool MultilevelCoupling::initialSolve()
       mats->updateTemperature(mpqd->heat->returnCurrentTemp());
 
       // Check if residuals are too big 
-     // if (residualELOT[0] > maxResidual or\
-     //     residualELOT[1] > maxResidual) 
-     // {
-      if (residualELOT[0] > lastResidualELOT[0] or\
-          residualELOT[1] > lastResidualELOT[1]) 
+      if (residualELOT[0]/lastResidualELOT[0] > resetThreshold or\
+          residualELOT[1]/lastResidualELOT[0] > resetThreshold) 
       {
         // Jump back to MGLOQD level
         break;
@@ -306,14 +303,9 @@ bool MultilevelCoupling::solveOneStepLagged()
 
         // Check if residuals are too big or if the residuals have increased
         // from the last MGLOQD residual 
-//        if (residualELOT[0] > maxResidual or\
-//            residualELOT[1] > maxResidual or\
-//            residualELOT[0] > lastResidualELOT[0] or\
-//            residualELOT[1] > lastResidualELOT[1]) 
-//        {
-          if (residualELOT[0]/lastResidualELOT[0] > maxResidual or\
-              residualELOT[1]/lastResidualELOT[1] > maxResidual) 
-          {
+        if (residualELOT[0]/lastResidualELOT[0] > resetThreshold or\
+            residualELOT[1]/lastResidualELOT[1] > resetThreshold) 
+        {
           // Jump back to MGLOQD level
           break;
         }
@@ -347,13 +339,8 @@ bool MultilevelCoupling::solveOneStepLagged()
 
       // Check if residuals are too big or if the residuals have increased
       // from the last MGLOQD residual 
-     // if (residualELOT[0] > maxResidual or\
-     //     residualELOT[1] > maxResidual or\
-     //     residualELOT[0] > lastResidualELOT[0] or\
-     //     residualELOT[1] > lastResidualELOT[1]) 
-     // {
-      if (residualELOT[0]/lastResidualELOT[0] > maxResidual or\
-          residualELOT[1]/lastResidualELOT[1] > maxResidual) 
+      if (residualELOT[0]/lastResidualELOT[0] > resetThreshold or\
+          residualELOT[1]/lastResidualELOT[1] > resetThreshold) 
       {
         // Jump back to MGHOT level
         break;
@@ -361,8 +348,6 @@ bool MultilevelCoupling::solveOneStepLagged()
 
 
       // Check converge criteria 
-      //if (epsELOT(mpqd->epsMPQD) > residualMGLOQD[0] and\
-          epsELOT(mpqd->epsMPQD) > residualMGLOQD[1])
       if (eps(residualMGHOT[0],relaxTolMGLOQD) > residualMGLOQD[0] and\
           eps(residualMGHOT[1],relaxTolMGLOQD) > residualMGLOQD[1])
       { 
@@ -391,10 +376,16 @@ bool MultilevelCoupling::solveOneStepLagged()
   } //MGHOT
     
   cout << endl;
-    
+   
+  // Write iteration countrs to console 
   cout << "MGHOT iterations: " << itersMGHOT << endl;
   cout << "MGLOQD iterations: " << itersMGLOQD << endl;
   cout << "ELOT iterations: " << itersELOT << endl;
+ 
+  // Output iteration counts 
+  mesh->output->write(outputDir,"MGHOT_iters",itersMGHOT);
+  mesh->output->write(outputDir,"MGLOQD_iters",itersMGLOQD);
+  mesh->output->write(outputDir,"ELOT_iters",itersELOT);
 
   return true;
 
@@ -483,6 +474,11 @@ void MultilevelCoupling::solveELOT()
 ///
 void MultilevelCoupling::solveTransient()
 {
+
+  // Timing variables
+  double duration,totalDuration = 0.0;
+  clock_t startTime;
+
   // Write mesh info
   mesh->writeVars();
 
@@ -498,8 +494,17 @@ void MultilevelCoupling::solveTransient()
   {
     cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
     cout << endl;
+
+    startTime = clock(); 
     if(solveOneStepLagged())
     {
+      // Report solution time
+      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      totalDuration = totalDuration + duration; 
+      cout << "Solution computed in " << duration << " seconds." << endl;      
+      mesh->output->write(outputDir,"Solve_Time",duration);
+
+      // Output and update variables
       mgqd->updateVarsAfterConvergence(); 
       mpqd->updateVarsAfterConvergence(); 
       mgqd->writeVars();
@@ -509,11 +514,21 @@ void MultilevelCoupling::solveTransient()
     }  
     else 
     {
+      // Report solution time
+      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      totalDuration = totalDuration + duration; 
+      cout << "Solution aborted after " << duration << " seconds." << endl;      
+      mesh->output->write(outputDir,"Solve_Time",duration);
+      
       cout << "Solve not converged." << endl;
       cout << "Transient aborted." << endl;
       break;
     }
   } 
+      
+  // Report total solve time
+  cout << "Total solve time: " << duration << " seconds." << endl;      
+  mesh->output->write(outputDir,"Solve_Time",totalDuration,true);
 
 };
 //==============================================================================
@@ -532,9 +547,9 @@ void MultilevelCoupling::checkOptionalParameters()
   if ((*input)["parameters"]["relaxTolELOT"])
     relaxTolMGLOQD=(*input)["parameters"]["relaxTolMGLOQD"].as<double>();
 
-  // Check for maxResidual specification.
-  if ((*input)["parameters"]["maxResidual"])
-    maxResidual=(*input)["parameters"]["maxResidual"].as<double>();
+  // Check for resetThreshold specification.
+  if ((*input)["parameters"]["resetThreshold"])
+    resetThreshold=(*input)["parameters"]["resetThreshold"].as<double>();
 
 };
 //==============================================================================
