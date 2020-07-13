@@ -59,6 +59,9 @@ quadLevel::quadLevel(vector< vector<double> > myQuad,\
 /// @param [in] myInput YAML input object for this simulation 
 Mesh::Mesh(YAML::Node * myInput){
 
+  // Variable for root output directory
+  string myOutputDir;
+
   // Set input pointer
   input = myInput;
 
@@ -77,14 +80,21 @@ Mesh::Mesh(YAML::Node * myInput){
     recircZ = (*input)["mesh"]["recirculation Z"].as<double>();
   else
     recircZ = Z;
+  
+  // Check for root output directory name 
+  if ((*input)["parameters"]["outputDirectory"])
+    myOutputDir = (*input)["parameters"]["outputDirectory"].as<string>();
+  else
+    myOutputDir = "output/";
 
   // Set up the mesh and quadrature set
   calcSpatialMesh();
   calcQuadSet();
   calcNumAnglesTotalWeight();
   calcTimeMesh();
- 
-  output = new WriteData(this);
+
+  // Initialize output object 
+  output = new WriteData(this,myOutputDir);
 }
 //==============================================================================
 

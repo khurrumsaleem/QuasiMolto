@@ -15,10 +15,13 @@ const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision,\
 ///
 /// @param [in] nZ number of axial cells
 /// @param [in] nR number of radial cells
-WriteData::WriteData(Mesh * myMesh)
+WriteData::WriteData(Mesh * myMesh, string myInputDir)
 {
   // assign pointers
   mesh = myMesh;
+  
+  // Set output root directory 
+  outputDirectory = myInputDir;    
 };
 //==============================================================================
 

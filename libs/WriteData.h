@@ -13,11 +13,11 @@ class WriteData
   public:
     
     // Constructor
-    WriteData(Mesh * myMesh);
+    WriteData(Mesh * myMesh, string myOutputDir = "output/");
 
     // Variables
-    string outputDirectory = "output/";    
-
+    string outputDirectory; 
+    
     // Pointers 
     Mesh * mesh; 
 
