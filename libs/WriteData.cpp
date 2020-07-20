@@ -101,6 +101,89 @@ void WriteData::write(string myDirName,\
 //==============================================================================
 
 //===============================================================================
+/// Write a Eigen::VectorXi variable to a file
+///
+/// @param [in] myDirName relative path of directory to be made 
+/// @param [in] parameterName label for variable being written
+/// @param [in] myData data to write
+void WriteData::write(string myDirName,\
+    string parameterName,\
+    Eigen::VectorXi myData,\
+    bool noTimeLabel)
+{
+
+  // Declare output stream.
+  ofstream outputFile;
+
+  // Form directory and file names. 
+  makeDirectory(myDirName,noTimeLabel);
+  string dir = getOutputPath(myDirName,noTimeLabel);
+  string fileName = dir + parameterName + ".csv";
+  
+  // Open output file, write myData to it, and close.
+  outputFile.open(fileName);
+  outputFile << myData.format(CSVFormat) << endl;
+  outputFile.close();
+ 
+};
+//==============================================================================
+
+//===============================================================================
+/// Write a std::vector variable to a file
+///
+/// @param [in] myDirName relative path of directory to be made 
+/// @param [in] parameterName label for variable being written
+/// @param [in] myData data to write
+void WriteData::write(string myDirName,\
+    string parameterName,\
+    vector<double> myData,\
+    bool noTimeLabel)
+{
+
+  // Declare output stream.
+  Eigen::VectorXd convertedData;
+
+  // Read std::vector data into an Eigen::VectorXd 
+  convertedData.setZero(myData.size());
+  for (int iElem = 0; iElem < convertedData.size(); iElem++)
+  {
+    convertedData(iElem) = myData[iElem];
+  }
+
+  write(myDirName,parameterName,convertedData,noTimeLabel);
+
+};
+//==============================================================================
+
+//===============================================================================
+/// Write a std::vector variable to a file
+///
+/// @param [in] myDirName relative path of directory to be made 
+/// @param [in] parameterName label for variable being written
+/// @param [in] myData data to write
+void WriteData::write(string myDirName,\
+    string parameterName,\
+    vector<int> myData,\
+    bool noTimeLabel)
+{
+
+  // Declare output stream.
+  Eigen::VectorXi convertedData;
+
+  // Read std::vector data into an Eigen::VectorXd 
+  convertedData.setZero(myData.size());
+  for (int iElem = 0; iElem < convertedData.size(); iElem++)
+  {
+    convertedData(iElem) = myData[iElem];
+  }
+
+  write(myDirName,parameterName,convertedData,noTimeLabel);
+
+};
+//==============================================================================
+
+
+//===============================================================================
 /// Write a double variable to a file
 ///
 /// @param [in] myDirName relative path of directory to be made 

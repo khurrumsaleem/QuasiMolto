@@ -34,6 +34,18 @@ class WriteData
         bool noTimeLabel = false);
     void write(string myDirName,\
         string parameterName,\
+        Eigen::VectorXi myData,\
+        bool noTimeLabel = false);
+    void write(string myDirName,\
+        string parameterName,\
+        vector<double> myData,\
+        bool noTimeLabel = false);
+    void write(string myDirName,\
+        string parameterName,\
+        vector<int> myData,\
+        bool noTimeLabel = false);
+    void write(string myDirName,\
+        string parameterName,\
         double myData,\
         bool noTimeLabel = false);
     void write(string myDirName,\
