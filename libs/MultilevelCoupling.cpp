@@ -237,6 +237,9 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
   bool eddingtonConverged;
   bool convergedMGHOT=false, convergedMGLOQD=false, convergedELOT=false;
   int itersMGHOT = 0, itersMGLOQD = 0, itersELOT = 0;
+  vector<int> iters;
+  vector<double> tempResMGHOT,tempResMGLOQD,tempResELOT,tempResiduals;
+  vector<double> fluxResMGHOT,fluxResMGLOQD,fluxResELOT,fluxResiduals;
 
   while (not convergedMGHOT){ 
 
@@ -249,6 +252,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
     {
       // Solve MGHOT problem
       solveMGHOT();
+      iters.push_back(3);
 
       // Calculate Eddington factors for MGQD problem
       eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
@@ -268,6 +272,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
 
       // Solve MGLOQD problem
       solveMGLOQD();
+      iters.push_back(2);
 
       // Get group fluxes to use in group collapse
       mgqd->getFluxes();
@@ -289,6 +294,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
       
         // Solve ELOT problem
         solveELOT();
+        iters.push_back(1);
 
         // Store newest iterate 
         xCurrentIter = mpqd->x;
@@ -301,7 +307,11 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
         cout << "        ";
         cout << "ELOT Residual: " << residualELOT[0]; 
         cout << ", " << residualELOT[1] << endl;
+
+        // Update iterate counters, store residuals
         itersELOT++;
+        fluxResELOT.push_back(residualELOT[0]);
+        tempResELOT.push_back(residualELOT[1]);
 
         // Calculate collapsed nuclear data at new temperature
         mats->updateTemperature(mpqd->heat->returnCurrentTemp());
@@ -316,7 +326,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
         }
        
         // Check converge criteria 
-        if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
+        if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] or\
             eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1]) 
         {
           convergedELOT = true;
@@ -341,7 +351,19 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
       cout << "MGLOQD Residual: " << residualMGLOQD[0];
       cout << ", " << residualMGLOQD[1] << endl;
       cout << endl;
+        
+      // Update iterate counters, store residuals
       itersMGLOQD++;
+
+      fluxResMGLOQD.push_back(residualMGLOQD[0]);
+      fluxResMGLOQD.insert(fluxResMGLOQD.end(),\
+          fluxResELOT.begin(),fluxResELOT.end());
+      fluxResELOT.clear();
+
+      tempResMGLOQD.push_back(residualMGLOQD[1]);
+      tempResMGLOQD.insert(tempResMGLOQD.end(),\
+          tempResELOT.begin(),tempResELOT.end());
+      tempResELOT.clear();
 
       // Check if residuals are too big or if the residuals have increased
       // from the last MGLOQD residual 
@@ -351,7 +373,6 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
         // Jump back to MGHOT level
         break;
       }
-
 
       // Check converge criteria 
       if (eps(residualMGHOT[0],relaxTolMGLOQD) > residualMGLOQD[0] and\
@@ -371,7 +392,28 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
     cout << "MGHOT Residual: " << residualMGHOT[0];
     cout << ", " << residualMGHOT[1] << endl;
     cout << endl;
+      
+    // Update iterate counters, store residuals
     itersMGHOT++;
+    
+    if (itersMGHOT != 1) fluxResMGHOT.push_back(residualMGHOT[0]);
+    fluxResMGHOT.insert(fluxResMGHOT.end(),\
+        fluxResMGLOQD.begin(),fluxResMGLOQD.end());
+    fluxResMGLOQD.clear();
+    
+    if (itersMGHOT != 1) tempResMGHOT.push_back(residualMGHOT[1]);
+    tempResMGHOT.insert(tempResMGHOT.end(),\
+        tempResMGLOQD.begin(),tempResMGLOQD.end());
+    tempResMGLOQD.clear();
+
+    // Update persistent iteration record
+    fluxResiduals.insert(fluxResiduals.end(),fluxResMGHOT.begin(),\
+        fluxResMGHOT.end());
+    fluxResMGHOT.clear();
+    
+    tempResiduals.insert(tempResiduals.end(),tempResMGHOT.begin(),\
+        tempResMGHOT.end());
+    tempResMGHOT.clear();
       
     // Check converge criteria 
     if (eps(mpqd->epsMPQD) > residualMGHOT[0] and\
@@ -393,6 +435,9 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
   mesh->output->write(outputDir,"MGHOT_iters",itersMGHOT);
   mesh->output->write(outputDir,"MGLOQD_iters",itersMGLOQD);
   mesh->output->write(outputDir,"ELOT_iters",itersELOT);
+  mesh->output->write(outputDir,"iterates",iters);
+  mesh->output->write(outputDir,"flux_residuals",fluxResiduals);
+  mesh->output->write(outputDir,"temp_residuals",tempResiduals);
 
   return true;
 
