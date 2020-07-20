@@ -244,14 +244,18 @@ bool MultilevelCoupling::solveOneStepLagged()
     // MGHOT SOLUTION // 
     ////////////////////
 
-    // Solve MGHOT problem
-    solveMGHOT();
+    // Only solve the MGHOT after we've got an estimate for the ELOT solution
+    if (itersMGHOT != 0)
+    {
+      // Solve MGHOT problem
+      solveMGHOT();
 
-    // Calculate Eddington factors for MGQD problem
-    eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
+      // Calculate Eddington factors for MGQD problem
+      eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
 
-    // Calculate BCs for MGQD problem 
-    MGTToMGQD->calcBCs();
+      // Calculate BCs for MGQD problem 
+      MGTToMGQD->calcBCs();
+    }
 
     // Store last iterate of ELOT solution used in MGHOT level
     xLastMGHOTIter = mpqd->x;
@@ -293,6 +297,7 @@ bool MultilevelCoupling::solveOneStepLagged()
 
         // Calculate and print ELOT residual  
         residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
+        residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
         cout << "        ";
         cout << "ELOT Residual: " << residualELOT[0]; 
         cout << ", " << residualELOT[1] << endl;
@@ -330,6 +335,7 @@ bool MultilevelCoupling::solveOneStepLagged()
  
       // Calculate and print MGLOQD residual 
       residualMGLOQD = MGQDToMPQD->calcResidual(xLastMGLOQDIter,xCurrentIter);
+      residualMGLOQD = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGLOQDIter);
       cout << endl;
       cout << "    ";
       cout << "MGLOQD Residual: " << residualMGLOQD[0];
@@ -361,6 +367,7 @@ bool MultilevelCoupling::solveOneStepLagged()
      
     // Calculate and print MGHOT residual 
     residualMGHOT = MGQDToMPQD->calcResidual(xLastMGHOTIter,xCurrentIter);
+    residualMGHOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGHOTIter);
     cout << "MGHOT Residual: " << residualMGHOT[0];
     cout << ", " << residualMGHOT[1] << endl;
     cout << endl;
@@ -486,7 +493,7 @@ void MultilevelCoupling::solveTransient()
   cout << "Computing initial solve..." << endl;
   cout << endl;
   //MGQDToMPQD->solveOneStep();
-  initialSolve();
+  //initialSolve();
   cout << "Initial solve completed." << endl;
   cout << endl;
   
@@ -527,7 +534,7 @@ void MultilevelCoupling::solveTransient()
   } 
       
   // Report total solve time
-  cout << "Total solve time: " << duration << " seconds." << endl;      
+  cout << "Total solve time: " << totalDuration << " seconds." << endl;      
   mesh->output->write(outputDir,"Solve_Time",totalDuration,true);
 
 };
