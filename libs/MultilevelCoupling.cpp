@@ -227,7 +227,7 @@ bool MultilevelCoupling::initialSolve()
 //==============================================================================
 /// Collapse nuclear data with flux and current weighting 
 ///
-bool MultilevelCoupling::solveOneStepLagged()
+bool MultilevelCoupling::solveOneStepResidualBalance()
 {
 
   Eigen::VectorXd xCurrentIter, xLastMGHOTIter, xLastMGLOQDIter,xLastELOTIter,\
@@ -503,7 +503,7 @@ void MultilevelCoupling::solveTransient()
     cout << endl;
 
     startTime = clock(); 
-    if(solveOneStepLagged())
+    if(solveOneStepResidualBalance())
     {
       // Report solution time
       duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;

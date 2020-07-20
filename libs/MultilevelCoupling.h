@@ -29,7 +29,7 @@ class MultilevelCoupling
         MultiPhysicsCoupledQD * myMPQD);
     double resetThreshold = 1E100, relaxTolELOT = 3E-4, relaxTolMGLOQD = 3E-4;
     bool solveOneStep();
-    bool solveOneStepLagged();
+    bool solveOneStepResidualBalance();
     bool initialSolve();
     void solveMGHOT();
     void solveMGLOQD();
