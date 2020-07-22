@@ -106,17 +106,18 @@ double Material::interpolateParameter(Eigen::MatrixXd param,double temp)
   double lowerTemp,upperTemp;
   double lowerParam,upperParam;
   double slope,interpParam;
+  double eps = 1E-6;
   int lastIndex = param.rows()-1;
 
   // Check if temperature is lower than specified in table or if 
   // there's only one entry in the temperature table
-  if (temp < param(0,0) or param.rows() == 1)
+  if (temp - eps < param(0,0) or param.rows() == 1)
   {
     // Just use lower bound of parameter
     interpParam = param(0,1); 
   }
   // Check if temperature is greater than specified in table
-  else if (temp > param(lastIndex,0))
+  else if (temp + eps > param(lastIndex,0))
   {
     // Just use upper bound of parameter
     interpParam = param(lastIndex,1); 
@@ -127,7 +128,7 @@ double Material::interpolateParameter(Eigen::MatrixXd param,double temp)
     // Check if temperature is greater than specified in table 
     for (int iRow = 0; iRow < param.rows(); iRow++)
     {
-      if (temp > param(iRow,0))
+      if (temp + eps > param(iRow,0))
       {
         lowerTemp = param(iRow,0); 
         lowerParam = param(iRow,1); 
