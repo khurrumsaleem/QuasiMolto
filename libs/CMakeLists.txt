@@ -21,3 +21,6 @@ add_library(libs
         CollapsedCrossSections.cpp
         WriteData.cpp
         MultilevelCoupling.cpp)
+
+# Add compilier flags
+SET(CMAKE_CXX_FLAGS "-std=c++11 -O3")

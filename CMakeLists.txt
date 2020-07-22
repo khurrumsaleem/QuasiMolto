@@ -18,14 +18,16 @@ set(LIBS_DIR ${CMAKE_SOURCE_DIR}/libs)
 # The following folder will be included
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories(TPLs/yaml-cpp/include)
+include_directories(TPLs/armadillo/include)
 
 # Add subdirectories
 add_subdirectory(${DRIVER_DIR})
 add_subdirectory(${LIBS_DIR})
 add_subdirectory(${TPLS_DIR}/yaml-cpp)
+add_subdirectory(${TPLS_DIR}/armadillo)
 
-find_package(Armadillo REQUIRED)
-include_directories(${ARMADILLO_INCLUDE_DIRS})
+#find_package(Armadillo REQUIRED)
+#include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 add_executable(QuasiMolto 
 	       ${PROJECT_SOURCE_DIR}/driver/driver.cpp 
@@ -61,6 +63,10 @@ target_link_libraries(
               # yaml-cpp's CMakeLists.txt file
 )
 
+# Add compilier flags
+SET(CMAKE_CXX_FLAGS "-std=c++11 -O3")
+
+# Enable testing
 ENABLE_TESTING()
 add_subdirectory(tests)
 
