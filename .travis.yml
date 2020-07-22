@@ -23,9 +23,9 @@ script:
   - gcc -v && g++ -v && cmake --version
   # Run your build commands next
   - cd TPLs/armadillo
-  - cmake .
+  - cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
   - make
-  - sudo make install
+  - make install
   - cd ../../
   - cmake . 
   - make all
