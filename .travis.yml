@@ -26,7 +26,9 @@ script:
   - cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
   - make
   - make install
-  - cd ../../
-  - cmake . 
+  - cd ../../../
+  - mkdir test-build
+  - cd test-build
+  - cmake -DCMAKE_BUILD_TYPE=Release ../QuasiMolto/
   - make all
   - make test

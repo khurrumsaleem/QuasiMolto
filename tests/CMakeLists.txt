@@ -1,8 +1,12 @@
 project(tests)
 
 # The test program
-set(TEST_EXE_DIR ${CMAKE_SOURCE_DIR}/tests/exes)
+set(TEST_EXE_DIR ${CMAKE_BINARY_DIR}/tests/exes)
 set(TEST_SRC_DIR ${CMAKE_SOURCE_DIR}/tests/src)
+set(TEST_SRC_INPUT_DIR ${CMAKE_SOURCE_DIR}/tests/inputs)
+set(TEST_BIN_INPUT_DIR ${CMAKE_BINARY_DIR}/tests/inputs)
+
+# Add test executables and specify where to put them
 
 # Add test executables and specify where to put them
 add_executable(inputTest ${TEST_SRC_DIR}/inputTest.cpp)
@@ -71,3 +75,6 @@ add_test(starting_angle_solver ${TEST_EXE_DIR}/startAngleSolverTest)
 
 target_link_libraries(scbSolverTest PRIVATE libs yaml-cpp)
 add_test(simple_corner_balance_solver ${TEST_EXE_DIR}/scbSolverTest)
+
+# Copy over input file
+file(COPY ${TEST_SRC_INPUT_DIR}/1-group-test.yaml DESTINATION ${TEST_BIN_INPUT_DIR})
