@@ -137,13 +137,11 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
 
   // Temporary variables used for looping though quad set
   double xi,sigTEff,mu,alphaMinusOneHalf,alphaPlusOneHalf,weight,\
-    tau,gamma,angRedistCoeff = 0,sigTEps=1E-4;
+    tau,gamma,v,angRedistCoeff = 0,sigTEps=1E-4;
   
   xi = mesh->quadrature[iXi].quad[0][xiIndex];
   mu = mesh->quadrature[iXi].quad[iMu][muIndex];
 
-  // Get neutron velocity in energyGroup 
-  double v = materials->neutV(energyGroup);
   int zStart,rStart,zInc,borderCellZ,borderCellR,angIdx,zStartCell,\
     rStartCell;
 
@@ -158,6 +156,7 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
   // Offsets to access each corner
   Eigen::MatrixXi cornerOffset(4,2);
   Eigen::MatrixXd sigT = Eigen::MatrixXd::Zero(rows,cols);
+  Eigen::MatrixXd neutV = Eigen::MatrixXd::Zero(rows,cols);
 
   // Within cell leakage matrices in R and Z directions
   double kRCoeff,kZCoeff;
@@ -304,9 +303,15 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
       }
 
       for (int iSig = 0; iSig < sigT.cols(); ++iSig){
+      
+        // Get neutron velocity in this corner
+        v = materials->neutVel(iZ+cornerOffset(iSig,1),\
+            iR+cornerOffset(iSig,0),energyGroup);
+
+        // Calculate effective cross section in this corner
         sigTEff = materials->sigT(iZ+cornerOffset(iSig,1),\
-          iR+cornerOffset(iSig,0),energyGroup)\
-          +(*alpha)(iZ+cornerOffset(iSig,1),iR+cornerOffset(iSig,0))/v; 
+            iR+cornerOffset(iSig,0),energyGroup)\
+            + (*alpha)(iZ+cornerOffset(iSig,1),iR+cornerOffset(iSig,0))/v; 
 
         if (sigTEff > sigTEps)
           sigT(iSig,iSig) = sigTEff;
@@ -631,9 +636,15 @@ void SimpleCornerBalance::solveAngularFluxPosMu(cube * aFlux,\
       }
 
       for (int iSig = 0; iSig < sigT.cols(); ++iSig){
+        
+        // Get neutron velocity in this corner
+        v = materials->neutVel(iZ+cornerOffset(iSig,1),\
+            iR+cornerOffset(iSig,0),energyGroup);
+
+        // Calculate effective cross section in this corner
         sigTEff = materials->sigT(iZ+cornerOffset(iSig,1),\
-          iR+cornerOffset(iSig,0),energyGroup)\
-          +(*alpha)(iZ+cornerOffset(iSig,1),iR+cornerOffset(iSig,0))/v; 
+            iR+cornerOffset(iSig,0),energyGroup)\
+            +(*alpha)(iZ+cornerOffset(iSig,1),iR+cornerOffset(iSig,0))/v; 
 
         if (sigTEff > sigTEps)
           sigT(iSig,iSig) = sigTEff;

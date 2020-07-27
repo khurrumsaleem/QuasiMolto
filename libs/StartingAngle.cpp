@@ -122,12 +122,11 @@ void StartingAngle::solveAngularFlux(cube * halfAFlux,\
   const int xiIndex = 0;
 
   // Temporary variable used for looping though quad set
-  double xi,sqrtXi,sigTEff,sigTEps=1E-4;
+  double xi,sqrtXi,sigTEff,v,sigTEps=1E-4;
 
   xi = mesh->quadrature[iXi].quad[0][xiIndex];
   int zStart,rStart,zEnd,zInc,borderCellZ,borderCellR,zStartCell,rStartCell;
   int rows = 4,cols = 4;
-  double v = materials->neutV(energyGroup);
   vector<int> withinUpstreamR(2);
   vector<int> outUpstreamR(2);
   vector<int> withinUpstreamZ(2);
@@ -243,9 +242,15 @@ void StartingAngle::solveAngularFlux(cube * halfAFlux,\
       }
 
       for (int iSig = 0; iSig < sigT.cols(); ++iSig){
+        
+        // Get neutron velocity in this corner
+        v = materials->neutVel(iZ,iR,energyGroup);
+
+        // Calculate effective cross section in this corner 
+        v = materials->neutVel(iZ,iR,energyGroup);
         sigTEff = materials->sigT(iZ+cornerOffset(iSig,1),\
             iR+cornerOffset(iSig,0),energyGroup)\
-                  +(*alpha)(iZ+cornerOffset(iSig,1),iR+cornerOffset(iSig,0))/v;
+            +(*alpha)(iZ+cornerOffset(iSig,1),iR+cornerOffset(iSig,0))/v;
 
         if (sigTEff > sigTEps)
           sigT(iSig,iSig) = sigTEff;

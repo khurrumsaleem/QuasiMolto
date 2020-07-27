@@ -197,7 +197,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
           mySigS += mats->sigS(iZ,iR,iEnergyGroup,iScat); 
         }
         mySigF = mats->sigF(iZ,iR,iEnergyGroup);
-        myNeutV = mats->neutV(iEnergyGroup);
+        myNeutV = mats->neutVel(iZ,iR,iEnergyGroup);
         myErr = mgqd->SGQDs[iEnergyGroup]->Err(iZ,iR);
         myEzz = mgqd->SGQDs[iEnergyGroup]->Ezz(iZ,iR);
         myErz = mgqd->SGQDs[iEnergyGroup]->Erz(iZ,iR);
@@ -593,16 +593,24 @@ void MGQDToMPQDCoupling::calculateAxialCurrentWeightedData()
         // Get nuclear data at these locations and energy groups
         // Assuming a matching material exist on the other side of boundaries 
         if (iZ == 0)
+        {
           mySigT = mats->sigT(iZ,iR,iEnergyGroup);
+          myNeutV = mats->neutVel(iZ,iR,iEnergyGroup);
+        }
         else if (iZ == mesh->nZ)
+        {
           mySigT = mats->sigT(iZ-1,iR,iEnergyGroup);
+          myNeutV = mats->neutVel(iZ-1,iR,iEnergyGroup);
+        }
         else
         {
           mySigT = (mats->sigT(iZ-1,iR,iEnergyGroup)*mesh->dzsCorner(iZ-1)\
               + mats->sigT(iZ,iR,iEnergyGroup)*mesh->dzsCorner(iZ))\
                    /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
+          myNeutV = (mats->neutVel(iZ-1,iR,iEnergyGroup)*mesh->dzsCorner(iZ-1)\
+              + mats->neutVel(iZ,iR,iEnergyGroup)*mesh->dzsCorner(iZ))\
+                   /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
         }     
-        myNeutV = mats->neutV(iEnergyGroup);
 
         // Axial current weighted neutron velocity
         mats->oneGroupXS->zSigTR(iZ,iR) += mySigT*zCurrent;
@@ -656,16 +664,24 @@ void MGQDToMPQDCoupling::calculateRadialCurrentWeightedData()
 
         // Get nuclear data at these locations and energy groups
         if (iR == 0)
+        {
           mySigT = mats->sigT(iZ,iR,iEnergyGroup);
+          myNeutV = mats->neutVel(iZ,iR,iEnergyGroup);
+        }
         else if (iR == mesh->nR)
+        {
           mySigT = mats->sigT(iZ,iR-1,iEnergyGroup);
+          myNeutV = mats->neutVel(iZ,iR-1,iEnergyGroup);
+        }
         else
         {
           mySigT = (mats->sigT(iZ,iR-1,iEnergyGroup)*mesh->drsCorner(iR-1)\
               + mats->sigT(iZ,iR,iEnergyGroup)*mesh->drsCorner(iR))\
                    /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
+          myNeutV = (mats->neutVel(iZ,iR-1,iEnergyGroup)*mesh->drsCorner(iR-1)\
+              + mats->neutVel(iZ,iR,iEnergyGroup)*mesh->drsCorner(iR))\
+                   /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
         }     
-        myNeutV = mats->neutV(iEnergyGroup);
 
         // Radial current weighted sigTR
         mats->oneGroupXS->rSigTR(iZ,iR) += mySigT*rCurrent;
@@ -723,17 +739,25 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
 
         // Get nuclear data at these locations and energy groups
         if (iR == 0)
+        {
           mySigT = mats->sigT(iZ,iR,iEnergyGroup);
+          myNeutV = mats->neutVel(iZ,iR,iEnergyGroup);
+        }
         else if (iR == mesh->nR)
+        {
           mySigT = mats->sigT(iZ,iR-1,iEnergyGroup);
+          myNeutV = mats->neutVel(iZ,iR-1,iEnergyGroup);
+        }
         else
         {
           mySigT = (mats->sigT(iZ,iR-1,iEnergyGroup)*mesh->drsCorner(iR-1)\
               + mats->sigT(iZ,iR,iEnergyGroup)*mesh->drsCorner(iR))\
                    /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
+          myNeutV = (mats->neutVel(iZ,iR-1,iEnergyGroup)*mesh->drsCorner(iR-1)\
+              + mats->neutVel(iZ,iR,iEnergyGroup)*mesh->drsCorner(iR))\
+                   /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
         }     
         mySigTR = mats->oneGroupXS->rSigTR(iZ,iR);
-        myNeutV = mats->neutV(iEnergyGroup);
         myRNeutV = mats->oneGroupXS->rNeutV(iZ,iR);
         myRNeutVPast = mats->oneGroupXS->rNeutVPast(iZ,iR);
 
@@ -801,17 +825,25 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
 
         // Get nuclear data at these locations and energy groups
         if (iZ == 0)
+        {
           mySigT = mats->sigT(iZ,iR,iEnergyGroup);
+          myNeutV = mats->neutVel(iZ,iR,iEnergyGroup);
+        }
         else if (iZ == mesh->nZ)
+        {
           mySigT = mats->sigT(iZ-1,iR,iEnergyGroup);
+          myNeutV = mats->neutVel(iZ-1,iR,iEnergyGroup);
+        }
         else
         {
           mySigT = (mats->sigT(iZ-1,iR,iEnergyGroup)*mesh->dzsCorner(iZ-1)\
               + mats->sigT(iZ,iR,iEnergyGroup)*mesh->dzsCorner(iZ))\
                    /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
+          myNeutV = (mats->neutVel(iZ-1,iR,iEnergyGroup)*mesh->dzsCorner(iZ-1)\
+              + mats->neutVel(iZ,iR,iEnergyGroup)*mesh->dzsCorner(iZ))\
+                   /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
         }     
         mySigTR = mats->oneGroupXS->zSigTR(iZ,iR);
-        myNeutV = mats->neutV(iEnergyGroup);
         myZNeutV = mats->oneGroupXS->zNeutV(iZ,iR);
         myZNeutVPast = mats->oneGroupXS->zNeutVPast(iZ,iR);
 
