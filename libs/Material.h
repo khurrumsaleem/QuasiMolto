@@ -38,10 +38,11 @@ class Material
                 double mycP,\
                 double myOmega,\
                 bool myStationary);
-        double getNu(int eIdx,double temp);
         double getSigT(int eIdx,double temp);
         double getSigF(int eIdx,double temp);
         double getSigS(int eIdxPrime,int eIdx,double temp);
+        double getNu(int eIdx,double temp);
+        double getNeutV(int eIdx,double temp);
         double interpolateParameter(Eigen::MatrixXd param,double temp);
         void checkMat();
 	void edit();

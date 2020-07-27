@@ -106,8 +106,20 @@ double Material::getNu(int eIdx,double temp)
   return interpolateParameter(nu[eIdx],temp); 
 };
 
-//==============================================================================
+//=============================================================================
 
+//=============================================================================
+/// Return neutron velocity 
+/// 
+/// @param [in] eIdx energy index for neutron velocity
+/// @param [in] temp temperature to evaluate neutron velocity at 
+/// @param [out] interpolated neutron velocity 
+double Material::getNeutV(int eIdx,double temp)
+{
+  return interpolateParameter(neutV[eIdx],temp); 
+};
+
+//==============================================================================
 
 //==============================================================================
 /// Interpolates parameters 

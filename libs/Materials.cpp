@@ -434,6 +434,23 @@ double Materials::nu(int zIdx,int rIdx,int eIndx){
 //==============================================================================
 
 //==============================================================================
+/// Return neutron velocity 
+///
+/// @param [in] zIdx Z index of location 
+/// @param [in] zIdx R index of location 
+/// @param [in] eIndx Energy index of location 
+/// @param [out] neutV Neutron velocity at location and energy
+double Materials::neutVel(int zIdx,int rIdx,int eIndx){
+
+  double temp = temperature(zIdx,rIdx);
+  double neutV = matBank[matMap(zIdx,rIdx)]->getNeutV(eIndx,temp);
+
+  return neutV;
+};
+//==============================================================================
+
+
+//==============================================================================
 /// Return density at indexed locaiton
 ///
 /// @param [in] zIdx Z index of location 
