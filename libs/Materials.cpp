@@ -130,8 +130,8 @@ void Materials::readMats()
   YAML::Node mats = (*input)["materials"];
   string name;
   vector<double> sigTInp,sigSInp,sigFInp,chiPInp,chiDInp,nuInp;
-  vector<Eigen::MatrixXd> sigT,sigS,sigF;
-  Eigen::VectorXd chiP,chiD,nu; 
+  vector<Eigen::MatrixXd> sigT,sigS,sigF,nu;
+  Eigen::VectorXd chiP,chiD; 
   int ID,size;
   double density,gamma,k,cP,omega;
   bool stationary;
@@ -176,7 +176,6 @@ void Materials::readMats()
       }
     }
 
-    cout << "sig F good" << endl;
     // Pull sigS values from input
     if (it->second["sigSFile"])
       sigS=readTempDependentYaml(it->second["sigSFile"].as<string>());
@@ -194,11 +193,22 @@ void Materials::readMats()
       }
     }
     
-    cout << "sig S good" << endl;
+    // Pull nu values from input
+    if (it->second["nuFile"])
+      nu = readTempDependentYaml(it->second["nuFile"].as<string>());
+    else
+    {
+      nuInp = it->second["nu"].as<vector<double>>();
+      nu.resize(size); 
+
+      for (int iNu = 0; iNu < size; ++iNu){
+        nu[iNu].setZero(1,2);
+        nu[iNu](0,1) = nuInp[iNu];
+      }
+    }
 
     chiPInp = it->second["chiP"].as<vector<double>>();
     chiDInp = it->second["chiD"].as<vector<double>>();
-    nuInp = it->second["nu"].as<vector<double>>();
     density = it->second["density"].as<double>();
     gamma = it->second["gamma"].as<double>();
     k = it->second["k"].as<double>();
@@ -211,7 +221,6 @@ void Materials::readMats()
     // Set size of Eigen vectors
     chiP.setZero(size);
     chiD.setZero(size);
-    nu.setZero(size);
 
     // Load vector inputs into Eigen vectors
     for (int iSig = 0; iSig < size; ++iSig){
@@ -219,16 +228,11 @@ void Materials::readMats()
       chiP(iSig) = chiPInp[iSig];
       chiD(iSig) = chiDInp[iSig];
 
-      // Accomodate a blanket nu over groups
-      if (nuInp.size() == size)
-        nu(iSig) = nuInp[iSig];
-      else
-        nu(iSig) = nuInp[0];
     }
 
     // Add material to bank
     shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,\
-          sigF,chiP,chiD,nu,density,gamma,k,cP,omega,stationary));
+          sigF,nu,chiP,chiD,density,gamma,k,cP,omega,stationary));
     matBank.push_back(std::move(newMat));
     ++iCount;
   }
@@ -407,7 +411,8 @@ double Materials::chiD(int zIdx,int rIdx,int eIndx){
 /// @param [out] nu Nu at the inquired location 
 double Materials::nu(int zIdx,int rIdx,int eIndx){
 
-  double nu = matBank[matMap(zIdx,rIdx)]->nu(eIndx);
+  double temp = temperature(zIdx,rIdx);
+  double nu = matBank[matMap(zIdx,rIdx)]->getNu(eIndx,temp);
 
   return nu;
 };
@@ -513,7 +518,7 @@ vector<Eigen::MatrixXd> Materials::readTempDependentYaml(string fileName)
   for (YAML::const_iterator energy=input.begin();energy!=input.end();++energy) 
   {
       myTemps = energy->second["temperature"].as<vector<double>>();
-      myXSs = energy->second["xs"].as<vector<double>>();
+      myXSs = energy->second["data"].as<vector<double>>();
       myMatrix.setZero(myTemps.size(),2);
       
       for (int iRow = 0; iRow < myMatrix.rows(); iRow++)

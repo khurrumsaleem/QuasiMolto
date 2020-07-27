@@ -24,9 +24,9 @@ Material::Material(int myMatID,\
   vector<Eigen::MatrixXd> mySigT,\
   vector<Eigen::MatrixXd> mySigS,\
   vector<Eigen::MatrixXd> mySigF,\
+  vector<Eigen::MatrixXd> myNu,\
   Eigen::VectorXd myChiP,\
   Eigen::VectorXd myChiD,\
-  Eigen::VectorXd myNu,\
   double myDensity,\
   double myGamma,\
   double myK,\
@@ -82,7 +82,8 @@ double Material::getSigF(int eIdx,double temp)
 //==============================================================================
 /// Return fission cross section 
 /// 
-/// @param [in] eIdx energy index for cross section 
+/// @param [in] eIdxPrim from energy group
+/// @param [in] eIdx to energy group
 /// @param [in] temp temperature to evaluate XS at 
 /// @param [out] interpolated XS 
 double Material::getSigS(int eIdxPrime,int eIdx,double temp)
@@ -92,6 +93,20 @@ double Material::getSigS(int eIdxPrime,int eIdx,double temp)
 };
 
 //==============================================================================
+
+//==============================================================================
+/// Return nu 
+/// 
+/// @param [in] eIdx energy index for nu
+/// @param [in] temp temperature to evaluate nu at 
+/// @param [out] interpolated nu 
+double Material::getNu(int eIdx,double temp)
+{
+  return interpolateParameter(nu[eIdx],temp); 
+};
+
+//==============================================================================
+
 
 //==============================================================================
 /// Interpolates parameters 
@@ -232,7 +247,7 @@ void Material::edit()
   cout << "sigF:"<< endl; 
 //  cout << sigF.transpose() << endl;
   cout << endl;
-  cout << "nu:  "<< nu << endl;
+//  cout << "nu:  "<< nu << endl;
   cout << endl;
   cout << "chiP:"<< endl;
   cout << chiP.transpose() << endl;
