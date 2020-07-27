@@ -44,6 +44,7 @@ Material::Material(int myMatID,\
   chiP = myChiP;
   chiD = myChiD;
   nu = myNu;
+  neutV = myNeutV;
   density = myDensity;
   gamma = myGamma;
   k = myK;
