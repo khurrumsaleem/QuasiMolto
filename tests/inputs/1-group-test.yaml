@@ -22,6 +22,7 @@ materials:
     cP: 1.0
     omega: 200.0
     gamma: 0.001
+    neutV: [220000]
 
 parameters:
   epsAlpha: 1E-3
