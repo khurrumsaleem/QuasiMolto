@@ -129,8 +129,8 @@ void Materials::readMats()
 {
   YAML::Node mats = (*input)["materials"];
   string name;
-  vector<double> sigTInp,sigSInp,sigFInp,chiPInp,chiDInp,nuInp;
-  vector<Eigen::MatrixXd> sigT,sigS,sigF,nu;
+  vector<double> sigTInp,sigSInp,sigFInp,chiPInp,chiDInp,nuInp,neutVInp;
+  vector<Eigen::MatrixXd> sigT,sigS,sigF,nu,neutV;
   Eigen::VectorXd chiP,chiD; 
   int ID,size;
   double density,gamma,k,cP,omega;
@@ -207,6 +207,21 @@ void Materials::readMats()
       }
     }
 
+    // Pull neutron velocity values from input
+    if (it->second["neutVFile"])
+      neutV = readTempDependentYaml(it->second["neutVFile"].as<string>());
+    else
+    {
+      neutVInp = it->second["neutV"].as<vector<double>>();
+      neutV.resize(size); 
+
+      for (int iNeut = 0; iNeut < size; ++iNeut){
+        neutV[iNeut].setZero(1,2);
+        neutV[iNeut](0,1) = neutVInp[iNeut];
+      }
+    }
+
+
     chiPInp = it->second["chiP"].as<vector<double>>();
     chiDInp = it->second["chiD"].as<vector<double>>();
     density = it->second["density"].as<double>();
@@ -232,7 +247,7 @@ void Materials::readMats()
 
     // Add material to bank
     shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,\
-          sigF,nu,chiP,chiD,density,gamma,k,cP,omega,stationary));
+          sigF,nu,neutV,chiP,chiD,density,gamma,k,cP,omega,stationary));
     matBank.push_back(std::move(newMat));
     ++iCount;
   }

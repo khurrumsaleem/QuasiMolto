@@ -25,6 +25,7 @@ Material::Material(int myMatID,\
   vector<Eigen::MatrixXd> mySigS,\
   vector<Eigen::MatrixXd> mySigF,\
   vector<Eigen::MatrixXd> myNu,\
+  vector<Eigen::MatrixXd> myNeutV,\
   Eigen::VectorXd myChiP,\
   Eigen::VectorXd myChiD,\
   double myDensity,\
