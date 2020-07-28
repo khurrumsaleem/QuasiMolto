@@ -494,7 +494,10 @@ void MultilevelCoupling::solveMGLOQD()
   mgqd->buildLinearSystem();
 
   // Solve flux system
-  mgqd->solveLinearSystem();
+  if (parallel)
+    mgqd->solveLinearSystemParallel();
+  else
+    mgqd->solveLinearSystem();
 
   // Build neutron current system
   mgqd->buildBackCalcSystem();
@@ -515,7 +518,10 @@ void MultilevelCoupling::solveELOT()
   mpqd->buildLinearSystem();
 
   // Solve ELOT system
-  mpqd->solveLinearSystem();
+  if (parallel)
+    mpqd->solveLinearSystemParallel();
+  else
+    mpqd->solveLinearSystem();
 
 };
 //==============================================================================
@@ -602,6 +608,9 @@ void MultilevelCoupling::checkOptionalParameters()
   // Check for resetThreshold specification.
   if ((*input)["parameters"]["resetThreshold"])
     resetThreshold=(*input)["parameters"]["resetThreshold"].as<double>();
+  
+  if ((*input)["parameters"]["parallel"])
+    parallel=(*input)["parameters"]["parallel"].as<bool>();
 
 };
 //==============================================================================

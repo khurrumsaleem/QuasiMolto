@@ -60,6 +60,15 @@ void MultiGroupQD::solveLinearSystem()
 //==============================================================================
 
 //==============================================================================
+/// Solves the linear system formed by the muligroup quasidiffusion equations
+/// using a parallelized method
+void MultiGroupQD::solveLinearSystemParallel()
+{
+  QDSolve->solveParallel();
+}
+//==============================================================================
+
+//==============================================================================
 /// Loops over energy groups and builds linear system to calculate the net 
 /// neutron currents from the flux values currrently held in x, the solution
 /// vector

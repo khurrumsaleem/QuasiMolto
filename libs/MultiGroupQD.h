@@ -27,6 +27,7 @@ class MultiGroupQD
         YAML::Node * myInput);
     void buildLinearSystem();
     void solveLinearSystem();
+    void solveLinearSystemParallel();
     void buildBackCalcSystem();
     void backCalculateCurrent();
     void setInitialCondition();
