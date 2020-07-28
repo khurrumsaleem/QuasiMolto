@@ -152,6 +152,7 @@ void MultiPhysicsCoupledQD::initializeXPast()
 ///
 void MultiPhysicsCoupledQD::solveLinearSystem()
 {
+  
   Eigen::SparseLU<Eigen::SparseMatrix<double>,\
     Eigen::COLAMDOrdering<int> > solverLU;
   A.makeCompressed();
@@ -162,6 +163,23 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Solve linear system for multiphysics coupled quasidiffusion system with a 
+/// solver that can us multiple processors
+///
+void MultiPhysicsCoupledQD::solveLinearSystemParallel()
+{
+
+  Eigen::MatrixXd A_dense;
+  A_dense = A;
+  x = A_dense.partialPivLu().solve(b);
+
+  mgdnp->solveRecircLinearSystem();
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Run transient with multiple solves 

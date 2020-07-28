@@ -121,18 +121,32 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
 /// low order quasidiffusion system
 void QDSolver::solve()
 {
-  // Eigen::BiCGSTAB<Eigen::SparseMatrix<double> > solver;
-  // solver.preconditioner().setDroptol(0.001);
-  // solver.compute(A);
-  // x = solver.solve(b);
 
   Eigen::SparseLU<Eigen::SparseMatrix<double>,\
     Eigen::COLAMDOrdering<int> > solverLU;
   A.makeCompressed();
   solverLU.compute(A);
   x = solverLU.solve(b);
+  
 }
 //==============================================================================
+
+//==============================================================================
+/// Compute the solution, x, to Ax = b. x contains the fluxes that solve the 
+/// low order quasidiffusion system. Solution is computed with a solver that
+/// can use multiple processors. 
+void QDSolver::solveParallel()
+{
+  
+  omp_set_num_threads(1);
+  Eigen::setNbThreads(1);
+  Eigen::MatrixXd A_dense;
+  A_dense = A;
+  x = A_dense.partialPivLu().solve(b);
+
+}
+//==============================================================================
+
 
 //==============================================================================
 /// Compute currents from flux values in x

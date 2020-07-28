@@ -34,7 +34,6 @@ CollapsedCrossSections::CollapsedCrossSections(Mesh * myMesh, int nEnergyGroups)
   rNeutVPast.setZero(nZ,nR+1);  
   zNeutV.setZero(nZ+1,nR);  
   zNeutVPast.setZero(nZ+1,nR);  
-  nu.setZero(nZ,nR);  
   Ezz.setConstant(nZ,nR,1.0/3.0);  
   Err.setConstant(nZ,nR,1.0/3.0);  
   Erz.setZero(nZ,nR);  
@@ -165,8 +164,6 @@ void CollapsedCrossSections::writeVars()
 
   mesh->output->write(outputDir,"zNeutV",zNeutV);
   
-  mesh->output->write(outputDir,"nu",nu);
-
   mesh->output->write(outputDir,"rZeta1",rZeta1);
 
   mesh->output->write(outputDir,"rZeta2",rZeta2);

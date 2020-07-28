@@ -75,6 +75,18 @@ int main(int argc, char** argv) {
   MMS * myMMS;
   myMMS = new MMS(myMGT,myMesh,myMaterials,input);
 
+  // Set number of procs
+  if ((*input)["parameters"]["nprocs"]){
+    int nProcs = (*input)["parameters"]["nprocs"].as<int>();
+    omp_set_num_threads(nProcs);
+    Eigen::setNbThreads(nProcs);
+  }
+  else
+  {
+    omp_set_num_threads(1);
+    Eigen::setNbThreads(1);
+  }
+
   if ((*input)["parameters"]["solve type"]){
 
     solveType=(*input)["parameters"]["solve type"].as<string>();

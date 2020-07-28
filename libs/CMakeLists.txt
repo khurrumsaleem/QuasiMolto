@@ -24,3 +24,4 @@ add_library(libs
 
 # Add compilier flags
 SET(CMAKE_CXX_FLAGS "-std=c++11 -O3")
+SET(CMAKE_CXX_FLAGS "-fopenmp")

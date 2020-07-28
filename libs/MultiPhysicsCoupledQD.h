@@ -38,6 +38,7 @@ class MultiPhysicsCoupledQD
     void initializeXPast();
     void buildLinearSystem();
     void solveLinearSystem();
+    void solveLinearSystemParallel();
     void solveTransient();
     void updateVarsAfterConvergence();
     void writeVars();
