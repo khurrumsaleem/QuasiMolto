@@ -138,8 +138,6 @@ void QDSolver::solve()
 void QDSolver::solveParallel()
 {
   
-  omp_set_num_threads(1);
-  Eigen::setNbThreads(1);
   Eigen::MatrixXd A_dense;
   A_dense = A;
   x = A_dense.partialPivLu().solve(b);
