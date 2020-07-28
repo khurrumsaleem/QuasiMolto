@@ -115,7 +115,6 @@ void CollapsedCrossSections::resetData()
   neutV.setZero();  
   rNeutV.setZero();  
   zNeutV.setZero();  
-  nu.setZero();
   Ezz.setZero();  
   Err.setZero();  
   Erz.setZero();  
