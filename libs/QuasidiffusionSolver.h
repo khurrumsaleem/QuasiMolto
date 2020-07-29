@@ -126,7 +126,7 @@ class QDSolver
     void checkOptionalParams();
 
     // public variables
-    Eigen::SparseMatrix<double> A,C;
+    Eigen::SparseMatrix<double,Eigen::RowMajor> A,C;
     Eigen::VectorXd x;
     Eigen::VectorXd xPast,currPast;
     Eigen::VectorXd b,d;
