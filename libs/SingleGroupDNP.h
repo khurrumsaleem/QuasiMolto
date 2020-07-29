@@ -39,7 +39,7 @@ class SingleGroupDNP
     void calcCoreDNPFluxes();
     void buildRecircLinearSystem();
     void buildCoreLinearSystem();
-    void buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
+    void buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajor> * myA,\
         Eigen::VectorXd * myb,\
         Eigen::MatrixXd myDNPConc,\
         Eigen::MatrixXd myDNPFlux,\

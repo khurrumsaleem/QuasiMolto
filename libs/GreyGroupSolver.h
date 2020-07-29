@@ -99,13 +99,13 @@ class GreyGroupSolver
     Eigen::VectorXd getCurrentSolutionVector();
 
     // function to assign pointers 
-    void assignPointers(Eigen::SparseMatrix<double> * myA,\
+    void assignPointers(Eigen::SparseMatrix<double,Eigen::RowMajor> * myA,\
         Eigen::VectorXd * myx,\
         Eigen::VectorXd * myxpast,\
         Eigen::VectorXd * myb);
 
     // public variables
-    Eigen::SparseMatrix<double> * A;
+    Eigen::SparseMatrix<double,Eigen::RowMajor> * A;
     Eigen::VectorXd * b;
     Eigen::VectorXd * x;
     Eigen::VectorXd * xPast;

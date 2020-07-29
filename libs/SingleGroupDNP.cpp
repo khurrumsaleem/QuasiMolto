@@ -103,7 +103,7 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
 /// @param [in] dzs axial heights on advecting mesh
 /// @param [in] myIndexOffset row to start building linear system on 
 /// @param [in] fluxSource indicator for whether a flux source is present 
-void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double> * myA,\
+void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajor> * myA,\
     Eigen::VectorXd * myb,\
     Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myDNPFlux,\

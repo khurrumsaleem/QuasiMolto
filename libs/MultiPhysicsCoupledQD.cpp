@@ -101,8 +101,14 @@ void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
 ///
 void MultiPhysicsCoupledQD::buildLinearSystem()
 {
+
+  // Get number of non-zero elements in sparse matrix to optimize building 
+  // linear system
+  int nonZeros = A.nonZeros(); 
+
   // Reset linear system
   A.setZero();
+  A.reserve(nonZeros); 
   x.setZero();
   b.setZero();
 

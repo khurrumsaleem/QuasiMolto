@@ -27,7 +27,7 @@ class MultiPhysicsCoupledQD
         YAML::Node * myInput);
 
     // Variables
-    Eigen::SparseMatrix<double> A;
+    Eigen::SparseMatrix<double,Eigen::RowMajor> A;
     Eigen::VectorXd x,xPast,b;
     string outputDir = "MPQD/";
     double epsMPQD = 1E-6;

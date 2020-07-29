@@ -42,7 +42,11 @@ MultiGroupQD::MultiGroupQD(Materials * myMaterials,\
 /// multigroup quasidiffusion equations
 void MultiGroupQD::buildLinearSystem()
 {
+  // Get non-zero elements to optimize building linear system
+  int nonZeros = QDSolve->A.nonZeros();
+
   QDSolve->A.setZero();
+  QDSolve->A.reserve(nonZeros);
   QDSolve->b.setZero();
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
