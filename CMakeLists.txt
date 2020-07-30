@@ -18,12 +18,14 @@ set(LIBS_DIR ${CMAKE_SOURCE_DIR}/libs)
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories(TPLs/yaml-cpp/include)
 include_directories(TPLs/armadillo/include)
+include_directories(TPLs/superlu/include)
 
 # Add subdirectories
 add_subdirectory(${DRIVER_DIR})
 add_subdirectory(${LIBS_DIR})
 add_subdirectory(${TPLS_DIR}/yaml-cpp)
 add_subdirectory(${TPLS_DIR}/armadillo)
+add_subdirectory(${TPLS_DIR}/superlu)
 
 #find_package(Armadillo REQUIRED)
 #include_directories(${ARMADILLO_INCLUDE_DIRS})
@@ -57,6 +59,7 @@ target_link_libraries(
     QuasiMolto
     PUBLIC
     ${ARMADILLO_LIBRARIES} 
+    superlu
     PRIVATE
     yaml-cpp  # This is the "target" exposed by 
               # yaml-cpp's CMakeLists.txt file
