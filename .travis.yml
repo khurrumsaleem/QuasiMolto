@@ -22,10 +22,19 @@ script:
   # Check versions of gcc, g++ and cmake
   - gcc -v && g++ -v && cmake --version
   # Run your build commands next
+  # Armadillo
   - cd TPLs/armadillo
   - cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
   - make
   - make install
+  - make test
+  # SuperLU 
+  - cd ../../TPLs/superlu
+  - cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
+  - make
+  - make install
+  - make test
+  # QuasiMolto 
   - cd ../../../
   - mkdir test-build
   - cd test-build
