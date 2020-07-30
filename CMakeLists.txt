@@ -58,8 +58,8 @@ add_executable(QuasiMolto
 target_link_libraries(
     QuasiMolto
     PUBLIC
-    ${ARMADILLO_LIBRARIES} 
     superlu
+    ${ARMADILLO_LIBRARIES} 
     PRIVATE
     yaml-cpp  # This is the "target" exposed by 
               # yaml-cpp's CMakeLists.txt file
