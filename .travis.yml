@@ -11,6 +11,7 @@ addons:
     packages:
       - gcc-6
       - g++-6
+      - gfortran
       - cmake
 script:
   # Link gcc-6 and g++-6 to their standard commands
