@@ -28,13 +28,11 @@ script:
   - cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
   - make
   - make install
-  - make test
   # SuperLU 
   - cd ../../TPLs/superlu
   - cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
   - make
   - make install
-  - make test
   # QuasiMolto 
   - cd ../../../
   - mkdir test-build
