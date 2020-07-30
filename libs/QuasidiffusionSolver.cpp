@@ -122,8 +122,9 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
 void QDSolver::solve()
 {
 
-  Eigen::SparseLU<Eigen::SparseMatrix<double>,\
+  //Eigen::SparseLU<Eigen::SparseMatrix<double>,\
     Eigen::COLAMDOrdering<int> > solverLU;
+  Eigen::SuperLU<Eigen::SparseMatrix<double> > solverLU;
   A.makeCompressed();
   solverLU.compute(A);
   x = solverLU.solve(b);
@@ -138,9 +139,19 @@ void QDSolver::solve()
 void QDSolver::solveParallel()
 {
   
-  Eigen::MatrixXd A_dense;
-  A_dense = A;
-  x = A_dense.partialPivLu().solve(b);
+ // Eigen::MatrixXd A_dense;
+ // A_dense = A;
+ // x = A_dense.partialPivLu().solve(b);
+
+  Eigen::BiCGSTAB<Eigen::SparseMatrix<double>,\
+    Eigen::DiagonalPreconditioner<double> > solver;
+  //solver.setMaxIterations(....);
+  //solver.setTolerance(...);
+  A.makeCompressed();
+  solver.compute(A);
+  xLast = x; 
+  x = solver.solveWithGuess(b,xLast);
+
 
 }
 //==============================================================================
