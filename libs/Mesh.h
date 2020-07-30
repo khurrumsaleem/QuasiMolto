@@ -9,6 +9,7 @@
 #include <armadillo>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
+#include "../TPLs/eigen-git-mirror/Eigen/IterativeLinearSolvers"
 #include "../TPLs/eigen-git-mirror/unsupported/Eigen/IterativeSolvers"
 #include "../TPLs/eigen-git-mirror/Eigen/SuperLUSupport"
 

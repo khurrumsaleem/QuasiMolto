@@ -22,5 +22,7 @@ add_library(libs
         WriteData.cpp
         MultilevelCoupling.cpp)
 
+target_link_libraries(libs superlu)
+
 # Add compilier flags
 SET(CMAKE_CXX_FLAGS "-std=c++11 -Ofast -fopenmp -pg -msse2")
