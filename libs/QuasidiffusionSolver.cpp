@@ -139,6 +139,7 @@ void QDSolver::solve()
 void QDSolver::solveParallel()
 {
   
+  Eigen::VectorXd xLast;
  // Eigen::MatrixXd A_dense;
  // A_dense = A;
  // x = A_dense.partialPivLu().solve(b);
