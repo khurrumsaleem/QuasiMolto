@@ -159,8 +159,9 @@ void MultiPhysicsCoupledQD::initializeXPast()
 void MultiPhysicsCoupledQD::solveLinearSystem()
 {
   
-  Eigen::SparseLU<Eigen::SparseMatrix<double>,\
+ // Eigen::SparseLU<Eigen::SparseMatrix<double>,\
     Eigen::COLAMDOrdering<int> > solverLU;
+  Eigen::SuperLU<Eigen::SparseMatrix<double>> solverLU;
   A.makeCompressed();
   solverLU.compute(A);
   x = solverLU.solve(b);

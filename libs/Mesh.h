@@ -1,5 +1,6 @@
 #ifndef MESH_H
 #define MESH_H
+#define EIGEN_SUPERLU_SUPPORT
 
 #include <iostream>
 #include <iomanip>
@@ -8,6 +9,8 @@
 #include <armadillo>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
+#include "../TPLs/eigen-git-mirror/unsupported/Eigen/IterativeSolvers"
+#include "../TPLs/eigen-git-mirror/Eigen/SuperLUSupport"
 
 using namespace std;
 using namespace arma;
