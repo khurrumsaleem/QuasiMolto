@@ -66,9 +66,9 @@ void MultiGroupQD::solveLinearSystem()
 //==============================================================================
 /// Solves the linear system formed by the muligroup quasidiffusion equations
 /// using a parallelized method
-void MultiGroupQD::solveLinearSystemParallel()
+void MultiGroupQD::solveLinearSystemIterative()
 {
-  QDSolve->solveParallel();
+  QDSolve->solveIterative();
 }
 //==============================================================================
 
@@ -246,6 +246,23 @@ void MultiGroupQD::printVars()
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Print Eddingtons
+/// 
+void MultiGroupQD::printEddingtons()
+{
+
+  for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup)
+  {
+    cout << "Group " << iGroup << ":" << endl;
+    cout << endl;
+    SGQDs[iGroup]->printEddingtons();
+  }
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Wrapper over SGQDs to write flux present in each

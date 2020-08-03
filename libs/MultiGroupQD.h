@@ -27,7 +27,7 @@ class MultiGroupQD
         YAML::Node * myInput);
     void buildLinearSystem();
     void solveLinearSystem();
-    void solveLinearSystemParallel();
+    void solveLinearSystemIterative();
     void buildBackCalcSystem();
     void backCalculateCurrent();
     void setInitialCondition();
@@ -37,6 +37,7 @@ class MultiGroupQD
     void writeFluxes();
     void writeVars();
     void printVars();
+    void printEddingtons();
     void assignMultiPhysicsCoupledQDPointer(MultiPhysicsCoupledQD * myMPQD);
     string outputDir = "MGQD/";
 

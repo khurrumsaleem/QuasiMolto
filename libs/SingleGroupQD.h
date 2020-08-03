@@ -85,6 +85,7 @@ class SingleGroupQD
     Eigen::VectorXd getFluxSolutionVector();
     Eigen::VectorXd getCurrentSolutionVector();
     void checkOptionalParams();
+    void printEddingtons();
     void writeFlux();
 
   private:

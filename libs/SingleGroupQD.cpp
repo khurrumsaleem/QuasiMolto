@@ -137,6 +137,51 @@ Eigen::VectorXd SingleGroupQD::getCurrentSolutionVector()
 }
 //==============================================================================
 
+//==============================================================================
+/// Print BC parameters 
+///
+void SingleGroupQD::printEddingtons()
+{
+
+cout << "Err: " << endl;
+cout << Err << endl;
+cout << endl;
+
+cout << "Ezz: " << endl;
+cout << Ezz << endl;
+cout << endl;
+
+cout << "Erz: " << endl;
+cout << Erz << endl;
+cout << endl;
+
+cout << "ErrAxial: " << endl;
+cout << ErrAxial << endl;
+cout << endl;
+
+cout << "EzzAxial: " << endl;
+cout << EzzAxial << endl;
+cout << endl;
+
+cout << "ErzAxial: " << endl;
+cout << ErzAxial << endl;
+cout << endl;
+
+cout << "ErrRadial: " << endl;
+cout << ErrRadial << endl;
+cout << endl;
+
+cout << "EzzRadial: " << endl;
+cout << EzzRadial << endl;
+cout << endl;
+
+cout << "ErzRadial: " << endl;
+cout << ErzRadial << endl;
+cout << endl;
+
+};
+//==============================================================================
+
 
 //==============================================================================
 // Check for optional input parameters relevant to this object

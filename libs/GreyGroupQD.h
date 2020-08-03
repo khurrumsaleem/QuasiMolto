@@ -90,6 +90,7 @@ class GreyGroupQD
 
     void buildLinearSystem();
     void printBCParams();
+    void printEddingtons();
     void assignMGQDPointer(MultiGroupQD * myMGQD);
 
   private:
