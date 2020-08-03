@@ -136,23 +136,33 @@ void QDSolver::solve()
 /// Compute the solution, x, to Ax = b. x contains the fluxes that solve the 
 /// low order quasidiffusion system. Solution is computed with a solver that
 /// can use multiple processors. 
-void QDSolver::solveParallel()
+void QDSolver::solveIterative()
 {
   
-  Eigen::VectorXd xLast;
- // Eigen::MatrixXd A_dense;
- // A_dense = A;
- // x = A_dense.partialPivLu().solve(b);
-
+  // Compute solution with biconjugate gradient stabilized method 
   Eigen::BiCGSTAB<Eigen::SparseMatrix<double>,\
-    Eigen::DiagonalPreconditioner<double> > solver;
-  //solver.setMaxIterations(....);
+    Eigen::IncompleteLUT<double> > solver;
+  solver.preconditioner().setDroptol(1E-6);
+  //solver.preconditioner().setFillfactor(5);
+  //solver.setMaxIterations(20);
   //solver.setTolerance(...);
   A.makeCompressed();
   solver.compute(A);
-  xLast = x; 
-  x = solver.solveWithGuess(b,xLast);
+  x = solver.solve(b);
 
+  // Print solver information
+  std::cout << "info:     " << solver.info() << std::endl;
+  std::cout << "#iterations:     " << solver.iterations() << std::endl;
+  std::cout << "estimated error: " << solver.error()      << std::endl;
+
+  // Print condition number info
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A);
+  cout << "MGLOQD" << endl;
+  cout << "max eig: "  << svd.singularValues()(A.cols()-1) << endl;
+  cout << "min eig: "  << svd.singularValues()(0) << endl;
+  cout << "cond(A): " << endl;
+  cout << svd.singularValues()(0)/svd.singularValues()(A.cols()-1) << endl;
+ 
 
 }
 //==============================================================================

@@ -170,26 +170,49 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
 //==============================================================================
 
 //==============================================================================
-/// Solve linear system for multiphysics coupled quasidiffusion system with a 
-/// solver that can us multiple processors
+/// Solve linear system for multiphysics coupled quasidiffusion system with an
+/// iterative solver
 ///
-void MultiPhysicsCoupledQD::solveLinearSystemParallel()
+void MultiPhysicsCoupledQD::solveLinearSystemIterative()
 {
 
-  Eigen::VectorXd xLast;
- // Eigen::MatrixXd A_dense;
-  //A_dense = A;
-  //x = A_dense.partialPivLu().solve(b);
- 
+
+
+  // Compute solution with biconjugate gradient stabilized method 
   Eigen::BiCGSTAB<Eigen::SparseMatrix<double>,\
-    Eigen::DiagonalPreconditioner<double> > solver;
-  //solver.setMaxIterations(....);
+    Eigen::IncompleteLUT<double> > solver;
+  solver.preconditioner().setDroptol(1E-4);
+  //solver.preconditioner().setFillfactor(100);
+  //solver.setTolerance(1E-14);
+  //solver.preconditioner().setFillfactor(5);
+  //solver.setMaxIterations(20);
   //solver.setTolerance(...);
   A.makeCompressed();
+  cout << "size(A):" << A.size() << endl;
+  cout << "A: " << endl;
+  cout << A << endl;
+  cout << "b: " << endl;
+  cout << b << endl;
   solver.compute(A);
-  xLast = x; 
-  x = solver.solveWithGuess(b,xLast);
+  x = solver.solve(b);
 
+  // Print solve information
+  //std::cout << "preconditioner info:     " << solver.preconditioner().info()\
+    << std::endl;
+  std::cout << "info:     " << solver.info() << std::endl;
+  std::cout << "#iterations:     " << solver.iterations() << std::endl;
+  std::cout << "estimated error: " << solver.error() << std::endl;
+  std::cout << "tolerance: " << solver.tolerance() << std::endl;
+
+  // Print max and min eigenvalues, and the condition number
+  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A);
+  cout << "ELOT" << endl;
+  cout << "max eig: "  << svd.singularValues()(A.cols()-1) << endl;
+  cout << "min eig: "  << svd.singularValues()(0) << endl;
+  cout << "cond(A): " << endl;
+  cout << svd.singularValues()(0)/svd.singularValues()(A.cols()-1) << endl;
+
+  // Solve recirc system
   mgdnp->solveRecircLinearSystem();
 
 };

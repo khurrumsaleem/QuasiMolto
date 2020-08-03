@@ -114,7 +114,7 @@ class QDSolver
 
     // function to solve linear system
     void solve();
-    void solveParallel();
+    void solveIterative();
     void backCalculateCurrent();
 
     // function to parse solution vector
