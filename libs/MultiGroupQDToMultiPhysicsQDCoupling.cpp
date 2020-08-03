@@ -301,6 +301,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedInterfaceEddingtons()
   double fluxAccum;
   double flux;
   double myErr,myEzz,myErz;
+  double bias;
 
   // Reset Eddington factors
   mpqd->ggqd->EzzRadial.setZero();
@@ -313,8 +314,13 @@ void MGQDToMPQDCoupling::calculateFluxWeightedInterfaceEddingtons()
   // Loop over radial interface mesh
   for (int iR = 0; iR < mesh->rCornerEdge.size(); iR++)
   {
+
     for (int iZ = 0; iZ < mesh->nZ; iZ++)
     {
+
+      // Check to see if we need to add a slight bias if all group fluxes are
+      // zero. This presents NaNs from dividing by zero. 
+      bias = checkForZeroRadialFlux(iZ,iR);
 
       // Reset accumulators
       fluxAccum = 0.0;
@@ -323,7 +329,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedInterfaceEddingtons()
       for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
       {
         // Get flux and currents in this cell and energy group
-        flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR); 
+        flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR) + bias; 
 
         myErr = mgqd->SGQDs[iEnergyGroup]->ErrRadial(iZ,iR);
         myEzz = mgqd->SGQDs[iEnergyGroup]->EzzRadial(iZ,iR);
@@ -350,11 +356,16 @@ void MGQDToMPQDCoupling::calculateFluxWeightedInterfaceEddingtons()
     }
   }
 
-  // Loop over radial interface mesh
+  // Loop over axial interface mesh
   for (int iR = 0; iR < mesh->nR; iR++)
   {
+    
     for (int iZ = 0; iZ < mesh->zCornerEdge.size(); iZ++)
     {
+    
+      // Check to see if we need to add a slight bias if all group fluxes are
+      // zero. This presents NaNs from dividing by zero. 
+      bias = checkForZeroAxialFlux(iZ,iR);
 
       // Reset accumulators
       fluxAccum = 0.0;
@@ -363,7 +374,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedInterfaceEddingtons()
       for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
       {
         // Get flux and currents in this cell and energy group
-        flux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(iZ,iR); 
+        flux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(iZ,iR) + bias; 
 
         myErr = mgqd->SGQDs[iEnergyGroup]->ErrAxial(iZ,iR);
         myEzz = mgqd->SGQDs[iEnergyGroup]->EzzAxial(iZ,iR);
@@ -714,6 +725,7 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
   double flux,rCurrent,rCurrentPast;
   double mySigT,mySigTR,myNeutV,myRNeutV,myRNeutVPast;
   double timeDerivative,sigTDiff,pastSum,presentSum; 
+  double bias;
 
 
   // Loop over spatial mesh
@@ -727,6 +739,10 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
       pastSum = 0.0;
       presentSum = 0.0;
       sigTDiff = 0.0;
+      
+      // Check to see if we need to add a slight bias if all group fluxes are
+      // zero. This presents NaNs from dividing by zero. 
+      bias = checkForZeroRadialFlux(iZ,iR);
 
       // Now that the current weight neutron velocities are calculated, we 
       // calculate we can calculate the zeta factors
@@ -735,7 +751,7 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
         // Get flux and currents in this cell and energy group
         rCurrent = mgqd->SGQDs[iEnergyGroup]->currentR(iZ,iR); 
         rCurrentPast = mgqd->SGQDs[iEnergyGroup]->currentRPrev(iZ,iR); 
-        flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR);
+        flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR) + bias;
 
         // Get nuclear data at these locations and energy groups
         if (iR == 0)
@@ -801,6 +817,7 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
   double flux,zCurrent,zCurrentPast;
   double mySigT,mySigTR,myNeutV,myZNeutV,myZNeutVPast;
   double timeDerivative,sigTDiff,pastSum,presentSum; 
+  double bias;
 
   // Loop over spatial mesh
   for (int iR = 0; iR < mesh->nR; iR++)
@@ -813,6 +830,10 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
       pastSum = 0.0;
       presentSum = 0.0;
       sigTDiff = 0.0;
+      
+      // Check to see if we need to add a slight bias if all group fluxes are
+      // zero. This presents NaNs from dividing by zero. 
+      bias = checkForZeroAxialFlux(iZ,iR);
 
       // Now that the current weight neutron velocities are calculated, we 
       // calculate we can calculate the zeta factors
@@ -821,7 +842,7 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
         // Get flux and currents in this cell and energy group
         zCurrent = mgqd->SGQDs[iEnergyGroup]->currentZ(iZ,iR); 
         zCurrentPast = mgqd->SGQDs[iEnergyGroup]->currentZPrev(iZ,iR); 
-        flux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(iZ,iR);
+        flux = mgqd->SGQDs[iEnergyGroup]->sFluxZ(iZ,iR) + bias;
 
         // Get nuclear data at these locations and energy groups
         if (iZ == 0)
