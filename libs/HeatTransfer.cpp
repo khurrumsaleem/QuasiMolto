@@ -69,9 +69,10 @@ void HeatTransfer::buildLinearSystem()
   calcDiracs();
   calcFluxes();
   
-  for (int iR = 0; iR < temp.cols(); iR++)
+  for (int iZ = 0; iZ < temp.rows(); iZ++)
   {
-    for (int iZ = 0; iZ < temp.rows(); iZ++)
+
+    for (int iR = 0; iR < temp.cols(); iR++)
     {
       myIndex = getIndex(iZ,iR);     
       sIndex = getIndex(iZ+1,iR);     

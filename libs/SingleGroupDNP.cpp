@@ -115,9 +115,9 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
   int myIndex,iEq = myIndexOffset;
   double coeff;
 
-  for (int iR = 0; iR < myDNPConc.cols(); iR++)
+  for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
   {
-    for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
+    for (int iR = 0; iR < myDNPConc.cols(); iR++)
     {
       myIndex = getIndex(iZ,iR,myIndexOffset);     
 
