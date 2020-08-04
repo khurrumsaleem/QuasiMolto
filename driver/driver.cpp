@@ -78,6 +78,7 @@ int main(int argc, char** argv) {
   // Set number of procs
   if ((*input)["parameters"]["nprocs"]){
     int nProcs = (*input)["parameters"]["nprocs"].as<int>();
+    Eigen::initParallel();
     omp_set_num_threads(nProcs);
     Eigen::setNbThreads(nProcs);
   }
