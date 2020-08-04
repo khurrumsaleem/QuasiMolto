@@ -64,14 +64,6 @@ void GreyGroupSolver::formLinearSystem()
       assertZerothMoment(iR,iZ,iEq);
       iEq = iEq + 1;
 
-      // north face
-      if (iZ == 0)
-      {
-        // if on the boundary, assert boundary conditions
-        assertNBC(iR,iZ,iEq);
-        iEq = iEq + 1;
-      } 
-
       // south face
       if (iZ == mesh->dzsCorner.size()-1)
       {
@@ -85,14 +77,6 @@ void GreyGroupSolver::formLinearSystem()
         iEq = iEq + 1;
       }
 
-      // west face
-      if (iR == 0)
-      {
-        // if on the boundary, assert boundary conditions
-        assertWBC(iR,iZ,iEq);
-        iEq = iEq + 1;
-      } 
-
       // east face
       if (iR == mesh->drsCorner.size()-1)
       {
@@ -105,6 +89,23 @@ void GreyGroupSolver::formLinearSystem()
         applyRadialBoundary(iR,iZ,iEq);
         iEq = iEq + 1;
       }
+
+      // north face
+      if (iZ == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertNBC(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertWBC(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
     }
   }
 };

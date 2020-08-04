@@ -69,13 +69,6 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
       assertZerothMoment(iR,iZ,iEq,SGQD->energyGroup,SGQD);
       iEq = iEq + 1;
 
-      // north face
-      if (iZ == 0)
-      {
-        // if on the boundary, assert boundary conditions
-        assertNBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
-        iEq = iEq + 1;
-      } 
 
       // south face
       if (iZ == mesh->dzsCorner.size()-1)
@@ -90,14 +83,6 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
         iEq = iEq + 1;
       }
 
-      // west face
-      if (iR == 0)
-      {
-        // if on the boundary, assert boundary conditions
-        assertWBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
-        iEq = iEq + 1;
-      } 
-
       // east face
       if (iR == mesh->drsCorner.size()-1)
       {
@@ -110,6 +95,23 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
         applyRadialBoundary(iR,iZ,iEq,SGQD->energyGroup,SGQD);
         iEq = iEq + 1;
       }
+
+      // north face
+      if (iZ == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertNBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertWBC(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
     }
   }
 };
@@ -156,12 +158,12 @@ void QDSolver::solveIterative()
   std::cout << "estimated error: " << solver.error()      << std::endl;
 
   // Print condition number info
-  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A);
-  cout << "MGLOQD" << endl;
-  cout << "max eig: "  << svd.singularValues()(A.cols()-1) << endl;
-  cout << "min eig: "  << svd.singularValues()(0) << endl;
-  cout << "cond(A): " << endl;
-  cout << svd.singularValues()(0)/svd.singularValues()(A.cols()-1) << endl;
+//  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A);
+//  cout << "MGLOQD" << endl;
+//  cout << "max eig: "  << svd.singularValues()(A.cols()-1) << endl;
+//  cout << "min eig: "  << svd.singularValues()(0) << endl;
+//  cout << "cond(A): " << endl;
+//  cout << svd.singularValues()(0)/svd.singularValues()(A.cols()-1) << endl;
  
 
 }
