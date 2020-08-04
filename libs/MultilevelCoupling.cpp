@@ -494,8 +494,8 @@ void MultilevelCoupling::solveMGLOQD()
   mgqd->buildLinearSystem();
 
   // Solve flux system
-  if (parallel)
-    mgqd->solveLinearSystemParallel();
+  if (iterativeMGLOQD)
+    mgqd->solveLinearSystemIterative();
   else
     mgqd->solveLinearSystem();
 
@@ -518,8 +518,8 @@ void MultilevelCoupling::solveELOT()
   mpqd->buildLinearSystem();
 
   // Solve ELOT system
-  if (parallel)
-    mpqd->solveLinearSystemParallel();
+  if (iterativeELOT)
+    mpqd->solveLinearSystemIterative();
   else
     mpqd->solveLinearSystem();
 
@@ -609,8 +609,13 @@ void MultilevelCoupling::checkOptionalParameters()
   if ((*input)["parameters"]["resetThreshold"])
     resetThreshold=(*input)["parameters"]["resetThreshold"].as<double>();
   
-  if ((*input)["parameters"]["parallel"])
-    parallel=(*input)["parameters"]["parallel"].as<bool>();
+  // Check if iterative solver should be used for ELOT 
+  if ((*input)["parameters"]["iterativeELOT"])
+    iterativeELOT=(*input)["parameters"]["iterativeELOT"].as<bool>();
+
+  // Check if iterative solver should be used for MGLOQD 
+  if ((*input)["parameters"]["iterativeMGLOQD"])
+    iterativeMGLOQD=(*input)["parameters"]["iterativeMGLOQD"].as<bool>();
 
 };
 //==============================================================================
