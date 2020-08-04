@@ -176,23 +176,21 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
 void MultiPhysicsCoupledQD::solveLinearSystemIterative()
 {
 
-
-
   // Compute solution with biconjugate gradient stabilized method 
   Eigen::BiCGSTAB<Eigen::SparseMatrix<double>,\
     Eigen::IncompleteLUT<double> > solver;
-  solver.preconditioner().setDroptol(1E-4);
+  solver.preconditioner().setDroptol(1E-6);
   //solver.preconditioner().setFillfactor(100);
   //solver.setTolerance(1E-14);
   //solver.preconditioner().setFillfactor(5);
   //solver.setMaxIterations(20);
   //solver.setTolerance(...);
   A.makeCompressed();
-  cout << "size(A):" << A.size() << endl;
-  cout << "A: " << endl;
-  cout << A << endl;
-  cout << "b: " << endl;
-  cout << b << endl;
+//  cout << "size(A):" << A.size() << endl;
+//  cout << "A: " << endl;
+//  cout << A << endl;
+//  cout << "b: " << endl;
+//  cout << b << endl;
   solver.compute(A);
   x = solver.solve(b);
 
@@ -205,12 +203,12 @@ void MultiPhysicsCoupledQD::solveLinearSystemIterative()
   std::cout << "tolerance: " << solver.tolerance() << std::endl;
 
   // Print max and min eigenvalues, and the condition number
-  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A);
-  cout << "ELOT" << endl;
-  cout << "max eig: "  << svd.singularValues()(A.cols()-1) << endl;
-  cout << "min eig: "  << svd.singularValues()(0) << endl;
-  cout << "cond(A): " << endl;
-  cout << svd.singularValues()(0)/svd.singularValues()(A.cols()-1) << endl;
+//  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A);
+//  cout << "ELOT" << endl;
+//  cout << "max eig: "  << svd.singularValues()(A.cols()-1) << endl;
+//  cout << "min eig: "  << svd.singularValues()(0) << endl;
+//  cout << "cond(A): " << endl;
+//  cout << svd.singularValues()(0)/svd.singularValues()(A.cols()-1) << endl;
 
   // Solve recirc system
   mgdnp->solveRecircLinearSystem();
