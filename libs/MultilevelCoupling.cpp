@@ -240,6 +240,10 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
   vector<int> iters;
   vector<double> tempResMGHOT,tempResMGLOQD,tempResELOT,tempResiduals;
   vector<double> fluxResMGHOT,fluxResMGLOQD,fluxResELOT,fluxResiduals;
+ 
+  // Timing variables 
+  double duration,totalDuration = 0.0;
+  clock_t startTime;
 
   while (not convergedMGHOT){ 
 
@@ -251,14 +255,22 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
     if (itersMGHOT != 0)
     {
       // Solve MGHOT problem
+      cout << "MGHOT solve...";
+      startTime = clock(); 
       solveMGHOT();
+      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      cout << " done. ("<< duration << " seconds)" << endl;
       iters.push_back(3);
 
       // Calculate Eddington factors for MGQD problem
+      cout << "Calculating MGLOQD Eddington factors...";
       eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
+      cout << " done."<< endl;
 
       // Calculate BCs for MGQD problem 
+      cout << "Calculating MGLOQD boundary conditions...";
       MGTToMGQD->calcBCs();
+      cout << " done."<< endl;
     }
 
     // Store last iterate of ELOT solution used in MGHOT level
@@ -271,7 +283,12 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
       /////////////////////
 
       // Solve MGLOQD problem
+      cout << "    ";
+      cout << "MGLOQD solve...";
+      startTime = clock(); 
       solveMGLOQD();
+      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      cout << " done. ("<< duration << " seconds)" << endl;
       iters.push_back(2);
 
       // Get group fluxes to use in group collapse
@@ -287,13 +304,24 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
         ///////////////////
 
         // Calculate collapsed nuclear data
+        cout << "        ";
+        cout << "Collapsing MGLOQD data for ELOT solve...";
         MGQDToMPQD->collapseNuclearData();
+        cout << " done."<< endl;
         
         // Store last iterate of ELOT solution used in ELOT level
+        cout << "        ";
+        cout << "Storing last solution...";
         xLastELOTIter = mpqd->x;
+        cout << " done."<< endl;
       
         // Solve ELOT problem
+        cout << "        ";
+        cout << "ELOT solve...";
+        startTime = clock(); 
         solveELOT();
+        duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+        cout << " done. ("<< duration << " seconds)" << endl;
         iters.push_back(1);
 
         // Store newest iterate 
