@@ -169,7 +169,7 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
 /// Solve linear system for multiphysics coupled quasidiffusion system with an
 /// iterative solver
 ///
-void MultiPhysicsCoupledQD::solveLinearSystemIterative()
+void MultiPhysicsCoupledQD::solveLinearSystemIterative(Eigen::VectorXd xGuess)
 {
 
   double duration,totalDuration = 0.0;
@@ -179,15 +179,15 @@ void MultiPhysicsCoupledQD::solveLinearSystemIterative()
   //cout << "number procs: " << n << endl;
 
   if (preconditioner == iluPreconditioner) 
-    solveOutcome = solveIterativeILU();
+    solveOutcome = solveIterativeILU(xGuess);
   else if (preconditioner == diagPreconditioner)
   {
-    solveOutcome = solveIterativeDiag();
+    solveOutcome = solveIterativeDiag(xGuess);
     if (solveOutcome != Eigen::Success)
     {
       cout << "            " << "BiCGSTAB solve failed! Attempting iterative";
       cout << " solve with ILU preconditioner." << endl;
-      solveOutcome = solveIterativeILU();
+      solveOutcome = solveIterativeILU(xGuess);
     }
   }
 
@@ -229,7 +229,7 @@ int MultiPhysicsCoupledQD::solveSuperLU()
 /// Solve linear system for multiphysics coupled quasidiffusion system with an
 /// iterative solver and incomplete LU preconditioner
 ///
-int MultiPhysicsCoupledQD::solveIterativeILU()
+int MultiPhysicsCoupledQD::solveIterativeILU(Eigen::VectorXd xGuess)
 {
 
   int success;
@@ -251,7 +251,7 @@ int MultiPhysicsCoupledQD::solveIterativeILU()
   A.makeCompressed();
   solver.analyzePattern(A);
   solver.factorize(A);
-  x = solver.solve(b);
+  x = solver.solveWithGuess(b,xGuess);
 
   if (mesh->verbose) 
   {
@@ -275,7 +275,7 @@ int MultiPhysicsCoupledQD::solveIterativeILU()
 /// Solve linear system for multiphysics coupled quasidiffusion system with an
 /// iterative solver and diagonal preconditioner
 ///
-int MultiPhysicsCoupledQD::solveIterativeDiag()
+int MultiPhysicsCoupledQD::solveIterativeDiag(Eigen::VectorXd xGuess)
 {
 
   int success;
@@ -292,7 +292,7 @@ int MultiPhysicsCoupledQD::solveIterativeDiag()
   A.makeCompressed();
   solver.analyzePattern(A);
   solver.factorize(A);
-  x = solver.solve(b);
+  x = solver.solveWithGuess(b,xGuess);
 
   if (mesh->verbose) 
   {

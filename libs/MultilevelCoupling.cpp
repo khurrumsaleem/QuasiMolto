@@ -154,7 +154,7 @@ bool MultilevelCoupling::initialSolve()
       xLastELOTIter = mpqd->x;
 
       // Solve ELOT problem
-      solveELOT();
+      solveELOT(mpqd->x);
 
       // Store newest iterate 
       xCurrentIter = mpqd->x;
@@ -320,7 +320,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
         cout << "        ";
         cout << "ELOT solve..." << endl;
         startTime = clock(); 
-        solveELOT();
+        solveELOT(mpqd->x);
         duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
         cout << "        ";
         cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
@@ -541,7 +541,7 @@ void MultilevelCoupling::solveMGLOQD()
 //==============================================================================
 /// Perform a solve at the ELOT level 
 ///
-void MultilevelCoupling::solveELOT()
+void MultilevelCoupling::solveELOT(Eigen::VectorXd xGuess)
 {
 
   // Build ELOT system
@@ -549,7 +549,7 @@ void MultilevelCoupling::solveELOT()
 
   // Solve ELOT system
   if (iterativeELOT)
-    mpqd->solveLinearSystemIterative();
+    mpqd->solveLinearSystemIterative(xGuess);
   else
     mpqd->solveLinearSystem();
 

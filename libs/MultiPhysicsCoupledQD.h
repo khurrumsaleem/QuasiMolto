@@ -38,10 +38,10 @@ class MultiPhysicsCoupledQD
     void initializeXPast();
     void buildLinearSystem();
     void solveLinearSystem();
-    void solveLinearSystemIterative();
+    void solveLinearSystemIterative(Eigen::VectorXd xGuess);
     int solveSuperLU();
-    int solveIterativeDiag();
-    int solveIterativeILU();
+    int solveIterativeDiag(Eigen::VectorXd xGuess);
+    int solveIterativeILU(Eigen::VectorXd xGuess);
     void solveTransient();
     void updateVarsAfterConvergence();
     void writeVars();
