@@ -119,58 +119,159 @@ void QDSolver::formLinearSystem(SingleGroupQD * SGQD)
 //==============================================================================
 
 //==============================================================================
-/// Compute the solution, x, to Ax = b. x contains the fluxes that solve the 
-/// low order quasidiffusion system
+/// Solve linear system for multigroup quasidiffusion system
+///
 void QDSolver::solve()
 {
+  
+  solveSuperLU();
 
-  //Eigen::SparseLU<Eigen::SparseMatrix<double>,\
-    Eigen::COLAMDOrdering<int> > solverLU;
-  Eigen::SuperLU<Eigen::SparseMatrix<double> > solverLU;
+};
+//==============================================================================
+
+//==============================================================================
+/// Solve linear system for multigroup quasidiffusion system with an
+/// iterative solver
+///
+void QDSolver::solveIterative()
+{
+
+  double duration,totalDuration = 0.0;
+  clock_t startTime;
+  int n = Eigen::nbThreads();
+  int solveOutcome;
+  //cout << "number procs: " << n << endl;
+
+  if (preconditioner == iluPreconditioner) 
+    solveOutcome = solveIterativeILU();
+  else if (preconditioner == diagPreconditioner)
+  {
+    solveOutcome = solveIterativeDiag();
+    if (solveOutcome != Eigen::Success)
+    {
+      cout << "        " << "BiCGSTAB solve failed! Attempting iterative";
+      cout << " solve with ILU preconditioner." << endl;
+      solveOutcome = solveIterativeILU();
+    }
+  }
+
+  if (solveOutcome != Eigen::Success)
+  {
+    cout << "        " << "Iterative solve failed! ";
+    cout << "Using SuperLU direct solve.";  
+    solveSuperLU();
+  }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Solve linear system for multigroup quasidiffusion system with a 
+/// direct solve
+///
+int QDSolver::solveSuperLU()
+{
+
+  int success;
+
+  // Declare SuperLU solver
+  Eigen::SuperLU<Eigen::SparseMatrix<double>> solverLU;
   A.makeCompressed();
   solverLU.compute(A);
   x = solverLU.solve(b);
+
+  // Return outcome of solve
+  return success = solverLU.info();
   
-}
+};
 //==============================================================================
 
 //==============================================================================
-/// Compute the solution, x, to Ax = b. x contains the fluxes that solve the 
-/// low order quasidiffusion system. Solution is computed with a solver that
-/// can use multiple processors. 
-void QDSolver::solveIterative()
+/// Solve linear system for multigroup quasidiffusion system with an
+/// iterative solver and incomplete LU preconditioner
+///
+int QDSolver::solveIterativeILU()
 {
-  
-  // Compute solution with biconjugate gradient stabilized method 
-  //Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor>,\
+
+  int success;
+
+  // Declare solver with ILUT preconditioner
+  Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor>,\
     Eigen::IncompleteLUT<double> > solver;
-  Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor> > solver;
-  //solver.preconditioner().setDroptol(1E-6);
+
+  // Set preconditioner parameters
+  solver.preconditioner().setDroptol(1E-4);
+  //solver.preconditioner().setFillfactor(100);
   //solver.preconditioner().setFillfactor(5);
+
+  // Set convergence parameters
+  //solver.setTolerance(1E-14);
   //solver.setMaxIterations(20);
-  solver.setTolerance(1E-14);
+
+  // Solve system
   A.makeCompressed();
-  solver.compute(A);
+  solver.analyzePattern(A);
+  solver.factorize(A);
   x = solver.solve(b);
 
-  cout << "size(A):" << A.size() << endl;
-  // Print solver information
-//  std::cout << "info:     " << solver.info() << std::endl;
-//  std::cout << "#iterations:     " << solver.iterations() << std::endl;
-//  std::cout << "estimated error: " << solver.error()      << std::endl;
+  if (mesh->verbose) 
+  {
+    cout << "        ";
+    cout << "info:     " << solver.info() << endl;
+    cout << "        ";
+    cout << "#iterations:     " << solver.iterations() << endl;
+    cout << "        ";
+    cout << "estimated error: " << solver.error() << endl;
+    cout << "        ";
+    cout << "tolerance: " << solver.tolerance() << endl;
+  }
 
-  // Print condition number info
-//  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A);
-//  cout << "MGLOQD" << endl;
-//  cout << "max eig: "  << svd.singularValues()(A.cols()-1) << endl;
-//  cout << "min eig: "  << svd.singularValues()(0) << endl;
-//  cout << "cond(A): " << endl;
-//  cout << svd.singularValues()(0)/svd.singularValues()(A.cols()-1) << endl;
- 
-
-}
+  // Return outcome of solve
+  return success = solver.info();
+  
+};
 //==============================================================================
 
+//==============================================================================
+/// Solve linear system for multigroup quasidiffusion system with an
+/// iterative solver and diagonal preconditioner
+///
+int QDSolver::solveIterativeDiag()
+{
+
+  int success;
+
+  // Declare solver with default diagonal precondition (cheaper to calculate) 
+  // but usually requires more iterations to converge
+  Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor> > solver;
+
+  // Set convergence parameters
+  //solver.setTolerance(1E-14);
+  //solver.setMaxIterations(20);
+
+  // Solve system
+  A.makeCompressed();
+  solver.analyzePattern(A);
+  solver.factorize(A);
+  x = solver.solve(b);
+
+  if (mesh->verbose) 
+  {
+    cout << "        ";
+    cout << "info:     " << solver.info() << endl;
+    cout << "        ";
+    cout << "#iterations:     " << solver.iterations() << endl;
+    cout << "        ";
+    cout << "estimated error: " << solver.error() << endl;
+    cout << "        ";
+    cout << "tolerance: " << solver.tolerance() << endl;
+  }
+
+  // Return outcome of solve
+  return success = solver.info();
+
+};
+//==============================================================================
 
 //==============================================================================
 /// Compute currents from flux values in x
@@ -179,7 +280,6 @@ void QDSolver::backCalculateCurrent()
   currPast = d + C*x; 
 }
 //==============================================================================
-
 
 //==============================================================================
 /// Assert the zeroth moment equation for cell (iR,iZ)
@@ -1514,7 +1614,7 @@ Eigen::VectorXd QDSolver::getCurrentSolutionVector(SingleGroupQD * SGQD)
 /// Check for optional inputs of relevance to this object
 void QDSolver::checkOptionalParams()
 {
-  string boundaryType;
+  string boundaryType,precondInput;
 
   // check for optional parameters specified in input file
 
@@ -1539,5 +1639,17 @@ void QDSolver::checkOptionalParams()
       goldinBCs = true;
 
   }
+
+  if ((*input)["parameters"]["preconditionerMGLOQD"])
+  {
+    precondInput=(*input)["parameters"]["preconditionerMGLOQD"].as<string>();
+
+    if (precondInput == "ilu")
+      preconditioner = iluPreconditioner;
+    else if (precondInput == "diagonal" or precondInput == "diag")
+      preconditioner = diagPreconditioner;
+      
+  }
+
 }
 //==============================================================================

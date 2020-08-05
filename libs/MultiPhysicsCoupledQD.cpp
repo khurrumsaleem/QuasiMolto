@@ -159,11 +159,7 @@ void MultiPhysicsCoupledQD::initializeXPast()
 void MultiPhysicsCoupledQD::solveLinearSystem()
 {
   
-  Eigen::SuperLU<Eigen::SparseMatrix<double>> solverLU;
-  A.makeCompressed();
-  solverLU.compute(A);
-  x = solverLU.solve(b);
-
+  solveSuperLU();
   mgdnp->solveRecircLinearSystem();
 
 };
@@ -179,68 +175,28 @@ void MultiPhysicsCoupledQD::solveLinearSystemIterative()
   double duration,totalDuration = 0.0;
   clock_t startTime;
   int n = Eigen::nbThreads();
-  cout << "number procs: " << n << endl;
+  int solveOutcome;
+  //cout << "number procs: " << n << endl;
 
-  if (preconditioner == ilutPreconditioner) 
-  {
-    // Declare solver with ILUT preconditioner
-    Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor>,\
-      Eigen::IncompleteLUT<double> > solver;
-    solver.preconditioner().setDroptol(1E-4);
-    //solver.preconditioner().setFillfactor(100);
-    //solver.preconditioner().setFillfactor(5);
-    solver.setTolerance(1E-14);
-    //solver.setMaxIterations(20);
-    A.makeCompressed();
-    solver.analyzePattern(A);
-    solver.factorize(A);
-    x = solver.solve(b);
-  }
+  if (preconditioner == iluPreconditioner) 
+    solveOutcome = solveIterativeILU();
   else if (preconditioner == diagPreconditioner)
   {
-    // Declare solver with default diagonal precondition (cheaper to calculate) 
-    // but usually requires more iterations to converge
-    Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor> > solver;
-    solver.setTolerance(1E-14);
-  //solver.setMaxIterations(20);
-    A.makeCompressed();
-    solver.analyzePattern(A);
-    solver.factorize(A);
-    x = solver.solve(b);
+    solveOutcome = solveIterativeDiag();
+    if (solveOutcome != Eigen::Success)
+    {
+      cout << "            " << "BiCGSTAB solve failed! Attempting iterative";
+      cout << " solve with ILU preconditioner." << endl;
+      solveOutcome = solveIterativeILU();
+    }
   }
 
-//  A.makeCompressed();
-//  cout << "size(A):" << A.size() << endl;
-////  cout << "A: " << endl;
-////  cout << A << endl;
-////  cout << "b: " << endl;
-////  cout << b << endl;
-//  startTime = clock(); 
-//  solver.analyzePattern(A);
-//  duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
-//  cout << "Analyze pattern time: " << duration << " seconds" << endl;
-//  startTime = clock(); 
-//  solver.factorize(A);
-//  duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
-//  cout << "Factorize time: " << duration << " seconds" << endl;
-//  //solver.compute(A);
-//  x = solver.solve(b);
-//
-//  // Print solve information
-//  //std::cout << "preconditioner info:     " << solver.preconditioner().info()\
-//    << std::endl;
-//  std::cout << "info:     " << solver.info() << std::endl;
-//  std::cout << "#iterations:     " << solver.iterations() << std::endl;
-//  std::cout << "estimated error: " << solver.error() << std::endl;
-//  std::cout << "tolerance: " << solver.tolerance() << std::endl;
-
-  // Print max and min eigenvalues, and the condition number
-//  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A);
-//  cout << "ELOT" << endl;
-//  cout << "max eig: "  << svd.singularValues()(A.cols()-1) << endl;
-//  cout << "min eig: "  << svd.singularValues()(0) << endl;
-//  cout << "cond(A): " << endl;
-//  cout << svd.singularValues()(0)/svd.singularValues()(A.cols()-1) << endl;
+  if (solveOutcome != Eigen::Success)
+  {
+    cout << "            " << "Iterative solve failed! ";
+    cout << "Using SuperLU direct solve.";  
+    solveSuperLU();
+  }
 
   // Solve recirc system
   mgdnp->solveRecircLinearSystem();
@@ -248,6 +204,113 @@ void MultiPhysicsCoupledQD::solveLinearSystemIterative()
 };
 //==============================================================================
 
+//==============================================================================
+/// Solve linear system for multiphysics coupled quasidiffusion system with a 
+/// direct solve
+///
+int MultiPhysicsCoupledQD::solveSuperLU()
+{
+
+  int success;
+
+  // Declare SuperLU solver
+  Eigen::SuperLU<Eigen::SparseMatrix<double>> solverLU;
+  A.makeCompressed();
+  solverLU.compute(A);
+  x = solverLU.solve(b);
+
+  // Return outcome of solve
+  return success = solverLU.info();
+  
+};
+//==============================================================================
+
+//==============================================================================
+/// Solve linear system for multiphysics coupled quasidiffusion system with an
+/// iterative solver and incomplete LU preconditioner
+///
+int MultiPhysicsCoupledQD::solveIterativeILU()
+{
+
+  int success;
+
+  // Declare solver with ILUT preconditioner
+  Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor>,\
+    Eigen::IncompleteLUT<double> > solver;
+
+  // Set preconditioner parameters
+  solver.preconditioner().setDroptol(1E-4);
+  //solver.preconditioner().setFillfactor(100);
+  //solver.preconditioner().setFillfactor(5);
+
+  // Set convergence parameters
+  //solver.setTolerance(1E-14);
+  //solver.setMaxIterations(20);
+
+  // Solve system
+  A.makeCompressed();
+  solver.analyzePattern(A);
+  solver.factorize(A);
+  x = solver.solve(b);
+
+  if (mesh->verbose) 
+  {
+    cout << "            ";
+    cout << "info:     " << solver.info() << endl;
+    cout << "            ";
+    cout << "#iterations:     " << solver.iterations() << endl;
+    cout << "            ";
+    cout << "estimated error: " << solver.error() << endl;
+    cout << "            ";
+    cout << "tolerance: " << solver.tolerance() << endl;
+  }
+
+  // Return outcome of solve
+  return success = solver.info();
+  
+};
+//==============================================================================
+
+//==============================================================================
+/// Solve linear system for multiphysics coupled quasidiffusion system with an
+/// iterative solver and diagonal preconditioner
+///
+int MultiPhysicsCoupledQD::solveIterativeDiag()
+{
+
+  int success;
+
+  // Declare solver with default diagonal precondition (cheaper to calculate) 
+  // but usually requires more iterations to converge
+  Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor> > solver;
+
+  // Set convergence parameters
+  //solver.setTolerance(1E-14);
+  //solver.setMaxIterations(20);
+
+  // Solve system
+  A.makeCompressed();
+  solver.analyzePattern(A);
+  solver.factorize(A);
+  x = solver.solve(b);
+
+  if (mesh->verbose) 
+  {
+    cout << "            ";
+    cout << "info:     " << solver.info() << endl;
+    cout << "            ";
+    cout << "#iterations:     " << solver.iterations() << endl;
+    cout << "            ";
+    cout << "estimated error: " << solver.error() << endl;
+    cout << "            ";
+    cout << "tolerance: " << solver.tolerance() << endl;
+  }
+
+  // Return outcome of solve
+  return success = solver.info();
+
+};
+//==============================================================================
 
 //==============================================================================
 /// Run transient with multiple solves 
@@ -360,9 +423,22 @@ void MultiPhysicsCoupledQD::solveTransient()
 /// Check for optional input parameters of relevance to this object
 void MultiPhysicsCoupledQD::checkOptionalParams()
 {
+  string precondInput;
+  
   if ((*input)["parameters"]["epsMPQD"])
   {
     epsMPQD=(*input)["parameters"]["epsMPQD"].as<double>();
+  }
+
+  if ((*input)["parameters"]["preconditionerELOT"])
+  {
+    precondInput=(*input)["parameters"]["preconditionerELOT"].as<string>();
+
+    if (precondInput == "ilu")
+      preconditioner = iluPreconditioner;
+    else if (precondInput == "diagonal" or precondInput == "diag")
+      preconditioner = diagPreconditioner;
+      
   }
 }
 //==============================================================================

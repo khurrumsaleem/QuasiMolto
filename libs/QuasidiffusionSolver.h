@@ -115,6 +115,9 @@ class QDSolver
     // function to solve linear system
     void solve();
     void solveIterative();
+    int solveSuperLU();
+    int solveIterativeDiag();
+    int solveIterativeILU();
     void backCalculateCurrent();
 
     // function to parse solution vector
@@ -131,6 +134,7 @@ class QDSolver
     Eigen::VectorXd xPast,currPast;
     Eigen::VectorXd b,d;
     int energyGroups,nR,nZ,nGroupUnknowns,nGroupCurrentUnknowns;
+    int preconditioner = 1;
     bool reflectingBCs = false;
     bool goldinBCs = false;
     bool useMPQDSources = false;
@@ -142,9 +146,10 @@ class QDSolver
     Mesh * mesh;
     Materials * materials;
     // indices for accessing index and geometry parameters vectors
-    int iCF = 0;
-    int iWF = 1, iEF = 2, iNF = 3, iSF = 4;
-    int iWC = 5, iEC = 6, iNC = 7, iSC = 8;
+    const int iCF = 0;
+    const int iWF = 1, iEF = 2, iNF = 3, iSF = 4;
+    const int iWC = 5, iEC = 6, iNC = 7, iSC = 8;
+    const int iluPreconditioner = 0, diagPreconditioner = 1;
 };
 
 //==============================================================================

@@ -39,12 +39,15 @@ class MultiPhysicsCoupledQD
     void buildLinearSystem();
     void solveLinearSystem();
     void solveLinearSystemIterative();
+    int solveSuperLU();
+    int solveIterativeDiag();
+    int solveIterativeILU();
     void solveTransient();
     void updateVarsAfterConvergence();
     void writeVars();
     void printVars();
     void checkOptionalParams();
-    int preconditioner = 0;
+    int preconditioner = 1;
 
     // Pointers
     HeatTransfer * heat;
@@ -55,7 +58,7 @@ class MultiPhysicsCoupledQD
     Materials * mats;
     Mesh * mesh;
     YAML::Node * input;
-    const int ilutPreconditioner = 0, diagPreconditioner = 1;
+    const int iluPreconditioner = 0, diagPreconditioner = 1;
 
 };
 
