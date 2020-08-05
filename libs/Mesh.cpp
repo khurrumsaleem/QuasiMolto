@@ -16,7 +16,6 @@ using namespace arma;
 qdCell::qdCell(){}
 //==============================================================================
 
-
 //==============================================================================
 /// Constructor for quadLevel object.
 ///
@@ -95,9 +94,12 @@ Mesh::Mesh(YAML::Node * myInput){
 
   // Initialize output object 
   output = new WriteData(this,myOutputDir);
+
+  // Check for optional parameters
+  checkOptionalParams();
+
 }
 //==============================================================================
-
 
 //==============================================================================
 /// Calculates a quadrature set and differencing coefficients
@@ -947,3 +949,17 @@ void Mesh::printQuadSet(){
 
 }
 //==============================================================================	
+//==============================================================================
+/// Check for optional inputs of relevance to this object
+void Mesh::checkOptionalParams()
+{
+
+  // check for optional parameters specified in input file
+
+  if ((*input)["parameters"]["verbose"])
+  {
+    verbose=(*input)["parameters"]["verbose"].as<bool>();
+  }
+
+}
+//==============================================================================
