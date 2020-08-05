@@ -284,11 +284,12 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
 
       // Solve MGLOQD problem
       cout << "    ";
-      cout << "MGLOQD solve...";
+      cout << "MGLOQD solve..." << endl;
       startTime = clock(); 
       solveMGLOQD();
       duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
-      cout << " done. ("<< duration << " seconds)" << endl;
+      cout << "    ";
+      cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
       iters.push_back(2);
 
       // Get group fluxes to use in group collapse
@@ -317,11 +318,12 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
       
         // Solve ELOT problem
         cout << "        ";
-        cout << "ELOT solve...";
+        cout << "ELOT solve..." << endl;
         startTime = clock(); 
         solveELOT();
         duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
-        cout << " done. ("<< duration << " seconds)" << endl;
+        cout << "        ";
+        cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
         iters.push_back(1);
 
         // Store newest iterate 
