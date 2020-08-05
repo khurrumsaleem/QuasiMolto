@@ -44,6 +44,7 @@ class MultiPhysicsCoupledQD
     void writeVars();
     void printVars();
     void checkOptionalParams();
+    int preconditioner = 0;
 
     // Pointers
     HeatTransfer * heat;
@@ -54,6 +55,7 @@ class MultiPhysicsCoupledQD
     Materials * mats;
     Mesh * mesh;
     YAML::Node * input;
+    const int ilutPreconditioner = 0, diagPreconditioner = 1;
 
 };
 

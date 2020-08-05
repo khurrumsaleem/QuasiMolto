@@ -176,31 +176,63 @@ void MultiPhysicsCoupledQD::solveLinearSystem()
 void MultiPhysicsCoupledQD::solveLinearSystemIterative()
 {
 
-  // Compute solution with biconjugate gradient stabilized method 
-  Eigen::BiCGSTAB<Eigen::SparseMatrix<double>,\
-    Eigen::IncompleteLUT<double> > solver;
-  solver.preconditioner().setDroptol(1E-6);
-  //solver.preconditioner().setFillfactor(100);
-  //solver.setTolerance(1E-14);
-  //solver.preconditioner().setFillfactor(5);
-  //solver.setMaxIterations(20);
-  //solver.setTolerance(...);
-  A.makeCompressed();
-//  cout << "size(A):" << A.size() << endl;
-//  cout << "A: " << endl;
-//  cout << A << endl;
-//  cout << "b: " << endl;
-//  cout << b << endl;
-  solver.compute(A);
-  x = solver.solve(b);
+  double duration,totalDuration = 0.0;
+  clock_t startTime;
+  int n = Eigen::nbThreads();
+  cout << "number procs: " << n << endl;
 
-  // Print solve information
-  //std::cout << "preconditioner info:     " << solver.preconditioner().info()\
-    << std::endl;
-  std::cout << "info:     " << solver.info() << std::endl;
-  std::cout << "#iterations:     " << solver.iterations() << std::endl;
-  std::cout << "estimated error: " << solver.error() << std::endl;
-  std::cout << "tolerance: " << solver.tolerance() << std::endl;
+  if (preconditioner == ilutPreconditioner) 
+  {
+    // Declare solver with ILUT preconditioner
+    Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor>,\
+      Eigen::IncompleteLUT<double> > solver;
+    solver.preconditioner().setDroptol(1E-4);
+    //solver.preconditioner().setFillfactor(100);
+    //solver.preconditioner().setFillfactor(5);
+    solver.setTolerance(1E-14);
+    //solver.setMaxIterations(20);
+    A.makeCompressed();
+    solver.analyzePattern(A);
+    solver.factorize(A);
+    x = solver.solve(b);
+  }
+  else if (preconditioner == diagPreconditioner)
+  {
+    // Declare solver with default diagonal precondition (cheaper to calculate) 
+    // but usually requires more iterations to converge
+    Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor> > solver;
+    solver.setTolerance(1E-14);
+  //solver.setMaxIterations(20);
+    A.makeCompressed();
+    solver.analyzePattern(A);
+    solver.factorize(A);
+    x = solver.solve(b);
+  }
+
+//  A.makeCompressed();
+//  cout << "size(A):" << A.size() << endl;
+////  cout << "A: " << endl;
+////  cout << A << endl;
+////  cout << "b: " << endl;
+////  cout << b << endl;
+//  startTime = clock(); 
+//  solver.analyzePattern(A);
+//  duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+//  cout << "Analyze pattern time: " << duration << " seconds" << endl;
+//  startTime = clock(); 
+//  solver.factorize(A);
+//  duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+//  cout << "Factorize time: " << duration << " seconds" << endl;
+//  //solver.compute(A);
+//  x = solver.solve(b);
+//
+//  // Print solve information
+//  //std::cout << "preconditioner info:     " << solver.preconditioner().info()\
+//    << std::endl;
+//  std::cout << "info:     " << solver.info() << std::endl;
+//  std::cout << "#iterations:     " << solver.iterations() << std::endl;
+//  std::cout << "estimated error: " << solver.error() << std::endl;
+//  std::cout << "tolerance: " << solver.tolerance() << std::endl;
 
   // Print max and min eigenvalues, and the condition number
 //  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A);

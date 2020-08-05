@@ -142,20 +142,22 @@ void QDSolver::solveIterative()
 {
   
   // Compute solution with biconjugate gradient stabilized method 
-  Eigen::BiCGSTAB<Eigen::SparseMatrix<double>,\
+  //Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor>,\
     Eigen::IncompleteLUT<double> > solver;
-  solver.preconditioner().setDroptol(1E-6);
+  Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor> > solver;
+  //solver.preconditioner().setDroptol(1E-6);
   //solver.preconditioner().setFillfactor(5);
   //solver.setMaxIterations(20);
-  //solver.setTolerance(...);
+  solver.setTolerance(1E-14);
   A.makeCompressed();
   solver.compute(A);
   x = solver.solve(b);
 
+  cout << "size(A):" << A.size() << endl;
   // Print solver information
-  std::cout << "info:     " << solver.info() << std::endl;
-  std::cout << "#iterations:     " << solver.iterations() << std::endl;
-  std::cout << "estimated error: " << solver.error()      << std::endl;
+//  std::cout << "info:     " << solver.info() << std::endl;
+//  std::cout << "#iterations:     " << solver.iterations() << std::endl;
+//  std::cout << "estimated error: " << solver.error()      << std::endl;
 
   // Print condition number info
 //  Eigen::JacobiSVD<Eigen::MatrixXd> svd(A);
