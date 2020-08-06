@@ -54,6 +54,7 @@ void GreyGroupSolver::formLinearSystem()
 
   int iEq = GGQD->indexOffset;
   Atemp.resize(nUnknowns,A->cols());
+  Atemp.reserve(10*nUnknowns);
 
   // loop over spatial mesh
   for (int iR = 0; iR < mesh->drsCorner.size(); iR++)

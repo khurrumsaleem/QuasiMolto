@@ -71,6 +71,7 @@ void HeatTransfer::buildLinearSystem()
   calcFluxes();
   
   Atemp.resize(nUnknowns,mpqd->A.cols());
+  Atemp.reserve(5*nUnknowns);
   
   for (int iZ = 0; iZ < temp.rows(); iZ++)
   {

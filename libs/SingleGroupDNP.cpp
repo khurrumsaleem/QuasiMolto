@@ -117,6 +117,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
   int iEqTemp=0,nDNPUnknowns = myDNPConc.rows()*myDNPConc.cols();
   double coeff;
   Atemp.resize(nDNPUnknowns,myA->cols());
+  Atemp.reserve(2*nDNPUnknowns);
 
   for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
   {
