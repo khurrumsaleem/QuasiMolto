@@ -112,8 +112,11 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
     bool fluxSource)
 {
 
+  //int myIndex,iEq = myIndexOffset;
   int myIndex,iEq = myIndexOffset;
+  int iEqTemp=0,nDNPUnknowns = myDNPConc.rows()*myDNPConc.cols();
   double coeff;
+  Atemp.resize(nDNPUnknowns,myA->cols());
 
   for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
   {
@@ -121,7 +124,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
     {
       myIndex = getIndex(iZ,iR,myIndexOffset);     
 
-      myA->coeffRef(iEq,myIndex) = 1 + mesh->dt*lambda; 
+      Atemp.coeffRef(iEqTemp,myIndex) = 1 + mesh->dt*lambda; 
 
       // Time term
       (*myb)(iEq) = myDNPConc(iZ,iR);
@@ -130,7 +133,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
       if (fluxSource)
       {
         coeff = -mesh->dt*mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
-        mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
+        mgdnp->mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
       }
 
       // Advection term
@@ -138,10 +141,12 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
 
       // Iterate equation count
       iEq = iEq + 1;
-      
+      iEqTemp = iEqTemp + 1;
 
     }
   }
+  
+  myA->middleRows(myIndexOffset,nDNPUnknowns) = Atemp; 
 };
 //==============================================================================
 

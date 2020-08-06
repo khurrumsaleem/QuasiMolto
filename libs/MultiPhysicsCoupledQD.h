@@ -33,8 +33,10 @@ class MultiPhysicsCoupledQD
     double epsMPQD = 1E-6;
    
     // Functions 
-    void fluxSource(int iZ,int iR,int iEq,double coeff);
-    void dnpSource(int iZ,int iR,int iEq,double coeff);
+    void fluxSource(int iZ,int iR,int iEq,double coeff,\
+      Eigen::SparseMatrix<double,Eigen::RowMajor> * myA);
+    void dnpSource(int iZ,int iR,int iEq,double coeff,\
+      Eigen::SparseMatrix<double,Eigen::RowMajor> * myA);
     void initializeXPast();
     void buildLinearSystem();
     void solveLinearSystem();

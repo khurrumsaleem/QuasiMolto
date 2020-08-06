@@ -24,6 +24,7 @@ class HeatTransfer
   double inletT = 922.0;
   int coreInletIndex,coreOutletIndex,nUnknowns,indexOffset = 0; 
   string fluxLimiter = "superbee";
+  Eigen::SparseMatrix<double,Eigen::RowMajor> Atemp;
   Eigen::MatrixXd temp,flux,dirac,inletTemp;
   Eigen::VectorXd inletDensity,inletVelocity,inletcP,outletTemp;        
   int getIndex(int iZ,int iR);

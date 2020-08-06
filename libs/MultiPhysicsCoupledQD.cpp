@@ -29,7 +29,6 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   // Initialize grey group qd object
   ggqd = new GreyGroupQD(mats,mesh,input,this);
   ggqd->indexOffset = 0;  
-  ggqd->GGSolver->assignPointers(&A,&x,&xPast,&b);
 
   // Initialize heat transfer object and set index offset
   heat = new HeatTransfer(mats,mesh,input,this);
@@ -46,7 +45,10 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   xPast.setOnes(nUnknowns); 
   b.setZero(nUnknowns);
 
-  // Initialize xPast 
+  // Assign pointers in ggqd object
+  ggqd->GGSolver->assignPointers(&A,&x,&xPast,&b);
+ 
+   // Initialize xPast 
   initializeXPast();
 
   // Check optional parameters
@@ -61,13 +63,14 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 /// @param [in] iR radial location
 /// @param [in] iEq equation index
 /// @param [in] coeff coefficient of flux source
-void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
+void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
+    Eigen::SparseMatrix<double,Eigen::RowMajor> * myA)
 {
 
   int iCF = 0; // index of cell-average flux value in index vector  
   vector<int> indices = ggqd->GGSolver->getIndices(iR,iZ);
 
-  A.coeffRef(iEq,indices[0]) += coeff; 
+  myA->coeffRef(iEq,indices[0]) += coeff; 
 
 };
 //==============================================================================
@@ -79,7 +82,8 @@ void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
 /// @param [in] iR radial location
 /// @param [in] iEq equation index
 /// @param [in] coeff coefficient of dnp source
-void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
+void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff,\
+    Eigen::SparseMatrix<double,Eigen::RowMajor> * myA)
 {
   int index,indexOffset;
   double groupLambda;
@@ -90,7 +94,7 @@ void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
     index = mgdnp->DNPs[iGroup]->getIndex(iZ,iR,indexOffset);
     groupLambda = mgdnp->DNPs[iGroup]->lambda;
 
-    A.coeffRef(iEq,index) += coeff*groupLambda;
+    myA->coeffRef(iEq,index) += coeff*groupLambda;
   }
 
 };

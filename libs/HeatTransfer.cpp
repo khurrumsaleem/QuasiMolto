@@ -60,6 +60,7 @@ void HeatTransfer::buildLinearSystem()
 {
   
   int myIndex,sIndex,nIndex,wIndex,eIndex,iEq = indexOffset;
+  int iEqTemp = 0;
   int nR = temp.cols()-1;
   int nZ = temp.rows()-1;
   double harmonicAvg,coeff;
@@ -68,6 +69,8 @@ void HeatTransfer::buildLinearSystem()
   updateBoundaryConditions();
   calcDiracs();
   calcFluxes();
+  
+  Atemp.resize(nUnknowns,mpqd->A.cols());
   
   for (int iZ = 0; iZ < temp.rows(); iZ++)
   {
@@ -82,22 +85,22 @@ void HeatTransfer::buildLinearSystem()
 
       gParams = mesh->getGeoParams(iR,iZ);
       
-      mpqd->A.coeffRef(iEq,myIndex) = mats->density(iZ,iR)*mats->cP(iZ,iR);
+      Atemp.coeffRef(iEqTemp,myIndex) = mats->density(iZ,iR)*mats->cP(iZ,iR);
       
       // East face
       if (iR == nR)
       {
         coeff = (-gParams[iEF]*mats->k(iZ,iR)\
         /mesh->drsCorner(iR))/gParams[iVol];
-        mpqd->A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+        Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
         mpqd->b(iEq) -= mesh->dt*coeff*wallT; 
       } else
       {
         harmonicAvg = pow(mesh->drsCorner(iR)/mats->k(iZ,iR)\
           + mesh->drsCorner(iR+1)/mats->k(iZ,iR+1),-1.0);
         coeff = -2.0*gParams[iEF]*harmonicAvg/gParams[iVol];
-        mpqd->A.coeffRef(iEq,eIndex) = mesh->dt*coeff;
-        mpqd->A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+        Atemp.coeffRef(iEqTemp,eIndex) = mesh->dt*coeff;
+        Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
       }
 
       // West face
@@ -106,8 +109,8 @@ void HeatTransfer::buildLinearSystem()
         harmonicAvg = pow(mesh->drsCorner(iR-1)/mats->k(iZ,iR-1)\
           + mesh->drsCorner(iR)/mats->k(iZ,iR),-1.0);
         coeff = 2.0*gParams[iWF]*harmonicAvg/gParams[iVol];
-        mpqd->A.coeffRef(iEq,wIndex) = -mesh->dt*coeff;
-        mpqd->A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
+        Atemp.coeffRef(iEqTemp,wIndex) = -mesh->dt*coeff;
+        Atemp.coeffRef(iEqTemp,myIndex) += mesh->dt*coeff;
       } 
 
       // North face
@@ -115,15 +118,15 @@ void HeatTransfer::buildLinearSystem()
       {
         coeff = (gParams[iNF]*mats->k(iZ,iR)\
         /mesh->dzsCorner(iZ))/gParams[iVol];
-        mpqd->A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
+        Atemp.coeffRef(iEqTemp,myIndex) += mesh->dt*coeff;
         mpqd->b(iEq) += mesh->dt*coeff*inletTemp(1,iR);             
       } else if (iZ != 0)
       {
         harmonicAvg = pow(mesh->dzsCorner(iZ-1)/mats->k(iZ-1,iR)\
           + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
         coeff = 2.0*gParams[iNF]*harmonicAvg/gParams[iVol];
-        mpqd->A.coeffRef(iEq,nIndex) = -mesh->dt*coeff;
-        mpqd->A.coeffRef(iEq,myIndex) += mesh->dt*coeff;
+        Atemp.coeffRef(iEqTemp,nIndex) = -mesh->dt*coeff;
+        Atemp.coeffRef(iEqTemp,myIndex) += mesh->dt*coeff;
       }
 
       // South face
@@ -131,15 +134,15 @@ void HeatTransfer::buildLinearSystem()
       {
         coeff = -(gParams[iSF]*mats->k(iZ,iR)\
         /mesh->dzsCorner(iZ))/gParams[iVol];
-        mpqd->A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+        Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
         mpqd->b(iEq) -= mesh->dt*coeff*inletTemp(0,iR);             
       } else if (iZ != nZ)
       {
         harmonicAvg = pow(mesh->dzsCorner(iZ+1)/mats->k(iZ+1,iR)\
           + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
         coeff = -2.0*gParams[iSF]*harmonicAvg/gParams[iVol];
-        mpqd->A.coeffRef(iEq,sIndex) = mesh->dt*coeff;
-        mpqd->A.coeffRef(iEq,myIndex) -= mesh->dt*coeff;
+        Atemp.coeffRef(iEqTemp,sIndex) = mesh->dt*coeff;
+        Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
       }
 
       // Time term
@@ -147,21 +150,24 @@ void HeatTransfer::buildLinearSystem()
 
       // Flux source term 
       coeff = -mesh->dt*mats->omega(iZ,iR)*mats->oneGroupXS->sigF(iZ,iR);
-      mpqd->fluxSource(iZ,iR,iEq,coeff);
+      mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
       
       // Gamma source term 
       coeff = -mesh->dt;
-      gammaSource(iZ,iR,iEq,coeff);
+      gammaSource(iZ,iR,iEqTemp,coeff);
 
       // Advection term
       mpqd->b(iEq) += (mesh->dt/mesh->dzsCorner(iZ))*(flux(iZ,iR)-flux(iZ+1,iR));
 
       // Iterate equation count
       iEq = iEq + 1;
+      iEqTemp = iEqTemp + 1;
   
     }
   }
    
+  mpqd->A.middleRows(indexOffset,nUnknowns) = Atemp; 
+
 };
 //==============================================================================
 
@@ -194,7 +200,7 @@ void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff)
       // Calculate gamma source coefficient 
       gammaSourceCoeff = coeff*localGamma*localOmega*localSigF;
       gammaSourceCoeff = localVolume*gammaSourceCoeff/totalVolume; 
-      mpqd->fluxSource(iZ,iR,iEq,gammaSourceCoeff);
+      mpqd->fluxSource(iZ,iR,iEq,gammaSourceCoeff,&Atemp);
       
     }
   }

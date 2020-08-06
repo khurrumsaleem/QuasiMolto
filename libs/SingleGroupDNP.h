@@ -14,6 +14,7 @@ class MultiGroupDNP; // forward declaration
 class SingleGroupDNP
 {
   public:
+    Eigen::SparseMatrix<double,Eigen::RowMajor> Atemp;
     Eigen::MatrixXd dnpConc,recircConc,flux,recircFlux,dirac,recircDirac;
     Eigen::MatrixXd inletConc,recircInletConc;
     Eigen::VectorXd inletVelocity,recircInletVelocity,outletConc,recircOutletConc;
