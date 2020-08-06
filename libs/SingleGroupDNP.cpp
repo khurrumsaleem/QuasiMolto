@@ -125,7 +125,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
     {
       myIndex = getIndex(iZ,iR,myIndexOffset);     
 
-      Atemp.coeffRef(iEqTemp,myIndex) = 1 + mesh->dt*lambda; 
+      Atemp.insert(iEqTemp,myIndex) = 1 + mesh->dt*lambda; 
 
       // Time term
       (*myb)(iEq) = myDNPConc(iZ,iR);

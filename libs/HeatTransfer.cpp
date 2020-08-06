@@ -63,7 +63,7 @@ void HeatTransfer::buildLinearSystem()
   int iEqTemp = 0;
   int nR = temp.cols()-1;
   int nZ = temp.rows()-1;
-  double harmonicAvg,coeff;
+  double harmonicAvg,coeff,cCoeff;
   vector<double> gParams;
 
   updateBoundaryConditions();
@@ -78,6 +78,10 @@ void HeatTransfer::buildLinearSystem()
 
     for (int iR = 0; iR < temp.cols(); iR++)
     {
+      // Reset center coefficient
+      cCoeff = 0;
+
+      // Get cell indices
       myIndex = getIndex(iZ,iR);     
       sIndex = getIndex(iZ+1,iR);     
       nIndex = getIndex(iZ-1,iR);     
@@ -86,22 +90,25 @@ void HeatTransfer::buildLinearSystem()
 
       gParams = mesh->getGeoParams(iR,iZ);
       
-      Atemp.coeffRef(iEqTemp,myIndex) = mats->density(iZ,iR)*mats->cP(iZ,iR);
+      //Atemp.insert(iEqTemp,myIndex) = mats->density(iZ,iR)*mats->cP(iZ,iR);
+      cCoeff = mats->density(iZ,iR)*mats->cP(iZ,iR);
       
       // East face
       if (iR == nR)
       {
         coeff = (-gParams[iEF]*mats->k(iZ,iR)\
         /mesh->drsCorner(iR))/gParams[iVol];
-        Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
+        //Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
+        cCoeff -= mesh->dt*coeff;
         mpqd->b(iEq) -= mesh->dt*coeff*wallT; 
       } else
       {
         harmonicAvg = pow(mesh->drsCorner(iR)/mats->k(iZ,iR)\
           + mesh->drsCorner(iR+1)/mats->k(iZ,iR+1),-1.0);
         coeff = -2.0*gParams[iEF]*harmonicAvg/gParams[iVol];
-        Atemp.coeffRef(iEqTemp,eIndex) = mesh->dt*coeff;
-        Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
+        Atemp.insert(iEqTemp,eIndex) = mesh->dt*coeff;
+        //Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
+        cCoeff -= mesh->dt*coeff;
       }
 
       // West face
@@ -110,8 +117,9 @@ void HeatTransfer::buildLinearSystem()
         harmonicAvg = pow(mesh->drsCorner(iR-1)/mats->k(iZ,iR-1)\
           + mesh->drsCorner(iR)/mats->k(iZ,iR),-1.0);
         coeff = 2.0*gParams[iWF]*harmonicAvg/gParams[iVol];
-        Atemp.coeffRef(iEqTemp,wIndex) = -mesh->dt*coeff;
-        Atemp.coeffRef(iEqTemp,myIndex) += mesh->dt*coeff;
+        Atemp.insert(iEqTemp,wIndex) = -mesh->dt*coeff;
+        //Atemp.coeffRef(iEqTemp,myIndex) += mesh->dt*coeff;
+        cCoeff += mesh->dt*coeff;
       } 
 
       // North face
@@ -119,15 +127,17 @@ void HeatTransfer::buildLinearSystem()
       {
         coeff = (gParams[iNF]*mats->k(iZ,iR)\
         /mesh->dzsCorner(iZ))/gParams[iVol];
-        Atemp.coeffRef(iEqTemp,myIndex) += mesh->dt*coeff;
+        //Atemp.coeffRef(iEqTemp,myIndex) += mesh->dt*coeff;
+        cCoeff += mesh->dt*coeff;
         mpqd->b(iEq) += mesh->dt*coeff*inletTemp(1,iR);             
       } else if (iZ != 0)
       {
         harmonicAvg = pow(mesh->dzsCorner(iZ-1)/mats->k(iZ-1,iR)\
           + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
         coeff = 2.0*gParams[iNF]*harmonicAvg/gParams[iVol];
-        Atemp.coeffRef(iEqTemp,nIndex) = -mesh->dt*coeff;
-        Atemp.coeffRef(iEqTemp,myIndex) += mesh->dt*coeff;
+        Atemp.insert(iEqTemp,nIndex) = -mesh->dt*coeff;
+        //Atemp.coeffRef(iEqTemp,myIndex) += mesh->dt*coeff;
+        cCoeff += mesh->dt*coeff;
       }
 
       // South face
@@ -135,16 +145,21 @@ void HeatTransfer::buildLinearSystem()
       {
         coeff = -(gParams[iSF]*mats->k(iZ,iR)\
         /mesh->dzsCorner(iZ))/gParams[iVol];
-        Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
+        //Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
+        cCoeff -= mesh->dt*coeff;
         mpqd->b(iEq) -= mesh->dt*coeff*inletTemp(0,iR);             
       } else if (iZ != nZ)
       {
         harmonicAvg = pow(mesh->dzsCorner(iZ+1)/mats->k(iZ+1,iR)\
           + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
         coeff = -2.0*gParams[iSF]*harmonicAvg/gParams[iVol];
-        Atemp.coeffRef(iEqTemp,sIndex) = mesh->dt*coeff;
-        Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
+        Atemp.insert(iEqTemp,sIndex) = mesh->dt*coeff;
+        //Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
+        cCoeff -= mesh->dt*coeff;
       }
+
+      // Insert cell center coefficient
+      Atemp.insert(iEqTemp,myIndex) = cCoeff;
 
       // Time term
       mpqd->b(iEq) += mats->density(iZ,iR)*mats->cP(iZ,iR)*temp(iZ,iR); 
