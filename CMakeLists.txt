@@ -66,7 +66,7 @@ target_link_libraries(
 )
 
 # Add compilier flags
-SET(CMAKE_CXX_FLAGS "-std=c++11 -Ofast -fopenmp -march=native -pipe")
+SET(CMAKE_CXX_FLAGS "-std=c++11 -Ofast -fopenmp -march=native")
 SET(CMAKE_CXX_FLAGS_DEBUG "-pg")
 
 # Enable testing
