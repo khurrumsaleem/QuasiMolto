@@ -76,6 +76,26 @@ void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
 //==============================================================================
 
 //==============================================================================
+/// Include a flux source in the linear system
+///
+/// @param [in] iZ axial location 
+/// @param [in] iR radial location
+/// @param [in] iEq equation index
+/// @param [in] coeff coefficient of flux source
+void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
+    Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA)
+{
+
+  int iCF = 0; // index of cell-average flux value in index vector  
+  vector<int> indices = ggqd->GGSolver->getIndices(iR,iZ);
+
+  (*myA)(iEq,indices[0]) += coeff; 
+
+};
+//==============================================================================
+
+
+//==============================================================================
 /// Include a dnp source in the linear system
 ///
 /// @param [in] iZ axial location 

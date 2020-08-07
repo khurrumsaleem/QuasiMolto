@@ -118,14 +118,21 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
   double coeff;
   Atemp.resize(nDNPUnknowns,myA->cols());
   Atemp.reserve(2*nDNPUnknowns);
+  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> testMat;
+  testMat.resize(nDNPUnknowns,myA->cols());
+  testMat.setZero();
 
   for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
   {
+    #pragma omp parallel for private(myIndex,iEq,iEqTemp)
     for (int iR = 0; iR < myDNPConc.cols(); iR++)
     {
       myIndex = getIndex(iZ,iR,myIndexOffset);     
+      iEq = getIndex(iZ,iR,myIndexOffset);     
+      iEqTemp = getIndex(iZ,iR,0);     
 
-      Atemp.insert(iEqTemp,myIndex) = 1 + mesh->dt*lambda; 
+      //Atemp.insert(iEqTemp,myIndex) = 1 + mesh->dt*lambda; 
+      testMat(iEqTemp,myIndex) = 1 + mesh->dt*lambda; 
 
       // Time term
       (*myb)(iEq) = myDNPConc(iZ,iR);
@@ -134,20 +141,22 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
       if (fluxSource)
       {
         coeff = -mesh->dt*mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
-        mgdnp->mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
+        mgdnp->mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&testMat);
+        //mgdnp->mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
       }
 
       // Advection term
       (*myb)(iEq) += (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
 
       // Iterate equation count
-      iEq = iEq + 1;
-      iEqTemp = iEqTemp + 1;
+      //iEq = iEq + 1;
+      //iEqTemp = iEqTemp + 1;
 
     }
   }
   
-  myA->middleRows(myIndexOffset,nDNPUnknowns) = Atemp; 
+  //myA->middleRows(myIndexOffset,nDNPUnknowns) = Atemp; 
+  myA->middleRows(myIndexOffset,nDNPUnknowns) = testMat.sparseView(); 
 };
 //==============================================================================
 

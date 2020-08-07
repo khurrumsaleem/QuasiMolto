@@ -70,14 +70,24 @@ void HeatTransfer::buildLinearSystem()
   calcDiracs();
   calcFluxes();
   
+  //Atemp.resize(nUnknowns,mpqd->A.cols());
+  //Atemp.reserve(5*nUnknowns);
+  
+  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> Atemp;
   Atemp.resize(nUnknowns,mpqd->A.cols());
-  Atemp.reserve(5*nUnknowns);
+  Atemp.setZero();
   
   for (int iZ = 0; iZ < temp.rows(); iZ++)
   {
 
+    #pragma omp parallel for private(myIndex,sIndex,nIndex,wIndex,eIndex,\
+        gParams,cCoeff,coeff,harmonicAvg,iEq,iEqTemp)
     for (int iR = 0; iR < temp.cols(); iR++)
     {
+      
+      iEq = getIndex(iZ,iR);
+      iEqTemp = iEq - indexOffset;
+
       // Reset center coefficient
       cCoeff = 0;
 
@@ -106,7 +116,8 @@ void HeatTransfer::buildLinearSystem()
         harmonicAvg = pow(mesh->drsCorner(iR)/mats->k(iZ,iR)\
           + mesh->drsCorner(iR+1)/mats->k(iZ,iR+1),-1.0);
         coeff = -2.0*gParams[iEF]*harmonicAvg/gParams[iVol];
-        Atemp.insert(iEqTemp,eIndex) = mesh->dt*coeff;
+        //Atemp.insert(iEqTemp,eIndex) = mesh->dt*coeff;
+        Atemp(iEqTemp,eIndex) = mesh->dt*coeff;
         //Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
         cCoeff -= mesh->dt*coeff;
       }
@@ -117,7 +128,8 @@ void HeatTransfer::buildLinearSystem()
         harmonicAvg = pow(mesh->drsCorner(iR-1)/mats->k(iZ,iR-1)\
           + mesh->drsCorner(iR)/mats->k(iZ,iR),-1.0);
         coeff = 2.0*gParams[iWF]*harmonicAvg/gParams[iVol];
-        Atemp.insert(iEqTemp,wIndex) = -mesh->dt*coeff;
+        //Atemp.insert(iEqTemp,wIndex) = -mesh->dt*coeff;
+        Atemp(iEqTemp,wIndex) = -mesh->dt*coeff;
         //Atemp.coeffRef(iEqTemp,myIndex) += mesh->dt*coeff;
         cCoeff += mesh->dt*coeff;
       } 
@@ -135,7 +147,8 @@ void HeatTransfer::buildLinearSystem()
         harmonicAvg = pow(mesh->dzsCorner(iZ-1)/mats->k(iZ-1,iR)\
           + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
         coeff = 2.0*gParams[iNF]*harmonicAvg/gParams[iVol];
-        Atemp.insert(iEqTemp,nIndex) = -mesh->dt*coeff;
+        //Atemp.insert(iEqTemp,nIndex) = -mesh->dt*coeff;
+        Atemp(iEqTemp,nIndex) = -mesh->dt*coeff;
         //Atemp.coeffRef(iEqTemp,myIndex) += mesh->dt*coeff;
         cCoeff += mesh->dt*coeff;
       }
@@ -153,36 +166,39 @@ void HeatTransfer::buildLinearSystem()
         harmonicAvg = pow(mesh->dzsCorner(iZ+1)/mats->k(iZ+1,iR)\
           + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
         coeff = -2.0*gParams[iSF]*harmonicAvg/gParams[iVol];
-        Atemp.insert(iEqTemp,sIndex) = mesh->dt*coeff;
+        //Atemp.insert(iEqTemp,sIndex) = mesh->dt*coeff;
+        Atemp(iEqTemp,sIndex) = mesh->dt*coeff;
         //Atemp.coeffRef(iEqTemp,myIndex) -= mesh->dt*coeff;
         cCoeff -= mesh->dt*coeff;
       }
 
       // Insert cell center coefficient
-      Atemp.insert(iEqTemp,myIndex) = cCoeff;
+      //Atemp.insert(iEqTemp,myIndex) = cCoeff;
+      Atemp(iEqTemp,myIndex) = cCoeff;
 
       // Time term
       mpqd->b(iEq) += mats->density(iZ,iR)*mats->cP(iZ,iR)*temp(iZ,iR); 
 
       // Flux source term 
       coeff = -mesh->dt*mats->omega(iZ,iR)*mats->oneGroupXS->sigF(iZ,iR);
+      //mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
       mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
       
       // Gamma source term 
       coeff = -mesh->dt;
-      gammaSource(iZ,iR,iEqTemp,coeff);
+      //gammaSource(iZ,iR,iEqTemp,coeff);
 
       // Advection term
       mpqd->b(iEq) += (mesh->dt/mesh->dzsCorner(iZ))*(flux(iZ,iR)-flux(iZ+1,iR));
 
       // Iterate equation count
-      iEq = iEq + 1;
-      iEqTemp = iEqTemp + 1;
+      //iEq = iEq + 1;
+      //iEqTemp = iEqTemp + 1;
   
     }
   }
    
-  mpqd->A.middleRows(indexOffset,nUnknowns) = Atemp; 
+  mpqd->A.middleRows(indexOffset,nUnknowns) = Atemp.sparseView(); 
 
 };
 //==============================================================================
@@ -194,7 +210,8 @@ void HeatTransfer::buildLinearSystem()
 /// @param [in] iR radial index 
 /// @param [in] iEq equation index 
 /// @param [in] coeff Coefficient to multiple gamma source term by  
-void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff)
+void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff,\
+    Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA)
 {
   
   int myIndex;
@@ -216,7 +233,7 @@ void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff)
       // Calculate gamma source coefficient 
       gammaSourceCoeff = coeff*localGamma*localOmega*localSigF;
       gammaSourceCoeff = localVolume*gammaSourceCoeff/totalVolume; 
-      mpqd->fluxSource(iZ,iR,iEq,gammaSourceCoeff,&Atemp);
+      mpqd->fluxSource(iZ,iR,iEq,gammaSourceCoeff,myA);
       
     }
   }
