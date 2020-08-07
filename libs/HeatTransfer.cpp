@@ -63,12 +63,15 @@ void HeatTransfer::buildLinearSystem()
   int iEqTemp = 0;
   int nR = temp.cols()-1;
   int nZ = temp.rows()-1;
-  double harmonicAvg,coeff,cCoeff;
+  double harmonicAvg,coeff,cCoeff,volAvgGammaDep;
   vector<double> gParams;
 
   updateBoundaryConditions();
   calcDiracs();
   calcFluxes();
+
+  // Calculate core-average gamma deposition term
+  volAvgGammaDep = calcExplicitGammaSource();
   
   //Atemp.resize(nUnknowns,mpqd->A.cols());
   //Atemp.reserve(5*nUnknowns);
@@ -185,8 +188,11 @@ void HeatTransfer::buildLinearSystem()
       mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
       
       // Gamma source term 
-      coeff = -mesh->dt;
+      coeff = mesh->dt;
+      mpqd->b(iEq) += coeff * mats->gamma(iZ,iR) * volAvgGammaDep;
+      cout << "Gamma coefficient: " << coeff * mats->gamma(iZ,iR) * volAvgGammaDep << endl;
       //gammaSource(iZ,iR,iEqTemp,coeff);
+      
 
       // Advection term
       mpqd->b(iEq) += (mesh->dt/mesh->dzsCorner(iZ))*(flux(iZ,iR)-flux(iZ+1,iR));
@@ -241,6 +247,39 @@ void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff,\
 };
 //==============================================================================
 
+//==============================================================================
+/// Calculate core-average gamma energy deposition term
+///
+double HeatTransfer::calcExplicitGammaSource()
+{
+  
+  double localVolume,localFlux,totalVolume,localSigF,localOmega,\
+    volAvgGammaDep = 0;
+ 
+  totalVolume = M_PI*mesh->R*mesh->R*mesh->Z;
+ 
+  for (int iR = 0; iR < temp.cols(); iR++)
+  {
+    for (int iZ = 0; iZ < temp.rows(); iZ++)
+    {
+      // Get local parameters
+      localSigF = mats->oneGroupXS->sigF(iZ,iR);
+      localOmega = mats->omega(iZ,iR);
+      localFlux = mpqd->ggqd->sFlux(iZ,iR);
+      localVolume = mesh->getGeoParams(iR,iZ)[0];
+ 
+      // Calculate gamma source coefficient 
+      volAvgGammaDep += localVolume*(localOmega*localSigF*localFlux); 
+      
+    }
+  }
+      
+  volAvgGammaDep = volAvgGammaDep/totalVolume; 
+  
+  return volAvgGammaDep;
+   
+};
+//==============================================================================
 
 //==============================================================================
 /// Calculate energy diracs

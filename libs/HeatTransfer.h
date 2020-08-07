@@ -3,6 +3,7 @@
 
 #include "Mesh.h"
 #include "Materials.h"
+#include "GreyGroupQD.h"
 
 using namespace std;
 
@@ -31,6 +32,7 @@ class HeatTransfer
   void buildLinearSystem();
   void gammaSource(int iZ,int iR,int iEq,double coeff,\
       Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA);
+  double calcExplicitGammaSource();
   void calcDiracs();
   void calcFluxes();
   void getTemp();
