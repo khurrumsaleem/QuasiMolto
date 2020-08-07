@@ -80,11 +80,11 @@ void HeatTransfer::buildLinearSystem()
   Atemp.resize(nUnknowns,mpqd->A.cols());
   Atemp.setZero();
   
+  #pragma omp parallel for private(myIndex,sIndex,nIndex,wIndex,eIndex,\
+    gParams,cCoeff,coeff,harmonicAvg,iEq,iEqTemp)
   for (int iZ = 0; iZ < temp.rows(); iZ++)
   {
 
-    #pragma omp parallel for private(myIndex,sIndex,nIndex,wIndex,eIndex,\
-        gParams,cCoeff,coeff,harmonicAvg,iEq,iEqTemp)
     for (int iR = 0; iR < temp.cols(); iR++)
     {
       

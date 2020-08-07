@@ -122,9 +122,9 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
   testMat.resize(nDNPUnknowns,myA->cols());
   testMat.setZero();
 
+  #pragma omp parallel for private(myIndex,iEq,iEqTemp)
   for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
   {
-    #pragma omp parallel for private(myIndex,iEq,iEqTemp)
     for (int iR = 0; iR < myDNPConc.cols(); iR++)
     {
       myIndex = getIndex(iZ,iR,myIndexOffset);     
