@@ -190,7 +190,6 @@ void HeatTransfer::buildLinearSystem()
       // Gamma source term 
       coeff = mesh->dt;
       mpqd->b(iEq) += coeff * mats->gamma(iZ,iR) * volAvgGammaDep;
-      cout << "Gamma coefficient: " << coeff * mats->gamma(iZ,iR) * volAvgGammaDep << endl;
       //gammaSource(iZ,iR,iEqTemp,coeff);
       
 
