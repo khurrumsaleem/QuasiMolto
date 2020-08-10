@@ -253,7 +253,7 @@ double HeatTransfer::calcExplicitGammaSource()
 {
   
   double localVolume,localFlux,totalVolume,localSigF,localOmega,\
-    volAvgGammaDep = 0;
+    volAvgGammaDep = 0,fuelVol = 0;
  
   totalVolume = M_PI*mesh->R*mesh->R*mesh->Z;
  
@@ -267,13 +267,16 @@ double HeatTransfer::calcExplicitGammaSource()
       localFlux = mpqd->ggqd->sFlux(iZ,iR);
       localVolume = mesh->getGeoParams(iR,iZ)[0];
  
-      // Calculate gamma source coefficient 
-      volAvgGammaDep += localVolume*(localOmega*localSigF*localFlux); 
-      
+      // Calculate gamma source coefficient
+      if (localSigF > 1E-6)
+      {
+        volAvgGammaDep += localVolume*(localOmega*localSigF*localFlux); 
+        fuelVol += localVolume;
+      }
     }
   }
       
-  volAvgGammaDep = volAvgGammaDep/totalVolume; 
+  volAvgGammaDep = volAvgGammaDep/fuelVol; 
   
   return volAvgGammaDep;
    
