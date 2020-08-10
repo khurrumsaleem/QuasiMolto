@@ -268,15 +268,11 @@ double HeatTransfer::calcExplicitGammaSource()
       localVolume = mesh->getGeoParams(iR,iZ)[0];
  
       // Calculate gamma source coefficient
-      if (localSigF > 1E-6)
-      {
-        volAvgGammaDep += localVolume*(localOmega*localSigF*localFlux); 
-        fuelVol += localVolume;
-      }
+      volAvgGammaDep += localVolume*(localOmega*localSigF*localFlux); 
     }
   }
       
-  volAvgGammaDep = volAvgGammaDep/fuelVol; 
+  volAvgGammaDep = volAvgGammaDep/totalVolume; 
   
   return volAvgGammaDep;
    
