@@ -30,7 +30,7 @@ class MultilevelCoupling
     double resetThreshold = 1E100, relaxTolELOT = 3E-4, relaxTolMGLOQD = 3E-4;
     bool iterativeMGLOQD = false, iterativeELOT = false;
     bool solveOneStep();
-    bool solveOneStepResidualBalance();
+    bool solveOneStepResidualBalance(bool outputVars);
     bool initialSolve();
     void solveMGHOT();
     void solveMGLOQD();

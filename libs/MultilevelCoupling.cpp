@@ -227,7 +227,7 @@ bool MultilevelCoupling::initialSolve()
 //==============================================================================
 /// Collapse nuclear data with flux and current weighting 
 ///
-bool MultilevelCoupling::solveOneStepResidualBalance()
+bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
 {
 
   Eigen::VectorXd xCurrentIter, xLastMGHOTIter, xLastMGLOQDIter,xLastELOTIter,\
@@ -462,12 +462,15 @@ bool MultilevelCoupling::solveOneStepResidualBalance()
   cout << "ELOT iterations: " << itersELOT << endl;
  
   // Output iteration counts 
-  mesh->output->write(outputDir,"MGHOT_iters",itersMGHOT);
-  mesh->output->write(outputDir,"MGLOQD_iters",itersMGLOQD);
-  mesh->output->write(outputDir,"ELOT_iters",itersELOT);
-  mesh->output->write(outputDir,"iterates",iters);
-  mesh->output->write(outputDir,"flux_residuals",fluxResiduals);
-  mesh->output->write(outputDir,"temp_residuals",tempResiduals);
+  if (outputVars)
+  {
+    mesh->output->write(outputDir,"MGHOT_iters",itersMGHOT);
+    mesh->output->write(outputDir,"MGLOQD_iters",itersMGLOQD);
+    mesh->output->write(outputDir,"ELOT_iters",itersELOT);
+    mesh->output->write(outputDir,"iterates",iters);
+    mesh->output->write(outputDir,"flux_residuals",fluxResiduals);
+    mesh->output->write(outputDir,"temp_residuals",tempResiduals);
+  }
 
   return true;
 
@@ -584,20 +587,23 @@ void MultilevelCoupling::solveTransient()
     cout << endl;
 
     startTime = clock(); 
-    if(solveOneStepResidualBalance())
+    if(solveOneStepResidualBalance(mesh->outputOnStep[iTime]))
     {
       // Report solution time
       duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
       totalDuration = totalDuration + duration; 
       cout << "Solution computed in " << duration << " seconds." << endl;      
-      mesh->output->write(outputDir,"Solve_Time",duration);
 
       // Output and update variables
       mgqd->updateVarsAfterConvergence(); 
       mpqd->updateVarsAfterConvergence(); 
-      mgqd->writeVars();
-      mpqd->writeVars(); 
-      mats->oneGroupXS->writeVars();
+      if (mesh->outputOnStep[iTime])
+      {
+        mgqd->writeVars();
+        mpqd->writeVars(); 
+        mats->oneGroupXS->writeVars();
+        mesh->output->write(outputDir,"Solve_Time",duration);
+      }
       mesh->advanceOneTimeStep();
     }  
     else 

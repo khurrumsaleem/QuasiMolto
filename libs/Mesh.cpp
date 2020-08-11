@@ -686,6 +686,44 @@ void Mesh::calcTimeMesh(){
       ts.push_back(timeAccum);
       dts.push_back(dt);
     }
+
+    // Set up vector indicating whether to print
+    if ((*input)["parameters"]["outputEveryNSteps"])
+    {
+      int intervalCount = 0;
+      int interval = (*input)["parameters"]["outputEveryNSteps"].as<int>();
+
+      for (int iTime = 0; iTime < nT; iTime++)
+      {
+        intervalCount += 1;
+        if (intervalCount == interval)
+        {
+          // Print on this step
+          outputOnStep.push_back(true);
+
+          // Reset interval count
+          intervalCount = 0;
+        }
+        else
+        {
+          // Don't print on this step
+          outputOnStep.push_back(false);
+        }
+      } // end iTime
+
+      // Ensure the variables on the last step are output
+      outputOnStep.back() = true;
+    }
+    else
+    {
+      // Print on every time step
+      for (int iTime = 0; iTime < nT; iTime++)
+      {
+        // Print on this step
+        outputOnStep.push_back(true);
+
+      }
+    }
   }
 }
 //==============================================================================

@@ -65,6 +65,7 @@ class Mesh
         vector< vector<double> > cellVSA;
         vector<double> dts;
         vector<double> ts;
+        vector<bool> outputOnStep;
         rowvec dzs,dzsCorner;
         rowvec drs,drsCorner;
 	rowvec rEdge;
