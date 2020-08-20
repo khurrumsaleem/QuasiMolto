@@ -356,7 +356,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
         }
        
         // Check converge criteria 
-        if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] or\
+        if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
             eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1]) 
         {
           convergedELOT = true;
