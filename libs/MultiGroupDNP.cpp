@@ -185,7 +185,22 @@ void MultiGroupDNP::buildRecircLinearSystem()
 //==============================================================================
 
 //==============================================================================
-/// Build linear system for DNPs inmultiphysics coupled quasidiffusion system
+/// Build linear system for steady state DNP recirculation
+///
+void MultiGroupDNP::buildSteadyStateRecircLinearSystem()
+{
+  recircA.setZero();
+  recircb.setZero();
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->buildSteadyStateRecircLinearSystem();
+  }
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system for transient DNPs in multiphysics coupled 
+/// quasidiffusion system
 ///
 void MultiGroupDNP::buildCoreLinearSystem()
 {
@@ -195,6 +210,20 @@ void MultiGroupDNP::buildCoreLinearSystem()
   }
 };
 //==============================================================================
+
+//==============================================================================
+/// Build linear system for steady state DNPs in multiphysics coupled 
+/// quasidiffusion system
+///
+void MultiGroupDNP::buildSteadyStateCoreLinearSystem()
+{
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->buildSteadyStateCoreLinearSystem();
+  }
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Extract core DNP concentrations into 2D matrices in each group 

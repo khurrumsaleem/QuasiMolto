@@ -28,8 +28,10 @@ class MultiGroupDNP
         MultiPhysicsCoupledQD * myMPQD,\
         int myIndexOffset);
     void readInput();
-    void buildRecircLinearSystem();
     void buildCoreLinearSystem();
+    void buildSteadyStateCoreLinearSystem();
+    void buildRecircLinearSystem();
+    void buildSteadyStateRecircLinearSystem();
     void getCoreDNPConc();
     void getCumulativeDNPDecaySource();
     void setCoreDNPConc();
