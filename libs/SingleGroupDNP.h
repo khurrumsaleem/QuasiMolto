@@ -7,6 +7,7 @@
 using namespace std;
 
 class MultiGroupDNP; // forward declaration
+class GreyGroupQD; // forward declaration
 
 //==============================================================================
 //! Contains information and builds linear system for a single precursor group
@@ -36,10 +37,12 @@ class SingleGroupDNP
     int getIndex(int iZ,int iR,int indexOffset);
     void assignBoundaryIndices();
     void updateBoundaryConditions();
-    void calcRecircDNPFluxes();
     void calcCoreDNPFluxes();
-    void buildRecircLinearSystem();
+    void calcRecircDNPFluxes();
     void buildCoreLinearSystem();
+    void buildSteadyStateCoreLinearSystem();
+    void buildRecircLinearSystem();
+    void buildSteadyStateRecircLinearSystem();
     void buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajor> * myA,\
         Eigen::VectorXd * myb,\
         Eigen::MatrixXd myDNPConc,\
@@ -47,6 +50,16 @@ class SingleGroupDNP
         rowvec dzs,\
         int myIndexOffset,
         bool fluxSource = true);
+    void buildSteadyStateLinearSystem(\
+        Eigen::SparseMatrix<double,Eigen::RowMajor> * myA,\
+        Eigen::VectorXd * myb,\
+        Eigen::MatrixXd myDNPConc,\
+        Eigen::MatrixXd myDNPFlux,\
+        Eigen::MatrixXd myInletDNP,\
+        rowvec dzs,\
+        int myIndexOffset,
+        bool fluxSource = true);
+
     Eigen::MatrixXd getInitialConc(double initConc);
     Eigen::MatrixXd calcDiracs(Eigen::MatrixXd dnpConc,\
         Eigen::MatrixXd inletConc,\
@@ -54,6 +67,11 @@ class SingleGroupDNP
     Eigen::MatrixXd calcFluxes(Eigen::MatrixXd myDNPConc,\
         Eigen::MatrixXd myFlowVelocity,\
         Eigen::MatrixXd dirac,\
+        Eigen::MatrixXd inletConc,\
+        Eigen::VectorXd inletVelocity,\
+        rowvec dzs);
+    Eigen::MatrixXd calcImplicitFluxes(Eigen::MatrixXd myDNPConc,\
+        Eigen::MatrixXd myFlowVelocity,\
         Eigen::MatrixXd inletConc,\
         Eigen::VectorXd inletVelocity,\
         rowvec dzs);

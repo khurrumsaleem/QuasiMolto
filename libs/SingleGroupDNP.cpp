@@ -5,6 +5,7 @@
 #include "SingleGroupDNP.h"
 #include "MultiGroupDNP.h"
 #include "MultiPhysicsCoupledQD.h"
+#include "GreyGroupQD.h"
 
 using namespace std;
 
@@ -148,14 +149,124 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
       // Advection term
       (*myb)(iEq) += (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
 
-      // Iterate equation count
-      //iEq = iEq + 1;
-      //iEqTemp = iEqTemp + 1;
 
     }
   }
   
   //myA->middleRows(myIndexOffset,nDNPUnknowns) = Atemp; 
+  myA->middleRows(myIndexOffset,nDNPUnknowns) = testMat.sparseView(); 
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system for this precursor group. Utilized for building the core
+///   and recirculation linear system. 
+///
+/// @param [in] myA pointer to linear system to build in
+/// @param [in] myb pointer to RHS of linear system
+/// @param [in] myDNPConc DNP concentration at last time step
+/// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
+/// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
+/// @param [in] dzs axial heights on advecting mesh
+/// @param [in] myIndexOffset row to start building linear system on 
+/// @param [in] fluxSource indicator for whether a flux source is present 
+void SingleGroupDNP::buildSteadyStateLinearSystem(\
+    Eigen::SparseMatrix<double,Eigen::RowMajor> * myA,\
+    Eigen::VectorXd * myb,\
+    Eigen::MatrixXd myDNPConc,\
+    Eigen::MatrixXd myDNPFlux,\
+    Eigen::MatrixXd myInletDNP,\
+    rowvec dzs,\
+    int myIndexOffset,\
+    bool fluxSource)
+{
+
+  //int myIndex,iEq = myIndexOffset;
+  int upwindIndex,myIndex,iEq = myIndexOffset;
+  int iEqTemp=0,nDNPUnknowns = myDNPConc.rows()*myDNPConc.cols();
+  double fissionCoeff,keff,neutronFlux;
+  Atemp.resize(nDNPUnknowns,myA->cols());
+  Atemp.reserve(2*nDNPUnknowns);
+  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> testMat;
+  testMat.resize(nDNPUnknowns,myA->cols());
+  testMat.setZero();
+
+
+  if (mats->posVelocity) 
+  {
+#pragma omp parallel for private(myIndex,iEq,iEqTemp)
+    for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
+    {
+      for (int iR = 0; iR < myDNPConc.cols(); iR++)
+      {
+        myIndex = getIndex(iZ,iR,myIndexOffset);     
+        upwindIndex = getIndex(iZ-1,iR,myIndexOffset);     
+        iEq = getIndex(iZ,iR,myIndexOffset);     
+        iEqTemp = getIndex(iZ,iR,0);     
+
+        // DNP decay term
+        testMat(iEqTemp,myIndex) = lambda; 
+
+        // Flux source term 
+        if (fluxSource)
+        {
+          fissionCoeff = mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
+          keff = mats->oneGroupXS->keff; 
+          neutronFlux = mgdnp->mpqd->ggqd->sFlux(iZ,iR);
+          (*myb)(iEq) = fissionCoeff*neutronFlux/keff;
+        }
+
+        // Advection terms
+
+        // Upwind cell
+        if (iZ == 0) // boundary case
+          (*myb)(iEq) += myDNPFlux(iZ,iR)*myInletDNP(2,iR)/dzs(iZ);
+        else
+          testMat(iEq,upwindIndex) = -myDNPFlux(iZ,iR)/dzs(iZ);
+
+        // Primary cell
+        testMat(iEq,myIndex) += myDNPFlux(iZ+1,iR)/dzs(iZ);
+      }
+    }
+  }
+  else
+  {
+#pragma omp parallel for private(myIndex,iEq,iEqTemp)
+    for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
+    {
+      for (int iR = 0; iR < myDNPConc.cols(); iR++)
+      {
+        myIndex = getIndex(iZ,iR,myIndexOffset);     
+        upwindIndex = getIndex(iZ+1,iR,myIndexOffset);     
+        iEq = getIndex(iZ,iR,myIndexOffset);     
+        iEqTemp = getIndex(iZ,iR,0);     
+
+        testMat(iEqTemp,myIndex) = lambda; 
+
+        // Flux source term 
+        if (fluxSource)
+        {
+          fissionCoeff = mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
+          keff = mats->oneGroupXS->keff; 
+          neutronFlux = mgdnp->mpqd->ggqd->sFlux(iZ,iR);
+          (*myb)(iEq) = fissionCoeff*neutronFlux/keff;
+        }
+
+        // Advection terms
+    
+        // Upwind cell
+        if (iZ == myDNPConc.rows()) // boundary case
+          (*myb)(iEq) -= myDNPFlux(iZ+1,iR)*myInletDNP(2,iR)/dzs(iZ);
+        else
+          testMat(iEq,upwindIndex) = myDNPFlux(iZ+1,iR)/dzs(iZ);
+    
+        // Primary cell
+        testMat(iEq,myIndex) -= myDNPFlux(iZ,iR)/dzs(iZ);
+      }
+    }
+  }
+
+  // Splice testMat into linear system
   myA->middleRows(myIndexOffset,nDNPUnknowns) = testMat.sparseView(); 
 };
 //==============================================================================
@@ -336,6 +447,73 @@ Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
                                  + 0.5*abs(vel)\
                                  *(1-abs(vel*mesh->dt/dzs(lastFluxIndex-1)))\
                                  *myDirac(lastFluxIndex,iR);
+
+    }
+  }
+
+  return myFlux;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Calculate implicit fluxes to model advection of precursors
+///
+/// @param [in] myDNPConc DNP concentration at last time step
+/// @param [in] myFlowVelocity flow velocity acting on precursors  
+/// @param [in] myDirac diracs to be used in flux calculation
+/// @param [in] myInletConc DNP concentration at inlet
+/// @param [in] myInletVelocity velocity at inlet
+/// @param [in] dzs axial heights on advecting mesh
+/// @param [out] myFlux fluxes used to model precursor advection
+Eigen::MatrixXd SingleGroupDNP::calcImplicitFluxes(Eigen::MatrixXd myDNPConc,\
+    Eigen::MatrixXd myFlowVelocity,\
+    Eigen::MatrixXd myInletConc,\
+    Eigen::VectorXd myInletVelocity,
+    rowvec dzs)
+{
+
+  // Declare temporary variables
+  Eigen::MatrixXd myFlux(dnpConc.rows()+1,dnpConc.cols());
+  double vel; // shorthand for velocity
+  int lastFluxIndex = myFlux.rows()-1;
+
+  // If velocity is positive
+  if (mats->posVelocity) {
+
+    for (int iR = 0; iR < myFlux.cols(); iR++)
+    {
+      // Handle iZ = 0 case
+      vel = myInletVelocity(iR);
+      myFlux(0,iR) = vel;
+
+      // Handle all other cases
+      for (int iZ = 1; iZ < myFlux.rows(); iZ++)
+      {
+        vel = myFlowVelocity(iZ-1,iR);
+        myFlux(iZ,iR) = vel;
+      }
+
+    }
+
+  } 
+  // If velocity is negative
+  else
+  {
+
+    for (int iR = 0; iR < myFlux.cols(); iR++)
+    {
+
+      // Handle all other cases
+      for (int iZ = 0; iZ < myFlux.rows()-1; iZ++)
+      {
+        vel = myFlowVelocity(iZ,iR);
+        myFlux(iZ,iR) = vel;
+      }
+
+      // Handle iZ = nZ case
+      vel = myInletVelocity(iR);
+      myFlux(lastFluxIndex,iR) = vel;
 
     }
   }
@@ -547,7 +725,63 @@ void SingleGroupDNP::calcCoreDNPFluxes()
 //==============================================================================
 
 //==============================================================================
-/// Calculate theta factor in flux limiting scheme
+/// Build linear system governing transient core DNP concentrations
+///
+void SingleGroupDNP::buildCoreLinearSystem()
+{
+
+  Eigen::MatrixXd coreDirac,coreFlux;
+
+  updateBoundaryConditions();
+
+  coreDirac = calcDiracs(dnpConc,\
+      inletConc,\
+      outletConc);
+
+  coreFlux = calcFluxes(dnpConc,\
+      mats->flowVelocity,\
+      coreDirac,\
+      inletConc,\
+      inletVelocity,\
+      mesh->dzsCorner);
+
+  buildLinearSystem(&(mgdnp->mpqd->A),\
+      &(mgdnp->mpqd->b),\
+      dnpConc,\
+      coreFlux,\
+      mesh->dzsCorner,\
+      coreIndexOffset);
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system governing steady state core DNP concentrations
+///
+void SingleGroupDNP::buildSteadyStateCoreLinearSystem()
+{
+
+  Eigen::MatrixXd coreFlux;
+
+  updateBoundaryConditions();
+
+  coreFlux = calcImplicitFluxes(dnpConc,\
+      mats->flowVelocity,\
+      inletConc,\
+      inletVelocity,\
+      mesh->dzsCorner);
+
+  buildSteadyStateLinearSystem(&(mgdnp->mpqd->A),\
+      &(mgdnp->mpqd->b),\
+      dnpConc,\
+      coreFlux,\
+      inletConc,\
+      mesh->dzsCorner,\
+      coreIndexOffset);
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system governing transient recirulation DNP concentrations
 ///
 void SingleGroupDNP::buildRecircLinearSystem()
 {
@@ -579,34 +813,33 @@ void SingleGroupDNP::buildRecircLinearSystem()
 //==============================================================================
 
 //==============================================================================
-/// Calculate theta factor in flux limiting scheme
+/// Build linear system governing steady state recirulation DNP concentrations
 ///
-void SingleGroupDNP::buildCoreLinearSystem()
+void SingleGroupDNP::buildSteadyStateRecircLinearSystem()
 {
 
-  Eigen::MatrixXd coreDirac,coreFlux;
+  Eigen::MatrixXd recircFlux,dumbySigF;
 
   updateBoundaryConditions();
 
-  coreDirac = calcDiracs(dnpConc,\
-      inletConc,\
-      outletConc);
+  recircFlux = calcImplicitFluxes(recircConc,\
+      mats->recircFlowVelocity,\
+      recircInletConc,\
+      recircInletVelocity,\
+      mesh->dzsCornerRecirc);
 
-  coreFlux = calcFluxes(dnpConc,\
-      mats->flowVelocity,\
-      coreDirac,\
-      inletConc,\
-      inletVelocity,\
-      mesh->dzsCorner);
+  buildSteadyStateLinearSystem(&(mgdnp->recircA),\
+      &(mgdnp->recircb),\
+      recircConc,\
+      recircFlux,\
+      recircInletConc,\
+      mesh->dzsCornerRecirc,\
+      recircIndexOffset,\
+      false);
 
-  buildLinearSystem(&(mgdnp->mpqd->A),\
-      &(mgdnp->mpqd->b),\
-      dnpConc,\
-      coreFlux,\
-      mesh->dzsCorner,\
-      coreIndexOffset);
 };
 //==============================================================================
+
 
 //==============================================================================
 /// Assign boundary indices depending on direction of flow velocity
