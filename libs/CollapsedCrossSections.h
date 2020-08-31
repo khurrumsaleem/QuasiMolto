@@ -24,6 +24,7 @@ class CollapsedCrossSections
     Eigen::MatrixXd sigT,sigS,sigF,rSigTR,zSigTR,neutV,neutVPast,rNeutV,\
       rNeutVPast,zNeutV,zNeutVPast,qdFluxCoeff,Ezz,Err,Erz,rZeta1,rZeta2,\
       rZeta,zZeta1,zZeta2,zZeta; 
+    double keff,kold;
     vector<Eigen::MatrixXd> groupDNPFluxCoeff; 
     vector<Eigen::MatrixXd> groupSigS; 
     vector<Eigen::MatrixXd> groupUpscatterCoeff; 
