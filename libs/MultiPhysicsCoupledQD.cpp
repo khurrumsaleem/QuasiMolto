@@ -152,6 +152,38 @@ void MultiPhysicsCoupledQD::buildLinearSystem()
 //==============================================================================
 
 //==============================================================================
+/// Build linear system for multiphysics coupled quasidiffusion system
+///
+void MultiPhysicsCoupledQD::buildSteadyStateLinearSystem()
+{
+
+  // Get number of non-zero elements in sparse matrix to optimize building 
+  // linear system
+  int nonZeros = A.nonZeros(); 
+
+  // Reset linear system
+  A.setZero();
+  A.reserve(nonZeros); 
+  x.setZero();
+  b.setZero();
+
+  // Build QD system
+  ggqd->buildLinearSystem();
+
+  // Build heat transfer system
+  heat->buildSteadyStateLinearSystem();
+
+  // Build delayed neutron precursor balance system in core
+  mgdnp->buildSteadyStateCoreLinearSystem();  
+
+  // Build delayed neutron precursor balance system in recirculation loop
+  mgdnp->buildSteadyStateRecircLinearSystem();  
+
+};
+//==============================================================================
+
+
+//==============================================================================
 /// Map values in multiphysics objects into xPast
 ///
 void MultiPhysicsCoupledQD::initializeXPast()

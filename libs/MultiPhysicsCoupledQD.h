@@ -41,6 +41,7 @@ class MultiPhysicsCoupledQD
       Eigen::SparseMatrix<double,Eigen::RowMajor> * myA);
     void initializeXPast();
     void buildLinearSystem();
+    void buildSteadyStateLinearSystem();
     void solveLinearSystem();
     void solveLinearSystemIterative(Eigen::VectorXd xGuess);
     int solveSuperLU();
