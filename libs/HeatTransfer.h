@@ -30,11 +30,13 @@ class HeatTransfer
   Eigen::VectorXd inletDensity,inletVelocity,inletcP,outletTemp;        
   int getIndex(int iZ,int iR);
   void buildLinearSystem();
+  void buildSteadyStateLinearSystem();
   void gammaSource(int iZ,int iR,int iEq,double coeff,\
       Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA);
   double calcExplicitGammaSource();
   void calcDiracs();
   void calcFluxes();
+  void calcImplicitFluxes();
   void getTemp();
   void setTemp();
   Eigen::MatrixXd returnCurrentTemp();
