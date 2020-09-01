@@ -478,18 +478,119 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
 //==============================================================================
 
 //==============================================================================
+/// Perform a steady state solve
+///
+bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
+{
+
+  Eigen::VectorXd xCurrentIter, xLastMGHOTIter, xLastMGLOQDIter,xLastELOTIter,\
+    residualVector;
+  vector<double> lastResidualELOT, lastResidualMGLOQD, residualMGHOT = {1,1,1},\
+    residualMGLOQD = {1,1,1}, residualELOT = {1,1,1};
+  bool eddingtonConverged;
+  bool convergedMGHOT=false, convergedMGLOQD=false, convergedELOT=false;
+  int itersMGHOT = 0, itersMGLOQD = 0, itersELOT = 0;
+  vector<int> iters;
+  vector<double> tempResMGHOT,tempResMGLOQD,tempResELOT,tempResiduals;
+  vector<double> fluxResMGHOT,fluxResMGLOQD,fluxResELOT,fluxResiduals;
+  double oldFissionSource,newFissionSource;
+ 
+  // Timing variables 
+  double duration,totalDuration = 0.0;
+  clock_t startTime;
+
+  for (int iIter = 0; iIter < 100; iIter++)
+  {
+
+    ///////////////////
+    // ELOT SOLUTION //
+    ///////////////////
+
+    // Calculate collapsed nuclear data
+    cout << "        ";
+    cout << "Collapsing MGLOQD data for ELOT solve...";
+    MGQDToMPQD->collapseNuclearData();
+    cout << " done."<< endl;
+
+    // Store last iterate of ELOT solution used in ELOT level
+    cout << "        ";
+    cout << "Storing last solution...";
+    xLastELOTIter = mpqd->x;
+    cout << " done."<< endl;
+
+    // Solve ELOT problem
+    cout << "        ";
+    cout << "ELOT solve..." << endl;
+    startTime = clock(); 
+    solveSteadyStateELOT(mpqd->x);
+    duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+    cout << "        ";
+    cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
+    iters.push_back(1);
+
+    // Store newest iterate 
+    xCurrentIter = mpqd->x;
+
+    lastResidualELOT = residualELOT; 
+
+    // Calculate and print ELOT residual  
+    residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
+    residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
+    cout << "        ";
+    cout << "ELOT Residual: " << residualELOT[0]; 
+    cout << ", " << residualELOT[1] << endl;
+
+    // Update iterate counters, store residuals
+    itersELOT++;
+    fluxResELOT.push_back(residualELOT[0]);
+    tempResELOT.push_back(residualELOT[1]);
+
+    // Calculate keff 
+    oldFissionSource =\
+      (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux)\
+      *(1.0/mats->oneGroupXS->kold)).sum();
+    mpqd->updateVarsAfterConvergence(); 
+    newFissionSource =\
+      (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux)).sum();
+
+    mats->oneGroupXS->kold = mats->oneGroupXS->keff;
+    mats->oneGroupXS->keff = newFissionSource/oldFissionSource; 
+  
+    cout << "keff: " << mats->oneGroupXS->keff << endl;
+      
+    // Calculate collapsed nuclear data at new temperature
+    mats->updateTemperature(mpqd->heat->returnCurrentTemp());
+
+    // Check converge criteria 
+    if (mpqd->epsMPQD > residualELOT[0] and mpqd->epsMPQD > residualELOT[1]) 
+    {
+      convergedELOT = true;
+    }
+  }
+
+  // Write vars
+  mpqd->updateVarsAfterConvergence(); 
+  mpqd->writeVars(); 
+  mats->oneGroupXS->writeVars();
+  mesh->output->write(outputDir,"Solve_Time",duration);
+
+
+};
+//==============================================================================
+
+//==============================================================================
 /// Dynamically determines a convergence threshold 
 ///
 double MultilevelCoupling::eps(double residual, double relaxationTolerance)
 {
 
   double eps;
-  
+
   if (residual*relaxationTolerance > mpqd->epsMPQD)
     eps = residual*relaxationTolerance;
   else
     eps = mpqd->epsMPQD; 
-  
+
   return eps;
 
 };
@@ -502,14 +603,14 @@ double MultilevelCoupling::eps(double residual, double relaxationTolerance)
 void MultilevelCoupling::solveMGHOT()
 {
 
-    // Calculate transport sources
-    mgt->calcSources();
+  // Calculate transport sources
+  mgt->calcSources();
 
-    // Calculate transport alphas
-    mgt->calcAlphas();
-  
-    // Solve starting angle transport problem
-    mgt->solveStartAngles();
+  // Calculate transport alphas
+  mgt->calcAlphas();
+
+  // Solve starting angle transport problem
+  mgt->solveStartAngles();
 
     // Solve all angle transport problem
     mgt->solveSCBs();
@@ -567,6 +668,7 @@ void MultilevelCoupling::solveSteadyStateELOT(Eigen::VectorXd xGuess)
 
   // Build ELOT system
   mpqd->buildSteadyStateLinearSystem();
+  cout << "built steady state system" << endl;
 
   // Solve ELOT system
   if (iterativeELOT)
