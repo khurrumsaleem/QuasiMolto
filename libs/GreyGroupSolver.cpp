@@ -125,9 +125,8 @@ void GreyGroupSolver::backCalculateCurrent()
 }
 //==============================================================================
 
-
 //==============================================================================
-/// Assert the zeroth moment equation for cell (iR,iZ)
+/// Assert the transient zeroth moment equation for cell (iR,iZ)
 ///
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
@@ -170,8 +169,9 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
 };
 //==============================================================================
 
+
 //==============================================================================
-/// Apply radial boundary for cell (iR,iZ)
+/// Apply transient radial boundary for cell (iR,iZ)
 ///
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
@@ -184,7 +184,7 @@ void GreyGroupSolver::applyRadialBoundary(int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
-/// Apply axial boundary for cell (iR,iZ)
+/// Apply transient axial boundary for cell (iR,iZ)
 ///
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
@@ -197,7 +197,79 @@ void GreyGroupSolver::applyAxialBoundary(int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
-/// Enforce coefficients for current on south face
+/// Assert the steady state zeroth moment equation for cell (iR,iZ)
+///
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateZerothMoment(int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double vPast = materials->oneGroupXS->neutVPast(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
+  double scatterCoeff, fissionCoeff, keff, cellFlux;
+
+  indices = getIndices(iR,iZ);
+
+  // Scattering source term (implicit)
+  scatterCoeff = materials->oneGroupXS->sigS(iZ,iR);
+  Atemp.insert(iEq,indices[iCF]) = -geoParams[iCF] * scatterCoeff;
+
+  // Fission source term (explicit for power iteration)
+  fissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
+  keff = materials->oneGroupXS->keff;
+  cellFlux = GGQD->sFlux(iZ,iR);
+  (*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
+              ( fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
+
+  // DNP source term
+  GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF], &Atemp);
+
+  // populate entries representing streaming and reaction terms
+  Atemp.coeffRef(iEq,indices[iCF]) += geoParams[iCF] * (sigT);
+
+  westCurrent(-geoParams[iWF],iR,iZ,iEq);
+
+  eastCurrent(geoParams[iEF],iR,iZ,iEq);
+
+  northCurrent(-geoParams[iNF],iR,iZ,iEq);
+
+  southCurrent(geoParams[iSF],iR,iZ,iEq);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Apply steady state radial boundary for cell (iR,iZ)
+///
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::applySteadyStateRadialBoundary(int iR,int iZ,int iEq)
+{
+  steadyStateEastCurrent(1,iR,iZ,iEq);
+  steadyStateWestCurrent(-1,iR+1,iZ,iEq);
+}
+//==============================================================================
+
+//==============================================================================
+/// Apply steady state axial boundary for cell (iR,iZ)
+///
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::applySteadyStateAxialBoundary(int iR,int iZ,int iEq)
+{
+  steadyStateNorthCurrent(1,iR,iZ+1,iEq);
+  steadyStateSouthCurrent(-1,iR,iZ,iEq);
+}
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients for transient current on south face
 ///
 /// @param [in] coeff coefficient multiplying current
 /// @param [in] iR radial index of cell
@@ -264,7 +336,7 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
-/// Enforce coefficients for current on north face 
+/// Enforce coefficients for transient current on north face 
 ///
 /// @param [in] coeff coefficient multiplying current
 /// @param [in] iR radial index of cell
@@ -330,7 +402,7 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
-/// Enforce coefficients for current on west face
+/// Enforce coefficients for transient current on west face
 ///
 /// @param [in] coeff coefficient multiplying current
 /// @param [in] iR radial index of cell
@@ -399,7 +471,7 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
-/// Enforce coefficients for current on east face
+/// Enforce coefficients for transient current on east face
 ///
 /// @param [in] coeff coefficient multiplying current
 /// @param [in] iR radial index of cell
@@ -468,9 +540,216 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
+/// Enforce coefficients for steady state current on south face
+///
+/// @param [in] coeff coefficient multiplying current
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::steadyStateSouthCurrent(double coeff,int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->zNeutV(iZ+1,iR);
+  double vPast = materials->oneGroupXS->zNeutVPast(iZ+1,iR);
+  double sigT = materials->oneGroupXS->zSigTR(iZ+1,iR);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL,\
+    mgqdCurrent,mgqdNeutV;  
+  double EzzC,EzzS,ErzW,ErzE;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zUp-zAvg;
+
+  // get local Eddington factors
+  EzzC = GGQD->Ezz(iZ,iR);
+  EzzS = GGQD->EzzAxial(iZ+1,iR); 
+  ErzW = GGQD->ErzRadial(iZ,iR);
+  ErzE = GGQD->ErzRadial(iZ,iR+1);
+  zetaL = materials->oneGroupXS->zZeta(iZ+1,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = coeff/(sigT); 
+
+  Atemp.coeffRef(iEq,indices[iSF]) -= coeff*EzzS/deltaZ;
+
+  Atemp.coeffRef(iEq,indices[iCF]) += coeff*EzzC/deltaZ;
+
+  Atemp.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  Atemp.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
+
+  // Enforce zeta coefficient
+  Atemp.coeffRef(iEq,indices[iSF]) -= coeff*zetaL;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients for steady state current on north face 
+///
+/// @param [in] coeff coefficient multiplying current
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::steadyStateNorthCurrent(double coeff,int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->zNeutV(iZ,iR);
+  double vPast = materials->oneGroupXS->zNeutVPast(iZ,iR);
+  double sigT = materials->oneGroupXS->zSigTR(iZ,iR);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL,\
+    mgqdCurrent,mgqdNeutV;  
+  double EzzC,EzzN,ErzW,ErzE;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zAvg-zDown;
+
+  // get local Eddington factors
+  EzzC = GGQD->Ezz(iZ,iR);
+  EzzN = GGQD->EzzAxial(iZ,iR); 
+  ErzW = GGQD->ErzRadial(iZ,iR);
+  ErzE = GGQD->ErzRadial(iZ,iR+1);
+  zetaL = materials->oneGroupXS->zZeta(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = coeff/(sigT); 
+
+  Atemp.coeffRef(iEq,indices[iNF]) += coeff*EzzN/deltaZ;
+
+  Atemp.coeffRef(iEq,indices[iCF]) -= coeff*EzzC/deltaZ;
+
+  Atemp.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  Atemp.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
+
+  // Enforce zeta coefficient
+  Atemp.coeffRef(iEq,indices[iNF]) -= coeff*zetaL;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients for steady state current on west face
+///
+/// @param [in] coeff coefficient multiplying current
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::steadyStateWestCurrent(double coeff,int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->rNeutV(iZ,iR);
+  double vPast = materials->oneGroupXS->rNeutVPast(iZ,iR);
+  double sigT = materials->oneGroupXS->rSigTR(iZ,iR);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL;
+  double hCent,hDown,mgqdCurrent,mgqdNeutV;
+  double ErzN,ErzS,ErrC,ErrW;  
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rAvg-rDown; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg);
+  hDown = calcIntegratingFactor(iR,iZ,rDown);
+
+  // get local Eddington factors
+  ErrC = GGQD->Err(iZ,iR);
+  ErrW = GGQD->ErrRadial(iZ,iR); 
+  ErzN = GGQD->ErzAxial(iZ,iR);
+  ErzS = GGQD->ErzAxial(iZ+1,iR);
+  zetaL = materials->oneGroupXS->rZeta(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = coeff/(sigT); 
+
+  Atemp.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
+
+  Atemp.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
+
+  Atemp.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
+
+  Atemp.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
+
+  // Enforce zeta coefficient
+  Atemp.coeffRef(iEq,indices[iWF]) -= coeff*zetaL;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients for steady state current on east face
+///
+/// @param [in] coeff coefficient multiplying current
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::steadyStateEastCurrent(double coeff,int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->rNeutV(iZ,iR+1);
+  double vPast = materials->oneGroupXS->rNeutVPast(iZ,iR+1);
+  double sigT = materials->oneGroupXS->rSigTR(iZ,iR+1);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,zetaL;  
+  double hCent,hUp,mgqdCurrent,mgqdNeutV;
+  double ErzN,ErzS,ErrC,ErrE;  
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rAvg; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg);
+  hUp = calcIntegratingFactor(iR,iZ,rUp);
+
+  // get local Eddington factors
+  ErrC = GGQD->Err(iZ,iR);
+  ErrE = GGQD->ErrRadial(iZ,iR+1); 
+  ErzN = GGQD->ErzAxial(iZ,iR);
+  ErzS = GGQD->ErzAxial(iZ+1,iR);
+  zetaL = materials->oneGroupXS->rZeta(iZ,iR+1);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = coeff/(sigT); 
+
+  Atemp.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
+
+  Atemp.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
+
+  Atemp.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrC/(hUp*deltaR);
+
+  Atemp.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
+
+  // Enforce zeta coefficient
+  Atemp.coeffRef(iEq,indices[iEF]) -= coeff*zetaL;
+
+};
+//==============================================================================
+
+//==============================================================================
 /// Form a portion of the current back calc linear system that belongs to GGQD 
-/// @param [in] GGQD quasidiffusion energy group to build portion of linear 
-///   for
+///
 void GreyGroupSolver::formBackCalcSystem()	      
 {
   int iEq = GGQD->indexOffset;
@@ -514,9 +793,54 @@ void GreyGroupSolver::formBackCalcSystem()
 
 //==============================================================================
 
+//==============================================================================
+/// Form a portion of the current back calc linear system that belongs to GGQD 
+///
+void GreyGroupSolver::formSteadyStateBackCalcSystem()	      
+{
+  int iEq = GGQD->indexOffset;
+
+  // Reset linear system
+  C.setZero();
+  d.setZero();
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+
+      // south face
+      calcSteadyStateSouthCurrent(iR,iZ,iEq);
+      iEq = iEq + 1;
+
+      // east face
+      calcSteadyStateEastCurrent(iR,iZ,iEq);
+      iEq = iEq + 1;
+
+      // north face
+      if (iZ == 0)
+      {
+        calcSteadyStateNorthCurrent(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        calcSteadyStateWestCurrent(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
+    }
+  }
+};
 
 //==============================================================================
-/// Enforce coefficients to calculate current on south face
+
+//==============================================================================
+/// Enforce coefficients to calculate transient current on south face
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -581,7 +905,7 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
-/// Enforce coefficients to calculate current on north face 
+/// Enforce coefficients to calculate transient current on north face 
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -647,7 +971,7 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
-/// Enforce coefficients to calculate current on west face
+/// Enforce coefficients to calculate transient current on west face
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -714,7 +1038,7 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
-/// Enforce coefficients to calculate current on east face
+/// Enforce coefficients to calculate transient current on east face
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
@@ -777,6 +1101,208 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   {
     d(iEq) = coeff*(currPast(indices[iEC])/(vPast*deltaT));
   }
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on south face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::calcSteadyStateSouthCurrent(int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->zNeutV(iZ+1,iR);
+  double vPast = materials->oneGroupXS->zNeutVPast(iZ+1,iR);
+  double sigT = materials->oneGroupXS->zSigTR(iZ+1,iR);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff,\
+    zetaL,mgqdCurrent,mgqdNeutV; 
+  double EzzC,EzzS,ErzW,ErzE;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zUp-zAvg;
+
+  // get local Eddington factors
+  EzzC = GGQD->Ezz(iZ,iR);
+  EzzS = GGQD->EzzAxial(iZ+1,iR); 
+  ErzW = GGQD->ErzRadial(iZ,iR);
+  ErzE = GGQD->ErzRadial(iZ,iR+1);
+  zetaL = materials->oneGroupXS->zZeta(iZ+1,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = 1/(sigT); 
+
+  C.coeffRef(iEq,indices[iSF]) -= coeff*EzzS/deltaZ;
+
+  C.coeffRef(iEq,indices[iCF]) += coeff*EzzC/deltaZ;
+
+  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
+
+  // Enforce zeta coefficient
+  C.coeffRef(iEq,indices[iSF]) -= coeff*zetaL;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on north face 
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::calcSteadyStateNorthCurrent(int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->zNeutV(iZ,iR);
+  double vPast = materials->oneGroupXS->zNeutVPast(iZ,iR);
+  double sigT = materials->oneGroupXS->zSigTR(iZ,iR);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff,\
+    zetaL,mgqdCurrent,mgqdNeutV;
+  double EzzC,EzzN,ErzW,ErzE;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zAvg-zDown;
+
+  // get local Eddington factors
+  EzzC = GGQD->Ezz(iZ,iR);
+  EzzN = GGQD->EzzAxial(iZ,iR); 
+  ErzW = GGQD->ErzRadial(iZ,iR);
+  ErzE = GGQD->ErzRadial(iZ,iR+1);
+
+  zetaL = materials->oneGroupXS->zZeta(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = 1/(sigT); 
+
+  C.coeffRef(iEq,indices[iNF]) += coeff*EzzN/deltaZ;
+
+  C.coeffRef(iEq,indices[iCF]) -= coeff*EzzC/deltaZ;
+
+  C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
+
+  // Enforce zeta coefficient
+  C.coeffRef(iEq,indices[iNF]) -= coeff*zetaL;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on west face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::calcSteadyStateWestCurrent(int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->rNeutV(iZ,iR);
+  double vPast = materials->oneGroupXS->rNeutVPast(iZ,iR);
+  double sigT = materials->oneGroupXS->rSigTR(iZ,iR);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double hCent,hDown,zetaL,mgqdCurrent,mgqdNeutV;
+  double ErzN,ErzS,ErrC,ErrW;  
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rAvg-rDown; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg);
+  hDown = calcIntegratingFactor(iR,iZ,rDown);
+
+  // get local Eddington factors
+  ErrC = GGQD->Err(iZ,iR);
+  ErrW = GGQD->ErrRadial(iZ,iR); 
+  ErzN = GGQD->ErzAxial(iZ,iR);
+  ErzS = GGQD->ErzAxial(iZ+1,iR);
+  zetaL = materials->oneGroupXS->rZeta(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = 1/(sigT); 
+
+  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
+
+  C.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
+
+  C.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
+
+  C.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
+
+  // Enforce zeta coefficient
+  C.coeffRef(iEq,indices[iWF]) -= coeff*zetaL;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on east face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::calcSteadyStateEastCurrent(int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->rNeutV(iZ,iR+1);
+  double vPast = materials->oneGroupXS->rNeutVPast(iZ,iR+1);
+  double sigT = materials->oneGroupXS->rSigTR(iZ,iR+1);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double hCent,hUp,zetaL,mgqdCurrent,mgqdNeutV;
+  double ErzN,ErzS,ErrC,ErrE;  
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rAvg; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg);
+  hUp = calcIntegratingFactor(iR,iZ,rUp);
+
+  // get local Eddington factors
+  ErrC = GGQD->Err(iZ,iR);
+  ErrE = GGQD->ErrRadial(iZ,iR+1); 
+  ErzN = GGQD->ErzAxial(iZ,iR);
+  ErzS = GGQD->ErzAxial(iZ+1,iR);
+
+  zetaL = materials->oneGroupXS->rZeta(iZ,iR+1);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = 1/(sigT); 
+
+  C.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
+
+  C.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
+
+  C.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrC/(hUp*deltaR);
+
+  C.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
+
+  // Enforce zeta coefficient
+  C.coeffRef(iEq,indices[iEF]) -= coeff*zetaL;
 
 };
 //==============================================================================

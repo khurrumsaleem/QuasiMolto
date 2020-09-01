@@ -23,6 +23,8 @@ class GreyGroupSolver
         YAML::Node * myInput);
     void formLinearSystem();
     void formBackCalcSystem();
+    void formSteadyStateLinearSystem();
+    void formSteadyStateBackCalcSystem();
 
     // functions to map grid indices to global index
     vector<int> getIndices(int iR,int iZ);
@@ -46,6 +48,10 @@ class GreyGroupSolver
     void applyRadialBoundary(int iR,int iZ,int iEq);
     void applyAxialBoundary(int iR,int iZ,int iEq);
 
+    // functions to enforce governing equations
+    void assertSteadyStateZerothMoment(int iR,int iZ,int iEq);
+    void applySteadyStateRadialBoundary(int iR,int iZ,int iEq);
+    void applySteadyStateAxialBoundary(int iR,int iZ,int iEq);
 
     // functions to enforce coefficients for facial currents
     void southCurrent(double coeff,int iR,int iZ,int iEq);
@@ -53,11 +59,23 @@ class GreyGroupSolver
     void westCurrent(double coeff,int iR,int iZ,int iEq);
     void eastCurrent(double coeff,int iR,int iZ,int iEq);
 
+    // functions to enforce coefficients for steady state facial currents
+    void steadyStateSouthCurrent(double coeff,int iR,int iZ,int iEq);
+    void steadyStateNorthCurrent(double coeff,int iR,int iZ,int iEq);
+    void steadyStateWestCurrent(double coeff,int iR,int iZ,int iEq);
+    void steadyStateEastCurrent(double coeff,int iR,int iZ,int iEq);
+
     // functions to enforce coefficients for calculation of facial currents
     void calcSouthCurrent(int iR,int iZ,int iEq);
     void calcNorthCurrent(int iR,int iZ,int iEq);
     void calcWestCurrent(int iR,int iZ,int iEq);
     void calcEastCurrent(int iR,int iZ,int iEq);
+
+    // functions to enforce coefficients for calculation of facial currents
+    void calcSteadyStateSouthCurrent(int iR,int iZ,int iEq);
+    void calcSteadyStateNorthCurrent(int iR,int iZ,int iEq);
+    void calcSteadyStateWestCurrent(int iR,int iZ,int iEq);
+    void calcSteadyStateEastCurrent(int iR,int iZ,int iEq);
 
     // functions to assert flux BCs
     void assertWFluxBC(int iR,int iZ,int iEq);
