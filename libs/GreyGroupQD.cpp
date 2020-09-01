@@ -115,14 +115,27 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
 //==============================================================================
 
 //==============================================================================
-/// Build linear system for QD equations
+/// Build linear system for transient QD equations
 ///
 void GreyGroupQD::buildLinearSystem()
 {
 
   GGSolver->formLinearSystem(); // Assuming this is the first set of equations
+
 };
 //==============================================================================
+
+//==============================================================================
+/// Build linear system for steady state QD equations
+///
+void GreyGroupQD::buildSteadyStateLinearSystem()
+{
+
+  GGSolver->formSteadyStateLinearSystem(); // Assuming this is the first set of equations
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Print BC parameters 

@@ -89,6 +89,7 @@ class GreyGroupQD
         MultiPhysicsCoupledQD * myMPQD);
 
     void buildLinearSystem();
+    void buildSteadyStateLinearSystem();
     void printBCParams();
     void printEddingtons();
     void assignMGQDPointer(MultiGroupQD * myMGQD);
