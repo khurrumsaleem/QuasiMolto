@@ -559,6 +559,25 @@ void MultilevelCoupling::solveELOT(Eigen::VectorXd xGuess)
 };
 //==============================================================================
 
+//==============================================================================
+/// Perform a steady state solve at the ELOT level 
+///
+void MultilevelCoupling::solveSteadyStateELOT(Eigen::VectorXd xGuess)
+{
+
+  // Build ELOT system
+  mpqd->buildSteadyStateLinearSystem();
+
+  // Solve ELOT system
+  if (iterativeELOT)
+    mpqd->solveLinearSystemIterative(xGuess);
+  else
+    mpqd->solveLinearSystem();
+
+};
+//==============================================================================
+
+
 
 //==============================================================================
 /// Collapse nuclear data with flux and current weighting 

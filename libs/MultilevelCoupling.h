@@ -35,6 +35,7 @@ class MultilevelCoupling
     void solveMGHOT();
     void solveMGLOQD();
     void solveELOT(Eigen::VectorXd xGuess);
+    void solveSteadyStateELOT(Eigen::VectorXd xGuess);
     void solveTransient();
     double eps(double residual, double relaxationTolerance = 1E-14);
     void checkOptionalParameters();
