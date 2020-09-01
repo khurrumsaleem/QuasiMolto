@@ -168,7 +168,7 @@ void MultiPhysicsCoupledQD::buildSteadyStateLinearSystem()
   b.setZero();
 
   // Build QD system
-  ggqd->buildLinearSystem();
+  ggqd->buildSteadyStateLinearSystem();
 
   // Build heat transfer system
   heat->buildSteadyStateLinearSystem();
