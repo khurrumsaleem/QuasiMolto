@@ -117,6 +117,76 @@ void GreyGroupSolver::formLinearSystem()
 //==============================================================================
 
 //==============================================================================
+/// Form a portion of the linear system  
+
+void GreyGroupSolver::formSteadyStateLinearSystem()	      
+{
+
+  int iEq = GGQD->indexOffset;
+  Atemp.resize(nUnknowns,A->cols());
+  Atemp.reserve(10*nUnknowns);
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+
+      // apply zeroth moment equation
+      assertSteadyStateZerothMoment(iR,iZ,iEq);
+      iEq = iEq + 1;
+
+      // south face
+      if (iZ == mesh->dzsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSteadyStateSBC(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on south face
+        applySteadyStateAxialBoundary(iR,iZ,iEq);
+        iEq = iEq + 1;
+      }
+
+      // east face
+      if (iR == mesh->drsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSteadyStateEBC(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on north face
+        applySteadyStateRadialBoundary(iR,iZ,iEq);
+        iEq = iEq + 1;
+      }
+
+      // north face
+      if (iZ == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSteadyStateNBC(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSteadyStateWBC(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
+    }
+  }
+
+  A->middleRows(GGQD->indexOffset,nUnknowns) = Atemp; 
+};
+
+//==============================================================================
+
+//==============================================================================
 /// Compute currents from flux values in x
 ///
 void GreyGroupSolver::backCalculateCurrent()
@@ -1408,6 +1478,54 @@ void GreyGroupSolver::assertECurrentBC(int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
+/// Assert the steady state current boundary condition on the north face at 
+/// location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateNCurrentBC(int iR,int iZ,int iEq)
+{
+  steadyStateNorthCurrent(1,iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the steady state current boundary condition on the south face at 
+/// location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateSCurrentBC(int iR,int iZ,int iEq)
+{
+  steadyStateSouthCurrent(1,iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the steady state current boundary condition on the west face at 
+/// location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateWCurrentBC(int iR,int iZ,int iEq)
+{
+  steadyStateWestCurrent(1,iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the steady state current boundary condition on the south face at 
+/// location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateECurrentBC(int iR,int iZ,int iEq)
+{
+  steadyStateEastCurrent(1,iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
 /// Assert Gol'din's boundary condition on the north face at location (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
@@ -1500,6 +1618,71 @@ void GreyGroupSolver::assertEGoldinBC(int iR,int iZ,int iEq)
 };
 //==============================================================================
 
+//==============================================================================
+/// Assert Gol'din's boundary condition on the north face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateNGoldinBC(int iR,int iZ,int iEq)
+{
+  vector<int> indices = getIndices(iR,iZ);
+  double ratio = GGQD->nOutwardCurrToFluxRatioBC(iR);
+  double inFluxWeightRatio = GGQD->nOutwardCurrToFluxRatioInwardWeightedBC(iR);
+  double absCurrent = GGQD->nAbsCurrentBC(iR);
+  double inwardCurrent = GGQD->nInwardCurrentBC(iR);
+  double inwardFlux = GGQD->nInwardFluxBC(iR);
+
+  steadyStateNorthCurrent(1.0,iR,iZ,iEq);
+  Atemp.coeffRef(iEq,indices[iNF]) -= ratio;
+  (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's boundary condition on the south face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateSGoldinBC(int iR,int iZ,int iEq)
+{
+  vector<int> indices = getIndices(iR,iZ);
+  double ratio = GGQD->sOutwardCurrToFluxRatioBC(iR);
+  double inFluxWeightRatio = GGQD->sOutwardCurrToFluxRatioInwardWeightedBC(iR);
+  double absCurrent = GGQD->sAbsCurrentBC(iR);
+  double inwardCurrent = GGQD->sInwardCurrentBC(iR);
+  double inwardFlux = GGQD->sInwardFluxBC(iR);
+
+  steadyStateSouthCurrent(1.0,iR,iZ,iEq);
+  Atemp.coeffRef(iEq,indices[iSF]) -= ratio;
+  (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's boundary condition on the east face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateEGoldinBC(int iR,int iZ,int iEq)
+{
+  vector<int> indices = getIndices(iR,iZ);
+  double ratio = GGQD->eOutwardCurrToFluxRatioBC(iZ);
+  double inFluxWeightRatio = GGQD->eOutwardCurrToFluxRatioInwardWeightedBC(iZ);
+  double absCurrent = GGQD->eAbsCurrentBC(iZ);
+  double inwardCurrent = GGQD->eInwardCurrentBC(iZ);
+  double inwardFlux = GGQD->eInwardFluxBC(iZ);
+
+  steadyStateEastCurrent(1.0,iR,iZ,iEq);
+  Atemp.coeffRef(iEq,indices[iEF]) -= ratio;
+  (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
+
+};
+//==============================================================================
 
 //==============================================================================
 /// Assert boundary condition on the north face at location (iR,iZ)
@@ -1561,6 +1744,71 @@ void GreyGroupSolver::assertEBC(int iR,int iZ,int iEq)
     assertECurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertEGoldinBC(iR,iZ,iEq);
+  else
+    assertEFluxBC(iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert steady state boundary condition on the north face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateNBC(int iR,int iZ,int iEq)
+{
+  if (reflectingBCs)
+    assertSteadyStateNCurrentBC(iR,iZ,iEq);
+  else if (goldinBCs)
+    assertSteadyStateNGoldinBC(iR,iZ,iEq);
+  else
+    assertNFluxBC(iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert steady state boundary condition on the south face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateSBC(int iR,int iZ,int iEq)
+{
+  if (reflectingBCs)
+    assertSteadyStateSCurrentBC(iR,iZ,iEq);
+  else if (goldinBCs)
+    assertSteadyStateSGoldinBC(iR,iZ,iEq);
+  else
+    assertSFluxBC(iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert steady state boundary condition on the west face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateWBC(int iR,int iZ,int iEq)
+{
+  if (reflectingBCs or goldinBCs)
+    assertSteadyStateWCurrentBC(iR,iZ,iEq);
+  else
+    // Can't think of a circumstance where there wouldn't be a reflecting BC at
+    //   r = 0 
+    //assertWFluxBC(iR,iZ,iEq);
+    assertSteadyStateWCurrentBC(iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert steady state boundary condition on the east face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateEBC(int iR,int iZ,int iEq)
+{
+  if (reflectingBCs)
+    assertSteadyStateECurrentBC(iR,iZ,iEq);
+  else if (goldinBCs)
+    assertSteadyStateEGoldinBC(iR,iZ,iEq);
   else
     assertEFluxBC(iR,iZ,iEq);
 };

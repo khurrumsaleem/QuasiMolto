@@ -89,16 +89,33 @@ class GreyGroupSolver
     void assertNCurrentBC(int iR,int iZ,int iEq);
     void assertSCurrentBC(int iR,int iZ,int iEq);
 
+    // functions to assert steady state current BCs
+    void assertSteadyStateWCurrentBC(int iR,int iZ,int iEq);
+    void assertSteadyStateECurrentBC(int iR,int iZ,int iEq);
+    void assertSteadyStateNCurrentBC(int iR,int iZ,int iEq);
+    void assertSteadyStateSCurrentBC(int iR,int iZ,int iEq);
+
     // functions to assert Gol'din BCs
     void assertNGoldinBC(int iR,int iZ,int iEq);
     void assertSGoldinBC(int iR,int iZ,int iEq);
     void assertEGoldinBC(int iR,int iZ,int iEq);
+    
+    // functions to assert steady state Gol'din BCs
+    void assertSteadyStateNGoldinBC(int iR,int iZ,int iEq);
+    void assertSteadyStateSGoldinBC(int iR,int iZ,int iEq);
+    void assertSteadyStateEGoldinBC(int iR,int iZ,int iEq);
 
     // wrapper to assert either a flux or current BC
     void assertWBC(int iR,int iZ,int iEq);
     void assertEBC(int iR,int iZ,int iEq);
     void assertNBC(int iR,int iZ,int iEq);
     void assertSBC(int iR,int iZ,int iEq);
+    
+    // wrapper to assert either a steady state flux or current BC
+    void assertSteadyStateWBC(int iR,int iZ,int iEq);
+    void assertSteadyStateEBC(int iR,int iZ,int iEq);
+    void assertSteadyStateNBC(int iR,int iZ,int iEq);
+    void assertSteadyStateSBC(int iR,int iZ,int iEq);
 
     double calcScatterAndFissionCoeff(int iR,int iZ);
     double calcIntegratingFactor(int iR,int iZ,double rEval);
