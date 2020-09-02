@@ -301,13 +301,13 @@ void GreyGroupSolver::assertSteadyStateZerothMoment(int iR,int iZ,int iEq)
   // populate entries representing streaming and reaction terms
   Atemp.coeffRef(iEq,indices[iCF]) += geoParams[iCF] * (sigT);
 
-  westCurrent(-geoParams[iWF],iR,iZ,iEq);
+  steadyStateWestCurrent(-geoParams[iWF],iR,iZ,iEq);
 
-  eastCurrent(geoParams[iEF],iR,iZ,iEq);
+  steadyStateEastCurrent(geoParams[iEF],iR,iZ,iEq);
 
-  northCurrent(-geoParams[iNF],iR,iZ,iEq);
+  steadyStateNorthCurrent(-geoParams[iNF],iR,iZ,iEq);
 
-  southCurrent(geoParams[iSF],iR,iZ,iEq);
+  steadyStateSouthCurrent(geoParams[iSF],iR,iZ,iEq);
 
 };
 //==============================================================================
