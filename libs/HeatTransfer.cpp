@@ -261,7 +261,8 @@ void HeatTransfer::buildSteadyStateLinearSystem()
         /mesh->drsCorner(iR))/gParams[iVol];
         //cCoeff -= mesh->dt*coeff;
         cCoeff -= coeff;
-        mpqd->b(iEq) -= mesh->dt*coeff*wallT; 
+        //mpqd->b(iEq) -= mesh->dt*coeff*wallT; 
+        mpqd->b(iEq) -= coeff*wallT; 
       } else
       {
         harmonicAvg = pow(mesh->drsCorner(iR)/mats->k(iZ,iR)\
@@ -339,7 +340,7 @@ void HeatTransfer::buildSteadyStateLinearSystem()
        
       mpqd->b(iEq) += coeff*neutronFlux/keff; 
       //mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
-      mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
+      //mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
       
       // Gamma source term 
       //coeff = mesh->dt;
