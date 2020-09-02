@@ -474,7 +474,7 @@ Eigen::MatrixXd SingleGroupDNP::calcImplicitFluxes(Eigen::MatrixXd myDNPConc,\
 {
 
   // Declare temporary variables
-  Eigen::MatrixXd myFlux(dnpConc.rows()+1,dnpConc.cols());
+  Eigen::MatrixXd myFlux(myDNPConc.rows()+1,myDNPConc.cols());
   double vel; // shorthand for velocity
   int lastFluxIndex = myFlux.rows()-1;
 
