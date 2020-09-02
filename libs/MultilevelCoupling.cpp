@@ -493,13 +493,27 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   vector<int> iters;
   vector<double> tempResMGHOT,tempResMGLOQD,tempResELOT,tempResiduals;
   vector<double> fluxResMGHOT,fluxResMGLOQD,fluxResELOT,fluxResiduals;
-  double oldFissionSource,newFissionSource;
+  double oldFissionSource,newFissionSource,power;
+  double ratedPower = 8E6;
  
   // Timing variables 
   double duration,totalDuration = 0.0;
   clock_t startTime;
 
-  for (int iIter = 0; iIter < 100; iIter++)
+  Eigen::MatrixXd volume,omega;
+
+  volume.setZero(mesh->nZ,mesh->nR);
+  omega.setZero(mesh->nZ,mesh->nR);
+  for (int iZ = 0; iZ < volume.rows(); iZ++)
+  {
+    for (int iR = 0; iR < volume.cols(); iR++)
+    {
+      volume(iZ,iR) = mesh->getGeoParams(iR,iZ)[0];
+      omega(iZ,iR) = mats->omega(iZ,iR);
+    }
+  }
+
+  for (int iIter = 0; iIter < 20; iIter++)
   {
 
     ///////////////////
@@ -547,16 +561,29 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
 
     // Calculate keff 
     oldFissionSource =\
-      (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux)\
-      *(1.0/mats->oneGroupXS->kold)).sum();
+      (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
+    cout << "old fission source: " << oldFissionSource << endl;
     mpqd->updateVarsAfterConvergence(); 
     newFissionSource =\
-      (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux)).sum();
+      (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
+    cout << "new fission source: " << newFissionSource << endl;
 
     mats->oneGroupXS->kold = mats->oneGroupXS->keff;
-    mats->oneGroupXS->keff = newFissionSource/oldFissionSource; 
+    mats->oneGroupXS->keff = newFissionSource\
+                             /((1/mats->oneGroupXS->kold)*oldFissionSource); 
+
+    // Calculate power
+    power = omega.cwiseProduct(mats->oneGroupXS->sigF).cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
+
+    mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
   
     cout << "keff: " << mats->oneGroupXS->keff << endl;
+    cout << "fissionCoeff: " << mats->oneGroupXS->qdFluxCoeff << endl;
+    cout << "volume: " << volume << endl;
+    cout << "flux: " << mpqd->ggqd->sFlux << endl;
+    cout << "temp: " << mpqd->heat->returnCurrentTemp()<< endl;
+    cout << "power: " << power << endl;
+    mpqd->mgdnp->printCoreDNPConc();
       
     // Calculate collapsed nuclear data at new temperature
     mats->updateTemperature(mpqd->heat->returnCurrentTemp());
@@ -565,6 +592,12 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     if (mpqd->epsMPQD > residualELOT[0] and mpqd->epsMPQD > residualELOT[1]) 
     {
       convergedELOT = true;
+    }
+    
+    // Check keff converge criteria 
+    if (abs(mats->oneGroupXS->keff - mats->oneGroupXS->kold) < 1E-10) 
+    {
+      //break;
     }
   }
 

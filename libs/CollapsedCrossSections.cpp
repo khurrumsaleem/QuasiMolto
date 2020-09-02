@@ -46,8 +46,8 @@ CollapsedCrossSections::CollapsedCrossSections(Mesh * myMesh, int nEnergyGroups)
   qdFluxCoeff.setZero(nZ,nR);  
 
   // Initialize keff
-  keff = 1;
-  kold = 1;
+  keff = 1.0;
+  kold = 1.0;
 
   // Set size of matrices contained in groupSigS 
   groupSigS.resize(nEnergyGroups);
