@@ -358,12 +358,12 @@ void HeatTransfer::buildSteadyStateLinearSystem()
 
         // Upwind cell
         if (iZ == 0) // boundary case
-          mpqd->b(iEq) += flux(iZ,iR)*inletTemp(2,iR)/mesh->dzsCorner(iZ);
+          mpqd->b(iEq) += flux(iZ,iR)*inletTemp(1,iR)/mesh->dzsCorner(iZ);
         else
-          Atemp(iEq,upwindIndex) = -flux(iZ,iR)/mesh->dzsCorner(iZ);
+          Atemp.coeffRef(iEqTemp,upwindIndex) += -flux(iZ,iR)/mesh->dzsCorner(iZ);
 
         // Primary cell
-        Atemp(iEq,myIndex) += flux(iZ+1,iR)/mesh->dzsCorner(iZ);
+        Atemp.coeffRef(iEqTemp,myIndex) += flux(iZ+1,iR)/mesh->dzsCorner(iZ);
       }
       else
       {
@@ -373,12 +373,12 @@ void HeatTransfer::buildSteadyStateLinearSystem()
 
         // Upwind cell
         if (iZ == temp.rows()) // boundary case
-          mpqd->b(iEq) -= flux(iZ+1,iR)*inletTemp(2,iR)/mesh->dzsCorner(iZ);
+          mpqd->b(iEq) -= flux(iZ+1,iR)*inletTemp(0,iR)/mesh->dzsCorner(iZ);
         else
-          Atemp(iEq,upwindIndex) = flux(iZ+1,iR)/mesh->dzsCorner(iZ);
+          Atemp.coeffRef(iEqTemp,upwindIndex) = flux(iZ+1,iR)/mesh->dzsCorner(iZ);
 
         // Primary cell
-        Atemp(iEq,myIndex) -= flux(iZ,iR)/mesh->dzsCorner(iZ);
+        Atemp.coeffRef(iEqTemp,myIndex) -= flux(iZ,iR)/mesh->dzsCorner(iZ);
       }
     }
   }

@@ -220,12 +220,12 @@ void SingleGroupDNP::buildSteadyStateLinearSystem(\
 
         // Upwind cell
         if (iZ == 0) // boundary case
-          (*myb)(iEq) += myDNPFlux(iZ,iR)*myInletDNP(2,iR)/dzs(iZ);
+          (*myb)(iEq) += myDNPFlux(iZ,iR)*myInletDNP(1,iR)/dzs(iZ);
         else
-          testMat(iEq,upwindIndex) = -myDNPFlux(iZ,iR)/dzs(iZ);
+          testMat(iEqTemp,upwindIndex) = -myDNPFlux(iZ,iR)/dzs(iZ);
 
         // Primary cell
-        testMat(iEq,myIndex) += myDNPFlux(iZ+1,iR)/dzs(iZ);
+        testMat(iEqTemp,myIndex) += myDNPFlux(iZ+1,iR)/dzs(iZ);
       }
     }
   }
@@ -256,12 +256,12 @@ void SingleGroupDNP::buildSteadyStateLinearSystem(\
     
         // Upwind cell
         if (iZ == myDNPConc.rows()) // boundary case
-          (*myb)(iEq) -= myDNPFlux(iZ+1,iR)*myInletDNP(2,iR)/dzs(iZ);
+          (*myb)(iEq) -= myDNPFlux(iZ+1,iR)*myInletDNP(0,iR)/dzs(iZ);
         else
-          testMat(iEq,upwindIndex) = myDNPFlux(iZ+1,iR)/dzs(iZ);
+          testMat(iEqTemp,upwindIndex) = myDNPFlux(iZ+1,iR)/dzs(iZ);
     
         // Primary cell
-        testMat(iEq,myIndex) -= myDNPFlux(iZ,iR)/dzs(iZ);
+        testMat(iEqTemp,myIndex) -= myDNPFlux(iZ,iR)/dzs(iZ);
       }
     }
   }
