@@ -563,7 +563,7 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     oldFissionSource =\
       (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
     cout << "old fission source: " << oldFissionSource << endl;
-    mpqd->updateVarsAfterConvergence(); 
+    mpqd->updateSteadyStateVarsAfterConvergence(); 
     newFissionSource =\
       (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
     cout << "new fission source: " << newFissionSource << endl;

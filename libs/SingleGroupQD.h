@@ -80,7 +80,9 @@ class SingleGroupQD
         Mesh * myMesh,\
         YAML::Node * myInput);
     void formContributionToLinearSystem();
+    void formSteadyStateContributionToLinearSystem();
     void formContributionToBackCalcSystem();
+    void formSteadyStateContributionToBackCalcSystem();
     void getFlux();
     Eigen::VectorXd getFluxSolutionVector();
     Eigen::VectorXd getCurrentSolutionVector();

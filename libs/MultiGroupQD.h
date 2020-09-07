@@ -26,14 +26,17 @@ class MultiGroupQD
         Mesh * myMesh,\
         YAML::Node * myInput);
     void buildLinearSystem();
+    void buildSteadyStateLinearSystem();
     void solveLinearSystem();
     void solveLinearSystemIterative();
     void buildBackCalcSystem();
+    void buildSteadyStateBackCalcSystem();
     void backCalculateCurrent();
     void setInitialCondition();
     void solveMGQDOnly();
     void getFluxes();
     void updateVarsAfterConvergence();
+    void updateSteadyStateVarsAfterConvergence();
     void writeFluxes();
     void writeVars();
     void printVars();

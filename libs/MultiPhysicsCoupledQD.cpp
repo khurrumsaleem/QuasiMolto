@@ -400,6 +400,35 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
 //==============================================================================
 /// Run transient with multiple solves 
 ///
+void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence()
+{
+
+  // Read solutions from 1D vector to 2D matrices 
+  ggqd->GGSolver->getFlux();
+
+  heat->getTemp();
+
+  mgdnp->getCoreDNPConc();
+
+  mgdnp->getRecircDNPConc();
+
+  // Back calculate currents
+  ggqd->GGSolver->formSteadyStateBackCalcSystem();
+  ggqd->GGSolver->backCalculateCurrent();
+  ggqd->GGSolver->getCurrent();
+
+  // Set xPast and past neutron velocities 
+  xPast = x;
+  mats->oneGroupXS->neutVPast = mats->oneGroupXS->neutV;  
+  mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;  
+  mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;  
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Run transient with multiple solves 
+///
 void MultiPhysicsCoupledQD::writeVars()
 {
 

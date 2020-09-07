@@ -105,6 +105,14 @@ void SingleGroupQD::formContributionToLinearSystem()
 //==============================================================================
 
 //==============================================================================
+/// Build the portion of low order QD linear system belonging to this object
+void SingleGroupQD::formSteadyStateContributionToLinearSystem()
+{
+  MGQD->QDSolve->formSteadyStateLinearSystem(this);
+}
+//==============================================================================
+
+//==============================================================================
 /// Build the portion of linear system, used to calculate currents, belonging 
 /// to this object
 void SingleGroupQD::formContributionToBackCalcSystem()
@@ -112,6 +120,16 @@ void SingleGroupQD::formContributionToBackCalcSystem()
   MGQD->QDSolve->formBackCalcSystem(this);
 }
 //==============================================================================
+
+//==============================================================================
+/// Build the portion of linear system, used to calculate currents, belonging 
+/// to this object
+void SingleGroupQD::formSteadyStateContributionToBackCalcSystem()
+{
+  MGQD->QDSolve->formSteadyStateBackCalcSystem(this);
+}
+//==============================================================================
+
 
 //==============================================================================
 /// Get the flux for this object

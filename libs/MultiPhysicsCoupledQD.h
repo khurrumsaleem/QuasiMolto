@@ -49,6 +49,7 @@ class MultiPhysicsCoupledQD
     int solveIterativeILU(Eigen::VectorXd xGuess);
     void solveTransient();
     void updateVarsAfterConvergence();
+    void updateSteadyStateVarsAfterConvergence();
     void writeVars();
     void printVars();
     void checkOptionalParams();

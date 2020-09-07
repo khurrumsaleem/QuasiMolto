@@ -56,6 +56,25 @@ void MultiGroupQD::buildLinearSystem()
 //==============================================================================
 
 //==============================================================================
+/// Loops over energy groups and builds the linear system to solve the 
+/// multigroup quasidiffusion equations
+void MultiGroupQD::buildSteadyStateLinearSystem()
+{
+  // Get non-zero elements to optimize building linear system
+  int nonZeros = QDSolve->A.nonZeros();
+
+  QDSolve->A.setZero();
+  QDSolve->A.reserve(nonZeros);
+  QDSolve->b.setZero();
+  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+  {
+    SGQDs[iGroup]->formContributionToLinearSystem();
+  }
+}
+//==============================================================================
+
+
+//==============================================================================
 /// Solves the linear system formed by the muligroup quasidiffusion equations
 void MultiGroupQD::solveLinearSystem()
 {
@@ -86,6 +105,22 @@ void MultiGroupQD::buildBackCalcSystem()
   }
 }
 //==============================================================================
+
+//==============================================================================
+/// Loops over energy groups and builds linear system to calculate the net 
+/// neutron currents from the flux values currrently held in x, the solution
+/// vector
+void MultiGroupQD::buildSteadyStateBackCalcSystem()
+{
+  QDSolve->C.setZero();
+  QDSolve->d.setZero();
+  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+  {
+    SGQDs[iGroup]->formContributionToBackCalcSystem();
+  }
+}
+//==============================================================================
+
 
 //==============================================================================
 /// Solve the linear system which calculates net currents from the current flux
@@ -169,6 +204,19 @@ void MultiGroupQD::updateVarsAfterConvergence()
   getFluxes();
 }
 //==============================================================================
+
+//==============================================================================
+/// Solve a transient problem without any transport coupling using diffusion
+/// values for the Eddington factors
+void MultiGroupQD::updateSteadyStateVarsAfterConvergence()
+{
+  QDSolve->xPast = QDSolve->x;
+  buildSteadyStateBackCalcSystem();
+  backCalculateCurrent();
+  getFluxes();
+}
+//==============================================================================
+
 
 //==============================================================================
 /// Assigning pointer to object containing grey group sources 
