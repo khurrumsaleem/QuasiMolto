@@ -68,7 +68,7 @@ void MultiGroupQD::buildSteadyStateLinearSystem()
   QDSolve->b.setZero();
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
-    SGQDs[iGroup]->formContributionToLinearSystem();
+    SGQDs[iGroup]->formSteadyStateContributionToLinearSystem();
   }
 }
 //==============================================================================
@@ -116,7 +116,7 @@ void MultiGroupQD::buildSteadyStateBackCalcSystem()
   QDSolve->d.setZero();
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
-    SGQDs[iGroup]->formContributionToBackCalcSystem();
+    SGQDs[iGroup]->formSteadyStateContributionToBackCalcSystem();
   }
 }
 //==============================================================================
