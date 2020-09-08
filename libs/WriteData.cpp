@@ -7,7 +7,7 @@
 
 using namespace std; 
 
-const static Eigen::IOFormat CSVFormat(Eigen::StreamPrecision,\
+const static Eigen::IOFormat CSVFormat(Eigen::FullPrecision,\
     Eigen::DontAlignCols,",","\n");
 
 //==============================================================================
