@@ -639,7 +639,7 @@ void GreyGroupSolver::steadyStateSouthCurrent(double coeff,int iR,int iZ,int iEq
   EzzS = GGQD->EzzAxial(iZ+1,iR); 
   ErzW = GGQD->ErzRadial(iZ,iR);
   ErzE = GGQD->ErzRadial(iZ,iR+1);
-  zetaL = materials->oneGroupXS->zZeta(iZ+1,iR);
+  zetaL = materials->oneGroupXS->zZeta2(iZ+1,iR);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
@@ -690,7 +690,7 @@ void GreyGroupSolver::steadyStateNorthCurrent(double coeff,int iR,int iZ,int iEq
   EzzN = GGQD->EzzAxial(iZ,iR); 
   ErzW = GGQD->ErzRadial(iZ,iR);
   ErzE = GGQD->ErzRadial(iZ,iR+1);
-  zetaL = materials->oneGroupXS->zZeta(iZ,iR);
+  zetaL = materials->oneGroupXS->zZeta2(iZ,iR);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
@@ -743,7 +743,7 @@ void GreyGroupSolver::steadyStateWestCurrent(double coeff,int iR,int iZ,int iEq)
   ErrW = GGQD->ErrRadial(iZ,iR); 
   ErzN = GGQD->ErzAxial(iZ,iR);
   ErzS = GGQD->ErzAxial(iZ+1,iR);
-  zetaL = materials->oneGroupXS->rZeta(iZ,iR);
+  zetaL = materials->oneGroupXS->rZeta2(iZ,iR);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
@@ -796,7 +796,7 @@ void GreyGroupSolver::steadyStateEastCurrent(double coeff,int iR,int iZ,int iEq)
   ErrE = GGQD->ErrRadial(iZ,iR+1); 
   ErzN = GGQD->ErzAxial(iZ,iR);
   ErzS = GGQD->ErzAxial(iZ+1,iR);
-  zetaL = materials->oneGroupXS->rZeta(iZ,iR+1);
+  zetaL = materials->oneGroupXS->rZeta2(iZ,iR+1);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
@@ -1203,7 +1203,7 @@ void GreyGroupSolver::calcSteadyStateSouthCurrent(int iR,int iZ,int iEq)
   EzzS = GGQD->EzzAxial(iZ+1,iR); 
   ErzW = GGQD->ErzRadial(iZ,iR);
   ErzE = GGQD->ErzRadial(iZ,iR+1);
-  zetaL = materials->oneGroupXS->zZeta(iZ+1,iR);
+  zetaL = materials->oneGroupXS->zZeta2(iZ+1,iR);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
@@ -1253,7 +1253,7 @@ void GreyGroupSolver::calcSteadyStateNorthCurrent(int iR,int iZ,int iEq)
   ErzW = GGQD->ErzRadial(iZ,iR);
   ErzE = GGQD->ErzRadial(iZ,iR+1);
 
-  zetaL = materials->oneGroupXS->zZeta(iZ,iR);
+  zetaL = materials->oneGroupXS->zZeta2(iZ,iR);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
@@ -1304,7 +1304,7 @@ void GreyGroupSolver::calcSteadyStateWestCurrent(int iR,int iZ,int iEq)
   ErrW = GGQD->ErrRadial(iZ,iR); 
   ErzN = GGQD->ErzAxial(iZ,iR);
   ErzS = GGQD->ErzAxial(iZ+1,iR);
-  zetaL = materials->oneGroupXS->rZeta(iZ,iR);
+  zetaL = materials->oneGroupXS->rZeta2(iZ,iR);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
@@ -1356,7 +1356,7 @@ void GreyGroupSolver::calcSteadyStateEastCurrent(int iR,int iZ,int iEq)
   ErzN = GGQD->ErzAxial(iZ,iR);
   ErzS = GGQD->ErzAxial(iZ+1,iR);
 
-  zetaL = materials->oneGroupXS->rZeta(iZ,iR+1);
+  zetaL = materials->oneGroupXS->rZeta2(iZ,iR+1);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);
