@@ -35,6 +35,7 @@ class MultilevelCoupling
     bool initialSolve();
     void solveMGHOT();
     void solveMGLOQD();
+    void solveSteadyStateMGLOQD();
     void solveELOT(Eigen::VectorXd xGuess);
     void solveSteadyStateELOT(Eigen::VectorXd xGuess);
     void solveTransient();

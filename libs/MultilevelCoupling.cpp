@@ -513,97 +513,258 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     }
   }
 
-  for (int iIter = 0; iIter < 20; iIter++)
-  {
+  for (int iMGLOQD; iMGLOQD < 100; iMGLOQD++){
 
-    ///////////////////
-    // ELOT SOLUTION //
-    ///////////////////
+    /////////////////////
+    // MGLOQD SOLUTION //
+    /////////////////////
 
-    // Calculate collapsed nuclear data
-    cout << "        ";
-    cout << "Collapsing MGLOQD data for ELOT solve...";
-    MGQDToMPQD->collapseNuclearData();
-    cout << " done."<< endl;
-
-    // Store last iterate of ELOT solution used in ELOT level
-    cout << "        ";
-    cout << "Storing last solution...";
-    xLastELOTIter = mpqd->x;
-    cout << " done."<< endl;
-
-    // Solve ELOT problem
-    cout << "        ";
-    cout << "ELOT solve..." << endl;
+    // Solve MGLOQD problem
+    cout << "    ";
+    cout << "MGLOQD solve..." << endl;
     startTime = clock(); 
-    solveSteadyStateELOT(mpqd->x);
+    solveSteadyStateMGLOQD();
     duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
-    cout << "        ";
-    cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
-    iters.push_back(1);
+    cout << "    ";
+    cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
+    iters.push_back(2);
 
-    // Store newest iterate 
-    xCurrentIter = mpqd->x;
+    // Get group fluxes to use in group collapse
+    mgqd->getFluxes();
 
-    lastResidualELOT = residualELOT; 
+    // Store last iterate of ELOT solution used in MGLOQD level
+    xLastMGLOQDIter = mpqd->x;
 
-    // Calculate and print ELOT residual  
-    residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
-    residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
-    cout << "        ";
-    cout << "ELOT Residual: " << residualELOT[0]; 
-    cout << ", " << residualELOT[1] << endl;
+    while (not convergedELOT)
+    {
+
+      ///////////////////
+      // ELOT SOLUTION //
+      ///////////////////
+
+      // Calculate collapsed nuclear data
+      cout << "        ";
+      cout << "Collapsing MGLOQD data for ELOT solve...";
+      MGQDToMPQD->collapseNuclearData();
+      cout << " done."<< endl;
+
+      // Store last iterate of ELOT solution used in ELOT level
+      cout << "        ";
+      cout << "Storing last solution...";
+      xLastELOTIter = mpqd->x;
+      cout << " done."<< endl;
+
+      // Solve ELOT problem
+      cout << "        ";
+      cout << "ELOT solve..." << endl;
+      startTime = clock(); 
+      solveSteadyStateELOT(mpqd->x);
+      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      cout << "        ";
+      cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
+      iters.push_back(1);
+
+      // Store newest iterate 
+      xCurrentIter = mpqd->x;
+
+      lastResidualELOT = residualELOT; 
+
+      // Calculate and print ELOT residual  
+      residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
+      residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
+      cout << "        ";
+      cout << "ELOT Residual: " << residualELOT[0]; 
+      cout << ", " << residualELOT[1] << endl;
+
+      // Update iterate counters, store residuals
+      itersELOT++;
+      fluxResELOT.push_back(residualELOT[0]);
+      tempResELOT.push_back(residualELOT[1]);
+
+      // Calculate keff 
+      oldFissionSource =\
+                        (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
+      //cout << "old fission source: " << oldFissionSource << endl;
+      mpqd->updateSteadyStateVarsAfterConvergence(); 
+      newFissionSource =\
+                        (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
+      //cout << "new fission source: " << newFissionSource << endl;
+
+      mats->oneGroupXS->kold = mats->oneGroupXS->keff;
+      mats->oneGroupXS->keff = newFissionSource\
+                               /((1/mats->oneGroupXS->kold)*oldFissionSource); 
+
+      // Calculate power
+      power = omega.cwiseProduct(mats->oneGroupXS->sigF).cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
+
+      mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
+
+      cout << "keff: " << mats->oneGroupXS->keff << endl;
+      //cout << "fissionCoeff: " << mats->oneGroupXS->qdFluxCoeff << endl;
+      //cout << "volume: " << volume << endl;
+      //cout << "flux: " << mpqd->ggqd->sFlux << endl;
+      //cout << "temp: " << mpqd->heat->returnCurrentTemp()<< endl;
+      //cout << "power: " << power << endl;
+      //mpqd->mgdnp->printCoreDNPConc();
+
+      // Calculate collapsed nuclear data at new temperature
+      mats->updateTemperature(mpqd->heat->returnCurrentTemp());
+
+      // Check converge criteria 
+      if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
+          eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1] and\
+          abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff) < 1E-12)
+      {
+        convergedELOT = true;
+      }
+
+      // Check keff converge criteria 
+      if (abs(mats->oneGroupXS->keff - mats->oneGroupXS->kold) < 1E-10) 
+      {
+        //break;
+      }
+    } // ELOT
+
+    // Reset convergence indicator
+    convergedELOT = false; 
+
+    // Store one group fluxes and DNPs for MGHOT and MGLOQD sources 
+    //mpqd->ggqd->GGSolver->getFlux();
+    mpqd->mgdnp->getCumulativeDNPDecaySource();
+
+    lastResidualMGLOQD = residualMGLOQD;
+
+    // Calculate and print MGLOQD residual 
+    residualMGLOQD = MGQDToMPQD->calcResidual(xLastMGLOQDIter,xCurrentIter);
+    residualMGLOQD = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGLOQDIter);
+    cout << endl;
+    cout << "    ";
+    cout << "MGLOQD Residual: " << residualMGLOQD[0];
+    cout << ", " << residualMGLOQD[1] << endl;
+    cout << endl;
 
     // Update iterate counters, store residuals
-    itersELOT++;
-    fluxResELOT.push_back(residualELOT[0]);
-    tempResELOT.push_back(residualELOT[1]);
+    itersMGLOQD++;
 
-    // Calculate keff 
-    oldFissionSource =\
-      (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
-    cout << "old fission source: " << oldFissionSource << endl;
-    mpqd->updateSteadyStateVarsAfterConvergence(); 
-    newFissionSource =\
-      (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
-    cout << "new fission source: " << newFissionSource << endl;
+    fluxResMGLOQD.push_back(residualMGLOQD[0]);
+    fluxResMGLOQD.insert(fluxResMGLOQD.end(),\
+        fluxResELOT.begin(),fluxResELOT.end());
+    fluxResELOT.clear();
 
-    mats->oneGroupXS->kold = mats->oneGroupXS->keff;
-    mats->oneGroupXS->keff = newFissionSource\
-                             /((1/mats->oneGroupXS->kold)*oldFissionSource); 
+    tempResMGLOQD.push_back(residualMGLOQD[1]);
+    tempResMGLOQD.insert(tempResMGLOQD.end(),\
+        tempResELOT.begin(),tempResELOT.end());
+    tempResELOT.clear();
 
-    // Calculate power
-    power = omega.cwiseProduct(mats->oneGroupXS->sigF).cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
-
-    mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
-  
-    cout << "keff: " << mats->oneGroupXS->keff << endl;
-    cout << "fissionCoeff: " << mats->oneGroupXS->qdFluxCoeff << endl;
-    cout << "volume: " << volume << endl;
-    cout << "flux: " << mpqd->ggqd->sFlux << endl;
-    cout << "temp: " << mpqd->heat->returnCurrentTemp()<< endl;
-    cout << "power: " << power << endl;
-    mpqd->mgdnp->printCoreDNPConc();
-      
-    // Calculate collapsed nuclear data at new temperature
-    mats->updateTemperature(mpqd->heat->returnCurrentTemp());
+    // Check if residuals are too big or if the residuals have increased
+    // from the last MGLOQD residual 
+    if (residualELOT[0]/lastResidualELOT[0] > resetThreshold or\
+        residualELOT[1]/lastResidualELOT[1] > resetThreshold) 
+    {
+      // Jump back to MGHOT level
+      // break;
+    }
 
     // Check converge criteria 
-    if (mpqd->epsMPQD > residualELOT[0] and mpqd->epsMPQD > residualELOT[1]) 
-    {
-      convergedELOT = true;
+    //if (eps(residualMGHOT[0],relaxTolMGLOQD) > residualMGLOQD[0] and\
+    //    eps(residualMGHOT[1],relaxTolMGLOQD) > residualMGLOQD[1])
+    //{ 
+    //  convergedMGLOQD = true;
+    //}
+
+    // Check converge criteria 
+    if (mpqd->epsMPQD > residualMGLOQD[0] and\
+        mpqd->epsMPQD > residualMGLOQD[1])
+    { 
+      convergedMGLOQD = true;
     }
-    
-    // Check keff converge criteria 
-    if (abs(mats->oneGroupXS->keff - mats->oneGroupXS->kold) < 1E-10) 
-    {
-      //break;
-    }
-  }
+
+  } // MGLOQD
+
+  // Solve MGLOQD problem
+  cout << "    ";
+  cout << "MGLOQD solve..." << endl;
+  startTime = clock(); 
+  solveSteadyStateMGLOQD();
+  duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+  cout << "    ";
+  cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
+  iters.push_back(2);
+
+  // Get group fluxes to use in group collapse
+  mgqd->getFluxes();
+
+  // Store last iterate of ELOT solution used in MGLOQD level
+  xLastMGLOQDIter = mpqd->x;
+
+  ///////////////////
+  // ELOT SOLUTION //
+  ///////////////////
+
+  // Calculate collapsed nuclear data
+  cout << "        ";
+  cout << "Collapsing MGLOQD data for ELOT solve...";
+  MGQDToMPQD->collapseNuclearData();
+  cout << " done."<< endl;
+
+  // Store last iterate of ELOT solution used in ELOT level
+  cout << "        ";
+  cout << "Storing last solution...";
+  xLastELOTIter = mpqd->x;
+  cout << " done."<< endl;
+
+  // Solve ELOT problem
+  cout << "        ";
+  cout << "ELOT solve..." << endl;
+  startTime = clock(); 
+  solveSteadyStateELOT(mpqd->x);
+  duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+  cout << "        ";
+  cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
+  iters.push_back(1);
+
+  // Store newest iterate 
+  xCurrentIter = mpqd->x;
+
+  lastResidualELOT = residualELOT; 
+
+  // Calculate and print ELOT residual  
+  residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
+  residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
+  cout << "        ";
+  cout << "ELOT Residual: " << residualELOT[0]; 
+  cout << ", " << residualELOT[1] << endl;
+
+  // Update iterate counters, store residuals
+  itersELOT++;
+  fluxResELOT.push_back(residualELOT[0]);
+  tempResELOT.push_back(residualELOT[1]);
+
+  // Calculate keff 
+  oldFissionSource =\
+                    (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
+  //cout << "old fission source: " << oldFissionSource << endl;
+  mpqd->updateSteadyStateVarsAfterConvergence(); 
+  newFissionSource =\
+                    (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
+  //cout << "new fission source: " << newFissionSource << endl;
+
+  mats->oneGroupXS->kold = mats->oneGroupXS->keff;
+  mats->oneGroupXS->keff = newFissionSource\
+                           /((1/mats->oneGroupXS->kold)*oldFissionSource); 
+
+  // Calculate power
+  power = omega.cwiseProduct(mats->oneGroupXS->sigF).cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
+
+  //mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
+
+  cout << "keff: " << mats->oneGroupXS->keff << endl;
+
 
   // Write vars
-  mpqd->updateVarsAfterConvergence(); 
+  mpqd->updateSteadyStateVarsAfterConvergence(); 
   mpqd->writeVars(); 
+  mgqd->writeVars(); 
   mats->oneGroupXS->writeVars();
   mesh->output->write(outputDir,"Solve_Time",duration);
 
@@ -645,8 +806,8 @@ void MultilevelCoupling::solveMGHOT()
   // Solve starting angle transport problem
   mgt->solveStartAngles();
 
-    // Solve all angle transport problem
-    mgt->solveSCBs();
+  // Solve all angle transport problem
+  mgt->solveSCBs();
 
 };
 //==============================================================================
@@ -674,6 +835,31 @@ void MultilevelCoupling::solveMGLOQD()
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Perform a steady state solve at the MGLOQD level 
+///
+void MultilevelCoupling::solveSteadyStateMGLOQD()
+{
+
+  // Build flux system
+  mgqd->buildSteadyStateLinearSystem();
+
+  // Solve flux system
+  if (iterativeMGLOQD)
+    mgqd->solveLinearSystemIterative();
+  else
+    mgqd->solveLinearSystem();
+
+  // Build neutron current system
+  mgqd->buildSteadyStateBackCalcSystem();
+
+  // Solve neutron current system
+  mgqd->backCalculateCurrent();
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Perform a solve at the ELOT level 
@@ -734,7 +920,7 @@ void MultilevelCoupling::solveTransient()
   //initialSolve();
   cout << "Initial solve completed." << endl;
   cout << endl;
-  
+
   for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
   {
     cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
@@ -767,13 +953,13 @@ void MultilevelCoupling::solveTransient()
       totalDuration = totalDuration + duration; 
       cout << "Solution aborted after " << duration << " seconds." << endl;      
       mesh->output->write(outputDir,"Solve_Time",duration);
-      
+
       cout << "Solve not converged." << endl;
       cout << "Transient aborted." << endl;
       break;
     }
   } 
-      
+
   // Report total solve time
   cout << "Total solve time: " << totalDuration << " seconds." << endl;      
   mesh->output->write(outputDir,"Solve_Time",totalDuration,true);
@@ -798,7 +984,7 @@ void MultilevelCoupling::checkOptionalParameters()
   // Check for resetThreshold specification.
   if ((*input)["parameters"]["resetThreshold"])
     resetThreshold=(*input)["parameters"]["resetThreshold"].as<double>();
-  
+
   // Check if iterative solver should be used for ELOT 
   if ((*input)["parameters"]["iterativeELOT"])
     iterativeELOT=(*input)["parameters"]["iterativeELOT"].as<bool>();
