@@ -350,6 +350,82 @@ double Materials::sigT(int zIdx,int rIdx,int eIdx){
 //==============================================================================
 
 //==============================================================================
+/// sigT return total cross section at axial interface 
+///
+/// @param [in] zIdx Z index of location 
+/// @param [in] zIdx R index of location 
+/// @param [in] eIndx Energy index of location 
+/// @param [out] sigT Total cross section of the inquired location 
+double Materials::zSigT(int zIdx,int rIdx,int eIdx){
+
+  double tempDown, tempUp, dzDown, dzUp, sigTDown, sigTUp, sigT;
+
+  if (zIdx == 0)
+  {
+    tempDown = temperature(zIdx,rIdx);
+    sigT = matBank[matMap(zIdx,rIdx)]->getSigT(eIdx,tempDown);
+  }
+  else if (zIdx == mesh->nZ)
+  {
+    tempUp = temperature(zIdx-1,rIdx);
+    sigT = matBank[matMap(zIdx-1,rIdx)]->getSigT(eIdx,tempUp);
+  }
+  else
+  {
+    dzDown = mesh->dzsCorner(zIdx-1);
+    tempDown = temperature(zIdx-1,rIdx);
+    sigTDown = matBank[matMap(zIdx-1,rIdx)]->getSigT(eIdx,tempDown);
+    
+    dzUp = mesh->dzsCorner(zIdx);
+    tempUp = temperature(zIdx,rIdx);
+    sigTUp = matBank[matMap(zIdx,rIdx)]->getSigT(eIdx,tempUp);
+
+    sigT = (sigTDown*dzDown + sigTUp*dzUp)/(dzDown + dzUp);
+  }     
+
+  return sigT;
+};
+//==============================================================================
+
+//==============================================================================
+/// sigT return total cross section at radial interface 
+///
+/// @param [in] zIdx Z index of location 
+/// @param [in] zIdx R index of location 
+/// @param [in] eIndx Energy index of location 
+/// @param [out] sigT Total cross section of the inquired location 
+double Materials::rSigT(int zIdx,int rIdx,int eIdx){
+
+  double tempLeft, tempRight, drLeft, drRight, sigTLeft, sigTRight, sigT;
+
+  if (rIdx == 0)
+  {
+    tempLeft = temperature(zIdx,rIdx);
+    sigT = matBank[matMap(zIdx,rIdx)]->getSigT(eIdx,tempLeft);
+  }
+  else if (rIdx == mesh->nR)
+  {
+    tempRight = temperature(zIdx,rIdx-1);
+    sigT = matBank[matMap(zIdx,rIdx-1)]->getSigT(eIdx,tempRight);
+  }
+  else
+  {
+    drLeft = mesh->drsCorner(rIdx-1);
+    tempLeft = temperature(zIdx,rIdx-1);
+    sigTLeft = matBank[matMap(zIdx,rIdx-1)]->getSigT(eIdx,tempLeft);
+    
+    drRight = mesh->drsCorner(rIdx);
+    tempRight = temperature(zIdx,rIdx);
+    sigTRight = matBank[matMap(zIdx,rIdx)]->getSigT(eIdx,tempRight);
+
+    sigT = (sigTLeft*drLeft + sigTRight*drRight)/(drLeft + drRight);
+  }     
+
+  return sigT;
+};
+//==============================================================================
+
+//==============================================================================
 /// sigS return scattering cross section
 ///
 /// @param [in] zIdx Z index of location 
@@ -449,6 +525,82 @@ double Materials::neutVel(int zIdx,int rIdx,int eIndx){
 };
 //==============================================================================
 
+//==============================================================================
+/// return neutron velocity at axial interface 
+///
+/// @param [in] zIdx Z index of location 
+/// @param [in] zIdx R index of location 
+/// @param [in] eIndx Energy index of location 
+/// @param [out] sigT Total cross section of the inquired location 
+double Materials::zNeutVel(int zIdx,int rIdx,int eIdx){
+
+  double tempDown, tempUp, dzDown, dzUp, neutVelDown, neutVelUp, neutVel;
+
+  if (zIdx == 0)
+  {
+    tempDown = temperature(zIdx,rIdx);
+    neutVel = matBank[matMap(zIdx,rIdx)]->getNeutV(eIdx,tempDown);
+  }
+  else if (zIdx == mesh->nZ)
+  {
+    tempUp = temperature(zIdx-1,rIdx);
+    neutVel = matBank[matMap(zIdx-1,rIdx)]->getNeutV(eIdx,tempUp);
+  }
+  else
+  {
+    dzDown = mesh->dzsCorner(zIdx-1);
+    tempDown = temperature(zIdx-1,rIdx);
+    neutVelDown = matBank[matMap(zIdx-1,rIdx)]->getNeutV(eIdx,tempDown);
+    
+    dzUp = mesh->dzsCorner(zIdx);
+    tempUp = temperature(zIdx,rIdx);
+    neutVelUp = matBank[matMap(zIdx,rIdx)]->getNeutV(eIdx,tempUp);
+
+    neutVel = (neutVelDown*dzDown + neutVelUp*dzUp)/(dzDown + dzUp);
+  }     
+
+  return neutVel;
+};
+//==============================================================================
+
+//==============================================================================
+/// sigT return total cross section at radial interface 
+///
+/// @param [in] zIdx Z index of location 
+/// @param [in] zIdx R index of location 
+/// @param [in] eIndx Energy index of location 
+/// @param [out] sigT Total cross section of the inquired location 
+double Materials::rNeutVel(int zIdx,int rIdx,int eIdx){
+
+  double tempLeft, tempRight, drLeft, drRight, neutVelLeft, neutVelRight,\
+    neutVel;
+
+  if (rIdx == 0)
+  {
+    tempLeft = temperature(zIdx,rIdx);
+    neutVel = matBank[matMap(zIdx,rIdx)]->getNeutV(eIdx,tempLeft);
+  }
+  else if (rIdx == mesh->nR)
+  {
+    tempRight = temperature(zIdx,rIdx-1);
+    neutVel = matBank[matMap(zIdx,rIdx-1)]->getNeutV(eIdx,tempRight);
+  }
+  else
+  {
+    drLeft = mesh->drsCorner(rIdx-1);
+    tempLeft = temperature(zIdx,rIdx-1);
+    neutVelLeft = matBank[matMap(zIdx,rIdx-1)]->getNeutV(eIdx,tempLeft);
+    
+    drRight = mesh->drsCorner(rIdx);
+    tempRight = temperature(zIdx,rIdx);
+    neutVelRight = matBank[matMap(zIdx,rIdx)]->getNeutV(eIdx,tempRight);
+
+    neutVel = (neutVelLeft*drLeft + neutVelRight*drRight)/(drLeft + drRight);
+  }     
+
+  return neutVel;
+};
+//==============================================================================
 
 //==============================================================================
 /// Return density at indexed locaiton
@@ -539,27 +691,27 @@ void Materials::updateTemperature(Eigen::MatrixXd myTemp)
 ///
 vector<Eigen::MatrixXd> Materials::readTempDependentYaml(string fileName)
 {
-  
+
   vector<Eigen::MatrixXd> params;
   vector<double> myTemps,myXSs;
   double myTemp,myXS;
   Eigen::MatrixXd myMatrix;
-  
+
   YAML::Node input;
   input = YAML::LoadFile(fileName);
   for (YAML::const_iterator energy=input.begin();energy!=input.end();++energy) 
   {
-      myTemps = energy->second["temperature"].as<vector<double>>();
-      myXSs = energy->second["data"].as<vector<double>>();
-      myMatrix.setZero(myTemps.size(),2);
-      
-      for (int iRow = 0; iRow < myMatrix.rows(); iRow++)
-      {
-        myMatrix(iRow,0) = myTemps[iRow];
-        myMatrix(iRow,1) = myXSs[iRow];
-      }
-      cout << myMatrix << endl;
-      params.push_back(myMatrix);
+    myTemps = energy->second["temperature"].as<vector<double>>();
+    myXSs = energy->second["data"].as<vector<double>>();
+    myMatrix.setZero(myTemps.size(),2);
+
+    for (int iRow = 0; iRow < myMatrix.rows(); iRow++)
+    {
+      myMatrix(iRow,0) = myTemps[iRow];
+      myMatrix(iRow,1) = myXSs[iRow];
+    }
+    cout << myMatrix << endl;
+    params.push_back(myMatrix);
   }
   return params;
 };
@@ -597,17 +749,17 @@ void Materials::initCollapsedXS()
       oneGroupXS->zNeutV(iZ,iR) = neutV(0);      
     }
   }
-  
+
   for (int iR = 0; iR < mesh->nR; ++iR)
   {
-      oneGroupXS->zSigTR(mesh->nZ,iR) = sigT(mesh->nZ-1,iR,0);      
-      oneGroupXS->zNeutV(mesh->nZ,iR) = neutV(0);      
+    oneGroupXS->zSigTR(mesh->nZ,iR) = sigT(mesh->nZ-1,iR,0);      
+    oneGroupXS->zNeutV(mesh->nZ,iR) = neutV(0);      
   }
-  
+
   for (int iZ = 0; iZ < mesh->nZ; ++iZ)
   {
-      oneGroupXS->rSigTR(iZ,mesh->nR) = sigT(iZ,mesh->nR-1,0);      
-      oneGroupXS->rNeutV(iZ,mesh->nR) = neutV(0);      
+    oneGroupXS->rSigTR(iZ,mesh->nR) = sigT(iZ,mesh->nR-1,0);      
+    oneGroupXS->rNeutV(iZ,mesh->nR) = neutV(0);      
   }
 
 };

@@ -30,12 +30,16 @@ class Materials
         void setMatRegion(int myIndex,double rIn,double rOut,\
 		double zUp,double zLow);
 	double sigT(int zIdx,int rIdx,int eIndx);
+	double zSigT(int zIdx,int rIdx,int eIndx);
+	double rSigT(int zIdx,int rIdx,int eIndx);
 	double sigS(int zIdx,int rIdx,int gprime,int g);
 	double sigF(int zIdx,int rIdx,int eIndx);
 	double chiP(int zIdx,int rIdx,int eIndx);
 	double chiD(int zIdx,int rIdx,int eIndx);
 	double nu(int zIdx,int rIdx,int eIdx);
 	double neutVel(int zIdx,int rIdx,int eIdx);
+	double zNeutVel(int zIdx,int rIdx,int eIdx);
+	double rNeutVel(int zIdx,int rIdx,int eIdx);
 	double density(int zIdx,int rIdx);
 	double gamma(int zIdx,int rIdx);
 	double k(int zIdx,int rIdx);
