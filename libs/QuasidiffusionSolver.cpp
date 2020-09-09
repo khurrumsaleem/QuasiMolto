@@ -524,8 +524,8 @@ void QDSolver::southCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->zNeutVel(iZ+1,iR,energyGroup);
+  double sigT = materials->zSigT(iZ+1,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double EzzC,EzzS,ErzW,ErzE;
 
@@ -572,8 +572,8 @@ void QDSolver::northCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->zNeutVel(iZ,iR,energyGroup);
+  double sigT = materials->zSigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double EzzC,EzzN,ErzW,ErzE;
 
@@ -620,8 +620,8 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->rNeutVel(iZ,iR,energyGroup);
+  double sigT = materials->rSigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double hCent,hDown;
   double ErzN,ErzS,ErrC,ErrW;  
@@ -671,8 +671,8 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->rNeutVel(iZ,iR+1,energyGroup);
+  double sigT = materials->rSigT(iZ,iR+1,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double hCent,hUp;
   double ErzN,ErzS,ErrC,ErrE;  
@@ -999,8 +999,8 @@ void QDSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->zNeutVel(iZ+1,iR,energyGroup);
+  double sigT = materials->zSigT(iZ+1,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double EzzC,EzzS,ErzW,ErzE;
 
@@ -1047,8 +1047,8 @@ void QDSolver::calcNorthCurrent(int iR,int iZ,int iEq,\
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->zNeutVel(iZ,iR,energyGroup);
+  double sigT = materials->zSigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double EzzC,EzzN,ErzW,ErzE;
 
@@ -1095,8 +1095,8 @@ void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->rNeutVel(iZ,iR,energyGroup);
+  double sigT = materials->rSigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double hCent,hDown;
   double ErzN,ErzS,ErrC,ErrW;  
@@ -1146,8 +1146,8 @@ void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
   vector<int> indices;
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
-  double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double v = materials->rNeutVel(iZ,iR+1,energyGroup);
+  double sigT = materials->rSigT(iZ,iR+1,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double hCent,hUp;
   double ErzN,ErzS,ErrC,ErrE;  
