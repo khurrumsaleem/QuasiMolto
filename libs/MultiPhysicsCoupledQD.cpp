@@ -449,6 +449,12 @@ void MultiPhysicsCoupledQD::writeVars()
   mesh->output->write(outputDir,"Err",ggqd->Err);
   mesh->output->write(outputDir,"Ezz",ggqd->Ezz);
   mesh->output->write(outputDir,"Erz",ggqd->Erz);
+  mesh->output->write(outputDir,"ErrAxial",ggqd->ErrAxial);
+  mesh->output->write(outputDir,"EzzAxial",ggqd->EzzAxial);
+  mesh->output->write(outputDir,"ErzAxial",ggqd->ErzAxial);
+  mesh->output->write(outputDir,"ErrRadial",ggqd->ErrRadial);
+  mesh->output->write(outputDir,"EzzRadial",ggqd->EzzRadial);
+  mesh->output->write(outputDir,"ErzRadial",ggqd->ErzRadial);
  
   // DNP concentrations
   for (int iDNP = 0; iDNP < mgdnp->DNPs.size(); iDNP++)
