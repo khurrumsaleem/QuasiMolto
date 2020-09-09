@@ -393,7 +393,7 @@ void GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
     {
       indices = GGQD->mgqd->QDSolve->getIndices(iR,iZ,iGroup);
       mgqdCurrent = GGQD->mgqd->QDSolve->currPast(indices[iSC]); 
-      mgqdNeutV = materials->neutVel(iZ,iR,iGroup); 
+      mgqdNeutV = materials->zNeutVel(iZ+1,iR,iGroup); 
       (*b)(iEq) -= (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
     }
   }
@@ -460,7 +460,7 @@ void GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
     {
       indices = GGQD->mgqd->QDSolve->getIndices(iR,iZ,iGroup);
       mgqdCurrent = GGQD->mgqd->QDSolve->currPast(indices[iNC]); 
-      mgqdNeutV = materials->neutVel(iZ,iR,iGroup); 
+      mgqdNeutV = materials->zNeutVel(iZ,iR,iGroup); 
       (*b)(iEq) -= (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
     }
   }
@@ -528,7 +528,7 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
     {
       indices = GGQD->mgqd->QDSolve->getIndices(iR,iZ,iGroup);
       mgqdCurrent = GGQD->mgqd->QDSolve->currPast(indices[iWC]); 
-      mgqdNeutV = materials->neutVel(iZ,iR,iGroup); 
+      mgqdNeutV = materials->rNeutVel(iZ,iR,iGroup); 
       (*b)(iEq) -= (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
     }
   }
@@ -597,7 +597,7 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
     {
       indices = GGQD->mgqd->QDSolve->getIndices(iR,iZ,iGroup);
       mgqdCurrent = GGQD->mgqd->QDSolve->currPast(indices[iEC]); 
-      mgqdNeutV = materials->neutVel(iZ,iR,iGroup); 
+      mgqdNeutV = materials->rNeutVel(iZ,iR+1,iGroup); 
       (*b)(iEq) -= (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
     }
   }
@@ -962,7 +962,7 @@ void GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
     {
       indices = GGQD->mgqd->QDSolve->getIndices(iR,iZ,iGroup);
       mgqdCurrent = GGQD->mgqd->QDSolve->currPast(indices[iSC]); 
-      mgqdNeutV = materials->neutVel(iZ,iR,iGroup); 
+      mgqdNeutV = materials->zNeutVel(iZ+1,iR,iGroup); 
       d(iEq) += (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
     }
   }
@@ -1028,7 +1028,7 @@ void GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
     {
       indices = GGQD->mgqd->QDSolve->getIndices(iR,iZ,iGroup);
       mgqdCurrent = GGQD->mgqd->QDSolve->currPast(indices[iNC]); 
-      mgqdNeutV = materials->neutVel(iZ,iR,iGroup); 
+      mgqdNeutV = materials->zNeutVel(iZ,iR,iGroup); 
       d(iEq) += (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
     }
   }
@@ -1095,7 +1095,7 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
     {
       indices = GGQD->mgqd->QDSolve->getIndices(iR,iZ,iGroup);
       mgqdCurrent = GGQD->mgqd->QDSolve->currPast(indices[iWC]); 
-      mgqdNeutV = materials->neutVel(iZ,iR,iGroup); 
+      mgqdNeutV = materials->rNeutVel(iZ,iR,iGroup); 
       d(iEq) += (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
     }
   }
@@ -1163,7 +1163,7 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
     {
       indices = GGQD->mgqd->QDSolve->getIndices(iR,iZ,iGroup);
       mgqdCurrent = GGQD->mgqd->QDSolve->currPast(indices[iEC]); 
-      mgqdNeutV = materials->neutVel(iZ,iR,iGroup); 
+      mgqdNeutV = materials->rNeutVel(iZ,iR+1,iGroup); 
       d(iEq) += (coeff/deltaT)*(mgqdCurrent/mgqdNeutV);
     }
   }
