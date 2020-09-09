@@ -723,7 +723,7 @@ void QDSolver::steadyStateSouthCurrent(double coeff,int iR,int iZ,int iEq,\
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double sigT = materials->zSigT(iZ+1,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double EzzC,EzzS,ErzW,ErzE;
 
@@ -769,7 +769,7 @@ void QDSolver::steadyStateNorthCurrent(double coeff,int iR,int iZ,int iEq,\
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double sigT = materials->zSigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double EzzC,EzzN,ErzW,ErzE;
 
@@ -815,7 +815,7 @@ void QDSolver::steadyStateWestCurrent(double coeff,int iR,int iZ,int iEq,
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double sigT = materials->rSigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double hCent,hDown;
   double ErzN,ErzS,ErrC,ErrW;  
@@ -864,7 +864,7 @@ void QDSolver::steadyStateEastCurrent(double coeff,int iR,int iZ,int iEq,\
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double sigT = materials->rSigT(iZ,iR+1,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ;  
   double hCent,hUp;
   double ErzN,ErzS,ErrC,ErrE;  
@@ -1198,7 +1198,7 @@ void QDSolver::calcSteadyStateSouthCurrent(int iR,int iZ,int iEq,\
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double sigT = materials->zSigT(iZ+1,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double EzzC,EzzS,ErzW,ErzE;
 
@@ -1244,7 +1244,7 @@ void QDSolver::calcSteadyStateNorthCurrent(int iR,int iZ,int iEq,\
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double sigT = materials->zSigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double EzzC,EzzN,ErzW,ErzE;
 
@@ -1290,7 +1290,7 @@ void QDSolver::calcSteadyStateWestCurrent(int iR,int iZ,int iEq,\
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double sigT = materials->rSigT(iZ,iR,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double hCent,hDown;
   double ErzN,ErzS,ErrC,ErrW;  
@@ -1339,7 +1339,7 @@ void QDSolver::calcSteadyStateEastCurrent(int iR,int iZ,int iEq,\
   vector<double> geoParams = calcGeoParams(iR,iZ);
   double deltaT = mesh->dt;
   double v = materials->neutVel(iZ,iR,energyGroup);
-  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double sigT = materials->rSigT(iZ,iR+1,energyGroup);
   double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
   double hCent,hUp;
   double ErzN,ErzS,ErrC,ErrE;  
