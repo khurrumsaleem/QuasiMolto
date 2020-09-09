@@ -298,44 +298,6 @@ void testSteadyState(Materials * myMaterials,\
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
       myMPQD);
 
-  for (int iR = 0; iR < myMesh->nR+1; iR++)
-  {
-    for (int iZ = 0; iZ < myMesh->nZ; iZ++)
-    {
-      cout << "(" << iZ << "," << iR << "): ";
-      cout << myMaterials->rSigT(iZ,iR,0) << endl;
-    }
-  }
-
-  for (int iR = 0; iR < myMesh->nR; iR++)
-  {
-    for (int iZ = 0; iZ < myMesh->nZ+1; iZ++)
-    {
-      cout << "(" << iZ << "," << iR << "): ";
-      cout << myMaterials->zSigT(iZ,iR,0) << endl;
-    }
-  }
-
-  for (int iR = 0; iR < myMesh->nR+1; iR++)
-  {
-    for (int iZ = 0; iZ < myMesh->nZ; iZ++)
-    {
-      cout << "(" << iZ << "," << iR << "): ";
-      cout << myMaterials->rNeutVel(iZ,iR,0) << endl;
-    }
-  }
-
-  for (int iR = 0; iR < myMesh->nR; iR++)
-  {
-    for (int iZ = 0; iZ < myMesh->nZ+1; iZ++)
-    {
-      cout << "(" << iZ << "," << iR << "): ";
-      cout << myMaterials->zSigT(iZ,iR,0) << endl;
-    }
-  }
-
-
-
   cout << "Initialized steady state solve" << endl;
 
   myMLCoupling->solveSteadyStateResidualBalance(true);
