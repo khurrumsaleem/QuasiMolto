@@ -513,7 +513,8 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     }
   }
 
-  for (int iMGLOQD; iMGLOQD < 100; iMGLOQD++){
+  while (not convergedMGLOQD)
+  {
 
     /////////////////////
     // MGLOQD SOLUTION //
@@ -612,8 +613,8 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
 
       // Check converge criteria 
       if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
-          eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1] and\
-          abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff) < 1E-12)
+          eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1] )
+         // abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff) < 1E-12)
       {
         convergedELOT = true;
       }
@@ -659,7 +660,8 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     // Check if residuals are too big or if the residuals have increased
     // from the last MGLOQD residual 
     if (residualELOT[0]/lastResidualELOT[0] > resetThreshold or\
-        residualELOT[1]/lastResidualELOT[1] > resetThreshold) 
+        residualELOT[1]/lastResidualELOT[1] > resetThreshold and\
+        abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff) < 1E-12) 
     {
       // Jump back to MGHOT level
       // break;
