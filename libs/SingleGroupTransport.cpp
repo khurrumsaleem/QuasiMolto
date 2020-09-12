@@ -135,7 +135,10 @@ double SingleGroupTransport::calcSource(string calcType)
   // Check is grey group sources should be used
   if (MGT->useMPQDSources)
   {         
-    q = calcMPQDSource();
+    if (calcType == "steady_state")
+      q = calcSteadyStateMPQDSource();
+    else
+      q = calcMPQDSource();
   }
   // Otherwise, use transport sources
   else
@@ -293,7 +296,47 @@ Eigen::MatrixXd SingleGroupTransport::calcMPQDSource()
 
 //==============================================================================
 
+//==============================================================================
+/// Calculate the steady state grey group source 
+///
+Eigen::MatrixXd SingleGroupTransport::calcSteadyStateMPQDSource()
+{  
 
+  double localSigS, localChiP, localChiD, localFissionCoeff, localFlux,\
+    localDNPSource, keff;
+  double weight = 1.0/mesh->totalWeight; 
+  Eigen::MatrixXd mpqdSource;
+
+  // Initialize size of source matrix
+  mpqdSource.setZero(sFlux.rows(),sFlux.cols());
+
+  for (int iR = 0; iR < mpqdSource.cols(); iR++)
+  {
+    for (int iZ = 0; iZ < mpqdSource.rows(); iZ++)
+    {
+      localSigS = mats->oneGroupXS->groupScatterXS(iZ,iR,energyGroup);
+      localFissionCoeff = mats->oneGroupXS->qdFluxCoeff(iZ,iR);
+      localChiP = mats->chiP(iZ,iR,energyGroup);
+      localChiD = mats->chiD(iZ,iR,energyGroup);
+      localFlux = MGT->mpqd->ggqd->sFlux(iZ,iR); 
+      localDNPSource = MGT->mpqd->mgdnp->dnpSource(iZ,iR); 
+      keff = mats->oneGroupXS->keff;
+
+      // Scattering source
+      mpqdSource(iZ,iR) = weight*localSigS*localFlux;
+
+      // Fission source
+      mpqdSource(iZ,iR) += weight*localChiP*localFissionCoeff*localFlux/keff;
+
+      // DNP source
+      mpqdSource(iZ,iR) += weight*localChiD*localDNPSource;
+    }
+  }
+
+  return mpqdSource;
+};
+
+//==============================================================================
 
 //==============================================================================
 /// Calculate the flux in this energy group
@@ -343,7 +386,7 @@ double SingleGroupTransport::calcFlux()
 /// Assuming the fluxes currently contained in this object
 /// @param [out] residual L2 norm of difference between newly calculate alpha
 /// and past alpha
-double SingleGroupTransport::calcAlpha()
+double SingleGroupTransport::calcAlpha(string calcType)
 {  
 
   double localFlux,localFluxPrev,residual,deltaT = mesh->dt;
@@ -356,17 +399,22 @@ double SingleGroupTransport::calcAlpha()
 
   if (MGT->useMPQDSources)
   {
-    for (int iZ = 0; iZ < alpha.rows(); ++iZ){
-      for (int iR = 0; iR < alpha.cols(); ++iR){
-        
-        // Get local values
-        indices = MGT->mgqd->QDSolve->getIndices(iR,iZ,energyGroup); 
-        localFlux = MGT->mgqd->QDSolve->x(indices[0]);
-        localFluxPrev = MGT->mgqd->QDSolve->xPast(indices[0]);
-        alpha(iZ,iR) = (1.0/deltaT)*log(localFlux/localFluxPrev);
+    if (calcType == "steady_state")
+      alpha.setZero();
+    else
+    {
+      for (int iZ = 0; iZ < alpha.rows(); ++iZ){
+        for (int iR = 0; iR < alpha.cols(); ++iR){
 
-      } // iR
-    } // iZ
+          // Get local values
+          indices = MGT->mgqd->QDSolve->getIndices(iR,iZ,energyGroup); 
+          localFlux = MGT->mgqd->QDSolve->x(indices[0]);
+          localFluxPrev = MGT->mgqd->QDSolve->xPast(indices[0]);
+          alpha(iZ,iR) = (1.0/deltaT)*log(localFlux/localFluxPrev);
+
+        } // iR
+      } // iZ
+    }
   }
   else
   {
@@ -377,7 +425,6 @@ double SingleGroupTransport::calcAlpha()
       } // iR
     } // iZ
   }
-
 
   alphaDiff = (alpha_old-alpha);
   // Calculate residual
@@ -400,7 +447,6 @@ double SingleGroupTransport::calcAlpha()
 };
 
 //==============================================================================
-
 
 //==============================================================================
 /// Write the flux in this energy group to a CVS

@@ -47,7 +47,7 @@ class MultiGroupTransport
     void solveSCBs();
     bool calcSources(string calcType="FS");
     bool calcFluxes(string printResidual="noprint");
-    bool calcAlphas(string printResidual="noprint");
+    bool calcAlphas(string printResidual="noprint", string calcType="");
     bool calcFissionSources(string printResidual="noprint");
     bool sourceIteration();
     bool powerIteration();

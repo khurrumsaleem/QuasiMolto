@@ -38,8 +38,10 @@ class SingleGroupTransport
     double calcFissionSource(); 
     double calcScatterSource(); 
     Eigen::MatrixXd calcMPQDSource(); 
+    Eigen::MatrixXd calcSteadyStateMPQDSource(); 
     double calcFlux();
-    double calcAlpha();
+    double calcAlpha(string calcType="");
+    double calcSteadyStateAlpha();
     void writeFlux();
 
   private:

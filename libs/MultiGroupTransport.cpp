@@ -174,7 +174,7 @@ bool MultiGroupTransport::calcSources(string calcType)
 ///
 /// @param [out] allConverged Indicates whether alpha estimates are globally 
 /// converged
-bool MultiGroupTransport::calcAlphas(string printResidual)
+bool MultiGroupTransport::calcAlphas(string printResidual,string calcType)
 {
 
   // Vector indicating whether alpha in each SGT is converged
@@ -189,7 +189,7 @@ bool MultiGroupTransport::calcAlphas(string printResidual)
   // Loop over SGTs, calculate alphas, and determine whether the alphas
   // in each SGT are converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
-    residuals(iGroup)=SGTs[iGroup]->calcAlpha();
+    residuals(iGroup)=SGTs[iGroup]->calcAlpha(calcType);
     converged(iGroup) = residuals(iGroup) < epsAlpha;
   }
 
