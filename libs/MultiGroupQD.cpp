@@ -272,6 +272,10 @@ void MultiGroupQD::writeVars()
     mesh->output->write(outputDir,name,SGQDs[iGroup]->EzzRadial);
     name =  "Erz_Radial_Group_" + to_string(iGroup);
     mesh->output->write(outputDir,name,SGQDs[iGroup]->ErzRadial);
+    name =  "G_Group_" + to_string(iGroup);
+    mesh->output->write(outputDir,name,SGQDs[iGroup]->G);
+    name =  "G_Radial_Group_" + to_string(iGroup);
+    mesh->output->write(outputDir,name,SGQDs[iGroup]->GRadial);
   }
 
 }
