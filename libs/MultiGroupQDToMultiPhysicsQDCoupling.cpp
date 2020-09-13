@@ -136,7 +136,6 @@ void MGQDToMPQDCoupling::initCollapsedNuclearData()
 };
 //==============================================================================
 
-
 //==============================================================================
 /// Collapse nuclear data with flux and current weighting 
 ///
@@ -288,6 +287,9 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
   // Calculate interface Eddington factors
   calculateFluxWeightedInterfaceEddingtons();
 
+  // Calculate integrating factor parameter
+  calculateCollapsedG();
+
 };
 //==============================================================================
 
@@ -403,6 +405,78 @@ void MGQDToMPQDCoupling::calculateFluxWeightedInterfaceEddingtons()
 };
 //==============================================================================
 
+//==============================================================================
+/// Collapse G parameter used in integrating factor 
+///
+void MGQDToMPQDCoupling::calculateCollapsedG()
+{
+
+  // Temporary accumulator variables
+  double eddingtonRxRates,eddington,numerator,radius,flux,G;
+
+  // Loop over spatial mesh and calculate collapsed G
+  for (int iZ = 0; iZ < mesh->nZ; iZ++)
+  {
+    for (int iR = 0; iR < mesh->nR; iR++)
+    {
+      // Get radius at cell center
+      radius = mesh->rCornerCent(iR); 
+
+      // Reset accumulators
+      eddingtonRxRates = 0.0; numerator = 0.0;
+
+      // Loop over neutron energy groups
+      for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+      {
+
+        // Get fluxes and data in the cell center
+        flux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,iR); 
+        eddington = mgqd->SGQDs[iEnergyGroup]->Err(iZ,iR); 
+        G = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
+
+        eddingtonRxRates += flux * eddington;
+        numerator += pow(radius,G) * flux * eddington; 
+
+      }
+
+      mpqd->ggqd->G(iZ,iR) = log(numerator/eddingtonRxRates)/log(radius);
+
+    }
+  }
+
+  // Loop over spatial edge mesh and calculate collapsed G
+  for (int iZ = 0; iZ < mesh->nZ; iZ++)
+  {
+    
+    for (int iR = 1; iR < mesh->nR+1; iR++)
+    {
+
+      // Get radius at cell center
+      radius = mesh->rCornerEdge(iR); 
+
+      // Reset accumulators
+      eddingtonRxRates = 0.0; numerator = 0.0;
+
+      // Loop over neutron energy groups
+      for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+      {
+
+        // Get fluxes and data in the cell center
+        flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR); 
+        eddington = mgqd->SGQDs[iEnergyGroup]->ErrRadial(iZ,iR); 
+        G = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR); 
+
+        eddingtonRxRates += flux * eddington;
+        numerator += pow(radius,G) * flux * eddington; 
+
+      }
+
+      mpqd->ggqd->GRadial(iZ,iR) = log(numerator/eddingtonRxRates)/log(radius);
+
+    }
+  }
+};
+//==============================================================================
 
 //==============================================================================
 /// Collapse boundary condition data 
@@ -620,7 +694,7 @@ void MGQDToMPQDCoupling::calculateAxialCurrentWeightedData()
                    /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
           myNeutV = (mats->neutVel(iZ-1,iR,iEnergyGroup)*mesh->dzsCorner(iZ-1)\
               + mats->neutVel(iZ,iR,iEnergyGroup)*mesh->dzsCorner(iZ))\
-                   /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
+                    /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
         }     
 
         // Axial current weighted neutron velocity
@@ -691,7 +765,7 @@ void MGQDToMPQDCoupling::calculateRadialCurrentWeightedData()
                    /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
           myNeutV = (mats->neutVel(iZ,iR-1,iEnergyGroup)*mesh->drsCorner(iR-1)\
               + mats->neutVel(iZ,iR,iEnergyGroup)*mesh->drsCorner(iR))\
-                   /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
+                    /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
         }     
 
         // Radial current weighted sigTR
@@ -739,7 +813,7 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
       pastSum = 0.0;
       presentSum = 0.0;
       sigTDiff = 0.0;
-      
+
       // Check to see if we need to add a slight bias if all group fluxes are
       // zero. This presents NaNs from dividing by zero. 
       bias = checkForZeroRadialFlux(iZ,iR);
@@ -771,7 +845,7 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
                    /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
           myNeutV = (mats->neutVel(iZ,iR-1,iEnergyGroup)*mesh->drsCorner(iR-1)\
               + mats->neutVel(iZ,iR,iEnergyGroup)*mesh->drsCorner(iR))\
-                   /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
+                    /(mesh->drsCorner(iR-1)+mesh->drsCorner(iR));
         }     
         mySigTR = mats->oneGroupXS->rSigTR(iZ,iR);
         myRNeutV = mats->oneGroupXS->rNeutV(iZ,iR);
@@ -830,7 +904,7 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
       pastSum = 0.0;
       presentSum = 0.0;
       sigTDiff = 0.0;
-      
+
       // Check to see if we need to add a slight bias if all group fluxes are
       // zero. This presents NaNs from dividing by zero. 
       bias = checkForZeroAxialFlux(iZ,iR);
@@ -862,7 +936,7 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
                    /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
           myNeutV = (mats->neutVel(iZ-1,iR,iEnergyGroup)*mesh->dzsCorner(iZ-1)\
               + mats->neutVel(iZ,iR,iEnergyGroup)*mesh->dzsCorner(iZ))\
-                   /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
+                    /(mesh->dzsCorner(iZ-1)+mesh->dzsCorner(iZ));
         }     
         mySigTR = mats->oneGroupXS->zSigTR(iZ,iR);
         myZNeutV = mats->oneGroupXS->zNeutV(iZ,iR);
@@ -1135,7 +1209,7 @@ double MGQDToMPQDCoupling::checkForZeroRadialCurrent(int iZ,int iR)
 vector<double> MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
     Eigen::VectorXd vector2)
 {
-  
+
   Eigen::VectorXd ones, residualVec, diff;
   Eigen::VectorXd fluxResidualVec, tempResidualVec, dnpResidualVec; 
   vector<double> multiphysicsResiduals;
@@ -1146,11 +1220,11 @@ vector<double> MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
   // Set flux indices
   fluxBeginIdx = 0; 
   fluxEndIdx = mpqd->ggqd->nUnknowns;
-  
+
   // Set temp indices
   heatBeginIdx = mpqd->heat->indexOffset;
   heatEndIdx = mpqd->heat->nUnknowns;
-  
+
   // Set DNP indices
   dnpBeginIdx = mpqd->mgdnp->indexOffset;
   dnpEndIdx = vector1.size()-1;
@@ -1209,7 +1283,7 @@ vector<double> MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
   residual = (1.0/residualVec.size())*residualVec.norm();
   //cout << "ResidualVec:" << endl;
   //cout << residualVec << endl;
-  
+
   fluxResidualVec = residualVec(Eigen::seqN(fluxBeginIdx,fluxEndIdx));
   tempResidualVec = residualVec(Eigen::seqN(heatBeginIdx,heatEndIdx));
   dnpResidualVec = residualVec(Eigen::seq(dnpBeginIdx,dnpEndIdx));
@@ -1221,9 +1295,9 @@ vector<double> MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
   multiphysicsResiduals.push_back(fluxResidual);
   multiphysicsResiduals.push_back(tempResidual);
   multiphysicsResiduals.push_back(dnpResidual);
-  
+
   return multiphysicsResiduals;
-  
+
 };
 //==============================================================================
 

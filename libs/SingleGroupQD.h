@@ -35,6 +35,9 @@ class SingleGroupQD
     Eigen::MatrixXd Ezz,EzzPrev;
     Eigen::MatrixXd Erz,ErzPrev;
 
+    // Integrating factor parameter
+    Eigen::MatrixXd G,GRadial;
+
     // Interface Eddington factors
     Eigen::MatrixXd ErrAxial;
     Eigen::MatrixXd EzzAxial;

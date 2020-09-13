@@ -34,15 +34,17 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   // initialize Eddington factors to diffusion physics
   double diagValue = 1.0/3.0, offDiagValue = 0.0;
   
-  Err.setConstant(mesh->nZ+1,mesh->nR,diagValue);
-  Ezz.setConstant(mesh->nZ+1,mesh->nR,diagValue);
-  Erz.setConstant(mesh->nZ+1,mesh->nR,offDiagValue);
+  Err.setConstant(mesh->nZ,mesh->nR,diagValue);
+  Ezz.setConstant(mesh->nZ,mesh->nR,diagValue);
+  Erz.setConstant(mesh->nZ,mesh->nR,offDiagValue);
   ErrAxial.setConstant(mesh->nZ+1,mesh->nR,diagValue);
   EzzAxial.setConstant(mesh->nZ+1,mesh->nR,diagValue);
   ErzAxial.setConstant(mesh->nZ+1,mesh->nR,offDiagValue);
   ErrRadial.setConstant(mesh->nZ,mesh->nR+1,diagValue);
   EzzRadial.setConstant(mesh->nZ,mesh->nR+1,diagValue);
   ErzRadial.setConstant(mesh->nZ,mesh->nR+1,offDiagValue);
+  G.setConstant(mesh->nZ,mesh->nR,offDiagValue);
+  GRadial.setConstant(mesh->nZ,mesh->nR+1,offDiagValue);
 
   // initialize previous Eddington factors
   ErrPrev = Err;

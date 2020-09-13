@@ -44,6 +44,8 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   ErrRadial.setConstant(mesh->nZ,mesh->nR+1,diagValue);
   EzzRadial.setConstant(mesh->nZ,mesh->nR+1,diagValue);
   ErzRadial.setConstant(mesh->nZ,mesh->nR+1,offDiagValue);
+  G.setConstant(mesh->nZ,mesh->nR,offDiagValue);
+  GRadial.setConstant(mesh->nZ,mesh->nR+1,offDiagValue);
 
   // initialize previous Eddington factors
   ErrPrev = Err;

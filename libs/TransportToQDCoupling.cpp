@@ -128,7 +128,12 @@ bool TransportToQDCoupling::calcEddingtonFactors()
       cellAvgConverged = cellAvgConverged and false;
   } //iGroup
 
+
+  // Calculate interface Eddingtons
   interfaceConverged = calcInterfaceEddingtonFactors(); 
+
+  // Calculate G used in integrating factor
+  calcGFactors();
 
   return (cellAvgConverged and interfaceConverged);
 }
@@ -316,6 +321,48 @@ bool TransportToQDCoupling::calcInterfaceEddingtonFactors()
 
 
   return allConverged;
+}
+//==============================================================================
+
+//==============================================================================
+/// Calculate G factors using group Eddington factors 
+void TransportToQDCoupling::calcGFactors()
+{
+  int rows = MGT->SGTs[0]->sFlux.rows();
+  int cols = MGT->SGTs[0]->sFlux.cols();
+  double Ezz, Err;
+
+  for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
+  {
+    for (int iZ = 0; iZ < rows; iZ++)
+    {
+      for (int iR = 0; iR < cols; iR++)
+      {
+
+        // Calculate cell center G
+        Ezz = MGQD->SGQDs[iGroup]->Ezz(iZ,iR);
+        Err = MGQD->SGQDs[iGroup]->Err(iZ,iR);
+
+        MGQD->SGQDs[iGroup]->G(iZ,iR)= 1.0 + (Err + Ezz - 1.0) / Err;
+
+        // Calculate cell edge G
+        Ezz = MGQD->SGQDs[iGroup]->EzzRadial(iZ,iR);
+        Err = MGQD->SGQDs[iGroup]->ErrRadial(iZ,iR);
+
+        MGQD->SGQDs[iGroup]->GRadial(iZ,iR)= 1.0 + (Err + Ezz - 1.0) / Err;
+
+      } // iR
+
+      // Calculate cell edge case for edge G
+      Ezz = MGQD->SGQDs[iGroup]->EzzRadial(iZ,cols);
+      Err = MGQD->SGQDs[iGroup]->ErrRadial(iZ,cols);
+
+      MGQD->SGQDs[iGroup]->GRadial(iZ,cols)= 1.0 + (Err + Ezz - 1.0) / Err;
+
+    } // iZ
+        
+  } //iGroup
+
 }
 //==============================================================================
 

@@ -34,6 +34,7 @@ class MGQDToMPQDCoupling
   void calculateRadialCurrentWeightedData();
   void calculateRadialZetaFactors();
   void calculateAxialZetaFactors();
+  void calculateCollapsedG();
   double checkForZeroFlux(int iZ,int iR);
   double checkForZeroInwardFluxSouthBC(int iR);
   double checkForZeroInwardFluxNorthBC(int iR);

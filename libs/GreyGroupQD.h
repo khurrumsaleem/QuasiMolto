@@ -41,6 +41,9 @@ class GreyGroupQD
     Eigen::MatrixXd EzzRadial;
     Eigen::MatrixXd ErzRadial;
 
+    // Integrating factor parameters 
+    Eigen::MatrixXd G,GRadial;
+
     // flux boundary conditions  
     Eigen::VectorXd wFluxBC;
     Eigen::VectorXd eFluxBC;
