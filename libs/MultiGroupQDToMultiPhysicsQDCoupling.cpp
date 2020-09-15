@@ -289,6 +289,7 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
 
   // Calculate integrating factor parameter
   calculateCollapsedG();
+  calculateCollapsedIntFactorCoeffs();
 
 };
 //==============================================================================
@@ -412,15 +413,52 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
 {
 
   // Temporary accumulator variables
-  double eddingtonRxRates,eddington,numerator,radius,flux,G;
+  double eddingtonRxRates,eddington,numerator,flux;
+  double centRad,edgeRad,centG,edgeG,Err,Ezz,frac;
 
   // Loop over spatial mesh and calculate collapsed G
   for (int iZ = 0; iZ < mesh->nZ; iZ++)
   {
-    for (int iR = 0; iR < mesh->nR; iR++)
+
+    // HANDLE EDGE CASE
+
+    // Calculate first G with collapsed Err and Ezz at (iZ,0)
+    Err = mpqd->ggqd->Err(iZ,0);
+    Ezz = mpqd->ggqd->Ezz(iZ,0);
+
+    centRad = mesh->rVWCornerCent(0); 
+    edgeRad = mesh->rCornerEdge(1); 
+    mpqd->ggqd->G(iZ,0) = 1 + (Err+Ezz-1)/Err;
+    
+    // Reset accumulators
+    eddingtonRxRates = 0.0; numerator = 0.0;
+
+    // Loop over neutron energy groups
+    for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
     {
-      // Get radius at cell center
-      radius = mesh->rCornerCent(iR); 
+
+      // Get fluxes and data in the cell center
+      flux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,0); 
+      Err = mgqd->SGQDs[iEnergyGroup]->Err(iZ,0); 
+      centG = mgqd->SGQDs[iEnergyGroup]->G(iZ,0); 
+      edgeG = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,1); 
+
+      eddingtonRxRates += flux * Err;
+      numerator += pow(centRad,centG) * flux * Err / pow(edgeRad,edgeG); 
+
+    }
+
+    frac = numerator/eddingtonRxRates;
+    mpqd->ggqd->GRadial(iZ,1) = -(log(frac)\
+        - mpqd->ggqd->G(iZ,0)*log(centRad))/log(edgeRad);
+
+    // HANDLE REMAINING CASES
+
+    for (int iR = 1; iR < mesh->nR; iR++)
+    {
+      // Get west side positions
+      centRad = mesh->rVWCornerCent(iR); 
+      edgeRad = mesh->rCornerEdge(iR); 
 
       // Reset accumulators
       eddingtonRxRates = 0.0; numerator = 0.0;
@@ -431,29 +469,24 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
 
         // Get fluxes and data in the cell center
         flux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,iR); 
-        eddington = mgqd->SGQDs[iEnergyGroup]->Err(iZ,iR); 
-        G = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
+        Err = mgqd->SGQDs[iEnergyGroup]->Err(iZ,iR); 
+        centG = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
+        edgeG = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR); 
 
-        eddingtonRxRates += flux * eddington;
-        numerator += pow(radius,G) * flux * eddington; 
+        eddingtonRxRates += flux * Err;
+        numerator += pow(centRad,centG) * flux * Err / pow(edgeRad,edgeG); 
 
       }
 
-      mpqd->ggqd->G(iZ,iR) = log(numerator/eddingtonRxRates)/log(radius);
+      // Collapse cell center G
+      frac = numerator/eddingtonRxRates;
+      mpqd->ggqd->G(iZ,iR) = (log(frac) + mpqd->ggqd->GRadial(iZ,iR)*log(edgeRad))\
+                             /log(centRad);
 
-    }
-  }
 
-  // Loop over spatial edge mesh and calculate collapsed G
-  for (int iZ = 0; iZ < mesh->nZ; iZ++)
-  {
-    
-    for (int iR = 1; iR < mesh->nR+1; iR++)
-    {
-
-      // Get radius at cell center
-      radius = mesh->rCornerEdge(iR); 
-
+      // Collapse cell edge G
+      edgeRad = mesh->rCornerEdge(iR+1); 
+      
       // Reset accumulators
       eddingtonRxRates = 0.0; numerator = 0.0;
 
@@ -462,20 +495,139 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
       {
 
         // Get fluxes and data in the cell center
-        flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR); 
-        eddington = mgqd->SGQDs[iEnergyGroup]->ErrRadial(iZ,iR); 
-        G = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR); 
+        flux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,iR); 
+        Err = mgqd->SGQDs[iEnergyGroup]->Err(iZ,iR); 
+        centG = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
+        edgeG = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR+1); 
 
-        eddingtonRxRates += flux * eddington;
-        numerator += pow(radius,G) * flux * eddington; 
+        eddingtonRxRates += flux * Err;
+        numerator += pow(centRad,centG) * flux * Err / pow(edgeRad,edgeG); 
 
       }
 
-      mpqd->ggqd->GRadial(iZ,iR) = log(numerator/eddingtonRxRates)/log(radius);
+      frac = numerator/eddingtonRxRates;
+      mpqd->ggqd->GRadial(iZ,iR+1) = -(log(frac)-mpqd->ggqd->G(iZ,iR)*log(centRad))\
+                                  /log(edgeRad);
 
     }
   }
+
+  //  // Loop over spatial edge mesh and calculate collapsed G
+  //  for (int iZ = 0; iZ < mesh->nZ; iZ++)
+  //  {
+  //
+  //    for (int iR = 1; iR < mesh->nR+1; iR++)
+  //    {
+  //
+  //      // Get radius at cell center
+  //      radius = mesh->rCornerEdge(iR); 
+  //
+  //      // Reset accumulators
+  //      eddingtonRxRates = 0.0; numerator = 0.0;
+  //
+  //      // Loop over neutron energy groups
+  //      for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
+  //      {
+  //
+  //        // Get fluxes and data in the cell center
+  //        flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR); 
+  //        eddington = mgqd->SGQDs[iEnergyGroup]->ErrRadial(iZ,iR); 
+  //        G = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR); 
+  //
+  //        eddingtonRxRates += flux * eddington;
+  //        numerator += pow(radius,G) * flux * eddington; 
+  //
+  //      }
+  //
+  //      mpqd->ggqd->GRadial(iZ,iR) = log(numerator/eddingtonRxRates)/log(radius);
+  //
+  //    }
+  //  }
+
+  //cout << "GRadial: " << mpqd->ggqd->GRadial << endl;
+  //cout << "G: " << mpqd->ggqd->G << endl;
 };
+//==============================================================================
+
+//==============================================================================
+/// Calculate integrating factor coefficients
+void MGQDToMPQDCoupling::calculateCollapsedIntFactorCoeffs()
+{
+  int p = 2;
+  double g0, g1, centExp, edgeExp, flux, Err, coeff1, coeff2, coeff3, coeff4, \
+    eddingtonRxRates, numerator,frac;
+  // May Zeus forgive me for the use of the variable names coeffN, but I'll be 
+  // damned if that isn't just about as descripitive as I can get.
+ 
+  double centR = mesh->rVWCornerCent(0), edgeR = mesh->rCornerEdge(1); 
+
+  for (int iZ = 0; iZ < mesh->nZ; iZ++)
+  {
+
+    // Reset accumulators
+    eddingtonRxRates = 0.0; numerator = 0.0;
+
+    // Loop over neutron energy groups
+    for (int iGroup = 0; iGroup < mats->nGroups; iGroup++)
+    {
+      // Get integrating factor coefficients 
+      g1 = mgqd->SGQDs[iGroup]->g1(iZ);
+      g0 = mgqd->SGQDs[iGroup]->g0(iZ);
+
+      centExp = (g0 * pow(centR, p) / p) + g1 * ( pow(centR, p+1) / (p + 1));
+
+      // Get fluxes and data in the cell center
+      flux = mgqd->SGQDs[iGroup]->sFlux(iZ,0); 
+      Err = mgqd->SGQDs[iGroup]->Err(iZ,0); 
+
+      eddingtonRxRates += flux * Err;
+      numerator += exp(centExp) * flux * Err; 
+
+    }
+
+    // Collapse cell center G
+    frac = numerator/eddingtonRxRates;
+    coeff1= log(frac);
+
+    // Reset accumulators
+    eddingtonRxRates = 0.0; numerator = 0.0;
+
+    // Loop over neutron energy groups
+    for (int iGroup = 0; iGroup < mats->nGroups; iGroup++)
+    {
+      // Get integrating factor coefficients 
+      g1 = mgqd->SGQDs[iGroup]->g1(iZ);
+      g0 = mgqd->SGQDs[iGroup]->g0(iZ);
+
+      centExp = (g0 * pow(centR, p) / p) + g1 * ( pow(centR, p + 1) / (p + 1));
+      edgeExp = (g0 * pow(edgeR, p) / p) + g1 * ( pow(edgeR, p + 1) / (p + 1));
+
+      // Get fluxes and data in the cell center
+      flux = mgqd->SGQDs[iGroup]->sFlux(iZ,0); 
+      Err = mgqd->SGQDs[iGroup]->Err(iZ,0); 
+
+      eddingtonRxRates += flux * Err;
+      numerator += exp(centExp) * flux * Err / exp(edgeExp); 
+
+    }
+    
+    coeff2 = (pow(centR, p + 1) / (p + 1)) - (pow(edgeR, p + 1) / (p + 1));
+    coeff3 = (pow(centR, p) / (p)) - (pow(edgeR, p) / (p));
+    
+    frac = numerator/eddingtonRxRates;
+    coeff4= log(frac);
+
+    mpqd->ggqd->g1(iZ) = (coeff4 - coeff1 * coeff3) \
+                         / (coeff2 - coeff3 * pow(centR, p + 1) / (p + 1));
+    mpqd->ggqd->g0(iZ) = coeff1 \
+      - mpqd->ggqd->g1(iZ) * pow(centR, p + 1) / (p + 1);
+
+  } // iZ
+
+  //cout << "g1: " << mpqd->ggqd->g1 << endl;
+  //cout << "g0: " << mpqd->ggqd->g0 << endl;
+
+}
 //==============================================================================
 
 //==============================================================================
