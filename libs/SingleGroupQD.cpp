@@ -45,6 +45,8 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
   ErzRadial.setConstant(mesh->nZ,mesh->nR+1,offDiagValue);
   G.setConstant(mesh->nZ,mesh->nR,offDiagValue);
   GRadial.setConstant(mesh->nZ,mesh->nR+1,offDiagValue);
+  g0.setConstant(mesh->nZ,offDiagValue);
+  g1.setConstant(mesh->nZ,offDiagValue);
 
   // initialize previous Eddington factors
   ErrPrev = Err;
