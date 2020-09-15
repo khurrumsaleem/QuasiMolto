@@ -390,6 +390,7 @@ void Mesh::calcSpatialMesh(){
   zCent.zeros(nCellsZ);
   rCornerCent.zeros(nCornersR);
   zCornerCent.zeros(nCornersZ);
+  rVWCornerCent.zeros(nCornersR);
 
   // Populate vectors holding cell boundaries in each dimension
   for (int iEdge = 1; iEdge < rEdge.n_elem; ++iEdge){
@@ -425,6 +426,14 @@ void Mesh::calcSpatialMesh(){
   
   for (int iCent = 0; iCent < zCornerCent.n_elem; ++iCent){
     zCornerCent(iCent) = (zCornerEdge(iCent)+zCornerEdge(iCent+1))/2.0;
+  }
+  
+  // Populate vectors holding volume weighted corner center location in 
+  // radial dimension
+  for (int iCent = 0; iCent < rVWCornerCent.n_elem; ++iCent){
+    rVWCornerCent(iCent) = (2.0/3.0)*(pow(rCornerEdge(iCent+1),3)\
+        - pow(rCornerEdge(iCent),3))/(pow(rCornerEdge(iCent+1),2)\
+        -pow(rCornerEdge(iCent),2));
   }
 
   // Set number of corners in axial and radial directions

@@ -76,6 +76,7 @@ class Mesh
 	rowvec zCornerEdge;
         rowvec rCornerCent;
         rowvec zCornerCent;
+        rowvec rVWCornerCent;
         vector<quadLevel> quadrature;
 	vector<qdCell> qdCells; 
         string outputDir = "mesh/";
