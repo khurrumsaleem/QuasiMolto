@@ -118,7 +118,7 @@ class GreyGroupSolver
     void assertSteadyStateSBC(int iR,int iZ,int iEq);
 
     double calcScatterAndFissionCoeff(int iR,int iZ);
-    double calcIntegratingFactor(int iR,int iZ,double rEval);
+    double calcIntegratingFactor(int iR,int iZ,double rEval,int iLoc);
 
     // function to solve linear system
     void backCalculateCurrent();

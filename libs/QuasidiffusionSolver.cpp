@@ -631,8 +631,8 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,iWF,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -682,8 +682,8 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,iEF,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -825,8 +825,8 @@ void QDSolver::steadyStateWestCurrent(double coeff,int iR,int iZ,int iEq,
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,iWF,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -874,8 +874,8 @@ void QDSolver::steadyStateEastCurrent(double coeff,int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,iEF,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -1106,8 +1106,8 @@ void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,iWF,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -1157,8 +1157,8 @@ void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,iEF,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -1300,8 +1300,8 @@ void QDSolver::calcSteadyStateWestCurrent(int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,iWF,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -1349,8 +1349,8 @@ void QDSolver::calcSteadyStateEastCurrent(int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
-  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,iEF,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -2009,16 +2009,67 @@ void QDSolver::steadyStateGreyGroupSources(int iR,int iZ,int iEq,\
 };
 //==============================================================================
 
+////==============================================================================
+///// Form a portion of the linear system that belongs to SGQD 
+///// @param [in] iR radial index of cell
+///// @param [in] iZ axial index of cell
+///// @param [in] rEval radial location to evaluate integrating factor at
+///// @param [in] SGQD of this energyGroup
+//double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
+//    SingleGroupQD * SGQD)	      
+//{
+//  double EzzL,ErrL,ErzL,G,rUp,rDown,rAvg,g0,g1,ratio,hEval;
+//  int p;
+//
+//  // get local Eddington factors 
+//  ErrL = SGQD->Err(iZ,iR);
+//  EzzL = SGQD->Ezz(iZ,iR);
+//  ErzL = SGQD->Erz(iZ,iR);
+//
+//  // evaluate G
+//  //G = 1 + (ErrL+EzzL-1)/ErrL;
+//  G = SGQD->G(iZ,iR);
+//  G = 0;
+//
+//  // get boundaries of cell and calculate volume average 
+//  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+//  rAvg = calcVolAvgR(rDown,rUp);
+//
+//  if (iR == 0){
+//
+//    // use a special expression for cells that share a boundary with
+//    // the z-axis
+//    p = 2;
+//    ratio = (pow(rUp,p+1)-pow(rAvg,p+1))/(pow(rAvg,p)-pow(rUp,p));
+//    g1 = G/(pow(rAvg,p) * (rAvg + ratio));
+//    g0 = g1 * ratio;
+//
+//    hEval = exp((g0*pow(rEval,p)/p)+g1*(pow(rEval,p+1))/(p+1));
+//
+//  } else {
+//
+//    // use the typical expression
+//    hEval = pow(rEval,G);
+//
+//  }
+//
+//  return hEval;
+//
+//};
+//
+////==============================================================================
+
 //==============================================================================
 /// Form a portion of the linear system that belongs to SGQD 
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] rEval radial location to evaluate integrating factor at
 /// @param [in] SGQD of this energyGroup
-double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
+double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,int iLoc,\
     SingleGroupQD * SGQD)	      
 {
   double EzzL,ErrL,ErzL,G,rUp,rDown,rAvg,g0,g1,ratio,hEval;
+  double Gcell,Gedge;
   int p;
 
   // get local Eddington factors 
@@ -2027,27 +2078,48 @@ double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
   ErzL = SGQD->Erz(iZ,iR);
 
   // evaluate G
-  G = 1 + (ErrL+EzzL-1)/ErrL;
+  //G = 1 + (ErrL+EzzL-1)/ErrL;
+  //G = SGQD->G(iZ,iR);
+  //G = 0;
 
   // get boundaries of cell and calculate volume average 
-  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
-  rAvg = calcVolAvgR(rDown,rUp);
+  //rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  //rAvg = calcVolAvgR(rDown,rUp);
 
-  if (iR == 0){
+  if (iR == 0)
+  {
 
     // use a special expression for cells that share a boundary with
     // the z-axis
+    //Gcell = SGQD->G(iZ,iR); Gedge = SGQD->GRadial(iZ,1);
     p = 2;
-    ratio = (pow(rUp,p+1)-pow(rAvg,p+1))/(pow(rAvg,p)-pow(rUp,p));
-    g1 = G/(pow(rAvg,p) * (rAvg + ratio));
-    g0 = g1 * ratio;
+    //g1 = (1.0 / (rUp-rAvg)) * ((Gedge/pow(rUp,p)) - (Gcell/pow(rAvg,p)));
+    //g0 = (Gcell/pow(rAvg,p)) - g1*rAvg;
+    g1 = SGQD->g1(iZ);
+    g0 = SGQD->g0(iZ);
 
     hEval = exp((g0*pow(rEval,p)/p)+g1*(pow(rEval,p+1))/(p+1));
 
-  } else {
+  } 
 
-    // use the typical expression
-    hEval = pow(rEval,G);
+  else {
+
+    // use the typical expressions depending on location to get G for
+    if (iLoc == iWF)
+    {
+      Gcell = SGQD->GRadial(iZ,iR);
+      hEval = pow(rEval,G);
+    }
+    else if (iLoc == iEF)
+    {
+      Gcell = SGQD->GRadial(iZ,iR+1);
+      hEval = pow(rEval,G);
+    }
+    else
+    {
+      Gcell = SGQD->G(iZ,iR);
+      hEval = pow(rEval,G);
+    }
 
   }
 
@@ -2056,6 +2128,7 @@ double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
 };
 
 //==============================================================================
+
 
 //==============================================================================
 /// Return global index of south face current at indices iR and iZ 
