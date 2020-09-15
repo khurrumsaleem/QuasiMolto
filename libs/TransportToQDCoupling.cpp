@@ -134,6 +134,9 @@ bool TransportToQDCoupling::calcEddingtonFactors()
 
   // Calculate G used in integrating factor
   calcGFactors();
+  
+  // Calculate g0 and g1 coefficients used in integrating factor 
+  calcIntFactorCoeffs();
 
   return (cellAvgConverged and interfaceConverged);
 }
@@ -365,6 +368,41 @@ void TransportToQDCoupling::calcGFactors()
 
 }
 //==============================================================================
+
+//==============================================================================
+/// Calculate integrating factor coefficients
+void TransportToQDCoupling::calcIntFactorCoeffs()
+{
+  int rows = MGT->SGTs[0]->sFlux.rows();
+  double g0, g1, Gcell, Gedge, p;
+
+  double rAvg = mesh->rVWCornerCent[0], rUp = mesh->rCornerEdge[1];
+
+  for (int iGroup = 0; iGroup < MGT->SGTs.size(); iGroup++)
+  {
+    for (int iZ = 0; iZ < rows; iZ++)
+    {
+
+      // Calculate g0 and g1 coefficients and store them in SGQD objects
+      Gcell = MGQD->SGQDs[iGroup]->G(iZ,0); 
+      Gedge = MGQD->SGQDs[iGroup]->GRadial(iZ,1);
+      p = 2;
+      g1 = (1.0 / (rUp-rAvg)) * ((Gedge/pow(rUp,p)) - (Gcell/pow(rAvg,p)));
+      g0 = (Gcell/pow(rAvg,p)) - g1*rAvg;
+
+      MGQD->SGQDs[iGroup]->g1(iZ) = g1;
+      MGQD->SGQDs[iGroup]->g0(iZ) = g0;
+
+    } // iZ
+      
+    //cout << "g1: " << MGQD->SGQDs[iGroup]->g1 << endl;
+    //cout << "g0: " << MGQD->SGQDs[iGroup]->g0 << endl;
+
+  } //iGroup
+
+}
+//==============================================================================
+
 
 //==============================================================================
 /// Calculate a number a parameters used for forming the boundary conditions of

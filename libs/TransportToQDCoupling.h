@@ -27,6 +27,7 @@ class TransportToQDCoupling
   bool calcEddingtonFactors();
   bool calcInterfaceEddingtonFactors();
   void calcGFactors();
+  void calcIntFactorCoeffs();
   void calcBCs();
   void solveTransportWithQDAcceleration();
   double calcResidual(Eigen::MatrixXd matrix1,Eigen::MatrixXd matrix2);
