@@ -34,6 +34,7 @@ class MultilevelCoupling
     bool solveSteadyStateResidualBalance(bool outputVars);
     bool initialSolve();
     void solveMGHOT();
+    void solveSteadyStateMGHOT();
     void solveMGLOQD();
     void solveSteadyStateMGLOQD();
     void solveELOT(Eigen::VectorXd xGuess);
