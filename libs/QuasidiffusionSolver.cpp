@@ -2068,33 +2068,14 @@ void QDSolver::steadyStateGreyGroupSources(int iR,int iZ,int iEq,\
 double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,int iLoc,\
     SingleGroupQD * SGQD)	      
 {
-  double EzzL,ErrL,ErzL,G,rUp,rDown,rAvg,g0,g1,ratio,hEval;
-  double Gcell,Gedge;
-  int p;
-
-  // get local Eddington factors 
-  ErrL = SGQD->Err(iZ,iR);
-  EzzL = SGQD->Ezz(iZ,iR);
-  ErzL = SGQD->Erz(iZ,iR);
-
-  // evaluate G
-  //G = 1 + (ErrL+EzzL-1)/ErrL;
-  //G = SGQD->G(iZ,iR);
-  //G = 0;
-
-  // get boundaries of cell and calculate volume average 
-  //rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
-  //rAvg = calcVolAvgR(rDown,rUp);
+  double g0,g1,hEval,G;
+  int p = 2;
 
   if (iR == 0)
   {
 
     // use a special expression for cells that share a boundary with
     // the z-axis
-    //Gcell = SGQD->G(iZ,iR); Gedge = SGQD->GRadial(iZ,1);
-    p = 2;
-    //g1 = (1.0 / (rUp-rAvg)) * ((Gedge/pow(rUp,p)) - (Gcell/pow(rAvg,p)));
-    //g0 = (Gcell/pow(rAvg,p)) - g1*rAvg;
     g1 = SGQD->g1(iZ);
     g0 = SGQD->g0(iZ);
 
@@ -2107,17 +2088,22 @@ double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,int iLoc,\
     // use the typical expressions depending on location to get G for
     if (iLoc == iWF)
     {
-      Gcell = SGQD->GRadial(iZ,iR);
+      G = SGQD->GRadial(iZ,iR);
+      G = SGQD->G(iZ,iR);
+      //G = 0;
       hEval = pow(rEval,G);
     }
     else if (iLoc == iEF)
     {
-      Gcell = SGQD->GRadial(iZ,iR+1);
+      G = SGQD->GRadial(iZ,iR+1);
+      G = SGQD->G(iZ,iR);
+      //G = 0;
       hEval = pow(rEval,G);
     }
     else
     {
-      Gcell = SGQD->G(iZ,iR);
+      G = SGQD->G(iZ,iR);
+      //G = 0;
       hEval = pow(rEval,G);
     }
 
