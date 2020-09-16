@@ -348,7 +348,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
 
         // Check if residuals are too big or if the residuals have increased
         // from the last MGLOQD residual 
-        if (residualELOT[0]/lastResidualELOT[0] > resetThreshold or\
+        if (residualELOT[0]/lastResidualELOT[0] > resetThreshold and\
             residualELOT[1]/lastResidualELOT[1] > resetThreshold) 
         {
           // Jump back to MGLOQD level
@@ -493,6 +493,7 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   vector<int> iters;
   vector<double> tempResMGHOT,tempResMGLOQD,tempResELOT,tempResiduals;
   vector<double> fluxResMGHOT,fluxResMGLOQD,fluxResELOT,fluxResiduals;
+  vector<double> kHist;
   double power,kdiff;
  
   // Timing variables 
@@ -512,6 +513,9 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
       omega(iZ,iR) = mats->omega(iZ,iR);
     }
   }
+        
+  // Store initial guess for k
+  kHist.push_back(mats->oneGroupXS->keff);
   
   // Write mesh info 
   mesh->writeVars();
@@ -629,6 +633,9 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
         // Calculate new eigenvalue
         mats->oneGroupXS->keff = calcK(oldFlux,newFlux,volume,\
             mats->oneGroupXS->kold);
+
+        // Store k
+        kHist.push_back(mats->oneGroupXS->keff);
         
         // Calculate power
         power = omega.cwiseProduct(mats->oneGroupXS->sigF)\
@@ -650,7 +657,7 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
 
         // Check if residuals are too big or if the residuals have increased
         // from the last MGLOQD residual 
-        if (residualELOT[0]/lastResidualELOT[0] > resetThreshold or\
+        if (residualELOT[0]/lastResidualELOT[0] > resetThreshold and\
             residualELOT[1]/lastResidualELOT[1] > resetThreshold) 
         {
           // Jump back to MGLOQD level
@@ -770,6 +777,23 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   mgqd->writeVars(); 
   mats->oneGroupXS->writeVars();
   mesh->output->write(outputDir,"Solve_Time",duration);
+
+  cout << "MGHOT iterations: " << itersMGHOT << endl;
+  cout << "MGLOQD iterations: " << itersMGLOQD << endl;
+  cout << "ELOT iterations: " << itersELOT << endl;
+ 
+  // Output iteration counts 
+  if (outputVars)
+  {
+    mesh->output->write(outputDir,"MGHOT_iters",itersMGHOT);
+    mesh->output->write(outputDir,"MGLOQD_iters",itersMGLOQD);
+    mesh->output->write(outputDir,"ELOT_iters",itersELOT);
+    mesh->output->write(outputDir,"iterates",iters);
+    mesh->output->write(outputDir,"flux_residuals",fluxResiduals);
+    mesh->output->write(outputDir,"temp_residuals",tempResiduals);
+    mesh->output->write(outputDir,"k_history",kHist);
+  }
+
 
 
 };
