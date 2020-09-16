@@ -363,7 +363,7 @@ void TransportToQDCoupling::calcGFactors()
       MGQD->SGQDs[iGroup]->GRadial(iZ,cols)= 1.0 + (Err + Ezz - 1.0) / Err;
 
     } // iZ
-        
+
   } //iGroup
 
 }

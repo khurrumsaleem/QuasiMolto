@@ -471,7 +471,8 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
         flux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,iR); 
         Err = mgqd->SGQDs[iEnergyGroup]->Err(iZ,iR); 
         centG = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
-        edgeG = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR); 
+        //edgeG = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR); 
+        edgeG = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
 
         eddingtonRxRates += flux * Err;
         numerator += pow(centRad,centG) * flux * Err / pow(edgeRad,edgeG); 
@@ -480,8 +481,9 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
 
       // Collapse cell center G
       frac = numerator/eddingtonRxRates;
-      mpqd->ggqd->G(iZ,iR) = (log(frac) + mpqd->ggqd->GRadial(iZ,iR)*log(edgeRad))\
+      //mpqd->ggqd->GL(iZ,iR) = (log(frac) + mpqd->ggqd->GRadial(iZ,iR)*log(edgeRad))\
                              /log(centRad);
+      mpqd->ggqd->GL(iZ,iR) = log(frac)/log(centRad/edgeRad);
 
 
       // Collapse cell edge G
@@ -498,16 +500,19 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
         flux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,iR); 
         Err = mgqd->SGQDs[iEnergyGroup]->Err(iZ,iR); 
         centG = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
-        edgeG = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR+1); 
+        //edgeG = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR+1); 
+        edgeG = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
 
         eddingtonRxRates += flux * Err;
         numerator += pow(centRad,centG) * flux * Err / pow(edgeRad,edgeG); 
 
       }
 
+
       frac = numerator/eddingtonRxRates;
-      mpqd->ggqd->GRadial(iZ,iR+1) = -(log(frac)-mpqd->ggqd->G(iZ,iR)*log(centRad))\
+      //mpqd->ggqd->GR(iZ,iR) = -(log(frac)-mpqd->ggqd->G(iZ,iR)*log(centRad))\
                                   /log(edgeRad);
+      mpqd->ggqd->GR(iZ,iR) = log(frac)/log(centRad/edgeRad);
 
     }
   }
@@ -544,8 +549,12 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
   //    }
   //  }
 
-  //cout << "GRadial: " << mpqd->ggqd->GRadial << endl;
-  //cout << "G: " << mpqd->ggqd->G << endl;
+  cout << "Flux 0: " << endl;
+  cout << mgqd->SGQDs[0]->sFlux << endl;
+  cout << "Flux 1: " << endl;
+  cout << mgqd->SGQDs[1]->sFlux << endl;
+  cout << "GL: " << mpqd->ggqd->GL << endl;
+  cout << "GR: " << mpqd->ggqd->GR << endl;
 };
 //==============================================================================
 
