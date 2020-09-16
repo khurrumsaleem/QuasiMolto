@@ -891,8 +891,9 @@ void Mesh::writeVars()
   // Read standard vectors into eigen types.
   Eigen::VectorXd zCent;
   zCent.setZero(zCornerCent.size());
-  Eigen::VectorXd rCent;
+  Eigen::VectorXd rCent,rCentroid;
   rCent.setZero(rCornerCent.size());
+  rCentroid.setZero(rVWCornerCent.size());
   Eigen::VectorXd zEdge; 
   zEdge.setZero(zCornerEdge.size());
   Eigen::VectorXd rEdge; 
@@ -902,6 +903,7 @@ void Mesh::writeVars()
   for (int iR = 0; iR < rCent.size(); iR++)
   { 
     rCent(iR) = rCornerCent[iR]; 
+    rCentroid(iR) = rVWCornerCent[iR]; 
     rEdge(iR) = rCornerEdge[iR]; 
   }
   rEdge(rEdge.size()-1) = rCornerEdge(rEdge.size()-1); 
@@ -917,6 +919,7 @@ void Mesh::writeVars()
   // Face fluxes
   output->write(outputDir,"zCent",zCent,true);
   output->write(outputDir,"rCent",rCent,true);
+  output->write(outputDir,"rCentroid",rCentroid,true);
   output->write(outputDir,"zEdge",zEdge,true);
   output->write(outputDir,"rEdge",rEdge,true);
 
