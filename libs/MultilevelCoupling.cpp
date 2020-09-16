@@ -513,6 +513,9 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     }
   }
   
+  // Write mesh info 
+  mesh->writeVars();
+  
   while (not convergedMGHOT){ 
 
     ////////////////////
@@ -645,7 +648,7 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
         // Check converge criteria 
         if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
             eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1] and\
-            abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff) < 1E-12)
+            abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff) < eps(residualMGLOQD[0], relaxTolELOT))
         {
           convergedELOT = true;
         }
@@ -741,109 +744,12 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     // Check converge criteria 
     if (eps(mpqd->epsMPQD) > residualMGHOT[0] and\
         eps(mpqd->epsMPQD) > residualMGHOT[1] and\
-        abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff) < 1E-16) 
+        abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff) < mpqd->epsMPQD) 
     {
       convergedMGHOT = true;
     }
 
   } //MGHOT
-
-//  // Solve MGHOT problem
-//  cout << "MGHOT solve...";
-//  startTime = clock(); 
-//  solveSteadyStateMGHOT();
-//  duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
-//  cout << " done. ("<< duration << " seconds)" << endl;
-//  iters.push_back(3);
-//
-//  // Calculate Eddington factors for MGQD problem
-//  cout << "Calculating MGLOQD Eddington factors...";
-//  eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
-//  cout << " done."<< endl;
-//
-//  // Calculate BCs for MGQD problem 
-//  cout << "Calculating MGLOQD boundary conditions...";
-//  MGTToMGQD->calcBCs();
-//  cout << " done."<< endl;
-//
-//  // Solve MGLOQD problem
-//  cout << "    ";
-//  cout << "MGLOQD solve..." << endl;
-//  startTime = clock(); 
-//  solveSteadyStateMGLOQD();
-//  duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
-//  cout << "    ";
-//  cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
-//  iters.push_back(2);
-//
-//  // Get group fluxes to use in group collapse
-//  mgqd->getFluxes();
-//
-//  // Store last iterate of ELOT solution used in MGLOQD level
-//  xLastMGLOQDIter = mpqd->x;
-//
-//  ///////////////////
-//  // ELOT SOLUTION //
-//  ///////////////////
-//
-//  // Calculate collapsed nuclear data
-//  cout << "        ";
-//  cout << "Collapsing MGLOQD data for ELOT solve...";
-//  MGQDToMPQD->collapseNuclearData();
-//  cout << " done."<< endl;
-//
-//  // Store last iterate of ELOT solution used in ELOT level
-//  cout << "        ";
-//  cout << "Storing last solution...";
-//  xLastELOTIter = mpqd->x;
-//  cout << " done."<< endl;
-//
-//  // Solve ELOT problem
-//  cout << "        ";
-//  cout << "ELOT solve..." << endl;
-//  startTime = clock(); 
-//  solveSteadyStateELOT(mpqd->x);
-//  duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
-//  cout << "        ";
-//  cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
-//  iters.push_back(1);
-//
-//  // Store newest iterate 
-//  xCurrentIter = mpqd->x;
-//
-//  lastResidualELOT = residualELOT; 
-//
-//  // Calculate and print ELOT residual  
-//  residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
-//  residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
-//  cout << "        ";
-//  cout << "ELOT Residual: " << residualELOT[0]; 
-//  cout << ", " << residualELOT[1] << endl;
-//
-//  // Update iterate counters, store residuals
-//  itersELOT++;
-//  fluxResELOT.push_back(residualELOT[0]);
-//  tempResELOT.push_back(residualELOT[1]);
-//
-//  // Calculate keff 
-//  oldFissionSource =\
-//                    (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
-//  //cout << "old fission source: " << oldFissionSource << endl;
-//  mpqd->updateSteadyStateVarsAfterConvergence(); 
-//  newFissionSource =\
-//                    (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
-//  //cout << "new fission source: " << newFissionSource << endl;
-//
-//  mats->oneGroupXS->kold = mats->oneGroupXS->keff;
-//  mats->oneGroupXS->keff = newFissionSource\
-//                           /((1/mats->oneGroupXS->kold)*oldFissionSource); 
-//
-//  // Calculate power
-//  power = omega.cwiseProduct(mats->oneGroupXS->sigF).cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
-//
-//  //mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
-//
-//  cout << "keff: " << mats->oneGroupXS->keff << endl;
 
 
   // Write vars
