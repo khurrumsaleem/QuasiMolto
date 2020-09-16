@@ -495,7 +495,7 @@ void GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iWF);
   hDown = calcIntegratingFactor(iR,iZ,rDown,iWF);
 
   // get local Eddington factors
@@ -564,7 +564,7 @@ void GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iEF);
   hUp = calcIntegratingFactor(iR,iZ,rUp,iEF);
 
   // get local Eddington factors
@@ -735,7 +735,7 @@ void GreyGroupSolver::steadyStateWestCurrent(double coeff,int iR,int iZ,int iEq)
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iWF);
   hDown = calcIntegratingFactor(iR,iZ,rDown,iWF);
 
   // get local Eddington factors
@@ -788,7 +788,7 @@ void GreyGroupSolver::steadyStateEastCurrent(double coeff,int iR,int iZ,int iEq)
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iEF);
   hUp = calcIntegratingFactor(iR,iZ,rUp,iEF);
 
   // get local Eddington factors
@@ -1062,7 +1062,7 @@ void GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iWF);
   hDown = calcIntegratingFactor(iR,iZ,rDown,iWF);
 
   // get local Eddington factors
@@ -1129,7 +1129,7 @@ void GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iEF);
   hUp = calcIntegratingFactor(iR,iZ,rUp,iEF);
 
   // get local Eddington factors
@@ -1296,7 +1296,7 @@ void GreyGroupSolver::calcSteadyStateWestCurrent(int iR,int iZ,int iEq)
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iWF);
   hDown = calcIntegratingFactor(iR,iZ,rDown,iWF);
 
   // get local Eddington factors
@@ -1347,7 +1347,7 @@ void GreyGroupSolver::calcSteadyStateEastCurrent(int iR,int iZ,int iEq)
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iEF);
   hUp = calcIntegratingFactor(iR,iZ,rUp,iEF);
 
   // get local Eddington factors
@@ -1888,33 +1888,14 @@ double GreyGroupSolver::calcScatterAndFissionCoeff(int iR,int iZ)
 /// @param [in] rEval radial location to evaluate integrating factor at
 double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval,int iLoc) 
 {
-  double EzzL,ErrL,ErzL,G,rUp,rDown,rAvg,g0,g1,ratio,hEval;
-  double Gcell,Gedge;
-  int p;
-
-  // get local Eddington factors 
-  ErrL = GGQD->Err(iZ,iR);
-  EzzL = GGQD->Ezz(iZ,iR);
-  ErzL = GGQD->Erz(iZ,iR);
-
-  // evaluate G
-  //G = 1 + (ErrL+EzzL-1)/ErrL;
-  //G = GGQD->G(iZ,iR);
- // G = 0;
-
-  // get boundaries of cell and calculate volume average 
-  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
-  rAvg = calcVolAvgR(rDown,rUp);
+  double g0,g1,hEval,G;
+  int p = 2;
 
   if (iR == 0)
   {
 
     // use a special expression for cells that share a boundary with
     // the z-axis
-    //Gcell = GGQD->G(iZ,iR); Gedge = GGQD->GRadial(iZ,1);
-    p = 2;
-    //g1 = (1.0 / (rUp-rAvg)) * ((Gedge/pow(rUp,p)) - (Gcell/pow(rAvg,p)));
-    //g0 = (Gcell/pow(rAvg,p)) - g1*rAvg;
     g1 = GGQD->g1(iZ);
     g0 = GGQD->g0(iZ);
 
@@ -1927,22 +1908,26 @@ double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval,int iLo
     // use the typical expressions depending on location to get G for
     if (iLoc == iWF)
     {
-      Gcell = GGQD->GRadial(iZ,iR);
+      //G = GGQD->GRadial(iZ,iR);
+      G = GGQD->GL(iZ,iR);
+      //G = 0;
       hEval = pow(rEval,G);
     }
     else if (iLoc == iEF)
     {
-      Gcell = GGQD->GRadial(iZ,iR+1);
+      //G = GGQD->GRadial(iZ,iR+1);
+      G = GGQD->GR(iZ,iR);
+      //G = 0;
       hEval = pow(rEval,G);
     }
     else
     {
-      Gcell = GGQD->G(iZ,iR);
+      G = GGQD->G(iZ,iR);
+      //G = 0;
       hEval = pow(rEval,G);
     }
 
   }
-
 
   return hEval;
 
