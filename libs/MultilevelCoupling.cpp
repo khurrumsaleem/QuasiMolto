@@ -397,8 +397,8 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
 
       // Check if residuals are too big or if the residuals have increased
       // from the last MGLOQD residual 
-      if (residualELOT[0]/lastResidualELOT[0] > resetThreshold or\
-          residualELOT[1]/lastResidualELOT[1] > resetThreshold) 
+      if (residualMGLOQD[0]/lastResidualMGLOQD[0] > resetThreshold or\
+          residualMGLOQD[1]/lastResidualMGLOQD[1] > resetThreshold) 
       {
         // Jump back to MGHOT level
         break;
@@ -493,15 +493,15 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   vector<int> iters;
   vector<double> tempResMGHOT,tempResMGLOQD,tempResELOT,tempResiduals;
   vector<double> fluxResMGHOT,fluxResMGLOQD,fluxResELOT,fluxResiduals;
-  double oldFissionSource,newFissionSource,power;
-  double ratedPower = 8E6;
+  double power,kdiff;
  
   // Timing variables 
   double duration,totalDuration = 0.0;
   clock_t startTime;
 
-  Eigen::MatrixXd volume,omega;
+  Eigen::MatrixXd volume,omega,oldFlux,newFlux;
 
+  // Get volume and omega in each cell
   volume.setZero(mesh->nZ,mesh->nR);
   omega.setZero(mesh->nZ,mesh->nR);
   for (int iZ = 0; iZ < volume.rows(); iZ++)
@@ -616,39 +616,52 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
         fluxResELOT.push_back(residualELOT[0]);
         tempResELOT.push_back(residualELOT[1]);
 
-        // Calculate keff 
-        oldFissionSource =\
-                          (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
-        //cout << "old fission source: " << oldFissionSource << endl;
+        // Store old flux
+        oldFlux = mpqd->ggqd->sFlux;
+
+        // Update variables and get new flux
         mpqd->updateSteadyStateVarsAfterConvergence(); 
-        newFissionSource =\
-                          (mats->oneGroupXS->qdFluxCoeff.cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume)).sum();
-        //cout << "new fission source: " << newFissionSource << endl;
+        newFlux = mpqd->ggqd->sFlux;
 
+        // Store previous eigenvalue
         mats->oneGroupXS->kold = mats->oneGroupXS->keff;
-        mats->oneGroupXS->keff = newFissionSource\
-                                 /((1/mats->oneGroupXS->kold)*oldFissionSource); 
 
+        // Calculate new eigenvalue
+        mats->oneGroupXS->keff = calcK(oldFlux,newFlux,volume,\
+            mats->oneGroupXS->kold);
+        
         // Calculate power
-        power = omega.cwiseProduct(mats->oneGroupXS->sigF).cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
+        power = omega.cwiseProduct(mats->oneGroupXS->sigF)\
+                .cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
 
+        // Scale flux to rated power
         mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
 
-        cout << "keff: " << mats->oneGroupXS->keff << endl;
-        //cout << "fissionCoeff: " << mats->oneGroupXS->qdFluxCoeff << endl;
-        //cout << "volume: " << volume << endl;
-        //cout << "flux: " << mpqd->ggqd->sFlux << endl;
-        //cout << "temp: " << mpqd->heat->returnCurrentTemp()<< endl;
-        //cout << "power: " << power << endl;
-        //mpqd->mgdnp->printCoreDNPConc();
+        // Print eigenvalue 
+        cout << "        ";
+        cout << "k: " << mats->oneGroupXS->keff << endl;
+        cout << endl;
 
-        // Calculate collapsed nuclear data at new temperature
+        // Calculate difference in past and current eigenvalue
+        kdiff = abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff);
+
+        // Update temperature to evaluate nuclear data at
         mats->updateTemperature(mpqd->heat->returnCurrentTemp());
+
+        // Check if residuals are too big or if the residuals have increased
+        // from the last MGLOQD residual 
+        if (residualELOT[0]/lastResidualELOT[0] > resetThreshold or\
+            residualELOT[1]/lastResidualELOT[1] > resetThreshold) 
+        {
+          // Jump back to MGLOQD level
+          break;
+        }
+
 
         // Check converge criteria 
         if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
             eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1] and\
-            abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff) < eps(residualMGLOQD[0], relaxTolELOT))
+            relaxedEpsK(residualMGLOQD[0], relaxTolELOT) > kdiff)
         {
           convergedELOT = true;
         }
@@ -664,7 +677,6 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
       convergedELOT = false; 
 
       // Store one group fluxes and DNPs for MGHOT and MGLOQD sources 
-      //mpqd->ggqd->GGSolver->getFlux();
       mpqd->mgdnp->getCumulativeDNPDecaySource();
 
       lastResidualMGLOQD = residualMGLOQD;
@@ -693,11 +705,11 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
 
       // Check if residuals are too big or if the residuals have increased
       // from the last MGLOQD residual 
-      if (residualELOT[0]/lastResidualELOT[0] > resetThreshold or\
-          residualELOT[1]/lastResidualELOT[1] > resetThreshold)
+      if (residualMGLOQD[0]/lastResidualMGLOQD[0] > resetThreshold or\
+          residualMGLOQD[1]/lastResidualMGLOQD[1] > resetThreshold)
       {
         // Jump back to MGHOT level
-        // break;
+        break;
       }
 
       // Check converge criteria 
@@ -744,7 +756,7 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     // Check converge criteria 
     if (eps(mpqd->epsMPQD) > residualMGHOT[0] and\
         eps(mpqd->epsMPQD) > residualMGHOT[1] and\
-        abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff) < mpqd->epsMPQD) 
+        relaxedEpsK(mpqd->epsMPQD) > kdiff) 
     {
       convergedMGHOT = true;
     }
@@ -759,6 +771,28 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   mats->oneGroupXS->writeVars();
   mesh->output->write(outputDir,"Solve_Time",duration);
 
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Calculate a new eigenvalue using fission source weighting
+///
+double MultilevelCoupling::calcK(Eigen::MatrixXd oldFlux,\
+    Eigen::MatrixXd newFlux, Eigen::MatrixXd volume, double kold)
+{
+
+  double knew;
+  Eigen::MatrixXd oldFS, newFS, fsCoeff = mats->oneGroupXS->qdFluxCoeff;
+
+  // calculate old and new fission sources weighted by new fission source
+  oldFS = fsCoeff.cwiseProduct(oldFlux)\
+          .cwiseProduct(fsCoeff).cwiseProduct(newFlux).cwiseProduct(volume);
+  newFS = fsCoeff.cwiseProduct(newFlux)\
+          .cwiseProduct(fsCoeff).cwiseProduct(newFlux).cwiseProduct(volume);
+  knew = newFS.sum()/((1.0/kold)*oldFS.sum()); 
+
+  return knew;
 
 };
 //==============================================================================
@@ -780,6 +814,25 @@ double MultilevelCoupling::eps(double residual, double relaxationTolerance)
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Dynamically determines a convergence threshold 
+///
+double MultilevelCoupling::relaxedEpsK(double residual, double relaxationTolerance)
+{
+
+  double eps;
+
+  if (residual*relaxationTolerance > mpqd->epsMPQD)
+    eps = residual*relaxationTolerance;
+  else
+    eps = epsK; 
+
+  return eps;
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Perform a solve at the MGHOT level 
@@ -899,7 +952,6 @@ void MultilevelCoupling::solveSteadyStateELOT(Eigen::VectorXd xGuess)
 
   // Build ELOT system
   mpqd->buildSteadyStateLinearSystem();
-  cout << "built steady state system" << endl;
 
   // Solve ELOT system
   if (iterativeELOT)
@@ -996,6 +1048,14 @@ void MultilevelCoupling::checkOptionalParameters()
   // Check for resetThreshold specification.
   if ((*input)["parameters"]["resetThreshold"])
     resetThreshold=(*input)["parameters"]["resetThreshold"].as<double>();
+
+  // Check for rated power 
+  if ((*input)["parameters"]["ratedPower"])
+    ratedPower=(*input)["parameters"]["ratedPower"].as<double>();
+
+  // Check for k convergence criteria
+  if ((*input)["parameters"]["epsK"])
+    epsK=(*input)["parameters"]["epsK"].as<double>();
 
   // Check if iterative solver should be used for ELOT 
   if ((*input)["parameters"]["iterativeELOT"])

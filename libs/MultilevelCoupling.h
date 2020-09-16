@@ -27,7 +27,8 @@ class MultilevelCoupling
         MultiGroupTransport * myMGT,\
         MultiGroupQD * myMGQD,\
         MultiPhysicsCoupledQD * myMPQD);
-    double resetThreshold = 1E100, relaxTolELOT = 3E-4, relaxTolMGLOQD = 3E-4;
+    double resetThreshold = 1E100, relaxTolELOT = 3E-4, relaxTolMGLOQD = 3E-4,\
+           ratedPower = 8e6, epsK = 1E-8;
     bool iterativeMGLOQD = false, iterativeELOT = false;
     bool solveOneStep();
     bool solveOneStepResidualBalance(bool outputVars);
@@ -40,7 +41,10 @@ class MultilevelCoupling
     void solveELOT(Eigen::VectorXd xGuess);
     void solveSteadyStateELOT(Eigen::VectorXd xGuess);
     void solveTransient();
+    double calcK(Eigen::MatrixXd oldFlux, Eigen::MatrixXd newFlux,\
+        Eigen::MatrixXd volume, double kold);
     double eps(double residual, double relaxationTolerance = 1E-14);
+    double relaxedEpsK(double residual, double relaxationTolerance = 1E-14);
     void checkOptionalParameters();
     string outputDir = "Solve_Metrics/";
     
