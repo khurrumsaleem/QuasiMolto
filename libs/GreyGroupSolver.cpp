@@ -1893,40 +1893,26 @@ double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval,int iLo
 
   if (iR == 0)
   {
-
     // use a special expression for cells that share a boundary with
     // the z-axis
     g1 = GGQD->g1(iZ);
     g0 = GGQD->g0(iZ);
 
     hEval = exp((g0*pow(rEval,p)/p)+g1*(pow(rEval,p+1))/(p+1));
-
   } 
-
   else {
 
     // use the typical expressions depending on location to get G for
     if (iLoc == iWF)
     {
-      //G = GGQD->GRadial(iZ,iR);
       G = GGQD->GL(iZ,iR);
-      //G = 0;
       hEval = pow(rEval,G);
     }
     else if (iLoc == iEF)
     {
-      //G = GGQD->GRadial(iZ,iR+1);
       G = GGQD->GR(iZ,iR);
-      //G = 0;
       hEval = pow(rEval,G);
     }
-    else
-    {
-      G = GGQD->G(iZ,iR);
-      //G = 0;
-      hEval = pow(rEval,G);
-    }
-
   }
 
   return hEval;

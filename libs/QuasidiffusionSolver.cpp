@@ -631,8 +631,8 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
-  hDown = calcIntegratingFactor(iR,iZ,rDown,iWF,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -682,8 +682,8 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
-  hUp = calcIntegratingFactor(iR,iZ,rUp,iEF,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -825,8 +825,8 @@ void QDSolver::steadyStateWestCurrent(double coeff,int iR,int iZ,int iEq,
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
-  hDown = calcIntegratingFactor(iR,iZ,rDown,iWF,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -874,8 +874,8 @@ void QDSolver::steadyStateEastCurrent(double coeff,int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
-  hUp = calcIntegratingFactor(iR,iZ,rUp,iEF,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -1106,8 +1106,8 @@ void QDSolver::calcWestCurrent(int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
-  hDown = calcIntegratingFactor(iR,iZ,rDown,iWF,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -1157,8 +1157,8 @@ void QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
-  hUp = calcIntegratingFactor(iR,iZ,rUp,iEF,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -1300,8 +1300,8 @@ void QDSolver::calcSteadyStateWestCurrent(int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rAvg-rDown; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
-  hDown = calcIntegratingFactor(iR,iZ,rDown,iWF,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -1349,8 +1349,8 @@ void QDSolver::calcSteadyStateEastCurrent(int iR,int iZ,int iEq,\
   zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
   rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
   deltaR = rUp-rAvg; deltaZ = zUp-zDown;
-  hCent = calcIntegratingFactor(iR,iZ,rAvg,iCF,SGQD);
-  hUp = calcIntegratingFactor(iR,iZ,rUp,iEF,SGQD);
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
 
   // get local Eddington factors
   ErrC = SGQD->Err(iZ,iR);
@@ -2065,7 +2065,7 @@ void QDSolver::steadyStateGreyGroupSources(int iR,int iZ,int iEq,\
 /// @param [in] iZ axial index of cell
 /// @param [in] rEval radial location to evaluate integrating factor at
 /// @param [in] SGQD of this energyGroup
-double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,int iLoc,\
+double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
     SingleGroupQD * SGQD)	      
 {
   double g0,g1,hEval,G;
@@ -2073,40 +2073,18 @@ double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,int iLoc,\
 
   if (iR == 0)
   {
-
     // use a special expression for cells that share a boundary with
     // the z-axis
     g1 = SGQD->g1(iZ);
     g0 = SGQD->g0(iZ);
 
     hEval = exp((g0*pow(rEval,p)/p)+g1*(pow(rEval,p+1))/(p+1));
-
   } 
-
-  else {
-
-    // use the typical expressions depending on location to get G for
-    if (iLoc == iWF)
-    {
-      G = SGQD->GRadial(iZ,iR);
-      G = SGQD->G(iZ,iR);
-      //G = 0;
-      hEval = pow(rEval,G);
-    }
-    else if (iLoc == iEF)
-    {
-      G = SGQD->GRadial(iZ,iR+1);
-      G = SGQD->G(iZ,iR);
-      //G = 0;
-      hEval = pow(rEval,G);
-    }
-    else
-    {
-      G = SGQD->G(iZ,iR);
-      //G = 0;
-      hEval = pow(rEval,G);
-    }
-
+  else 
+  {
+    // use the typical expression
+    G = SGQD->G(iZ,iR);
+    hEval = pow(rEval,G);
   }
 
   return hEval;

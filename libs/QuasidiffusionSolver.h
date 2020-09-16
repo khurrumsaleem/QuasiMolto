@@ -173,7 +173,7 @@ class QDSolver
         vector<double> geoParams);
     void steadyStateGreyGroupSources(int iR,int iZ,int iEq,int toEnergyGroup,\
         vector<double> geoParams);
-    double calcIntegratingFactor(int iR,int iZ,double rEval,int iLoc,\
+    double calcIntegratingFactor(int iR,int iZ,double rEval,\
         SingleGroupQD * SGQD);
 
     // function to solve linear system
