@@ -549,12 +549,6 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
   //    }
   //  }
 
-  cout << "Flux 0: " << endl;
-  cout << mgqd->SGQDs[0]->sFlux << endl;
-  cout << "Flux 1: " << endl;
-  cout << mgqd->SGQDs[1]->sFlux << endl;
-  cout << "GL: " << mpqd->ggqd->GL << endl;
-  cout << "GR: " << mpqd->ggqd->GR << endl;
 };
 //==============================================================================
 
@@ -632,9 +626,6 @@ void MGQDToMPQDCoupling::calculateCollapsedIntFactorCoeffs()
       - mpqd->ggqd->g1(iZ) * pow(centR, p + 1) / (p + 1);
 
   } // iZ
-
-  //cout << "g1: " << mpqd->ggqd->g1 << endl;
-  //cout << "g0: " << mpqd->ggqd->g0 << endl;
 
 }
 //==============================================================================
