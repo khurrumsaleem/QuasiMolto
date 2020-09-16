@@ -385,7 +385,7 @@ void TransportToQDCoupling::calcIntFactorCoeffs()
 
       // Calculate g0 and g1 coefficients and store them in SGQD objects
       Gcell = MGQD->SGQDs[iGroup]->G(iZ,0); 
-      Gedge = MGQD->SGQDs[iGroup]->GRadial(iZ,1);
+      Gedge = MGQD->SGQDs[iGroup]->G(iZ,0);
       p = 2;
       g1 = (1.0 / (rUp-rAvg)) * ((Gedge/pow(rUp,p)) - (Gcell/pow(rAvg,p)));
       g0 = (Gcell/pow(rAvg,p)) - g1*rAvg;
@@ -395,9 +395,6 @@ void TransportToQDCoupling::calcIntFactorCoeffs()
 
     } // iZ
       
-    //cout << "g1: " << MGQD->SGQDs[iGroup]->g1 << endl;
-    //cout << "g0: " << MGQD->SGQDs[iGroup]->g0 << endl;
-
   } //iGroup
 
 }
