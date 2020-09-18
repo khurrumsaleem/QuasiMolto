@@ -338,7 +338,8 @@ void HeatTransfer::buildSteadyStateLinearSystem()
       keff = mats->oneGroupXS->keff; 
       neutronFlux = mpqd->ggqd->sFlux(iZ,iR);
        
-      mpqd->b(iEq) += coeff*neutronFlux/keff; 
+      //mpqd->b(iEq) += coeff*neutronFlux/keff; 
+      mpqd->b(iEq) += coeff*neutronFlux; 
       //mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
       //mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
       
