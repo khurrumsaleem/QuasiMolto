@@ -419,42 +419,9 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
   // Loop over spatial mesh and calculate collapsed G
   for (int iZ = 0; iZ < mesh->nZ; iZ++)
   {
-
-    // HANDLE EDGE CASE
-
-    // Calculate first G with collapsed Err and Ezz at (iZ,0)
-    Err = mpqd->ggqd->Err(iZ,0);
-    Ezz = mpqd->ggqd->Ezz(iZ,0);
-
-    centRad = mesh->rVWCornerCent(0); 
-    edgeRad = mesh->rCornerEdge(1); 
-    mpqd->ggqd->G(iZ,0) = 1 + (Err+Ezz-1)/Err;
     
-    // Reset accumulators
-    eddingtonRxRates = 0.0; numerator = 0.0;
-
-    // Loop over neutron energy groups
-    for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
-    {
-
-      // Get fluxes and data in the cell center
-      flux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,0); 
-      Err = mgqd->SGQDs[iEnergyGroup]->Err(iZ,0); 
-      centG = mgqd->SGQDs[iEnergyGroup]->G(iZ,0); 
-      edgeG = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,1); 
-
-      eddingtonRxRates += flux * Err;
-      numerator += pow(centRad,centG) * flux * Err / pow(edgeRad,edgeG); 
-
-    }
-
-    frac = numerator/eddingtonRxRates;
-    mpqd->ggqd->GRadial(iZ,1) = -(log(frac)\
-        - mpqd->ggqd->G(iZ,0)*log(centRad))/log(edgeRad);
-
-    // HANDLE REMAINING CASES
-
-    for (int iR = 1; iR < mesh->nR; iR++)
+    // Calculate left- and right-side collpased G factors
+    for (int iR = 0; iR < mesh->nR; iR++)
     {
       // Get west side positions
       centRad = mesh->rVWCornerCent(iR); 
@@ -471,7 +438,6 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
         flux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,iR); 
         Err = mgqd->SGQDs[iEnergyGroup]->Err(iZ,iR); 
         centG = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
-        //edgeG = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR); 
         edgeG = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
 
         eddingtonRxRates += flux * Err;
@@ -481,10 +447,7 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
 
       // Collapse cell center G
       frac = numerator/eddingtonRxRates;
-      //mpqd->ggqd->GL(iZ,iR) = (log(frac) + mpqd->ggqd->GRadial(iZ,iR)*log(edgeRad))\
-                             /log(centRad);
       mpqd->ggqd->GL(iZ,iR) = log(frac)/log(centRad/edgeRad);
-
 
       // Collapse cell edge G
       edgeRad = mesh->rCornerEdge(iR+1); 
@@ -500,7 +463,6 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
         flux = mgqd->SGQDs[iEnergyGroup]->sFlux(iZ,iR); 
         Err = mgqd->SGQDs[iEnergyGroup]->Err(iZ,iR); 
         centG = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
-        //edgeG = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR+1); 
         edgeG = mgqd->SGQDs[iEnergyGroup]->G(iZ,iR); 
 
         eddingtonRxRates += flux * Err;
@@ -508,47 +470,11 @@ void MGQDToMPQDCoupling::calculateCollapsedG()
 
       }
 
-
       frac = numerator/eddingtonRxRates;
-      //mpqd->ggqd->GR(iZ,iR) = -(log(frac)-mpqd->ggqd->G(iZ,iR)*log(centRad))\
-                                  /log(edgeRad);
       mpqd->ggqd->GR(iZ,iR) = log(frac)/log(centRad/edgeRad);
 
     }
   }
-
-  //  // Loop over spatial edge mesh and calculate collapsed G
-  //  for (int iZ = 0; iZ < mesh->nZ; iZ++)
-  //  {
-  //
-  //    for (int iR = 1; iR < mesh->nR+1; iR++)
-  //    {
-  //
-  //      // Get radius at cell center
-  //      radius = mesh->rCornerEdge(iR); 
-  //
-  //      // Reset accumulators
-  //      eddingtonRxRates = 0.0; numerator = 0.0;
-  //
-  //      // Loop over neutron energy groups
-  //      for (int iEnergyGroup = 0; iEnergyGroup < mats->nGroups; iEnergyGroup++)
-  //      {
-  //
-  //        // Get fluxes and data in the cell center
-  //        flux = mgqd->SGQDs[iEnergyGroup]->sFluxR(iZ,iR); 
-  //        eddington = mgqd->SGQDs[iEnergyGroup]->ErrRadial(iZ,iR); 
-  //        G = mgqd->SGQDs[iEnergyGroup]->GRadial(iZ,iR); 
-  //
-  //        eddingtonRxRates += flux * eddington;
-  //        numerator += pow(radius,G) * flux * eddington; 
-  //
-  //      }
-  //
-  //      mpqd->ggqd->GRadial(iZ,iR) = log(numerator/eddingtonRxRates)/log(radius);
-  //
-  //    }
-  //  }
-
 };
 //==============================================================================
 

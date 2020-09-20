@@ -42,7 +42,6 @@ class GreyGroupQD
     Eigen::MatrixXd ErzRadial;
 
     // Integrating factor parameters 
-    Eigen::MatrixXd G,GRadial;
     Eigen::MatrixXd GL,GR;
     Eigen::VectorXd g0,g1;
 
