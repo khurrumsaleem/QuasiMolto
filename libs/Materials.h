@@ -45,6 +45,7 @@ class Materials
 	double k(int zIdx,int rIdx);
 	double cP(int zIdx,int rIdx);
 	double omega(int zIdx,int rIdx);
+	double coreFlowVelocity(int zIdx,int rIdx);
         void updateTemperature(Eigen::MatrixXd myTemp);
         vector<Eigen::MatrixXd> readTempDependentYaml(string file);
         void checkMats();

@@ -133,7 +133,7 @@ void Materials::readMats()
   vector<Eigen::MatrixXd> sigT,sigS,sigF,nu,neutV;
   Eigen::VectorXd chiP,chiD; 
   int ID,size;
-  double density,gamma,k,cP,omega;
+  double density,gamma,k,cP,omega,flowVelocity;
   bool stationary;
 
   int iCount=0;
@@ -230,6 +230,9 @@ void Materials::readMats()
     cP = it->second["cP"].as<double>();
     omega = it->second["omega"].as<double>();
     
+    if (it->second["material velocity"]) 
+      flowVelocity = it->second["material velocity"].as<double>();
+    
     if (it->second["stationary"]) 
       stationary = it->second["stationary"].as<bool>();
 
@@ -247,7 +250,8 @@ void Materials::readMats()
 
     // Add material to bank
     shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,\
-          sigF,nu,neutV,chiP,chiD,density,gamma,k,cP,omega,stationary));
+          sigF,nu,neutV,chiP,chiD,density,gamma,k,cP,omega,flowVelocity,\
+          stationary));
     matBank.push_back(std::move(newMat));
     ++iCount;
   }
@@ -278,7 +282,7 @@ void Materials::readFlowVelocity()
       // If the material here is not stationary, assign the input flow velocity
       if (!matBank[matMap(iZ,iR)]->stationary){
 
-        flowVelocity(iZ,iR) = inputFlowVelocity;
+        flowVelocity(iZ,iR) = coreFlowVelocity(iZ,iR);
 
       }
     }
@@ -674,6 +678,19 @@ double Materials::omega(int zIdx,int rIdx){
   double omega = matBank[matMap(zIdx,rIdx)]->omega;
 
   return omega;
+};
+//==============================================================================
+
+//==============================================================================
+/// Return flow velocity at indexed locaiton
+///
+/// @param [in] zIdx Z index of location 
+/// @param [in] rIdx R index of location 
+double Materials::coreFlowVelocity(int zIdx,int rIdx){
+
+  double flowVelocity = matBank[matMap(zIdx,rIdx)]->flowVelocity;
+
+  return flowVelocity;
 };
 //==============================================================================
 

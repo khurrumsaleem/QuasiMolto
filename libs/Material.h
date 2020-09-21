@@ -20,6 +20,7 @@ class Material
         double k; // thermal conductivity
         double cP; // specific heat
         double omega; // energy release per fission	
+        double flowVelocity; // energy release per fission	
         bool stationary = true; // is the material stationary
         
         // public functions
@@ -37,7 +38,8 @@ class Material
                 double myK,\
                 double mycP,\
                 double myOmega,\
-                bool myStationary);
+                double flowVelocity=0,\
+                bool myStationary=true);
         double getSigT(int eIdx,double temp);
         double getSigF(int eIdx,double temp);
         double getSigS(int eIdxPrime,int eIdx,double temp);

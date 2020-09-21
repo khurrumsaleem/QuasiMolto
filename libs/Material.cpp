@@ -33,6 +33,7 @@ Material::Material(int myMatID,\
   double myK,\
   double mycP,\
   double myOmega,\
+  double myFlowVelocity,\
   bool myStationary)
 {
   // Assign inputs to their member variables
@@ -50,6 +51,7 @@ Material::Material(int myMatID,\
   k = myK;
   cP = mycP;
   omega = myOmega;
+  flowVelocity = myFlowVelocity;
   stationary = myStationary;
 
 };
