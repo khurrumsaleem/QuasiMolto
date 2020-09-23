@@ -646,7 +646,8 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
 
         // Print eigenvalue 
         cout << "        ";
-        cout << "k: " << mats->oneGroupXS->keff << endl;
+        cout << "k: " << setprecision(10) <<mats->oneGroupXS->keff;
+        cout << setprecision(6) <<scientific << endl;
         cout << endl;
 
         // Calculate difference in past and current eigenvalue

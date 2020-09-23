@@ -205,7 +205,7 @@ void WriteData::write(string myDirName,\
   
   // Open output file, write myData to it, and close.
   outputFile.open(fileName);
-  outputFile << myData << endl;
+  outputFile << setprecision(17) << myData << endl;
   outputFile.close();
  
 };

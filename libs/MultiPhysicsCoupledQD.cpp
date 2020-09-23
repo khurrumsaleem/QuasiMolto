@@ -457,6 +457,12 @@ void MultiPhysicsCoupledQD::writeVars()
   mesh->output->write(outputDir,"ErzRadial",ggqd->ErzRadial);
   mesh->output->write(outputDir,"GL",ggqd->GL);
   mesh->output->write(outputDir,"GR",ggqd->GR);
+
+  // Eigen value
+  mesh->output->write(outputDir,"keff",mats->oneGroupXS->keff);
+
+  //  factors
+  mesh->output->write(outputDir,"Err",ggqd->Err);
  
   // DNP concentrations
   for (int iDNP = 0; iDNP < mgdnp->DNPs.size(); iDNP++)
