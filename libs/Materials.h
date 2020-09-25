@@ -22,6 +22,8 @@ class Materials
         Eigen::VectorXd neutV;
         int nGroups;
         bool posVelocity;
+        bool uniformTemperature = false;
+        double uniformTempValue;
         // public functions
         Materials(Mesh * myMesh,YAML::Node * myInput);
 	void readMats();

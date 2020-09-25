@@ -786,7 +786,11 @@ int HeatTransfer::getIndex(int iZ, int iR)
 void HeatTransfer::getTemp()
 {
 
-  temp = returnCurrentTemp();
+  if (not mats->uniformTemperature)
+    temp = returnCurrentTemp();
+  else
+    temp.setConstant(mats->uniformTempValue);
+
   
 };
 //==============================================================================

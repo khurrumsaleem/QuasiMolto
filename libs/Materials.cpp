@@ -73,6 +73,13 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
     neutV = 2200.0*neutV;
   }
 
+  if ((*input)["parameters"]["uniformTemperature"]){
+    uniformTemperature = (*input)["parameters"]["uniformTemperature"]\
+               .as<bool>();
+    uniformTempValue = (*input)["parameters"]["inletTemp"]\
+               .as<double>();
+  }
+
   // Initialize 1GXS
   oneGroupXS = new CollapsedCrossSections(mesh,nGroups);
 
@@ -699,7 +706,10 @@ double Materials::coreFlowVelocity(int zIdx,int rIdx){
 ///
 void Materials::updateTemperature(Eigen::MatrixXd myTemp)
 {
-  temperature = myTemp;
+  if (not uniformTemperature)
+    temperature = myTemp;
+  else
+    temperature.setConstant(uniformTempValue);
 };
 //==============================================================================
 
