@@ -24,6 +24,7 @@ class HeatTransfer
   double wallT = 922.0;
   double inletT = 922.0;
   int coreInletIndex,coreOutletIndex,nUnknowns,indexOffset = 0; 
+  string modIrradiation = "volume", axial = "axial", volume = "volume";
   string fluxLimiter = "superbee";
   Eigen::SparseMatrix<double,Eigen::RowMajor> Atemp;
   Eigen::MatrixXd temp,flux,dirac,inletTemp;
@@ -33,7 +34,8 @@ class HeatTransfer
   void buildSteadyStateLinearSystem();
   void gammaSource(int iZ,int iR,int iEq,double coeff,\
       Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA);
-  double calcExplicitGammaSource();
+  Eigen::MatrixXd calcExplicitFissionEnergy();
+  Eigen::MatrixXd calcExplicitAxialFissionEnergy();
   void calcDiracs();
   void calcFluxes();
   void calcImplicitFluxes();
@@ -44,6 +46,7 @@ class HeatTransfer
   void updateBoundaryConditions();
   double calcPhi(double theta,string fluxLimiter);
   double calcTheta(double TupwindInterface,double Tinterface);
+  void checkOptionalParams();
   
   private:
   Materials * mats;

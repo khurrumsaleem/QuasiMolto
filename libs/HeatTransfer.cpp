@@ -25,16 +25,7 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
   input = myInput;
   mpqd = myMPQD;
 
-  // Check for optional inputs 
-  if ((*input)["parameters"]["wallTemp"]){
-    wallT=(*input)["parameters"]["wallTemp"].as<double>();
-  } 
-  if ((*input)["parameters"]["inletTemp"]){
-    inletT=(*input)["parameters"]["inletTemp"].as<double>();
-  } 
-  if ((*input)["parameters"]["flux limiter"]){
-    fluxLimiter=(*input)["parameters"]["flux limiter"].as<string>();
-  } 
+  checkOptionalParams();
 
   // Set number of unknowns
   nUnknowns = mesh->nR*mesh->nZ;
@@ -63,7 +54,8 @@ void HeatTransfer::buildLinearSystem()
   int iEqTemp = 0;
   int nR = temp.cols()-1;
   int nZ = temp.rows()-1;
-  double harmonicAvg,coeff,cCoeff,volAvgGammaDep;
+  double harmonicAvg,coeff,cCoeff;
+  Eigen::MatrixXd volAvgGammaDep;
   vector<double> gParams;
 
   updateBoundaryConditions();
@@ -71,7 +63,11 @@ void HeatTransfer::buildLinearSystem()
   calcFluxes();
 
   // Calculate core-average gamma deposition term
-  volAvgGammaDep = calcExplicitGammaSource();
+  if (modIrradiation == axial)
+    volAvgGammaDep = calcExplicitAxialFissionEnergy();
+  else
+    volAvgGammaDep = calcExplicitFissionEnergy();
+
   
   //Atemp.resize(nUnknowns,mpqd->A.cols());
   //Atemp.reserve(5*nUnknowns);
@@ -189,7 +185,7 @@ void HeatTransfer::buildLinearSystem()
       
       // Gamma source term 
       coeff = mesh->dt;
-      mpqd->b(iEq) += coeff * mats->gamma(iZ,iR) * volAvgGammaDep;
+      mpqd->b(iEq) += coeff * mats->gamma(iZ,iR) * volAvgGammaDep(iZ,iR);
       //gammaSource(iZ,iR,iEqTemp,coeff);
       
 
@@ -218,14 +214,18 @@ void HeatTransfer::buildSteadyStateLinearSystem()
   int iEqTemp = 0;
   int nR = temp.cols()-1;
   int nZ = temp.rows()-1;
-  double harmonicAvg,coeff,keff,neutronFlux,cCoeff,volAvgGammaDep;
+  double harmonicAvg,coeff,keff,neutronFlux,cCoeff;
+  Eigen::MatrixXd volAvgGammaDep;
   vector<double> gParams;
 
   updateBoundaryConditions();
   calcImplicitFluxes();
 
   // Calculate core-average gamma deposition term
-  volAvgGammaDep = calcExplicitGammaSource();
+  if (modIrradiation == axial)
+    volAvgGammaDep = calcExplicitAxialFissionEnergy();
+  else
+    volAvgGammaDep = calcExplicitFissionEnergy();
   
   Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> Atemp;
   Atemp.resize(nUnknowns,mpqd->A.cols());
@@ -346,7 +346,7 @@ void HeatTransfer::buildSteadyStateLinearSystem()
       // Gamma source term 
       //coeff = mesh->dt;
       //mpqd->b(iEq) += coeff * mats->gamma(iZ,iR) * volAvgGammaDep;
-      mpqd->b(iEq) += mats->gamma(iZ,iR) * volAvgGammaDep;
+      mpqd->b(iEq) += mats->gamma(iZ,iR) * volAvgGammaDep(iZ,iR);
       //gammaSource(iZ,iR,iEqTemp,coeff);
 
       // Advection terms
@@ -431,35 +431,83 @@ void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff,\
 //==============================================================================
 /// Calculate core-average gamma energy deposition term
 ///
-double HeatTransfer::calcExplicitGammaSource()
+Eigen::MatrixXd HeatTransfer::calcExplicitFissionEnergy()
 {
   
   double localVolume,localFlux,totalVolume,localSigF,localOmega,\
     volAvgGammaDep = 0,fuelVol = 0;
+  
+  Eigen::MatrixXd avgFissionEnergy;
  
   totalVolume = M_PI*mesh->R*mesh->R*mesh->Z;
  
-  for (int iR = 0; iR < temp.cols(); iR++)
+  for (int iZ = 0; iZ < temp.rows(); iZ++)
   {
-    for (int iZ = 0; iZ < temp.rows(); iZ++)
+    for (int iR = 0; iR < temp.cols(); iR++)
     {
       // Get local parameters
       localSigF = mats->oneGroupXS->sigF(iZ,iR);
       localOmega = mats->omega(iZ,iR);
       localFlux = mpqd->ggqd->sFlux(iZ,iR);
       localVolume = mesh->getGeoParams(iR,iZ)[0];
- 
+
       // Calculate gamma source coefficient
       volAvgGammaDep += localVolume*(localOmega*localSigF*localFlux); 
     }
   }
-      
+
   volAvgGammaDep = volAvgGammaDep/totalVolume; 
-  
-  return volAvgGammaDep;
-   
+
+  avgFissionEnergy.setConstant(temp.rows(),temp.cols(),volAvgGammaDep);
+
+  return avgFissionEnergy;
+
 };
 //==============================================================================
+
+//==============================================================================
+/// Calculate core-average gamma energy deposition term
+///
+Eigen::MatrixXd HeatTransfer::calcExplicitAxialFissionEnergy()
+{
+  
+  double localVolume,localFlux,totalVolume,localSigF,localOmega,\
+    axialSliceVolume = 0,axialSliceEnergy = 0,fuelVol = 0;
+ 
+  Eigen::MatrixXd avgFissionEnergy, temporaryMatrix;
+  avgFissionEnergy.setZero(temp.rows(),temp.cols());
+ 
+  totalVolume = M_PI*mesh->R*mesh->R*mesh->Z;
+ 
+  for (int iZ = 0; iZ < temp.rows(); iZ++)
+  {
+    // Reset slice quantities
+    axialSliceEnergy = 0;
+    axialSliceVolume = 0;
+
+    for (int iR = 0; iR < temp.cols(); iR++)
+    {
+      // Get local parameters
+      localSigF = mats->oneGroupXS->sigF(iZ,iR);
+      localOmega = mats->omega(iZ,iR);
+      localFlux = mpqd->ggqd->sFlux(iZ,iR);
+      localVolume = mesh->getGeoParams(iR,iZ)[0];
+      axialSliceVolume += localVolume;
+
+      // Calculate gamma source coefficient
+      axialSliceEnergy += localVolume*(localOmega*localSigF*localFlux); 
+    }
+      
+    axialSliceEnergy = axialSliceEnergy/axialSliceVolume;
+    temporaryMatrix.setConstant(1,temp.rows(),axialSliceEnergy);
+    avgFissionEnergy.row(iZ) = temporaryMatrix;
+  }
+
+  return avgFissionEnergy;
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Calculate energy diracs
@@ -486,7 +534,7 @@ void HeatTransfer::calcDiracs()
       theta = calcTheta(TupwindInterface,Tinterface);
       phi = calcPhi(theta,fluxLimiter); 
       dirac(1,iR) = phi*Tinterface; 
-      
+
       // Handle all other cases
       for (int iZ = 2; iZ < dirac.rows()-1; iZ++)
       {
@@ -496,7 +544,7 @@ void HeatTransfer::calcDiracs()
         theta = calcTheta(TupwindInterface,Tinterface);
         phi = calcPhi(theta,fluxLimiter); 
         dirac(iZ,iR) = phi*Tinterface; 
-        
+
       }
 
       // Handle iZ = nZ case
@@ -517,7 +565,7 @@ void HeatTransfer::calcDiracs()
       theta = calcTheta(TupwindInterface,Tinterface);
       phi = calcPhi(theta,fluxLimiter); 
       dirac(0,iR) = phi*Tinterface; 
-      
+
       // Handle all other cases
       for (int iZ = 1; iZ < dirac.rows()-2; iZ++)
       {
@@ -527,7 +575,7 @@ void HeatTransfer::calcDiracs()
         theta = calcTheta(TupwindInterface,Tinterface);
         phi = calcPhi(theta,fluxLimiter); 
         dirac(iZ,iR) = phi*Tinterface; 
-        
+
       }
 
       // Handle iZ = nZ-1 case
@@ -546,7 +594,7 @@ void HeatTransfer::calcDiracs()
     }
 
   }
-  
+
 };
 //==============================================================================
 
@@ -558,7 +606,7 @@ void HeatTransfer::calcImplicitFluxes()
 
   double tdc; // shorthand for temp*density*specific heat 
   int lastFluxIndex = flux.rows()-1;
- 
+
   if (mats->posVelocity) {
 
     for (int iR = 0; iR < flux.cols(); iR++)
@@ -571,13 +619,13 @@ void HeatTransfer::calcImplicitFluxes()
       for (int iZ = 1; iZ < flux.rows(); iZ++)
       {
         tdc = mats->flowVelocity(iZ-1,iR)*mats->density(iZ-1,iR)\
-          *mats->cP(iZ-1,iR);
+              *mats->cP(iZ-1,iR);
         flux(iZ,iR) = tdc;
-          
+
       }
 
     }
-    
+
   } else
   {
 
@@ -588,17 +636,17 @@ void HeatTransfer::calcImplicitFluxes()
       for (int iZ = 0; iZ < flux.rows()-1; iZ++)
       {
         tdc = mats->flowVelocity(iZ,iR)*mats->density(iZ,iR)\
-          *mats->cP(iZ,iR);
+              *mats->cP(iZ,iR);
         flux(iZ,iR) = tdc;
       }
-      
+
       // Handle iZ = nZ case
       tdc = inletVelocity(iR)*inletDensity(iR)*inletcP(iR);
       flux(lastFluxIndex,iR) = tdc;
 
     }
   }
-  
+
 };
 //==============================================================================
 
@@ -611,7 +659,7 @@ void HeatTransfer::calcFluxes()
 
   double tdc; // shorthand for temp*density*specific heat 
   int lastFluxIndex = flux.rows()-1;
- 
+
   if (mats->posVelocity) {
 
     for (int iR = 0; iR < flux.cols(); iR++)
@@ -619,21 +667,21 @@ void HeatTransfer::calcFluxes()
       // Handle iZ = 0 case
       tdc = inletVelocity(iR)*inletDensity(iR)*inletcP(iR);
       flux(0,iR) = tdc*inletTemp(1,iR)\
-        + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(0)))\
-        *dirac(0,iR);
+                   + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(0)))\
+                   *dirac(0,iR);
 
       // Handle all other cases
       for (int iZ = 1; iZ < flux.rows(); iZ++)
       {
         tdc = mats->flowVelocity(iZ-1,iR)*mats->density(iZ-1,iR)\
-          *mats->cP(iZ-1,iR);
+              *mats->cP(iZ-1,iR);
         flux(iZ,iR) = tdc*temp(iZ-1,iR)\
-          + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(iZ-1)))\
-          *dirac(iZ,iR);
+                      + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(iZ-1)))\
+                      *dirac(iZ,iR);
       }
 
     }
-    
+
   } else
   {
 
@@ -644,20 +692,20 @@ void HeatTransfer::calcFluxes()
       for (int iZ = 0; iZ < flux.rows()-1; iZ++)
       {
         tdc = mats->flowVelocity(iZ,iR)*mats->density(iZ,iR)\
-          *mats->cP(iZ,iR);
+              *mats->cP(iZ,iR);
         flux(iZ,iR) = tdc*temp(iZ,iR)\
-          + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(iZ)))*dirac(iZ,iR);
+                      + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(iZ)))*dirac(iZ,iR);
       }
-      
+
       // Handle iZ = nZ case
       tdc = inletVelocity(iR)*inletDensity(iR)*inletcP(iR);
       flux(lastFluxIndex,iR) = tdc*inletTemp(0,iR)\
-        + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(lastFluxIndex-1)))\
-        *dirac(lastFluxIndex,iR);
+                               + 0.5*abs(tdc)*(1-abs(tdc*mesh->dt/mesh->dzsCorner(lastFluxIndex-1)))\
+                               *dirac(lastFluxIndex,iR);
 
     }
   }
-  
+
 };
 //==============================================================================
 
@@ -668,7 +716,7 @@ void HeatTransfer::calcFluxes()
 /// @param [in] Tinterface change in temp at interface
 double HeatTransfer::calcTheta(double TupwindInterface, double Tinterface)
 {
- 
+
   double theta;
   if (abs(Tinterface) < 1E-10)
   {
@@ -679,7 +727,7 @@ double HeatTransfer::calcTheta(double TupwindInterface, double Tinterface)
   }
 
   return theta;
-  
+
 };
 //==============================================================================
 
@@ -692,7 +740,7 @@ double HeatTransfer::calcTheta(double TupwindInterface, double Tinterface)
 /// @param [out] phi flux limiting parameter
 double HeatTransfer::calcPhi(double theta, string fluxLimiter)
 {
- 
+
   double phi; 
   Eigen::Vector2d fluxLimiterArg1,fluxLimiterArg2;
   Eigen::Vector3d fluxLimiterArg3;
@@ -719,7 +767,7 @@ double HeatTransfer::calcPhi(double theta, string fluxLimiter)
   }
 
   return phi;
-  
+
 };
 //==============================================================================
 
@@ -737,7 +785,7 @@ void HeatTransfer::assignBoundaryIndices()
     coreInletIndex = mesh->nZ-1;
     coreOutletIndex = 0;
   }
-  
+
 };
 //==============================================================================
 
@@ -751,7 +799,7 @@ void HeatTransfer::updateBoundaryConditions()
   inletTemp.setConstant(inletTemp.rows(),inletTemp.cols(),inletT);
   outletTemp = temp.row(coreOutletIndex);   
   inletVelocity = mats->flowVelocity.row(coreInletIndex);
-  
+
   // Update variables that require looping to access   
   for (int iR = 0; iR < mesh->nR; iR++)
   {
@@ -776,7 +824,7 @@ int HeatTransfer::getIndex(int iZ, int iR)
   index = indexOffset + iR + nR*iZ;
 
   return index;
-  
+
 };
 //==============================================================================
 
@@ -791,7 +839,7 @@ void HeatTransfer::getTemp()
   else
     temp.setConstant(mats->uniformTempValue);
 
-  
+
 };
 //==============================================================================
 
@@ -803,17 +851,17 @@ Eigen::MatrixXd HeatTransfer::returnCurrentTemp()
   Eigen::MatrixXd currentTemp; 
 
   currentTemp.setZero(mesh->nZ,mesh->nR);
-  
+
   for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
   {
     for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
     { 
-    
+
       currentTemp(iZ,iR) = mpqd->x(getIndex(iZ,iR));   
-    
+
     }
   }
- 
+
 
   return currentTemp; 
 };
@@ -829,11 +877,34 @@ void HeatTransfer::setTemp()
   {
     for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
     { 
-    
+
       mpqd->xPast(getIndex(iZ,iR)) = temp(iZ,iR);   
-    
+
     }
   }
-  
+
 };
+//==============================================================================
+
+//==============================================================================
+/// Check for optional input parameters of relevance to this object
+void HeatTransfer::checkOptionalParams()
+{
+ 
+  // Check for optional inputs 
+  if ((*input)["parameters"]["wallTemp"]){
+    wallT=(*input)["parameters"]["wallTemp"].as<double>();
+  } 
+  if ((*input)["parameters"]["inletTemp"]){
+    inletT=(*input)["parameters"]["inletTemp"].as<double>();
+  } 
+  if ((*input)["parameters"]["flux limiter"]){
+    fluxLimiter=(*input)["parameters"]["flux limiter"].as<string>();
+  } 
+  if ((*input)["parameters"]["modIrradiation"])
+  {
+    modIrradiation=(*input)["parameters"]["modIrratidation"].as<string>();
+  }
+
+}
 //==============================================================================
