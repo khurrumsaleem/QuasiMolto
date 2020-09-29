@@ -499,7 +499,7 @@ Eigen::MatrixXd HeatTransfer::calcExplicitAxialFissionEnergy()
     }
       
     axialSliceEnergy = axialSliceEnergy/axialSliceVolume;
-    temporaryMatrix.setConstant(1,temp.rows(),axialSliceEnergy);
+    temporaryMatrix.setConstant(1,temp.cols(),axialSliceEnergy);
     avgFissionEnergy.row(iZ) = temporaryMatrix;
   }
 
@@ -903,7 +903,7 @@ void HeatTransfer::checkOptionalParams()
   } 
   if ((*input)["parameters"]["modIrradiation"])
   {
-    modIrradiation=(*input)["parameters"]["modIrratidation"].as<string>();
+    modIrradiation=(*input)["parameters"]["modIrradiation"].as<string>();
   }
 
 }
