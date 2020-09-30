@@ -24,7 +24,8 @@ class HeatTransfer
   double wallT = 922.0;
   double inletT = 922.0;
   int coreInletIndex,coreOutletIndex,nUnknowns,indexOffset = 0; 
-  string modIrradiation = "volume", axial = "axial", volume = "volume";
+  string modIrradiation = "volume", axial = "axial", volume = "volume",\
+                           fuel = "fuel";
   string fluxLimiter = "superbee";
   Eigen::SparseMatrix<double,Eigen::RowMajor> Atemp;
   Eigen::MatrixXd temp,flux,dirac,inletTemp;
@@ -36,6 +37,7 @@ class HeatTransfer
       Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA);
   Eigen::MatrixXd calcExplicitFissionEnergy();
   Eigen::MatrixXd calcExplicitAxialFissionEnergy();
+  Eigen::MatrixXd calcExplicitAxialFuelFissionEnergy();
   void calcDiracs();
   void calcFluxes();
   void calcImplicitFluxes();

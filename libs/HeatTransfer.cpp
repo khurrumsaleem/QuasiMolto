@@ -65,6 +65,8 @@ void HeatTransfer::buildLinearSystem()
   // Calculate core-average gamma deposition term
   if (modIrradiation == axial)
     volAvgGammaDep = calcExplicitAxialFissionEnergy();
+  else if (modIrradiation == fuel)
+    volAvgGammaDep = calcExplicitAxialFuelFissionEnergy();
   else
     volAvgGammaDep = calcExplicitFissionEnergy();
 
@@ -224,6 +226,8 @@ void HeatTransfer::buildSteadyStateLinearSystem()
   // Calculate core-average gamma deposition term
   if (modIrradiation == axial)
     volAvgGammaDep = calcExplicitAxialFissionEnergy();
+  else if (modIrradiation == fuel)
+    volAvgGammaDep = calcExplicitAxialFuelFissionEnergy();
   else
     volAvgGammaDep = calcExplicitFissionEnergy();
   
@@ -507,6 +511,53 @@ Eigen::MatrixXd HeatTransfer::calcExplicitAxialFissionEnergy()
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Calculate core-average gamma energy deposition term
+///
+Eigen::MatrixXd HeatTransfer::calcExplicitAxialFuelFissionEnergy()
+{
+  
+  double localVolume,localFlux,totalVolume,localSigF,localOmega,\
+    axialSliceVolume = 0,axialSliceEnergy = 0,fuelVol = 0;
+ 
+  Eigen::MatrixXd avgFissionEnergy, temporaryMatrix;
+  avgFissionEnergy.setZero(temp.rows(),temp.cols());
+ 
+  totalVolume = M_PI*mesh->R*mesh->R*mesh->Z;
+ 
+  for (int iZ = 0; iZ < temp.rows(); iZ++)
+  {
+    // Reset slice quantities
+    axialSliceEnergy = 0;
+    axialSliceVolume = 0;
+
+    for (int iR = 0; iR < temp.cols(); iR++)
+    {
+      // Get local parameters
+      localSigF = mats->oneGroupXS->sigF(iZ,iR);
+      localOmega = mats->omega(iZ,iR);
+      localFlux = mpqd->ggqd->sFlux(iZ,iR);
+      localVolume = mesh->getGeoParams(iR,iZ)[0];
+
+      if (localSigF > 1E-10)
+      {
+        axialSliceVolume += localVolume;
+        axialSliceEnergy += localVolume*(localOmega*localSigF*localFlux); 
+      }
+
+    }
+
+    axialSliceEnergy = axialSliceEnergy/axialSliceVolume;
+    temporaryMatrix.setConstant(1,temp.cols(),axialSliceEnergy);
+    avgFissionEnergy.row(iZ) = temporaryMatrix;
+  }
+
+  return avgFissionEnergy;
+
+};
+//==============================================================================
+
 
 
 //==============================================================================
@@ -890,7 +941,7 @@ void HeatTransfer::setTemp()
 /// Check for optional input parameters of relevance to this object
 void HeatTransfer::checkOptionalParams()
 {
- 
+
   // Check for optional inputs 
   if ((*input)["parameters"]["wallTemp"]){
     wallT=(*input)["parameters"]["wallTemp"].as<double>();
