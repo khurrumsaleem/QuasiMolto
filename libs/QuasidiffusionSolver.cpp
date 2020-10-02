@@ -1658,6 +1658,66 @@ void QDSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 //==============================================================================
 
 //==============================================================================
+/// Assert Gol'din's diffusion boundary condition on the north face at location 
+///   (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertNGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  // Note: assumes vacuum boundary condition
+  vector<int> indices = getIndices(iR,iZ,energyGroup);
+
+  northCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  A.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's diffusion boundary condition on the south face at location 
+///   (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertSGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  // Note: assumes vacuum boundary condition
+  vector<int> indices = getIndices(iR,iZ,energyGroup);
+
+  southCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  A.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's diffusion boundary condition on the east face at location 
+///   (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertEGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  // Note: assumes vacuum boundary condition
+  vector<int> indices = getIndices(iR,iZ,energyGroup);
+
+  eastCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  A.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
 /// Assert Gol'din's steady state boundary condition on the north face at 
 /// location (iR,iZ)
 /// @param [in] iR radial index of cell
@@ -1760,6 +1820,66 @@ void QDSolver::assertSteadyStateEGoldinBC(int iR,int iZ,int iEq,\
 //==============================================================================
 
 //==============================================================================
+/// Assert Gol'din's steady state diffusion boundary condition on the north face 
+///   at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertSteadyStateNGoldinDiffusionBC(int iR,int iZ,int iEq,\
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  // Note: assumes vacuum boundary condition
+  vector<int> indices = getIndices(iR,iZ,energyGroup);
+
+  steadyStateNorthCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  A.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's steady state diffusion boundary condition on the south face 
+///   at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertSteadyStateSGoldinDiffusionBC(int iR,int iZ,int iEq,\
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  // Note: assumes vacuum boundary condition
+  vector<int> indices = getIndices(iR,iZ,energyGroup);
+
+  steadyStateSouthCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  A.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's steady state diffusion boundary condition on the east face 
+///   at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertSteadyStateEGoldinDiffusionBC(int iR,int iZ,int iEq,\
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  // Note: assumes vacuum boundary condition
+  vector<int> indices = getIndices(iR,iZ,energyGroup);
+
+  steadyStateEastCurrent(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  A.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
 /// Assert boundary condition on the north face at location (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
@@ -1773,6 +1893,8 @@ void QDSolver::assertNBC(int iR,int iZ,int iEq,int energyGroup,\
     assertNCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (goldinBCs)
     assertNGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
+  else if (diffusionBCs)
+    assertNGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertNFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -1792,6 +1914,8 @@ void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
     assertSCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (goldinBCs)
     assertSGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
+  else if (diffusionBCs)
+    assertSGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertSFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -1807,12 +1931,11 @@ void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
 void QDSolver::assertWBC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD)
 {
+  // Can't think of a circumstance where there wouldn't be a reflecting BC at
+  //   r = 0 
   if (reflectingBCs or goldinBCs)
     assertWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else
-    // Can't think of a circumstance where there wouldn't be a reflecting BC at
-    //   r = 0 
-    //assertWFluxBC(iR,iZ,iEq,energyGroup,SGQD);
     assertWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
@@ -1831,6 +1954,8 @@ void QDSolver::assertEBC(int iR,int iZ,int iEq,int energyGroup,\
     assertECurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (goldinBCs)
     assertEGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
+  else if (diffusionBCs)
+    assertEGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertEFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -1850,6 +1975,8 @@ void QDSolver::assertSteadyStateNBC(int iR,int iZ,int iEq,int energyGroup,\
     assertSteadyStateNCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (goldinBCs)
     assertSteadyStateNGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
+  else if (diffusionBCs)
+    assertSteadyStateNGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertNFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -1869,6 +1996,8 @@ void QDSolver::assertSteadyStateSBC(int iR,int iZ,int iEq,int energyGroup,\
     assertSteadyStateSCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (goldinBCs)
     assertSteadyStateSGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
+  else if (diffusionBCs)
+    assertSteadyStateSGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertSFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -1884,12 +2013,11 @@ void QDSolver::assertSteadyStateSBC(int iR,int iZ,int iEq,int energyGroup,\
 void QDSolver::assertSteadyStateWBC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD)
 {
+  // Can't think of a circumstance where there wouldn't be a reflecting BC at
+  //   r = 0 
   if (reflectingBCs or goldinBCs)
     assertSteadyStateWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else
-    // Can't think of a circumstance where there wouldn't be a reflecting BC at
-    //   r = 0 
-    //assertWFluxBC(iR,iZ,iEq,energyGroup,SGQD);
     assertSteadyStateWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
@@ -1908,11 +2036,12 @@ void QDSolver::assertSteadyStateEBC(int iR,int iZ,int iEq,int energyGroup,\
     assertSteadyStateECurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (goldinBCs)
     assertSteadyStateEGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
+  else if (diffusionBCs)
+    assertSteadyStateEGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertEFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
-
 
 //==============================================================================
 /// Calculate multigroup source coefficient for cell at (iR,iZ)
@@ -1968,7 +2097,7 @@ void QDSolver::greyGroupSources(int iR,int iZ,int iEq,int toEnergyGroup,\
   localFlux = mpqd->ggqd->sFlux(iZ,iR); 
 
   b(iEq) += geoParams[iCF]*((localUpscatterCoeff\
-      + localChiP*localFissionCoeff)*localFlux + localChiD*localDNPSource);
+        + localChiP*localFissionCoeff)*localFlux + localChiD*localDNPSource);
 };
 //==============================================================================
 
@@ -2005,7 +2134,7 @@ void QDSolver::steadyStateGreyGroupSources(int iR,int iZ,int iEq,\
   keff = materials->oneGroupXS->keff;
 
   b(iEq) += geoParams[iCF]*((localUpscatterCoeff\
-      + localChiP*localFissionCoeff/keff)*localFlux + localChiD*localDNPSource);
+        + localChiP*localFissionCoeff/keff)*localFlux + localChiD*localDNPSource);
 };
 //==============================================================================
 
@@ -2520,6 +2649,10 @@ void QDSolver::checkOptionalParams()
     else if (boundaryType == "goldin" or boundaryType == "GOLDIN" \
         or boundaryType == "Goldin")
       goldinBCs = true;
+    else if (boundaryType == "diffusion" or boundaryType == "DIFFUSION" \
+        or boundaryType == "Diffusion")
+      diffusionBCs = true;
+
 
   }
 
@@ -2531,7 +2664,7 @@ void QDSolver::checkOptionalParams()
       preconditioner = iluPreconditioner;
     else if (precondInput == "diagonal" or precondInput == "diag")
       preconditioner = diagPreconditioner;
-      
+
   }
 
 }

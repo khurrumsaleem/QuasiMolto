@@ -138,6 +138,14 @@ class QDSolver
     void assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
         SingleGroupQD * SGQD);
 
+    // functions to assert Gol'din diffusion BCs
+    void assertNGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    void assertSGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    void assertEGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+
     // functions to assert steady state Gol'din BCs
     void assertSteadyStateNGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
         SingleGroupQD * SGQD);
@@ -145,6 +153,14 @@ class QDSolver
         SingleGroupQD * SGQD);
     void assertSteadyStateEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
         SingleGroupQD * SGQD);
+
+    // functions to assert Gol'din diffusion BCs
+    void assertSteadyStateNGoldinDiffusionBC(int iR,int iZ,int iEq,\
+        int energyGroup,SingleGroupQD * SGQD);
+    void assertSteadyStateSGoldinDiffusionBC(int iR,int iZ,int iEq,\
+        int energyGroup,SingleGroupQD * SGQD);
+    void assertSteadyStateEGoldinDiffusionBC(int iR,int iZ,int iEq,\
+        int energyGroup,SingleGroupQD * SGQD);
 
     // wrapper to assert either a flux or current BC
     void assertWBC(int iR,int iZ,int iEq,int energyGroup,\
@@ -201,6 +217,7 @@ class QDSolver
     int preconditioner = 1;
     bool reflectingBCs = false;
     bool goldinBCs = false;
+    bool diffusionBCs = false;
     bool useMPQDSources = false;
     MultiPhysicsCoupledQD * mpqd;
 
