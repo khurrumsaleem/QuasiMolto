@@ -1619,6 +1619,51 @@ void GreyGroupSolver::assertEGoldinBC(int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
+/// Assert Gol'din's P1 boundary condition on the north face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertNGoldinP1BC(int iR,int iZ,int iEq)
+{
+  vector<int> indices = getIndices(iR,iZ);
+
+  northCurrent(1.0,iR,iZ,iEq);
+  Atemp.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's P1 boundary condition on the south face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSGoldinP1BC(int iR,int iZ,int iEq)
+{
+  vector<int> indices = getIndices(iR,iZ);
+
+  southCurrent(1.0,iR,iZ,iEq);
+  Atemp.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's P1 boundary condition on the east face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertEGoldinP1BC(int iR,int iZ,int iEq)
+{
+  vector<int> indices = getIndices(iR,iZ);
+
+  eastCurrent(1.0,iR,iZ,iEq);
+  Atemp.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
 /// Assert Gol'din's boundary condition on the north face at location (iR,iZ)
 /// for steady state solves
 /// @param [in] iR radial index of cell
@@ -1685,6 +1730,54 @@ void GreyGroupSolver::assertSteadyStateEGoldinBC(int iR,int iZ,int iEq)
 //==============================================================================
 
 //==============================================================================
+/// Assert Gol'din's P1 boundary condition on the north face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateNGoldinP1BC(int iR,int iZ,int iEq)
+{
+  vector<int> indices = getIndices(iR,iZ);
+
+  steadyStateNorthCurrent(1.0,iR,iZ,iEq);
+  Atemp.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's P1 boundary condition on the south face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateSGoldinP1BC(int iR,int iZ,int iEq)
+{
+  vector<int> indices = getIndices(iR,iZ);
+
+  steadyStateSouthCurrent(1.0,iR,iZ,iEq);
+  Atemp.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's P1 boundary condition on the east face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateEGoldinP1BC(int iR,int iZ,int iEq)
+{
+  vector<int> indices = getIndices(iR,iZ);
+
+  steadyStateEastCurrent(1.0,iR,iZ,iEq);
+  Atemp.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
 /// Assert boundary condition on the north face at location (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
@@ -1695,6 +1788,8 @@ void GreyGroupSolver::assertNBC(int iR,int iZ,int iEq)
     assertNCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertNGoldinBC(iR,iZ,iEq);
+  else if (diffusionBCs)
+    assertNGoldinP1BC(iR,iZ,iEq);
   else
     assertNFluxBC(iR,iZ,iEq);
 };
@@ -1711,6 +1806,8 @@ void GreyGroupSolver::assertSBC(int iR,int iZ,int iEq)
     assertSCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertSGoldinBC(iR,iZ,iEq);
+  else if (diffusionBCs)
+    assertSGoldinP1BC(iR,iZ,iEq);
   else
     assertSFluxBC(iR,iZ,iEq);
 };
@@ -1744,6 +1841,8 @@ void GreyGroupSolver::assertEBC(int iR,int iZ,int iEq)
     assertECurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertEGoldinBC(iR,iZ,iEq);
+  else if (diffusionBCs)
+    assertEGoldinP1BC(iR,iZ,iEq);
   else
     assertEFluxBC(iR,iZ,iEq);
 };
@@ -1760,6 +1859,8 @@ void GreyGroupSolver::assertSteadyStateNBC(int iR,int iZ,int iEq)
     assertSteadyStateNCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertSteadyStateNGoldinBC(iR,iZ,iEq);
+  else if (diffusionBCs)
+    assertSteadyStateNGoldinP1BC(iR,iZ,iEq);
   else
     assertNFluxBC(iR,iZ,iEq);
 };
@@ -1776,6 +1877,8 @@ void GreyGroupSolver::assertSteadyStateSBC(int iR,int iZ,int iEq)
     assertSteadyStateSCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertSteadyStateSGoldinBC(iR,iZ,iEq);
+  else if (diffusionBCs)
+    assertSteadyStateSGoldinP1BC(iR,iZ,iEq);
   else
     assertSFluxBC(iR,iZ,iEq);
 };
@@ -1809,6 +1912,8 @@ void GreyGroupSolver::assertSteadyStateEBC(int iR,int iZ,int iEq)
     assertSteadyStateECurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertSteadyStateEGoldinBC(iR,iZ,iEq);
+  else if (diffusionBCs)
+    assertSteadyStateEGoldinP1BC(iR,iZ,iEq);
   else
     assertEFluxBC(iR,iZ,iEq);
 };
@@ -2401,6 +2506,10 @@ void GreyGroupSolver::checkOptionalParams()
     else if (boundaryType == "goldin" or boundaryType == "GOLDIN" \
         or boundaryType == "Goldin")
       goldinBCs = true;
+    else if (boundaryType == "diffusion" or boundaryType == "DIFFUSION" \
+        or boundaryType == "Diffusion")
+      diffusionBCs = true;
+
 
   }
 }

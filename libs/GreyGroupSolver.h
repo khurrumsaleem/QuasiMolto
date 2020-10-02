@@ -99,11 +99,21 @@ class GreyGroupSolver
     void assertNGoldinBC(int iR,int iZ,int iEq);
     void assertSGoldinBC(int iR,int iZ,int iEq);
     void assertEGoldinBC(int iR,int iZ,int iEq);
+
+    // functions to assert Gol'din diffusion BCs
+    void assertNGoldinP1BC(int iR,int iZ,int iEq);
+    void assertSGoldinP1BC(int iR,int iZ,int iEq);
+    void assertEGoldinP1BC(int iR,int iZ,int iEq);
     
     // functions to assert steady state Gol'din BCs
     void assertSteadyStateNGoldinBC(int iR,int iZ,int iEq);
     void assertSteadyStateSGoldinBC(int iR,int iZ,int iEq);
     void assertSteadyStateEGoldinBC(int iR,int iZ,int iEq);
+
+    // functions to assert steady state Gol'din BCs
+    void assertSteadyStateNGoldinP1BC(int iR,int iZ,int iEq);
+    void assertSteadyStateSGoldinP1BC(int iR,int iZ,int iEq);
+    void assertSteadyStateEGoldinP1BC(int iR,int iZ,int iEq);
 
     // wrapper to assert either a flux or current BC
     void assertWBC(int iR,int iZ,int iEq);
@@ -152,6 +162,7 @@ class GreyGroupSolver
     int energyGroups,nR,nZ,nUnknowns,nCurrentUnknowns;
     bool reflectingBCs = false;
     bool goldinBCs = false;
+    bool diffusionBCs = false;
 
   private:
     // private variables
