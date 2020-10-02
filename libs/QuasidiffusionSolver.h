@@ -139,11 +139,11 @@ class QDSolver
         SingleGroupQD * SGQD);
 
     // functions to assert Gol'din diffusion BCs
-    void assertNGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+    void assertNGoldinP1BC(int iR,int iZ,int iEq,int energyGroup,\
         SingleGroupQD * SGQD);
-    void assertSGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+    void assertSGoldinP1BC(int iR,int iZ,int iEq,int energyGroup,\
         SingleGroupQD * SGQD);
-    void assertEGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+    void assertEGoldinP1BC(int iR,int iZ,int iEq,int energyGroup,\
         SingleGroupQD * SGQD);
 
     // functions to assert steady state Gol'din BCs
@@ -155,11 +155,11 @@ class QDSolver
         SingleGroupQD * SGQD);
 
     // functions to assert Gol'din diffusion BCs
-    void assertSteadyStateNGoldinDiffusionBC(int iR,int iZ,int iEq,\
+    void assertSteadyStateNGoldinP1BC(int iR,int iZ,int iEq,\
         int energyGroup,SingleGroupQD * SGQD);
-    void assertSteadyStateSGoldinDiffusionBC(int iR,int iZ,int iEq,\
+    void assertSteadyStateSGoldinP1BC(int iR,int iZ,int iEq,\
         int energyGroup,SingleGroupQD * SGQD);
-    void assertSteadyStateEGoldinDiffusionBC(int iR,int iZ,int iEq,\
+    void assertSteadyStateEGoldinP1BC(int iR,int iZ,int iEq,\
         int energyGroup,SingleGroupQD * SGQD);
 
     // wrapper to assert either a flux or current BC

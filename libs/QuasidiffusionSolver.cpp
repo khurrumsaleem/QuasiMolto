@@ -1665,7 +1665,7 @@ void QDSolver::assertEGoldinBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
-void QDSolver::assertNGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+void QDSolver::assertNGoldinP1BC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD)
 {
   // Note: assumes vacuum boundary condition
@@ -1685,7 +1685,7 @@ void QDSolver::assertNGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
-void QDSolver::assertSGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+void QDSolver::assertSGoldinP1BC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD)
 {
   // Note: assumes vacuum boundary condition
@@ -1705,7 +1705,7 @@ void QDSolver::assertSGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
-void QDSolver::assertEGoldinDiffusionBC(int iR,int iZ,int iEq,int energyGroup,\
+void QDSolver::assertEGoldinP1BC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD)
 {
   // Note: assumes vacuum boundary condition
@@ -1827,7 +1827,7 @@ void QDSolver::assertSteadyStateEGoldinBC(int iR,int iZ,int iEq,\
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
-void QDSolver::assertSteadyStateNGoldinDiffusionBC(int iR,int iZ,int iEq,\
+void QDSolver::assertSteadyStateNGoldinP1BC(int iR,int iZ,int iEq,\
     int energyGroup,SingleGroupQD * SGQD)
 {
   // Note: assumes vacuum boundary condition
@@ -1847,7 +1847,7 @@ void QDSolver::assertSteadyStateNGoldinDiffusionBC(int iR,int iZ,int iEq,\
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
-void QDSolver::assertSteadyStateSGoldinDiffusionBC(int iR,int iZ,int iEq,\
+void QDSolver::assertSteadyStateSGoldinP1BC(int iR,int iZ,int iEq,\
     int energyGroup,SingleGroupQD * SGQD)
 {
   // Note: assumes vacuum boundary condition
@@ -1867,7 +1867,7 @@ void QDSolver::assertSteadyStateSGoldinDiffusionBC(int iR,int iZ,int iEq,\
 /// @param [in] iEq row to place equation in
 /// @param [in] energyGroup energy group to assert boundary condition for
 /// @param [in] SGQD of this energyGroup
-void QDSolver::assertSteadyStateEGoldinDiffusionBC(int iR,int iZ,int iEq,\
+void QDSolver::assertSteadyStateEGoldinP1BC(int iR,int iZ,int iEq,\
     int energyGroup,SingleGroupQD * SGQD)
 {
   // Note: assumes vacuum boundary condition
@@ -1894,7 +1894,7 @@ void QDSolver::assertNBC(int iR,int iZ,int iEq,int energyGroup,\
   else if (goldinBCs)
     assertNGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (diffusionBCs)
-    assertNGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertNGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertNFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -1915,7 +1915,7 @@ void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
   else if (goldinBCs)
     assertSGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (diffusionBCs)
-    assertSGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertSGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertSFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -1955,7 +1955,7 @@ void QDSolver::assertEBC(int iR,int iZ,int iEq,int energyGroup,\
   else if (goldinBCs)
     assertEGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (diffusionBCs)
-    assertEGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertEGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertEFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -1976,7 +1976,7 @@ void QDSolver::assertSteadyStateNBC(int iR,int iZ,int iEq,int energyGroup,\
   else if (goldinBCs)
     assertSteadyStateNGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (diffusionBCs)
-    assertSteadyStateNGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertSteadyStateNGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertNFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -1997,7 +1997,7 @@ void QDSolver::assertSteadyStateSBC(int iR,int iZ,int iEq,int energyGroup,\
   else if (goldinBCs)
     assertSteadyStateSGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (diffusionBCs)
-    assertSteadyStateSGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertSteadyStateSGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertSFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
@@ -2037,7 +2037,7 @@ void QDSolver::assertSteadyStateEBC(int iR,int iZ,int iEq,int energyGroup,\
   else if (goldinBCs)
     assertSteadyStateEGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (diffusionBCs)
-    assertSteadyStateEGoldinDiffusionBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertSteadyStateEGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
   else
     assertEFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
