@@ -252,7 +252,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
     ////////////////////
 
     // Only solve the MGHOT after we've got an estimate for the ELOT solution
-    if (itersMGHOT != 0)
+    if (itersMGHOT != 0 and not p1Approx)
     {
       // Solve MGHOT problem
       cout << "MGHOT solve...";
@@ -527,7 +527,7 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     ////////////////////
 
     // Only solve the MGHOT after we've got an estimate for the ELOT solution
-    if (itersMGHOT != 0)
+    if (itersMGHOT != 0 and not p1Approx)
     {
       // Solve MGHOT problem
       cout << "MGHOT solve...";
@@ -1061,6 +1061,7 @@ void MultilevelCoupling::solveTransient()
 ///
 void MultilevelCoupling::checkOptionalParameters()
 {
+  string boundaryType;
 
   // Check for relaxTolELOT specification..
   if ((*input)["parameters"]["relaxTolELOT"])
@@ -1089,6 +1090,17 @@ void MultilevelCoupling::checkOptionalParameters()
   // Check if iterative solver should be used for MGLOQD 
   if ((*input)["parameters"]["iterativeMGLOQD"])
     iterativeMGLOQD=(*input)["parameters"]["iterativeMGLOQD"].as<bool>();
+
+  // Check if the P1 approximation should be used
+  if ((*input)["parameters"]["mgqd-bcs"])
+  {
+    boundaryType=(*input)["parameters"]["mgqd-bcs"].as<string>();
+
+    if (boundaryType == "diffusion" or boundaryType == "DIFFUSION" \
+        or boundaryType == "Diffusion")
+      p1Approx = true;
+  } 
+
 
 };
 //==============================================================================
