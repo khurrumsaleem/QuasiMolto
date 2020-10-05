@@ -474,6 +474,17 @@ void Mesh::calcSpatialMesh(){
     }
   }
 
+  
+  volume.setZero(nZ,nR);
+  for (int iZ = 0; iZ < volume.rows(); iZ++)
+  {
+    for (int iR = 0; iR < volume.cols(); iR++)
+    {
+      volume(iZ,iR) = getGeoParams(iR,iZ)[0];
+    }
+  }
+
+
   calcQDCellIndices(nCornersR,nCornersZ);
   
 }
@@ -943,6 +954,8 @@ void Mesh::writeVars()
   output->write(outputDir,"zEdgeRecirc",zEdge,true);
   output->write(outputDir,"rEdgeRecirc",rEdge,true);
 
+  // Write volumes
+  output->write(outputDir,"volume",volume,true);
 
 };
 //==============================================================================

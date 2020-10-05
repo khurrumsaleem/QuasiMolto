@@ -79,6 +79,7 @@ class Mesh
         rowvec rVWCornerCent;
         vector<quadLevel> quadrature;
 	vector<qdCell> qdCells; 
+        Eigen::MatrixXd volume;
         string outputDir = "mesh/";
         WriteData * output;
 
