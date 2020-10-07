@@ -242,7 +242,8 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
   vector<double> fluxResMGHOT,fluxResMGLOQD,fluxResELOT,fluxResiduals;
  
   // Timing variables 
-  double duration,totalDuration = 0.0;
+  double duration,totalDuration = 0.0,elotDuration = 0,\
+    mgloqdDuration = 0, mghotDuration = 0;
   clock_t startTime;
 
   while (not convergedMGHOT){ 
@@ -259,6 +260,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
       startTime = clock(); 
       solveMGHOT();
       duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      mghotDuration = mghotDuration + duration;
       cout << " done. ("<< duration << " seconds)" << endl;
       iters.push_back(3);
 
@@ -288,6 +290,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
       startTime = clock(); 
       solveMGLOQD();
       duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      mgloqdDuration = mgloqdDuration + duration;
       cout << "    ";
       cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
       iters.push_back(2);
@@ -322,6 +325,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
         startTime = clock(); 
         solveELOT(mpqd->x);
         duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+        elotDuration = elotDuration + duration;
         cout << "        ";
         cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
         iters.push_back(1);
@@ -470,6 +474,9 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
     mesh->output->write(outputDir,"iterates",iters);
     mesh->output->write(outputDir,"flux_residuals",fluxResiduals);
     mesh->output->write(outputDir,"temp_residuals",tempResiduals);
+    mesh->output->write(outputDir,"MGHOT_Time",mghotDuration);
+    mesh->output->write(outputDir,"MGLOQD_Time",mgloqdDuration);
+    mesh->output->write(outputDir,"ELOT_Time",elotDuration);
   }
 
   return true;
@@ -497,7 +504,8 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   double power,kdiff;
  
   // Timing variables 
-  double duration,totalDuration = 0.0;
+  double duration,totalDuration = 0.0,elotDuration = 0,\
+    mgloqdDuration = 0, mghotDuration = 0;
   clock_t startTime;
 
   Eigen::MatrixXd volume,omega,oldFlux,newFlux;
@@ -534,6 +542,8 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
       startTime = clock(); 
       solveSteadyStateMGHOT();
       duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      totalDuration = totalDuration + duration; 
+      mghotDuration = mghotDuration + duration; 
       cout << " done. ("<< duration << " seconds)" << endl;
       iters.push_back(3);
 
@@ -564,6 +574,8 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
       startTime = clock(); 
       solveSteadyStateMGLOQD();
       duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      totalDuration = totalDuration + duration; 
+      mgloqdDuration = mgloqdDuration + duration; 
       cout << "    ";
       cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
       iters.push_back(2);
@@ -599,6 +611,8 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
         startTime = clock(); 
         solveSteadyStateELOT(mpqd->x);
         duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+        totalDuration = totalDuration + duration; 
+        elotDuration = elotDuration + duration; 
         cout << "        ";
         cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
         iters.push_back(1);
@@ -777,7 +791,6 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   mpqd->writeVars(); 
   mgqd->writeVars(); 
   mats->oneGroupXS->writeVars();
-  mesh->output->write(outputDir,"Solve_Time",duration);
 
   cout << "MGHOT iterations: " << itersMGHOT << endl;
   cout << "MGLOQD iterations: " << itersMGLOQD << endl;
@@ -786,6 +799,10 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   // Output iteration counts 
   if (outputVars)
   {
+    mesh->output->write(outputDir,"Solve_Time",totalDuration);
+    mesh->output->write(outputDir,"MGHOT_Time",mghotDuration);
+    mesh->output->write(outputDir,"MGLOQD_Time",mgloqdDuration);
+    mesh->output->write(outputDir,"ELOT_Time",elotDuration);
     mesh->output->write(outputDir,"MGHOT_iters",itersMGHOT);
     mesh->output->write(outputDir,"MGLOQD_iters",itersMGLOQD);
     mesh->output->write(outputDir,"ELOT_iters",itersELOT);
