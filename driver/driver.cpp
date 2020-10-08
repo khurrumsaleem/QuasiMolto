@@ -343,7 +343,7 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
   
   cout << "Initialized steady state solve" << endl;
 
-  myMLCoupling->solveSteadyStateResidualBalance(true);
+  myMLCoupling->solveSteadyStateResidualBalance(false);
 
   cout << "Completed steady state solve" << endl;
 
