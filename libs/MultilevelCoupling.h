@@ -32,7 +32,8 @@ class MultilevelCoupling
     bool p1Approx = false, iterativeMGLOQD = false, iterativeELOT = false;
     bool solveOneStep();
     bool solveOneStepResidualBalance(bool outputVars);
-    bool solveSteadyStateResidualBalance(bool outputVars);
+    void solveSteadyStateResidualBalance(bool outputVars);
+    void solveSteadyStateTransientResidualBalance(bool outputVars);
     bool initialSolve();
     void solveMGHOT();
     void solveSteadyStateMGHOT();

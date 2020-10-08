@@ -487,7 +487,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
 //==============================================================================
 /// Perform a steady state solve
 ///
-bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
+void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
 {
 
   Eigen::VectorXd xCurrentIter, xLastMGHOTIter, xLastMGLOQDIter,xLastELOTIter,\
@@ -814,6 +814,16 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   }
 
 };
+//==============================================================================
+
+//==============================================================================
+void MultilevelCoupling::solveSteadyStateTransientResidualBalance(bool outputVars)
+{
+  mesh->state=0;
+  solveSteadyStateResidualBalance(outputVars);
+  mesh->advanceOneTimeStep();
+  solveTransient();
+}
 //==============================================================================
 
 //==============================================================================

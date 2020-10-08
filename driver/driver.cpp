@@ -353,20 +353,9 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
       myMPQD);
 
-  // Set state to zero for initial steady state solve
-  myMesh->state=0;
-  
-  cout << "Initialized steady state solve" << endl;
+  cout << "Starting solves..." << endl;
 
-  myMLCoupling->solveSteadyStateResidualBalance(false);
-
-  cout << "Completed steady state solve" << endl;
-
-  myMesh->advanceOneTimeStep();
-
-  cout << "Starting transient solves..." << endl;
-
-  myMLCoupling->solveTransient();
+  myMLCoupling->solveSteadyStateTransientResidualBalance(true);
   
   cout << "Completed multilevel solve" << endl;
 
