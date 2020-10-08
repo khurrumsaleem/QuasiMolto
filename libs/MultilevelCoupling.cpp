@@ -788,6 +788,7 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
 
   // Write vars
   mpqd->updateSteadyStateVarsAfterConvergence(); 
+  mgqd->updateSteadyStateVarsAfterConvergence(); 
   mpqd->writeVars(); 
   mgqd->writeVars(); 
   mats->oneGroupXS->writeVars();
@@ -811,8 +812,6 @@ bool MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     mesh->output->write(outputDir,"temp_residuals",tempResiduals);
     mesh->output->write(outputDir,"k_history",kHist);
   }
-
-
 
 };
 //==============================================================================
