@@ -235,8 +235,8 @@ void HeatTransfer::buildSteadyStateLinearSystem()
   Atemp.resize(nUnknowns,mpqd->A.cols());
   Atemp.setZero();
   
- // #pragma omp parallel for private(myIndex,sIndex,nIndex,wIndex,eIndex,\
- //   upwindIndex,gParams,cCoeff,coeff,keff,neutronFlux,harmonicAvg,iEq,iEqTemp)
+  #pragma omp parallel for private(myIndex,sIndex,nIndex,wIndex,eIndex,\
+    upwindIndex,gParams,cCoeff,coeff,keff,neutronFlux,harmonicAvg,iEq,iEqTemp)
   for (int iZ = 0; iZ < temp.rows(); iZ++)
   {
 

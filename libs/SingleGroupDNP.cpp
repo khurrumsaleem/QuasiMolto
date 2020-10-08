@@ -194,7 +194,7 @@ void SingleGroupDNP::buildSteadyStateLinearSystem(\
 
   if (mats->posVelocity) 
   {
-//#pragma omp parallel for private(myIndex,iEq,iEqTemp)
+    #pragma omp parallel for private(myIndex,iEq,iEqTemp)
     for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
     {
       for (int iR = 0; iR < myDNPConc.cols(); iR++)
