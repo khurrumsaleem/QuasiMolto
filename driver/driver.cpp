@@ -134,6 +134,16 @@ int main(int argc, char** argv) {
   {
     myMGT->solveTransportOnly();
   }
+
+  // Clear pointers
+
+  delete myMesh;
+  delete myMaterials;
+  delete myMGT; 
+  delete myMGQD; 
+  delete myT2QD; 
+  delete myMMS;
+
 return(0);
 }
 
@@ -312,9 +322,14 @@ void testSteadyState(Materials * myMaterials,\
   myMLCoupling->solveSteadyStateResidualBalance(true);
 
   cout << "Completed steady state solve" << endl;
+  
+  // Delete pointers
 
-  //  myMaterials->oneGroupXS->print();
-  //  myMPQD->ggqd->printBCParams();
+  delete myMGT;
+  delete myMGQD;
+  delete myMPQD;
+  delete myMLCoupling;
+
 }
 
 void testSteadyStateThenTransient(Materials * myMaterials,\
@@ -354,5 +369,13 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
   myMLCoupling->solveTransient();
   
   cout << "Completed multilevel solve" << endl;
+
+  // Delete pointers
+
+  delete myMGT;
+  delete myMGQD;
+  delete myMPQD;
+  delete myMLCoupling;
+
 
 }
