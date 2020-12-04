@@ -7,6 +7,7 @@
 #include <cmath>
 #include <vector>
 #include <armadillo>
+#include <petsc.h>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 #include "../TPLs/eigen-git-mirror/Eigen/IterativeLinearSolvers"
