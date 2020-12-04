@@ -221,6 +221,11 @@ class QDSolver
     bool useMPQDSources = false;
     MultiPhysicsCoupledQD * mpqd;
 
+    // PETSc variables (the p denotes a petsc variable)
+    Vec xp,bp,dp;
+    Mat Ap,Cp;
+    KSP ksp;
+
   private:
     // private variables
     YAML::Node * input;
