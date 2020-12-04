@@ -15,7 +15,6 @@
 #include "../TPLs/eigen-git-mirror/Eigen/SuperLUSupport"
 
 using namespace std;
-using namespace arma;
 
 class WriteData; // forward declaration
 
@@ -67,17 +66,17 @@ class Mesh
         vector<double> dts;
         vector<double> ts;
         vector<bool> outputOnStep;
-        rowvec dzs,dzsCorner;
-        rowvec drs,drsCorner;
-	rowvec rEdge;
-	rowvec zEdge;
-        rowvec rCent;
-        rowvec zCent;
-	rowvec rCornerEdge;
-	rowvec zCornerEdge;
-        rowvec rCornerCent;
-        rowvec zCornerCent;
-        rowvec rVWCornerCent;
+        arma::rowvec dzs,dzsCorner;
+        arma::rowvec drs,drsCorner;
+	arma::rowvec rEdge;
+	arma::rowvec zEdge;
+        arma::rowvec rCent;
+        arma::rowvec zCent;
+	arma::rowvec rCornerEdge;
+	arma::rowvec zCornerEdge;
+        arma::rowvec rCornerCent;
+        arma::rowvec zCornerCent;
+        arma::rowvec rVWCornerCent;
         vector<quadLevel> quadrature;
 	vector<qdCell> qdCells; 
         Eigen::MatrixXd volume;
@@ -87,8 +86,8 @@ class Mesh
         // Recirculation loop parameters
         double dzCornerRecirc,recircZ;
         int nZrecirc;
-	rowvec zCornerEdgeRecirc,dzsCornerRecirc;
-        rowvec zCornerCentRecirc;
+	arma::rowvec zCornerEdgeRecirc,dzsCornerRecirc;
+        arma::rowvec zCornerCentRecirc;
 
         // Functions
   	vector<int> getQDCellIndices(int iR, int iZ);

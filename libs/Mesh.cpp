@@ -8,7 +8,6 @@
 #include "WriteData.h"
 
 using namespace std;
-using namespace arma;
 
 //==============================================================================
 /// Constructor for qdCell object.

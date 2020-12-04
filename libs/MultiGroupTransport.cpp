@@ -8,7 +8,6 @@
 #include "SimpleCornerBalance.h"
 
 using namespace std; 
-using namespace arma;
 
 //==============================================================================
 /// MultiGroupTransport class object constructor

@@ -108,7 +108,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
     Eigen::VectorXd * myb,\
     Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myDNPFlux,\
-    rowvec dzs,\
+    arma::rowvec dzs,\
     int myIndexOffset,\
     bool fluxSource)
 {
@@ -176,7 +176,7 @@ void SingleGroupDNP::buildSteadyStateLinearSystem(\
     Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myDNPFlux,\
     Eigen::MatrixXd myInletDNP,\
-    rowvec dzs,\
+    arma::rowvec dzs,\
     int myIndexOffset,\
     bool fluxSource)
 {
@@ -391,7 +391,7 @@ Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myDirac,\
     Eigen::MatrixXd myInletConc,\
     Eigen::VectorXd myInletVelocity,\
-    rowvec dzs)
+    arma::rowvec dzs)
 {
 
   // Declare temporary variables
@@ -470,7 +470,7 @@ Eigen::MatrixXd SingleGroupDNP::calcImplicitFluxes(Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myFlowVelocity,\
     Eigen::MatrixXd myInletConc,\
     Eigen::VectorXd myInletVelocity,
-    rowvec dzs)
+    arma::rowvec dzs)
 {
 
   // Declare temporary variables

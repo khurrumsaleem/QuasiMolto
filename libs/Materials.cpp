@@ -5,7 +5,6 @@
 #include "Materials.h"
 
 using namespace std; 
-using namespace arma;
 
 //==============================================================================
 /// Material class object constructor

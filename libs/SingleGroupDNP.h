@@ -47,7 +47,7 @@ class SingleGroupDNP
         Eigen::VectorXd * myb,\
         Eigen::MatrixXd myDNPConc,\
         Eigen::MatrixXd myDNPFlux,\
-        rowvec dzs,\
+        arma::rowvec dzs,\
         int myIndexOffset,
         bool fluxSource = true);
     void buildSteadyStateLinearSystem(\
@@ -56,7 +56,7 @@ class SingleGroupDNP
         Eigen::MatrixXd myDNPConc,\
         Eigen::MatrixXd myDNPFlux,\
         Eigen::MatrixXd myInletDNP,\
-        rowvec dzs,\
+        arma::rowvec dzs,\
         int myIndexOffset,
         bool fluxSource = true);
 
@@ -69,12 +69,12 @@ class SingleGroupDNP
         Eigen::MatrixXd dirac,\
         Eigen::MatrixXd inletConc,\
         Eigen::VectorXd inletVelocity,\
-        rowvec dzs);
+        arma::rowvec dzs);
     Eigen::MatrixXd calcImplicitFluxes(Eigen::MatrixXd myDNPConc,\
         Eigen::MatrixXd myFlowVelocity,\
         Eigen::MatrixXd inletConc,\
         Eigen::VectorXd inletVelocity,\
-        rowvec dzs);
+        arma::rowvec dzs);
     void getCoreConc();
     void setCoreConc();
     void getRecircConc();

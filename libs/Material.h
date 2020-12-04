@@ -4,7 +4,6 @@
 #include "Mesh.h"
 
 using namespace std; 
-using namespace arma;
 
 //==============================================================================
 //! Material class that holds material and geometry information

@@ -7,7 +7,6 @@
 #include "QuasidiffusionSolver.h"
 
 using namespace std; 
-using namespace arma;
 
 class MultiGroupTransport; // forward declaration
 
@@ -18,8 +17,8 @@ class SingleGroupTransport
 {
   public:
     int energyGroup;
-    cube aFlux;
-    cube aHalfFlux;
+    arma::cube aFlux;
+    arma::cube aHalfFlux;
     Eigen::MatrixXd sFlux; 
     Eigen::MatrixXd sFluxPrev; 
     Eigen::MatrixXd alpha; 
