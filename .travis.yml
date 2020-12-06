@@ -11,10 +11,11 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - gcc-6
-      #- g++-6
-      - mpicxx
+      - g++-6
       - gfortran
       - cmake
+      - mpich
+      - libmpich-dev
 script:
   # Link gcc-6 and g++-6 to their standard commands
   - sudo ln -s /usr/bin/gcc-6 /usr/local/bin/gcc
