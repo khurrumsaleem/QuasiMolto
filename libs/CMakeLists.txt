@@ -25,6 +25,7 @@ add_library(libs
         )
 
 target_link_libraries(libs superlu)
+target_link_libraries(libs petsc)
 
 # Add compilier flags
 SET(CMAKE_CXX_FLAGS "-std=c++11 -Ofast -fopenmp")
