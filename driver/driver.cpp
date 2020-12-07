@@ -1,5 +1,7 @@
 // test.cpp
 
+static char help[] = "Solves CFR reactor kinetics problem with KSP.\n\n";
+
 #include <iostream>
 #include "../libs/Materials.h"
 #include "../libs/MultiGroupQD.h"
@@ -48,7 +50,13 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
 
 int main(int argc, char** argv) {
 
+  PetscMPIInt size;
+  PetscErrorCode ierr; 
   string solveType;
+
+  // initialize PETSc
+  PetscInitialize(&argc,&argv,(char*)0,help);
+  ierr = MPI_Comm_size(PETSC_COMM_WORLD,&size); CHKERRQ(ierr);
 
   // get input file
   YAML::Node * input;
@@ -136,7 +144,7 @@ int main(int argc, char** argv) {
     myMGT->solveTransportOnly();
   }
 
-  // Clear pointers
+  // Delete pointers
 
   delete myMesh;
   delete myMaterials;
@@ -145,7 +153,10 @@ int main(int argc, char** argv) {
   delete myT2QD; 
   delete myMMS;
 
-return(0);
+  // Finalize PETSc
+  ierr = PetscFinalize();
+
+  return(0);
 }
 
 void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input){
