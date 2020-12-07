@@ -16,6 +16,8 @@ addons:
       - cmake
       - mpich
       - libmpich-dev
+      - libblas-dev
+      - liblapack-dev
 script:
   # Link gcc-6 and g++-6 to their standard commands
   - sudo ln -s /usr/bin/gcc-6 /usr/local/bin/gcc
