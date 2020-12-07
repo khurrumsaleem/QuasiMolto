@@ -7,8 +7,8 @@ using namespace std;
 
 //==============================================================================
 
-void initPETScMat(Mat *A, double squareSize, double nonZeros);
-void initPETScVec(Vec *A, double squareSize, double nonZeros);
+int initPETScMat(Mat *A, int squareSize, int nonZeros);
+int initPETScVec(Vec *A, int size);
 
 //==============================================================================
 
