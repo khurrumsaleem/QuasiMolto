@@ -20,7 +20,9 @@ add_library(libs
         GreyGroupSolver.cpp
         CollapsedCrossSections.cpp
         WriteData.cpp
-        MultilevelCoupling.cpp)
+        MultilevelCoupling.cpp
+        PETScWrapper.cpp
+        )
 
 target_link_libraries(libs superlu)
 

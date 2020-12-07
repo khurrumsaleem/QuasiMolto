@@ -18,6 +18,7 @@
 #include "../libs/MultiPhysicsCoupledQD.h"
 #include "../libs/MultiGroupQDToMultiPhysicsQDCoupling.h"
 #include "../libs/MultilevelCoupling.h"
+#include "../libs/PETScWrapper.h"
 #include "../libs/MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
