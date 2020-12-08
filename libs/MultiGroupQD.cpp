@@ -73,12 +73,41 @@ void MultiGroupQD::buildSteadyStateLinearSystem()
 }
 //==============================================================================
 
+//==============================================================================
+/// Loops over energy groups and builds the linear system to solve the 
+/// multigroup quasidiffusion equations
+int MultiGroupQD::buildSteadyStateLinearSystem_p()
+{
+  
+  PetscErrorCode ierr;
+  
+  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+  {
+    SGQDs[iGroup]->formSteadyStateContributionToLinearSystem_p();
+  }
+
+  /* Finalize assembly for A_p and b_p */
+  ierr = MatAssemblyBegin(QDSolve->A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(QDSolve->A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
+  ierr = VecAssemblyBegin(QDSolve->b_p);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(QDSolve->b_p);CHKERRQ(ierr);
+
+}
+//==============================================================================
 
 //==============================================================================
 /// Solves the linear system formed by the muligroup quasidiffusion equations
 void MultiGroupQD::solveLinearSystem()
 {
   QDSolve->solve();
+}
+//==============================================================================
+
+//==============================================================================
+/// Solves the linear system formed by the muligroup quasidiffusion equations
+void MultiGroupQD::solveLinearSystem_p()
+{
+  QDSolve->solve_p();
 }
 //==============================================================================
 
@@ -216,7 +245,6 @@ void MultiGroupQD::updateSteadyStateVarsAfterConvergence()
   getFluxes();
 }
 //==============================================================================
-
 
 //==============================================================================
 /// Assigning pointer to object containing grey group sources 

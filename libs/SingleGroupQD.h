@@ -92,6 +92,9 @@ class SingleGroupQD
     void printEddingtons();
     void writeFlux();
 
+    /* PETSc function */
+    void formSteadyStateContributionToLinearSystem_p();
+
   private:
     MultiGroupQD * MGQD;
     Materials * mats;

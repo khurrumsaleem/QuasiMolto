@@ -46,7 +46,9 @@ void testSteadyState(Materials * myMaterials,\
 void testSteadyStateThenTransient(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
-
+void testPETScCoupling(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input);
 
 int main(int argc, char** argv) {
 
@@ -136,6 +138,8 @@ int main(int argc, char** argv) {
       testSteadyState(myMaterials,myMesh,input);
     else if (solveType == "testSteadyStateThenTransient")
       testSteadyStateThenTransient(myMaterials,myMesh,input);
+    else if (solveType == "testPETScCoupling")
+      testPETScCoupling(myMaterials,myMesh,input);
     else
       myMGT->solveTransportOnly();
   }
@@ -378,5 +382,51 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
   delete myMPQD;
   delete myMLCoupling;
 
+}
+
+void testPETScCoupling(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input){
+  
+  // initialize multigroup transport object
+  MultiGroupTransport * myMGT; 
+  myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
+
+  // initialize multigroup quasidiffusion object
+  MultiGroupQD * myMGQD; 
+  myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
+
+  // Initialize MultiPhysicsCoupledQD
+  MultiPhysicsCoupledQD * myMPQD; 
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+
+  // Initialize MultiPhysicsCoupledQD
+  MultilevelCoupling * myMLCoupling; 
+  myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
+      myMPQD);
+
+  cout << "Build PETSc MGQD linear system...";
+  myMGQD->buildSteadyStateLinearSystem_p();
+  cout << " done." << endl;
+  
+  cout << "Solve system...";
+  myMGQD->solveLinearSystem_p();
+  cout << " done." << endl;
+  
+  cout << "Build Eigen MGQD linear system...";
+  myMGQD->buildSteadyStateLinearSystem();
+  cout << " done." << endl;
+  
+  cout << "Solve system...";
+  myMGQD->QDSolve->solveSuperLU();
+  cout << " done." << endl;
+
+
+  // Delete pointers
+
+  delete myMGT;
+  delete myMGQD;
+  delete myMPQD;
+  delete myMLCoupling;
 
 }

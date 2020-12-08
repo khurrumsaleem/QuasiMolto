@@ -44,6 +44,10 @@ class MultiGroupQD
     void assignMultiPhysicsCoupledQDPointer(MultiPhysicsCoupledQD * myMPQD);
     string outputDir = "MGQD/";
 
+    /* PETSc functions */
+    int buildSteadyStateLinearSystem_p();
+    void solveLinearSystem_p();
+
   private:
     YAML::Node * input;
     Mesh * mesh;
