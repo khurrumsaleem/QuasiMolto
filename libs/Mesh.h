@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <cmath>
 #include <vector>
+#include <chrono>
 #include <armadillo>
 #include <petsc.h>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
