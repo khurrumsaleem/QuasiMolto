@@ -140,6 +140,14 @@ void SingleGroupQD::formSteadyStateContributionToBackCalcSystem()
 }
 //==============================================================================
 
+//==============================================================================
+/// Build the portion of linear system, used to calculate currents, belonging 
+/// to this object
+void SingleGroupQD::formSteadyStateContributionToBackCalcSystem_p()
+{
+  MGQD->QDSolve->formSteadyStateBackCalcSystem_p(this);
+}
+//==============================================================================
 
 //==============================================================================
 /// Get the flux for this object

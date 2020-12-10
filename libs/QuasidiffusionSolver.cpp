@@ -54,8 +54,8 @@ QDSolver::QDSolver(Mesh * myMesh,\
   initPETScVec(&b_p,nUnknowns);
  
   // Current system variables 
-  initPETScMat(&C_p,nCurrentUnknowns,4*nUnknowns);
-  initPETScVec(&currPast_p,energyGroups*nCurrentUnknowns);
+  initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,4*nUnknowns);
+  initPETScVec(&currPast_p,nCurrentUnknowns);
   initPETScVec(&d_p,nCurrentUnknowns);
 
   checkOptionalParams();
@@ -253,15 +253,15 @@ int QDSolver::solveSuperLU()
   int success;
 
   // Declare SuperLU solver
+  auto begin = chrono::high_resolution_clock::now();
   Eigen::SuperLU<Eigen::SparseMatrix<double>> solverLU;
   A.makeCompressed();
-  auto begin = chrono::high_resolution_clock::now();
   solverLU.compute(A);
   x = solverLU.solve(b);
   auto end = chrono::high_resolution_clock::now();
   auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
   cout << "solve time: " << elapsed.count()*1e-9 << endl;
-  cout << "EIGEN x:" << x << endl;
+  //cout << "EIGEN x:" << x << endl;
 
   // Return outcome of solve
   return success = solverLU.info();
@@ -2541,9 +2541,14 @@ double QDSolver::getSouthErz(int iZ,int iR,SingleGroupQD * SGQD)
 //==============================================================================
 /// Extract cell average values from solution vector and store
 /// @param [in] SGQD single group quasidiffusion object to get flux for
-void QDSolver::getFlux(SingleGroupQD * SGQD)
+int QDSolver::getFlux(SingleGroupQD * SGQD)
 {
   vector<int> indices;
+  PetscErrorCode ierr = 0;
+  PetscScalar value;
+  PetscInt index;
+  Vec            x_p_seq,currPast_p_seq;
+  VecScatter     ctx;
 
   // Store past current values. These are used in the group collapse calc.
   SGQD->sFluxPrev = SGQD->sFlux;
@@ -2551,31 +2556,100 @@ void QDSolver::getFlux(SingleGroupQD * SGQD)
   SGQD->sFluxZPrev = SGQD->sFluxZ;
   SGQD->currentRPrev = SGQD->currentR;
   SGQD->currentZPrev = SGQD->currentZ;
+  
+  if (mesh->petsc)
+  {  
+    VecScatterCreateToAll(x_p,&ctx,&x_p_seq);
+    VecScatterBegin(ctx,x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    
+    VecScatterCreateToAll(currPast_p,&ctx,&currPast_p_seq);
+    VecScatterBegin(ctx,currPast_p,currPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,currPast_p,currPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
 
-  // loop over spatial mesh
-  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
-  {
-    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
     {
-      indices = getIndices(iR,iZ,SGQD->energyGroup);
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      {
+        indices = getIndices(iR,iZ,SGQD->energyGroup);
 
-      // Get cell average flux
-      SGQD->sFlux(iZ,iR) = x(indices[iCF]);
+        // Get cell average flux
+        index = indices[iCF];
+        ierr = VecGetValues(x_p_seq,1,&index,&value);CHKERRQ(ierr);
+        SGQD->sFlux(iZ,iR) = value;
 
-      // Get cell interface fluxes
-      SGQD->sFluxR(iZ,iR) = x(indices[iWF]);
-      SGQD->sFluxR(iZ,iR+1) = x(indices[iEF]);
-      SGQD->sFluxZ(iZ,iR) = x(indices[iNF]);
-      SGQD->sFluxZ(iZ+1,iR) = x(indices[iSF]);
+        // Get cell interface fluxes
+        index = indices[iWF];
+        ierr = VecGetValues(x_p_seq,1,&index,&value);CHKERRQ(ierr);
+        SGQD->sFluxR(iZ,iR) = value;
+        
+        index = indices[iEF];
+        ierr = VecGetValues(x_p_seq,1,&index,&value);CHKERRQ(ierr);
+        SGQD->sFluxR(iZ,iR+1) = value;
 
-      // Get cell currents 
-      SGQD->currentR(iZ,iR) = currPast(indices[iWC]);
-      SGQD->currentR(iZ,iR+1) = currPast(indices[iEC]);
-      SGQD->currentZ(iZ,iR) = currPast(indices[iNC]);
-      SGQD->currentZ(iZ+1,iR) = currPast(indices[iSC]);
+        index = indices[iNF];
+        ierr = VecGetValues(x_p_seq,1,&index,&value);CHKERRQ(ierr);
+        SGQD->sFluxZ(iZ,iR) = value;
 
-    }
-  } 
+        index = indices[iSF];
+        ierr = VecGetValues(x_p_seq,1,&index,&value);CHKERRQ(ierr);
+        SGQD->sFluxZ(iZ+1,iR) = value;
+
+        // Get cell currents 
+        index = indices[iWC];
+        ierr = VecGetValues(currPast_p_seq,1,&index,&value);CHKERRQ(ierr);
+        SGQD->currentR(iZ,iR) = value;
+
+        index = indices[iEC];
+        ierr = VecGetValues(currPast_p_seq,1,&index,&value);CHKERRQ(ierr);
+        SGQD->currentR(iZ,iR+1) = value;
+
+        index = indices[iNC];
+        ierr = VecGetValues(currPast_p_seq,1,&index,&value);CHKERRQ(ierr);
+        SGQD->currentZ(iZ,iR) = value;
+
+        index = indices[iSC];
+        ierr = VecGetValues(currPast_p_seq,1,&index,&value);CHKERRQ(ierr);
+        SGQD->currentZ(iZ+1,iR) = value;
+      }
+    } 
+    
+    /* Destroy temporary PETSc variables */
+    VecScatterDestroy(&ctx);
+    VecDestroy(&x_p_seq);
+    VecDestroy(&currPast_p_seq);
+  }
+  else
+  {
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      {
+        indices = getIndices(iR,iZ,SGQD->energyGroup);
+
+        // Get cell average flux
+        SGQD->sFlux(iZ,iR) = x(indices[iCF]);
+
+        // Get cell interface fluxes
+        SGQD->sFluxR(iZ,iR) = x(indices[iWF]);
+        SGQD->sFluxR(iZ,iR+1) = x(indices[iEF]);
+        SGQD->sFluxZ(iZ,iR) = x(indices[iNF]);
+        SGQD->sFluxZ(iZ+1,iR) = x(indices[iSF]);
+
+        // Get cell currents 
+        SGQD->currentR(iZ,iR) = currPast(indices[iWC]);
+        SGQD->currentR(iZ,iR+1) = currPast(indices[iEC]);
+        SGQD->currentZ(iZ,iR) = currPast(indices[iNC]);
+        SGQD->currentZ(iZ+1,iR) = currPast(indices[iSC]);
+      }
+    } 
+  }
+
+  return ierr;
 };
 //==============================================================================
 
@@ -2815,7 +2889,6 @@ int QDSolver::steadyStateSouthCurrent_p(double coeff,int iR,int iZ,int iEq,\
   PetscErrorCode ierr;
   PetscScalar value[4];
   PetscInt index[4];
-
 
   // calculate geometric values
   rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
@@ -3568,6 +3641,270 @@ int QDSolver::assertEFluxBC_p(int iR,int iZ,int iEq,int energyGroup,\
 //==============================================================================
 
 //==============================================================================
+/// Form a portion of the steady state current back calc linear system that 
+/// belongs to SGQD 
+/// @param [in] SGQD quasidiffusion energy group to build portion of linear 
+///   for
+void QDSolver::formSteadyStateBackCalcSystem_p(SingleGroupQD * SGQD)	      
+{
+  int iEq = SGQD->energyGroup*nGroupCurrentUnknowns;
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+
+      // south face
+      calcSteadyStateSouthCurrent_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      iEq = iEq + 1;
+
+      // east face
+      calcSteadyStateEastCurrent_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      iEq = iEq + 1;
+
+      // north face
+      if (iZ == 0)
+      {
+        calcSteadyStateNorthCurrent_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        calcSteadyStateWestCurrent_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
+    }
+  }
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on south face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+int QDSolver::calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq,\
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutVel(iZ,iR,energyGroup);
+  double sigT = materials->zSigT(iZ+1,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double EzzC,EzzS,ErzW,ErzE;
+  PetscErrorCode ierr;
+  PetscScalar value[4];
+  PetscInt index[4];
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zUp-zAvg;
+
+  // get local Eddington factors
+  EzzC = SGQD->Ezz(iZ,iR);
+  EzzS = SGQD->EzzAxial(iZ+1,iR); 
+  ErzW = SGQD->ErzRadial(iZ,iR);
+  ErzE = SGQD->ErzRadial(iZ,iR+1);
+  
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+
+  coeff = 1/(sigT); 
+
+  index[0] = indices[iSF]; value[0] = -coeff*EzzS/deltaZ;
+
+  index[1] = indices[iCF]; value[1] = coeff*EzzC/deltaZ;
+
+  index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
+  
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on north face 
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+int QDSolver::calcSteadyStateNorthCurrent_p(int iR,int iZ,int iEq,\
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutVel(iZ,iR,energyGroup);
+  double sigT = materials->zSigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double EzzC,EzzN,ErzW,ErzE;
+  PetscErrorCode ierr;
+  PetscScalar value[4];
+  PetscInt index[4];
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zAvg-zDown;
+
+  // get local Eddington factors
+  EzzC = SGQD->Ezz(iZ,iR);
+  EzzN = SGQD->EzzAxial(iZ,iR); 
+  ErzW = SGQD->ErzRadial(iZ,iR);
+  ErzE = SGQD->ErzRadial(iZ,iR+1);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+
+  coeff = 1/(sigT); 
+
+  index[0] = indices[iNF]; value[0] = coeff*EzzN/deltaZ;
+                                                                    
+  index[1] = indices[iCF]; value[1] = -coeff*EzzC/deltaZ;
+                                                                    
+  index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
+                                                                    
+  index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
+  
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on west face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+int QDSolver::calcSteadyStateWestCurrent_p(int iR,int iZ,int iEq,\
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutVel(iZ,iR,energyGroup);
+  double sigT = materials->rSigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double hCent,hDown;
+  double ErzN,ErzS,ErrC,ErrW;  
+  PetscErrorCode ierr;
+  PetscScalar value[4];
+  PetscInt index[4];
+
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rAvg-rDown; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
+
+  // get local Eddington factors
+  ErrC = SGQD->Err(iZ,iR);
+  ErrW = SGQD->ErrRadial(iZ,iR); 
+  ErzN = SGQD->ErzAxial(iZ,iR);
+  ErzS = SGQD->ErzAxial(iZ+1,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+
+  coeff = 1/(sigT); 
+
+  index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
+                                                                       
+  index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
+                                                                       
+  index[2] = indices[iCF]; value[2] = -coeff*hCent*ErrC/(hDown*deltaR);
+                                                                       
+  index[3] = indices[iWF]; value[3] = coeff*hDown*ErrW/(hDown*deltaR);
+  
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on east face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+int QDSolver::calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq,\
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutVel(iZ,iR,energyGroup);
+  double sigT = materials->rSigT(iZ,iR+1,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double hCent,hUp;
+  double ErzN,ErzS,ErrC,ErrE;  
+  PetscErrorCode ierr;
+  PetscScalar value[4];
+  PetscInt index[4];
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rAvg; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
+
+  // get local Eddington factors
+  ErrC = SGQD->Err(iZ,iR);
+  ErrE = SGQD->ErrRadial(iZ,iR+1); 
+  ErzN = SGQD->ErzAxial(iZ,iR);
+  ErzS = SGQD->ErzAxial(iZ+1,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+
+  coeff = 1/(sigT); 
+
+  index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
+                                                                   
+  index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
+                                                                   
+  index[2] = indices[iCF]; value[2] = coeff*hCent*ErrC/(hUp*deltaR);
+                                                                   
+  index[3] = indices[iEF]; value[3] = -coeff*hUp*ErrE/(hUp*deltaR);
+  
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Compute currents from flux values in x
+int QDSolver::backCalculateCurrent_p()
+{
+  PetscErrorCode ierr;
+
+  ierr = MatMultAdd(C_p,x_p,d_p,currPast_p);
+}
+//==============================================================================
+
+//==============================================================================
 /// Impose steady state scattering and fission source from grey group values 
 /// 
 /// @param [in] iR radial index of cell
@@ -3636,7 +3973,7 @@ int QDSolver::solve_p()
   /* Create solver */
   ierr = KSPCreate(PETSC_COMM_WORLD,&ksp);CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp,A_p,A_p);CHKERRQ(ierr);
-  ierr = KSPSetTolerances(ksp,1.e-6/((m+1)*(n+1)),1.e-50,PETSC_DEFAULT,PETSC_DEFAULT);
+  ierr = KSPSetTolerances(ksp,1.e-9/((m+1)*(n+1)),1.e-50,PETSC_DEFAULT,PETSC_DEFAULT);
   CHKERRQ(ierr);
 
   /* Set solver type */
@@ -3650,7 +3987,7 @@ int QDSolver::solve_p()
   ierr = KSPSolve(ksp,b_p,x_p);CHKERRQ(ierr);
   auto end = chrono::high_resolution_clock::now();
   auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-  ierr = VecView(x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //ierr = VecView(x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   cout << "solve time: " << elapsed.count()*1e-9 << endl;
 
   /* Print solve information */

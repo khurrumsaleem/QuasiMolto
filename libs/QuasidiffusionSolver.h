@@ -200,7 +200,7 @@ class QDSolver
     void backCalculateCurrent();
 
     // function to parse solution vector
-    void getFlux(SingleGroupQD * SGQD);
+    int getFlux(SingleGroupQD * SGQD);
     Eigen::VectorXd getFluxSolutionVector(SingleGroupQD * SGQD);
     Eigen::VectorXd getCurrentSolutionVector(SingleGroupQD * SGQD);
 
@@ -231,6 +231,7 @@ class QDSolver
    
     /* =========== TRANSIENT AND STEADY-STATE FUNCTIONS =============*/ 
     int solve_p();
+    int backCalculateCurrent_p();
 
     // functions to assert flux BCs
     int assertWFluxBC_p(int iR,int iZ,int iEq,int energyGroup,\
@@ -277,7 +278,7 @@ class QDSolver
     /*=================== STEADY-STATE FUNCTIONS ====================*/
 
     void formSteadyStateLinearSystem_p(SingleGroupQD * SGQD);
-    //void formSteadyStateBackCalcSystem_p(SingleGroupQD * SGQD);
+    void formSteadyStateBackCalcSystem_p(SingleGroupQD * SGQD);
 
     // functions to enforce steady state governing equations
     int assertSteadyStateZerothMoment_p(int iR,int iZ,int iEq,int energyGroup,\
@@ -335,13 +336,13 @@ class QDSolver
 
     // functions to enforce coefficients for calculation of steady state 
     // facial currents
-   // int calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
-   //     SingleGroupQD * SGQD);
-   // int calcSteadyStateNorthCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
-   //     SingleGroupQD * SGQD);
-   // int calcSteadyStateWestCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
-   //     SingleGroupQD * SGQD);
-   // int calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
+    int calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    int calcSteadyStateNorthCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    int calcSteadyStateWestCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    int calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
         SingleGroupQD * SGQD);
 
     int steadyStateGreyGroupSources_p(int iR,int iZ,int iEq,int toEnergyGroup,\

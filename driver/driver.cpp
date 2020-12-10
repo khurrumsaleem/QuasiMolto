@@ -405,6 +405,7 @@ void testPETScCoupling(Materials * myMaterials,\
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
       myMPQD);
 
+  /* PETSc */  
   cout << "Build PETSc MGQD linear system...";
   myMGQD->buildSteadyStateLinearSystem_p();
   cout << " done." << endl;
@@ -412,13 +413,32 @@ void testPETScCoupling(Materials * myMaterials,\
   cout << "Solve system...";
   myMGQD->solveLinearSystem_p();
   cout << " done." << endl;
+
+  cout << "Build system to back calculate current...";
+  myMGQD->buildSteadyStateBackCalcSystem_p();
+  cout << " done." << endl;
   
+  cout << "Solve system...";
+  myMGQD->backCalculateCurrent_p();
+  cout << " done." << endl;
+  myMGQD->getFluxes();
+  myMGQD->writeVars();
+
+  /* EIGEN */  
   cout << "Build Eigen MGQD linear system...";
   myMGQD->buildSteadyStateLinearSystem();
   cout << " done." << endl;
   
   cout << "Solve system...";
   myMGQD->QDSolve->solveSuperLU();
+  cout << " done." << endl;
+  
+  cout << "Build system to back calculate current...";
+  myMGQD->buildSteadyStateBackCalcSystem();
+  cout << " done." << endl;
+  
+  cout << "Solve system...";
+  myMGQD->backCalculateCurrent();
   cout << " done." << endl;
 
 

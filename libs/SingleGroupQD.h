@@ -94,6 +94,7 @@ class SingleGroupQD
 
     /* PETSc function */
     void formSteadyStateContributionToLinearSystem_p();
+    void formSteadyStateContributionToBackCalcSystem_p();
 
   private:
     MultiGroupQD * MGQD;

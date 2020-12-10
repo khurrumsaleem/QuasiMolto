@@ -47,6 +47,9 @@ class MultiGroupQD
     /* PETSc functions */
     int buildSteadyStateLinearSystem_p();
     void solveLinearSystem_p();
+    int buildSteadyStateBackCalcSystem_p();
+    void backCalculateCurrent_p();
+
 
   private:
     YAML::Node * input;

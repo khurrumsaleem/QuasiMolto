@@ -74,28 +74,6 @@ void MultiGroupQD::buildSteadyStateLinearSystem()
 //==============================================================================
 
 //==============================================================================
-/// Loops over energy groups and builds the linear system to solve the 
-/// multigroup quasidiffusion equations
-int MultiGroupQD::buildSteadyStateLinearSystem_p()
-{
-  
-  PetscErrorCode ierr;
-  
-  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
-  {
-    SGQDs[iGroup]->formSteadyStateContributionToLinearSystem_p();
-  }
-
-  /* Finalize assembly for A_p and b_p */
-  ierr = MatAssemblyBegin(QDSolve->A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(QDSolve->A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
-  ierr = VecAssemblyBegin(QDSolve->b_p);CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(QDSolve->b_p);CHKERRQ(ierr);
-
-}
-//==============================================================================
-
-//==============================================================================
 /// Solves the linear system formed by the muligroup quasidiffusion equations
 void MultiGroupQD::solveLinearSystem()
 {
@@ -103,13 +81,6 @@ void MultiGroupQD::solveLinearSystem()
 }
 //==============================================================================
 
-//==============================================================================
-/// Solves the linear system formed by the muligroup quasidiffusion equations
-void MultiGroupQD::solveLinearSystem_p()
-{
-  QDSolve->solve_p();
-}
-//==============================================================================
 
 //==============================================================================
 /// Solves the linear system formed by the muligroup quasidiffusion equations
@@ -186,8 +157,16 @@ void MultiGroupQD::setInitialCondition()
   }
 
   // Set initial conditions in QDSolver object
-  QDSolve->xPast = initialFluxCondition;
-  QDSolve->currPast = initialCurrentCondition;
+  if (mesh->petsc)
+  {
+    eigenVecToPETScVec(&initialFluxCondition,&(QDSolve->x_p));
+    eigenVecToPETScVec(&initialCurrentCondition,&(QDSolve->currPast_p));
+  }
+  else
+  {
+    QDSolve->xPast = initialFluxCondition;
+    QDSolve->currPast = initialCurrentCondition;
+  }
 }
 //==============================================================================
 
@@ -243,6 +222,71 @@ void MultiGroupQD::updateSteadyStateVarsAfterConvergence()
   buildSteadyStateBackCalcSystem();
   backCalculateCurrent();
   getFluxes();
+}
+//==============================================================================
+
+//==============================================================================
+/// Loops over energy groups and builds the linear system to solve the 
+/// multigroup quasidiffusion equations
+int MultiGroupQD::buildSteadyStateLinearSystem_p()
+{
+  
+  PetscErrorCode ierr;
+  
+  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+  {
+    SGQDs[iGroup]->formSteadyStateContributionToLinearSystem_p();
+  }
+
+  /* Finalize assembly for A_p and b_p */
+  ierr = MatAssemblyBegin(QDSolve->A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(QDSolve->A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
+  ierr = VecAssemblyBegin(QDSolve->b_p);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(QDSolve->b_p);CHKERRQ(ierr);
+
+}
+//==============================================================================
+
+//==============================================================================
+/// Solves the linear system formed by the muligroup quasidiffusion equations
+void MultiGroupQD::solveLinearSystem_p()
+{
+  QDSolve->solve_p();
+}
+//==============================================================================
+
+//==============================================================================
+/// Loops over energy groups and builds linear system to calculate the net 
+/// neutron currents from the flux values currrently held in x, the solution
+/// vector
+int MultiGroupQD::buildSteadyStateBackCalcSystem_p()
+{
+  PetscErrorCode ierr;
+  
+  ierr = VecSet(QDSolve->d_p,0.0);CHKERRQ(ierr);
+
+  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+  {
+    SGQDs[iGroup]->formSteadyStateContributionToBackCalcSystem_p();
+  }
+
+  /* Finalize assembly for C_p and d_p */
+  ierr = MatAssemblyBegin(QDSolve->C_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(QDSolve->C_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
+  ierr = VecAssemblyBegin(QDSolve->d_p);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(QDSolve->d_p);CHKERRQ(ierr);
+
+}
+//==============================================================================
+
+//==============================================================================
+/// Solve the linear system which calculates net currents from the current flux
+/// values
+void MultiGroupQD::backCalculateCurrent_p()
+{
+
+  QDSolve->backCalculateCurrent_p();
+
 }
 //==============================================================================
 
