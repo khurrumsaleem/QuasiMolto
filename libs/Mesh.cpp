@@ -1023,5 +1023,11 @@ void Mesh::checkOptionalParams()
     verbose=(*input)["parameters"]["verbose"].as<bool>();
   }
 
+  if ((*input)["parameters"]["petsc"])
+  {
+    petsc=(*input)["parameters"]["petsc"].as<bool>();
+  }
+
+
 }
 //==============================================================================
