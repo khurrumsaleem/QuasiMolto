@@ -77,7 +77,7 @@ int eigenVecToPETScVec(Eigen::VectorXd *x_e,Vec *x_p)
   
   for (int idx = 0; idx < (*x_e).size(); idx++)
   {
-  ierr = VecSetValue(*x_p,idx,(*x_e)(idx),INSERT_VALUES);CHKERRQ(ierr); 
+    ierr = VecSetValue(*x_p,idx,(*x_e)(idx),INSERT_VALUES);CHKERRQ(ierr); 
   }
   ierr = VecAssemblyBegin(*x_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(*x_p);CHKERRQ(ierr);
