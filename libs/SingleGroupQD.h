@@ -93,6 +93,8 @@ class SingleGroupQD
     void writeFlux();
 
     /* PETSc function */
+    void formContributionToLinearSystem_p();
+    void formContributionToBackCalcSystem_p();
     void formSteadyStateContributionToLinearSystem_p();
     void formSteadyStateContributionToBackCalcSystem_p();
 
