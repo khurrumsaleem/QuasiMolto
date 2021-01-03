@@ -32,7 +32,7 @@ class MultiGroupQD
     void buildBackCalcSystem();
     void buildSteadyStateBackCalcSystem();
     void backCalculateCurrent();
-    void setInitialCondition();
+    int setInitialCondition();
     void solveMGQDOnly();
     void getFluxes();
     void updateVarsAfterConvergence();
@@ -45,11 +45,13 @@ class MultiGroupQD
     string outputDir = "MGQD/";
 
     /* PETSc functions */
+    int solveMGQDOnly_p();
     int buildSteadyStateLinearSystem_p();
     void solveLinearSystem_p();
     int buildSteadyStateBackCalcSystem_p();
     void backCalculateCurrent_p();
-
+    int buildLinearSystem_p();
+    int buildBackCalcSystem_p();
 
   private:
     YAML::Node * input;
