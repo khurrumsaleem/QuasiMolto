@@ -24,7 +24,7 @@ QDSolver::QDSolver(Mesh * myMesh,\
   materials = myMaterials;
 
   // temporary variables for initialization
-  int nUnknowns,nCurrentUnknowns;
+  //int nUnknowns,nCurrentUnknowns;
 
   // calculate number of unknowns  
   energyGroups = materials->nGroups;
@@ -57,6 +57,10 @@ QDSolver::QDSolver(Mesh * myMesh,\
   initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,4*nUnknowns);
   initPETScVec(&currPast_p,nCurrentUnknowns);
   initPETScVec(&d_p,nCurrentUnknowns);
+
+  // Initialize sequential variables
+  initPETScVec(&xPast_p_seq,nUnknowns);
+  initPETScVec(&currPast_p_seq,nCurrentUnknowns);
 
   checkOptionalParams();
 };
@@ -2547,7 +2551,7 @@ int QDSolver::getFlux(SingleGroupQD * SGQD)
   PetscErrorCode ierr = 0;
   PetscScalar value;
   PetscInt index;
-  Vec            x_p_seq,currPast_p_seq;
+  Vec            x_p_seq,currPast_p_seq_temp;
   VecScatter     ctx;
 
   // Store past current values. These are used in the group collapse calc.
@@ -2562,11 +2566,11 @@ int QDSolver::getFlux(SingleGroupQD * SGQD)
     VecScatterCreateToAll(x_p,&ctx,&x_p_seq);
     VecScatterBegin(ctx,x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
     VecScatterEnd(ctx,x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-    
-    VecScatterCreateToAll(currPast_p,&ctx,&currPast_p_seq);
-    VecScatterBegin(ctx,currPast_p,currPast_p_seq,\
+  
+    VecScatterCreateToAll(currPast_p,&ctx,&currPast_p_seq_temp);
+    VecScatterBegin(ctx,currPast_p,currPast_p_seq_temp,\
         INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,currPast_p,currPast_p_seq,\
+    VecScatterEnd(ctx,currPast_p,currPast_p_seq_temp,\
         INSERT_VALUES,SCATTER_FORWARD);
 
     // loop over spatial mesh
@@ -2580,7 +2584,7 @@ int QDSolver::getFlux(SingleGroupQD * SGQD)
         index = indices[iCF];
         ierr = VecGetValues(x_p_seq,1,&index,&value);CHKERRQ(ierr);
         SGQD->sFlux(iZ,iR) = value;
-
+        
         // Get cell interface fluxes
         index = indices[iWF];
         ierr = VecGetValues(x_p_seq,1,&index,&value);CHKERRQ(ierr);
@@ -2600,27 +2604,27 @@ int QDSolver::getFlux(SingleGroupQD * SGQD)
 
         // Get cell currents 
         index = indices[iWC];
-        ierr = VecGetValues(currPast_p_seq,1,&index,&value);CHKERRQ(ierr);
+        ierr = VecGetValues(currPast_p_seq_temp,1,&index,&value);CHKERRQ(ierr);
         SGQD->currentR(iZ,iR) = value;
 
         index = indices[iEC];
-        ierr = VecGetValues(currPast_p_seq,1,&index,&value);CHKERRQ(ierr);
+        ierr = VecGetValues(currPast_p_seq_temp,1,&index,&value);CHKERRQ(ierr);
         SGQD->currentR(iZ,iR+1) = value;
 
         index = indices[iNC];
-        ierr = VecGetValues(currPast_p_seq,1,&index,&value);CHKERRQ(ierr);
+        ierr = VecGetValues(currPast_p_seq_temp,1,&index,&value);CHKERRQ(ierr);
         SGQD->currentZ(iZ,iR) = value;
 
         index = indices[iSC];
-        ierr = VecGetValues(currPast_p_seq,1,&index,&value);CHKERRQ(ierr);
+        ierr = VecGetValues(currPast_p_seq_temp,1,&index,&value);CHKERRQ(ierr);
         SGQD->currentZ(iZ+1,iR) = value;
       }
     } 
-    
+
     /* Destroy temporary PETSc variables */
     VecScatterDestroy(&ctx);
     VecDestroy(&x_p_seq);
-    VecDestroy(&currPast_p_seq);
+    VecDestroy(&currPast_p_seq_temp);
   }
   else
   {
@@ -3877,6 +3881,170 @@ int QDSolver::solve_p()
 /* ======================================*/
 
 //==============================================================================
+/// Form a portion of the linear system that belongs to SGQD 
+/// @param [in] SGQD quasidiffusion energy group to build portion of linear 
+///   for
+void QDSolver::formLinearSystem_p(SingleGroupQD * SGQD)	      
+{
+  int iEq = SGQD->energyGroup*nGroupUnknowns;
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+
+      // apply zeroth moment equation
+      assertZerothMoment_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      iEq = iEq + 1;
+
+      // south face
+      if (iZ == mesh->dzsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSBC_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on south face
+        applyAxialBoundary_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      }
+
+      // east face
+      if (iR == mesh->drsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertEBC_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on north face
+        applyRadialBoundary_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      }
+
+      // north face
+      if (iZ == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertNBC_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertWBC_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
+    }
+  }
+};
+
+//==============================================================================
+
+//==============================================================================
+/// Assert the zeroth moment equation for cell (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+// ToDo: eliminate energyGroup input, as it can just be defined from the SGQD
+// object. Same with a lot of functions in this class
+int QDSolver::assertZerothMoment_p(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutVel(iZ,iR,energyGroup);
+  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double groupSourceCoeff;
+  PetscErrorCode ierr;
+  PetscScalar value,past_flux;
+  PetscInt index;
+
+  // populate entries representing sources from scattering and fission in 
+  // this and other energy groups
+  if (useMPQDSources)
+    greyGroupSources_p(iR,iZ,iEq,energyGroup,geoParams);
+  else
+  {
+    for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup)
+    {
+      index = getIndices(iR,iZ,iGroup)[iCF];
+      groupSourceCoeff = calcScatterAndFissionCoeff(iR,iZ,energyGroup,iGroup);
+      value = -geoParams[iCF] * groupSourceCoeff;
+      ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+
+      //indices = getIndices(iR,iZ,iGroup);
+      //groupSourceCoeff = calcScatterAndFissionCoeff(iR,iZ,energyGroup,iGroup);
+      //A.insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
+    }
+  }
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+  
+  value = geoParams[iCF] * ((1/(v*deltaT)) + sigT);
+  index = indices[iCF];
+  ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+
+  //A.coeffRef(iEq,indices[iCF]) += geoParams[iCF] * ((1/(v*deltaT)) + sigT);
+
+  westCurrent_p(-geoParams[iWF],iR,iZ,iEq,energyGroup,SGQD);
+
+  eastCurrent_p(geoParams[iEF],iR,iZ,iEq,energyGroup,SGQD);
+
+  northCurrent_p(-geoParams[iNF],iR,iZ,iEq,energyGroup,SGQD);
+
+  southCurrent_p(geoParams[iSF],iR,iZ,iEq,energyGroup,SGQD);
+
+  // formulate RHS entry
+  VecGetValues(xPast_p_seq,1,&index,&past_flux);CHKERRQ(ierr);
+  value = geoParams[iCF]*( (past_flux/(v*deltaT)) + SGQD->q(iZ,iR));
+  ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  
+  //b(iEq) = b(iEq) + geoParams[iCF]*\
+           ( (xPast(indices[iCF])/(v*deltaT)) + SGQD->q(iZ,iR));
+};
+//==============================================================================
+
+//==============================================================================
+/// Apply radial boundary for cell (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::applyRadialBoundary_p(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  eastCurrent_p(1,iR,iZ,iEq,energyGroup,SGQD);
+  westCurrent_p(-1,iR+1,iZ,iEq,energyGroup,SGQD);
+}
+//==============================================================================
+
+//==============================================================================
+/// Apply axial boundary for cell (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::applyAxialBoundary_p(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  northCurrent_p(1,iR,iZ+1,iEq,energyGroup,SGQD);
+  southCurrent_p(-1,iR,iZ,iEq,energyGroup,SGQD);
+}
+//==============================================================================
+
+//==============================================================================
 /// Enforce coefficients for current on south face
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
@@ -3938,8 +4106,8 @@ int QDSolver::southCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,
 
   // formulate RHS entry
   curr_index = indices[iSC];
-  VecGetValues(currPast_p,1,&curr_index,&curr_value);CHKERRQ(ierr);
-  curr_value = coeff*(curr_value/(v*deltaT));
+  VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+  curr_value = -coeff*(curr_value/(v*deltaT));
   ierr = VecSetValue(b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 };
 //==============================================================================
@@ -4007,8 +4175,8 @@ int QDSolver::northCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,
 
   // formulate RHS entry
   curr_index = indices[iNC];
-  VecGetValues(currPast_p,1,&curr_index,&curr_value);CHKERRQ(ierr);
-  curr_value = coeff*(curr_value/(v*deltaT));
+  VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+  curr_value = -coeff*(curr_value/(v*deltaT));
   ierr = VecSetValue(b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
 };
@@ -4080,8 +4248,8 @@ int QDSolver::westCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 
   // formulate RHS entry
   curr_index = indices[iWC];
-  VecGetValues(currPast_p,1,&curr_index,&curr_value);CHKERRQ(ierr);
-  curr_value = coeff*(curr_value/(v*deltaT));
+  VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+  curr_value = -coeff*(curr_value/(v*deltaT));
   ierr = VecSetValue(b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
 };
@@ -4153,10 +4321,148 @@ int QDSolver::eastCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,\
 
   // formulate RHS entry
   curr_index = indices[iEC];
-  VecGetValues(currPast_p,1,&curr_index,&curr_value);CHKERRQ(ierr);
-  curr_value = coeff*(curr_value/(v*deltaT));
+  VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+  curr_value = -coeff*(curr_value/(v*deltaT));
   ierr = VecSetValue(b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert boundary condition on the north face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertNBC_p(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  if (reflectingBCs)
+    assertNCurrentBC_p(iR,iZ,iEq,energyGroup,SGQD);
+  else if (goldinBCs)
+    assertNGoldinBC_p(iR,iZ,iEq,energyGroup,SGQD);
+  else if (diffusionBCs)
+    assertNGoldinP1BC_p(iR,iZ,iEq,energyGroup,SGQD);
+  else
+    assertNFluxBC_p(iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert boundary condition on the south face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertSBC_p(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  if (reflectingBCs)
+    assertSCurrentBC_p(iR,iZ,iEq,energyGroup,SGQD);
+  else if (goldinBCs)
+    assertSGoldinBC_p(iR,iZ,iEq,energyGroup,SGQD);
+  else if (diffusionBCs)
+    assertSGoldinP1BC_p(iR,iZ,iEq,energyGroup,SGQD);
+  else
+    assertSFluxBC_p(iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert boundary condition on the west face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertWBC_p(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  // Can't think of a circumstance where there wouldn't be a reflecting BC at
+  //   r = 0 
+  if (reflectingBCs or goldinBCs)
+    assertWCurrentBC_p(iR,iZ,iEq,energyGroup,SGQD);
+  else
+    assertWCurrentBC_p(iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert boundary condition on the east face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertEBC_p(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  if (reflectingBCs)
+    assertECurrentBC_p(iR,iZ,iEq,energyGroup,SGQD);
+  else if (goldinBCs)
+    assertEGoldinBC_p(iR,iZ,iEq,energyGroup,SGQD);
+  else if (diffusionBCs)
+    assertEGoldinP1BC_p(iR,iZ,iEq,energyGroup,SGQD);
+  else
+    assertEFluxBC_p(iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the current boundary condition on the north face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertNCurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  northCurrent_p(1,iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the current boundary condition on the south face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertSCurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  southCurrent_p(1,iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the current boundary condition on the west face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertWCurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  westCurrent_p(1,iR,iZ,iEq,energyGroup,SGQD);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the current boundary condition on the east face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert boundary condition for
+/// @param [in] SGQD of this energyGroup
+void QDSolver::assertECurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
+    SingleGroupQD * SGQD)
+{
+  eastCurrent_p(1,iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
 
@@ -4319,6 +4625,375 @@ int QDSolver::assertEGoldinP1BC_p(int iR,int iZ,int iEq,int energyGroup,\
   ierr = MatSetValue(A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //A.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Impose scattering and fission source from grey group values 
+/// 
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] toEnergyGroup energy group of sourcing group
+/// @param [in] fromEnergyGroup energy group of source group
+int QDSolver::greyGroupSources_p(int iR,int iZ,int iEq,int toEnergyGroup,\
+    vector<double> geoParams)
+{
+
+  double localChiP,localSigS,localFissionCoeff,localFlux,localUpscatterCoeff,\
+    localChiD,localDNPSource;
+  vector<int> indices;
+  PetscErrorCode ierr;
+  PetscScalar value;
+  PetscInt index;
+
+  for (int iFromEnergyGroup = 0; iFromEnergyGroup <= toEnergyGroup;\
+      ++iFromEnergyGroup)
+  {
+    //indices = getIndices(iR,iZ,iFromEnergyGroup);
+    //localSigS = materials->sigS(iZ,iR,iFromEnergyGroup,toEnergyGroup);
+    //A.insert(iEq,indices[iCF]) = -geoParams[iCF] * localSigS;
+    
+    index = getIndices(iR,iZ,iFromEnergyGroup)[iCF];
+    localSigS = materials->sigS(iZ,iR,iFromEnergyGroup,toEnergyGroup);
+    value = -geoParams[iCF] * localSigS;
+    ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+  }
+
+  localChiD = materials->chiD(iZ,iR,toEnergyGroup);
+  localDNPSource = mpqd->mgdnp->dnpSource(iZ,iR); 
+  localChiP = materials->chiP(iZ,iR,toEnergyGroup);
+  localUpscatterCoeff = materials->oneGroupXS->upscatterCoeff(iZ,iR,\
+      toEnergyGroup);
+  localFissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
+  localFlux = mpqd->ggqd->sFlux(iZ,iR); 
+  
+  value = geoParams[iCF]*((localUpscatterCoeff\
+        + localChiP*localFissionCoeff)*localFlux + localChiD*localDNPSource);
+  ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  
+  //b(iEq) += geoParams[iCF]*((localUpscatterCoeff\
+        + localChiP*localFissionCoeff)*localFlux + localChiD*localDNPSource);
+};
+//==============================================================================
+
+//==============================================================================
+/// Form a portion of the current back calc linear system that belongs to SGQD 
+/// @param [in] SGQD quasidiffusion energy group to build portion of linear 
+///   for
+void QDSolver::formBackCalcSystem_p(SingleGroupQD * SGQD)	      
+{
+  int iEq = SGQD->energyGroup*nGroupCurrentUnknowns;
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+
+      // south face
+      calcSouthCurrent_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      iEq = iEq + 1;
+
+      // east face
+      calcEastCurrent_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      iEq = iEq + 1;
+
+      // north face
+      if (iZ == 0)
+      {
+        calcNorthCurrent_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        calcWestCurrent_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
+    }
+  }
+};
+
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate current on south face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+int QDSolver::calcSouthCurrent_p(int iR,int iZ,int iEq,\
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->zNeutVel(iZ+1,iR,energyGroup);
+  double sigT = materials->zSigT(iZ+1,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double EzzC,EzzS,ErzW,ErzE;
+  PetscErrorCode ierr;
+  PetscScalar value[4],rhsValue,past_curr;
+  PetscInt index[4],rhsIndex;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zUp-zAvg;
+
+  // get local Eddington factors
+  EzzC = SGQD->Ezz(iZ,iR);
+  EzzS = SGQD->EzzAxial(iZ+1,iR); 
+  ErzW = SGQD->ErzRadial(iZ,iR);
+  ErzE = SGQD->ErzRadial(iZ,iR+1);
+  
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+
+  coeff = 1/((1/(v*deltaT))+sigT); 
+
+  //C.coeffRef(iEq,indices[iSF]) -= coeff*EzzS/deltaZ;
+
+  //C.coeffRef(iEq,indices[iCF]) += coeff*EzzC/deltaZ;
+
+  //C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  //C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
+
+  //// formulate RHS entry
+  //d(iEq) = coeff*(currPast(indices[iSC])/(v*deltaT));
+
+  index[0] = indices[iSF]; value[0] = -coeff*EzzS/deltaZ;
+
+  index[1] = indices[iCF]; value[1] = coeff*EzzC/deltaZ;
+
+  index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
+  
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+  rhsIndex = indices[iSC];
+  VecGetValues(currPast_p_seq,1,&rhsIndex,&past_curr);CHKERRQ(ierr);
+  rhsValue = coeff*(past_curr/(v*deltaT));
+  
+  ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate current on north face 
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+int QDSolver::calcNorthCurrent_p(int iR,int iZ,int iEq,\
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->zNeutVel(iZ,iR,energyGroup);
+  double sigT = materials->zSigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double EzzC,EzzN,ErzW,ErzE;
+  PetscErrorCode ierr;
+  PetscScalar value[4],rhsValue,past_curr;
+  PetscInt index[4],rhsIndex;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zAvg-zDown;
+
+  // get local Eddington factors
+  EzzC = SGQD->Ezz(iZ,iR);
+  EzzN = SGQD->EzzAxial(iZ,iR); 
+  ErzW = SGQD->ErzRadial(iZ,iR);
+  ErzE = SGQD->ErzRadial(iZ,iR+1);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+
+  coeff = 1/((1/(v*deltaT))+sigT); 
+
+  //C.coeffRef(iEq,indices[iNF]) += coeff*EzzN/deltaZ;
+
+  //C.coeffRef(iEq,indices[iCF]) -= coeff*EzzC/deltaZ;
+
+  //C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  //C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
+
+  //// formulate RHS entry
+  //d(iEq) = coeff*(currPast(indices[iNC])/(v*deltaT));
+
+  index[0] = indices[iNF]; value[0] = coeff*EzzN/deltaZ;
+                                                                       
+  index[1] = indices[iCF]; value[1] = -coeff*EzzC/deltaZ;
+                                                                       
+  index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
+                                                                       
+  index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
+  
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+  rhsIndex = indices[iNC];
+  VecGetValues(currPast_p_seq,1,&rhsIndex,&past_curr);CHKERRQ(ierr);
+  rhsValue = coeff*(past_curr/(v*deltaT));
+  
+  ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate current on west face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+int QDSolver::calcWestCurrent_p(int iR,int iZ,int iEq,\
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->rNeutVel(iZ,iR,energyGroup);
+  double sigT = materials->rSigT(iZ,iR,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double hCent,hDown;
+  double ErzN,ErzS,ErrC,ErrW;  
+  PetscErrorCode ierr;
+  PetscScalar value[4],rhsValue,past_curr;
+  PetscInt index[4],rhsIndex;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rAvg-rDown; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,SGQD);
+
+  // get local Eddington factors
+  ErrC = SGQD->Err(iZ,iR);
+  ErrW = SGQD->ErrRadial(iZ,iR); 
+  ErzN = SGQD->ErzAxial(iZ,iR);
+  ErzS = SGQD->ErzAxial(iZ+1,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+
+  coeff = 1/((1/(v*deltaT))+sigT); 
+
+  //C.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
+
+  //C.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
+
+  //C.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
+
+  //C.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
+
+  //// formulate RHS entry
+  //d(iEq) = coeff*(currPast(indices[iWC])/(v*deltaT));
+
+  index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
+                                                                       
+  index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
+                                                                       
+  index[2] = indices[iCF]; value[2] = -coeff*hCent*ErrC/(hDown*deltaR);
+                                                                       
+  index[3] = indices[iWF]; value[3] = coeff*hDown*ErrW/(hDown*deltaR);
+  
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+  rhsIndex = indices[iWC];
+  VecGetValues(currPast_p_seq,1,&rhsIndex,&past_curr);CHKERRQ(ierr);
+  rhsValue = coeff*(past_curr/(v*deltaT));
+  
+  ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate current on east face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+int QDSolver::calcEastCurrent_p(int iR,int iZ,int iEq,\
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->rNeutVel(iZ,iR+1,energyGroup);
+  double sigT = materials->rSigT(iZ,iR+1,energyGroup);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double hCent,hUp;
+  double ErzN,ErzS,ErrC,ErrE;  
+  PetscErrorCode ierr;
+  PetscScalar value[4],rhsValue,past_curr;
+  PetscInt index[4],rhsIndex;
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rAvg; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,SGQD);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,SGQD);
+
+  // get local Eddington factors
+  ErrC = SGQD->Err(iZ,iR);
+  ErrE = SGQD->ErrRadial(iZ,iR+1); 
+  ErzN = SGQD->ErzAxial(iZ,iR);
+  ErzS = SGQD->ErzAxial(iZ+1,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+
+  coeff = 1/((1/(v*deltaT))+sigT); 
+
+  //C.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
+
+  //C.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
+
+  //C.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrC/(hUp*deltaR);
+
+  //C.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
+
+  //// formulate RHS entry
+  //d(iEq) = coeff*(currPast(indices[iEC])/(v*deltaT));
+
+  index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
+                                                                     
+  index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
+                                                                     
+  index[2] = indices[iCF]; value[2] = coeff*hCent*ErrC/(hUp*deltaR);
+                                                                     
+  index[3] = indices[iEF]; value[3] = -coeff*hUp*ErrE/(hUp*deltaR);
+  
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+  rhsIndex = indices[iEC];
+  VecGetValues(currPast_p_seq,1,&rhsIndex,&past_curr);CHKERRQ(ierr);
+  rhsValue = coeff*(past_curr/(v*deltaT));
+  
+  ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
 
 };
 //==============================================================================

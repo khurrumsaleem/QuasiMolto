@@ -213,6 +213,7 @@ class QDSolver
     Eigen::VectorXd xPast,currPast;
     Eigen::VectorXd b,d;
     int energyGroups,nR,nZ,nGroupUnknowns,nGroupCurrentUnknowns;
+    int nUnknowns,nCurrentUnknowns;
     int preconditioner = 1;
     bool reflectingBCs = false;
     bool goldinBCs = false;
@@ -225,6 +226,7 @@ class QDSolver
     // PETSc variables (the p denotes a petsc variable)
     Vec x_p,b_p,d_p;
     Vec xPast_p,currPast_p;
+    Vec xPast_p_seq,currPast_p_seq;
     Mat A_p,C_p;
     KSP ksp;
     PC pc;
@@ -245,16 +247,16 @@ class QDSolver
 
     /*=================== TRANSIENT FUNCTIONS =======================*/
     
-    //void formLinearSystem_p(SingleGroupQD * SGQD);
-    //void formBackCalcSystem_p(SingleGroupQD * SGQD);
+    void formLinearSystem_p(SingleGroupQD * SGQD);
+    void formBackCalcSystem_p(SingleGroupQD * SGQD);
 
-//    // functions to enforce steady state governing equations
-//    int assertZerothMoment_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//    void applyRadialBoundary_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//    void applyAxialBoundary_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
+    // functions to enforce steady state governing equations
+    int assertZerothMoment_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    void applyRadialBoundary_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    void applyAxialBoundary_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
 
     // functions to enforce coefficients for steady state facial currents
     int southCurrent_p(double coeff,int iR,int iZ,int iEq,\
@@ -266,16 +268,16 @@ class QDSolver
     int eastCurrent_p(double coeff,int iR,int iZ,int iEq,\
         int energyGroup, SingleGroupQD * SGQD);
 
-//    // functions to assert steady state current BCs
-//    void assertWCurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//    void assertECurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//    void assertNCurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//    void assertSCurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//
+    // functions to assert steady state current BCs
+    void assertWCurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    void assertECurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    void assertNCurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    void assertSCurrentBC_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+
     // functions to assert steady state Gol'din BCs
     int assertNGoldinBC_p(int iR,int iZ,int iEq,int energyGroup,\
         SingleGroupQD * SGQD);
@@ -291,31 +293,30 @@ class QDSolver
         int energyGroup,SingleGroupQD * SGQD);
     int assertEGoldinP1BC_p(int iR,int iZ,int iEq,\
         int energyGroup,SingleGroupQD * SGQD);
-//
-//    // wrapper to assert either a flux or current BC
-//    void assertWBC_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//    void assertEBC_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//    void assertNBC_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//    void assertSBC_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//
-//    // functions to enforce coefficients for calculation of steady state 
-//    // facial currents
-//    int calcSouthCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//    int calcNorthCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//    int calcWestCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//    int calcEastCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
-//        SingleGroupQD * SGQD);
-//
-//    int greyGroupSources_p(int iR,int iZ,int iEq,int toEnergyGroup,\
-//        vector<double> geoParams);
 
+    // wrapper to assert either a flux or current BC
+    void assertWBC_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    void assertEBC_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    void assertNBC_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    void assertSBC_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+
+    // functions to enforce coefficients for calculation of steady state 
+    // facial currents
+    int calcSouthCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    int calcNorthCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    int calcWestCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+    int calcEastCurrent_p(int iR,int iZ,int iEq,int energyGroup,\
+        SingleGroupQD * SGQD);
+
+    int greyGroupSources_p(int iR,int iZ,int iEq,int toEnergyGroup,\
+        vector<double> geoParams);
     
     /*=================== STEADY-STATE FUNCTIONS ====================*/
 
