@@ -46,7 +46,7 @@ void testSteadyState(Materials * myMaterials,\
 void testSteadyStateThenTransient(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
-void testPETScCoupling(Materials * myMaterials,\
+int testPETScCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
 
@@ -384,9 +384,11 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
 
 }
 
-void testPETScCoupling(Materials * myMaterials,\
+int testPETScCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input){
+  
+  PetscErrorCode ierr;
   
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
@@ -405,45 +407,97 @@ void testPETScCoupling(Materials * myMaterials,\
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
       myMPQD);
 
-  /* PETSc */  
-  cout << "Build PETSc MGQD linear system...";
-  myMGQD->buildSteadyStateLinearSystem_p();
-  cout << " done." << endl;
-  
-  cout << "Solve system...";
-  myMGQD->solveLinearSystem_p();
-  cout << " done." << endl;
+//  /* PETSc steady state*/  
+//  cout << "Build PETSc MGQD linear system...";
+//  myMGQD->buildSteadyStateLinearSystem_p();
+//  cout << " done." << endl;
+//  
+//  cout << "Solve system...";
+//  myMGQD->solveLinearSystem_p();
+//  cout << " done." << endl;
+//
+//  cout << "Build system to back calculate current...";
+//  myMGQD->buildSteadyStateBackCalcSystem_p();
+//  cout << " done." << endl;
+//  
+//  cout << "Solve system...";
+//  myMGQD->backCalculateCurrent_p();
+//  cout << " done." << endl;
+//  myMGQD->getFluxes();
+//  myMGQD->writeVars();
+//
+//  /* EIGEN steady state*/  
+//  cout << "Build Eigen MGQD linear system...";
+//  myMGQD->buildSteadyStateLinearSystem();
+//  cout << " done." << endl;
+//  
+//  cout << "Solve system...";
+//  myMGQD->QDSolve->solveSuperLU();
+//  cout << " done." << endl;
+//  
+//  cout << "Build system to back calculate current...";
+//  myMGQD->buildSteadyStateBackCalcSystem();
+//  cout << " done." << endl;
+//  
+//  cout << "Solve system...";
+//  myMGQD->backCalculateCurrent();
+//  cout << " done." << endl;
+//
+//  /* PETSc transient*/  
+//  cout << "Build transient PETSc MGQD linear system...";
+//  myMGQD->buildLinearSystem_p();
+//  cout << " done." << endl;
+//  
+//  cout << "Solve system...";
+//  myMGQD->solveLinearSystem_p();
+//  cout << " done." << endl;
+//  //ierr = VecView(myMGQD->QDSolve->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+//
+//  cout << "Build system to back calculate current...";
+//  myMGQD->buildBackCalcSystem_p();
+//  cout << " done." << endl;
+//
+//  cout << "Solve system...";
+//  myMGQD->backCalculateCurrent_p();
+//  cout << " done." << endl;
+//  ierr = VecView(myMGQD->QDSolve->currPast_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+//  //myMGQD->getFluxes();
+//  //myMGQD->writeVars();
+//
+//  /* EIGEN transient*/  
+//  cout << "Build Eigen MGQD linear system...";
+//  myMGQD->buildLinearSystem();
+//  cout << " done." << endl;
+//  
+//  cout << "Solve system...";
+//  myMGQD->QDSolve->solveSuperLU();
+//  cout << " done." << endl;
+//  //cout << myMGQD->QDSolve->x << endl;
+//  
+//  cout << "Build system to back calculate current...";
+//  myMGQD->buildBackCalcSystem();
+//  cout << " done." << endl;
+//  
+//  cout << "Solve system...";
+//  myMGQD->backCalculateCurrent();
+//  cout << " done." << endl;
+//  cout << myMGQD->QDSolve->currPast<< endl;
 
-  cout << "Build system to back calculate current...";
-  myMGQD->buildSteadyStateBackCalcSystem_p();
-  cout << " done." << endl;
-  
-  cout << "Solve system...";
-  myMGQD->backCalculateCurrent_p();
-  cout << " done." << endl;
-  myMGQD->getFluxes();
-  myMGQD->writeVars();
-
-  /* EIGEN */  
-  cout << "Build Eigen MGQD linear system...";
-  myMGQD->buildSteadyStateLinearSystem();
-  cout << " done." << endl;
-  
-  cout << "Solve system...";
-  myMGQD->QDSolve->solveSuperLU();
-  cout << " done." << endl;
-  
-  cout << "Build system to back calculate current...";
-  myMGQD->buildSteadyStateBackCalcSystem();
-  cout << " done." << endl;
-  
-  cout << "Solve system...";
-  myMGQD->backCalculateCurrent();
-  cout << " done." << endl;
-
+  /* PETSc transient*/  
+  if (myMesh->petsc)
+  {
+    cout << "Run PETSc transient...";
+    myMGQD->solveMGQDOnly_p();
+    cout << " done." << endl;
+  }
+  else
+  {
+    cout << "Run Eigen transient...";
+    myMGQD->solveMGQDOnly();
+    cout << " done." << endl;
+  }
 
   // Delete pointers
-
   delete myMGT;
   delete myMGQD;
   delete myMPQD;
