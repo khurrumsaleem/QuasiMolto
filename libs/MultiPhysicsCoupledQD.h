@@ -6,6 +6,7 @@
 #include "GreyGroupSolver.h"
 #include "SingleGroupDNP.h"
 #include "WriteData.h"
+#include "PETScWrapper.h"
 
 using namespace std;
 
@@ -54,6 +55,13 @@ class MultiPhysicsCoupledQD
     void printVars();
     void checkOptionalParams();
     int preconditioner = 1;
+
+    // PETSc variables
+    Vec x_p,xPast_p,b_p;
+    Vec xPast_p_seq;
+    Mat A_p;
+    KSP ksp;
+    PC pc;
 
     // Pointers
     HeatTransfer * heat;

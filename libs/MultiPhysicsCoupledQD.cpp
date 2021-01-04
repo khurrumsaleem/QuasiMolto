@@ -45,6 +45,16 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   xPast.setOnes(nUnknowns); 
   b.setZero(nUnknowns);
 
+  /* Initialize PETSc variables */
+  // Multiphysics system variables 
+  initPETScMat(&A_p,nUnknowns,4*nUnknowns);
+  initPETScVec(&x_p,nUnknowns);
+  initPETScVec(&xPast_p,nUnknowns);
+  initPETScVec(&b_p,nUnknowns);
+ 
+  // Initialize sequential variables
+  initPETScVec(&xPast_p_seq,nUnknowns);
+
   // Assign pointers in ggqd object
   ggqd->GGSolver->assignPointers(&A,&x,&xPast,&b);
  
