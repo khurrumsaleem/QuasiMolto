@@ -208,10 +208,38 @@ void MultiGroupQD::getFluxes()
 /// values for the Eddington factors
 void MultiGroupQD::updateVarsAfterConvergence()
 {
-  QDSolve->xPast = QDSolve->x;
-  buildBackCalcSystem();
-  backCalculateCurrent();
-  getFluxes();
+  if (mesh->petsc)
+  {
+
+    QDSolve->xPast_p = QDSolve->x_p;
+
+    /* Collect flux solutions */
+    VecScatterCreateToAll(QDSolve->xPast_p,&ctx,&(QDSolve->xPast_p_seq));
+    VecScatterBegin(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+
+    buildBackCalcSystem_p();
+    backCalculateCurrent_p();
+      
+    /* Collect current solutions */
+    VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
+    VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+
+    getFluxes();
+
+  }
+  else
+  {
+    QDSolve->xPast = QDSolve->x;
+    buildBackCalcSystem();
+    backCalculateCurrent();
+    getFluxes();
+  }
 }
 //==============================================================================
 
@@ -220,10 +248,36 @@ void MultiGroupQD::updateVarsAfterConvergence()
 /// values for the Eddington factors
 void MultiGroupQD::updateSteadyStateVarsAfterConvergence()
 {
-  QDSolve->xPast = QDSolve->x;
-  buildSteadyStateBackCalcSystem();
-  backCalculateCurrent();
-  getFluxes();
+  if (mesh->petsc)
+  {
+    QDSolve->xPast_p = QDSolve->x_p;
+
+    /* Collect flux solutions */
+    VecScatterCreateToAll(QDSolve->xPast_p,&ctx,&(QDSolve->xPast_p_seq));
+    VecScatterBegin(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+
+    buildSteadyStateBackCalcSystem_p();
+    backCalculateCurrent_p();
+      
+    /* Collect current solutions */
+    VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
+    VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+
+    getFluxes();
+  }
+  else
+  {
+    QDSolve->xPast = QDSolve->x;
+    buildSteadyStateBackCalcSystem();
+    backCalculateCurrent();
+    getFluxes();
+  }
 }
 //==============================================================================
 
@@ -255,9 +309,6 @@ int MultiGroupQD::solveMGQDOnly_p()
     backCalculateCurrent_p();
     getFluxes();
       
-    /* Collect entire solution at past step on all procs. This will be
-       needed when building the linear system. */
-
     /* Current solutions */
     VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
     VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
