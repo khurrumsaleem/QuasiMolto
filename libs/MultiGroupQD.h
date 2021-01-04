@@ -45,7 +45,7 @@ class MultiGroupQD
     string outputDir = "MGQD/";
 
     /* PETSc functions */
-    int solveMGQDOnly_p();
+    void solveMGQDOnly_p();
     int buildSteadyStateLinearSystem_p();
     void solveLinearSystem_p();
     int buildSteadyStateBackCalcSystem_p();

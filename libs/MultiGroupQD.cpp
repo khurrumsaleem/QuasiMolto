@@ -183,10 +183,11 @@ void MultiGroupQD::solveMGQDOnly()
     buildLinearSystem();
     cout << "time: " <<mesh->ts[iTime+1] << endl;
     solveLinearSystem();
-    QDSolve->xPast = QDSolve->x;
-    buildBackCalcSystem();
-    backCalculateCurrent();
-    getFluxes();
+    updateVarsAfterConvergence();
+    //QDSolve->xPast = QDSolve->x;
+    //buildBackCalcSystem();
+    //backCalculateCurrent();
+    //getFluxes();
   }
   writeVars();
 }
@@ -210,6 +211,7 @@ void MultiGroupQD::updateVarsAfterConvergence()
 {
   if (mesh->petsc)
   {
+    VecScatter     ctx;
 
     QDSolve->xPast_p = QDSolve->x_p;
 
@@ -232,6 +234,8 @@ void MultiGroupQD::updateVarsAfterConvergence()
 
     getFluxes();
 
+    /* Destory scatter context */
+    VecScatterDestroy(&ctx);
   }
   else
   {
@@ -248,8 +252,11 @@ void MultiGroupQD::updateVarsAfterConvergence()
 /// values for the Eddington factors
 void MultiGroupQD::updateSteadyStateVarsAfterConvergence()
 {
+
   if (mesh->petsc)
   {
+    VecScatter     ctx;
+
     QDSolve->xPast_p = QDSolve->x_p;
 
     /* Collect flux solutions */
@@ -270,6 +277,9 @@ void MultiGroupQD::updateSteadyStateVarsAfterConvergence()
         INSERT_VALUES,SCATTER_FORWARD);
 
     getFluxes();
+
+    /* Destory scatter context */
+    VecScatterDestroy(&ctx);
   }
   else
   {
@@ -284,10 +294,10 @@ void MultiGroupQD::updateSteadyStateVarsAfterConvergence()
 //==============================================================================
 /// Solve a transient problem without any transport coupling using diffusion
 /// values for the Eddington factors
-int MultiGroupQD::solveMGQDOnly_p()
+void MultiGroupQD::solveMGQDOnly_p()
 {
   PetscErrorCode ierr;
-  VecScatter     ctx;
+  //VecScatter     ctx;
   
   setInitialCondition();
 
@@ -296,31 +306,32 @@ int MultiGroupQD::solveMGQDOnly_p()
     buildLinearSystem_p();
     cout << "time: " <<mesh->ts[iTime+1] << endl;
     solveLinearSystem_p();
-    QDSolve->xPast_p = QDSolve->x_p;
-
-    /* Flux solutions */
-    VecScatterCreateToAll(QDSolve->xPast_p,&ctx,&(QDSolve->xPast_p_seq));
-    VecScatterBegin(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
-
-    buildBackCalcSystem_p();
-    backCalculateCurrent_p();
-    getFluxes();
-      
-    /* Current solutions */
-    VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
-    VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
+    updateVarsAfterConvergence();
+//    QDSolve->xPast_p = QDSolve->x_p;
+//
+//    /* Flux solutions */
+//    VecScatterCreateToAll(QDSolve->xPast_p,&ctx,&(QDSolve->xPast_p_seq));
+//    VecScatterBegin(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+//        INSERT_VALUES,SCATTER_FORWARD);
+//    VecScatterEnd(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+//        INSERT_VALUES,SCATTER_FORWARD);
+//
+//    buildBackCalcSystem_p();
+//    backCalculateCurrent_p();
+//    getFluxes();
+//      
+//    /* Current solutions */
+//    VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
+//    VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+//        INSERT_VALUES,SCATTER_FORWARD);
+//    VecScatterEnd(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+//        INSERT_VALUES,SCATTER_FORWARD);
 
   }
   writeVars();
 
   /* Destory scatter context */
-  VecScatterDestroy(&ctx);
+  //VecScatterDestroy(&ctx);
 }
 //==============================================================================
 
