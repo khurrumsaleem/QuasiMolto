@@ -46,7 +46,7 @@ void testSteadyState(Materials * myMaterials,\
 void testSteadyStateThenTransient(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
-int testPETScCoupling(Materials * myMaterials,\
+int testMGQDPETScCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
 
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
       testSteadyState(myMaterials,myMesh,input);
     else if (solveType == "testSteadyStateThenTransient")
       testSteadyStateThenTransient(myMaterials,myMesh,input);
-    else if (solveType == "testPETScCoupling")
+    else if (solveType == "testMGQDPETScCoupling")
       testPETScCoupling(myMaterials,myMesh,input);
     else
       myMGT->solveTransportOnly();
@@ -384,7 +384,7 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
 
 }
 
-int testPETScCoupling(Materials * myMaterials,\
+int testMGQDPETScCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input){
   
