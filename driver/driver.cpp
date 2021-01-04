@@ -139,7 +139,7 @@ int main(int argc, char** argv) {
     else if (solveType == "testSteadyStateThenTransient")
       testSteadyStateThenTransient(myMaterials,myMesh,input);
     else if (solveType == "testMGQDPETScCoupling")
-      testPETScCoupling(myMaterials,myMesh,input);
+      testMGQDPETScCoupling(myMaterials,myMesh,input);
     else
       myMGT->solveTransportOnly();
   }
