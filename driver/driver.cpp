@@ -49,6 +49,9 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
 int testMGQDPETScCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
+int testELOTPETScCoupling(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input);
 
 int main(int argc, char** argv) {
 
@@ -140,6 +143,8 @@ int main(int argc, char** argv) {
       testSteadyStateThenTransient(myMaterials,myMesh,input);
     else if (solveType == "testMGQDPETScCoupling")
       testMGQDPETScCoupling(myMaterials,myMesh,input);
+    else if (solveType == "testELOTPETScCoupling")
+      testELOTPETScCoupling(myMaterials,myMesh,input);
     else
       myMGT->solveTransportOnly();
   }
@@ -406,7 +411,7 @@ int testMGQDPETScCoupling(Materials * myMaterials,\
   MultilevelCoupling * myMLCoupling; 
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
       myMPQD);
-
+//
 //  /* PETSc steady state*/  
 //  cout << "Build PETSc MGQD linear system...";
 //  myMGQD->buildSteadyStateLinearSystem_p();
@@ -496,6 +501,37 @@ int testMGQDPETScCoupling(Materials * myMaterials,\
     myMGQD->solveMGQDOnly();
     cout << " done." << endl;
   }
+
+  // Delete pointers
+  delete myMGT;
+  delete myMGQD;
+  delete myMPQD;
+  delete myMLCoupling;
+
+}
+
+int testELOTPETScCoupling(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input){
+  
+  PetscErrorCode ierr;
+  
+  // initialize multigroup transport object
+  MultiGroupTransport * myMGT; 
+  myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
+
+  // initialize multigroup quasidiffusion object
+  MultiGroupQD * myMGQD; 
+  myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
+
+  // Initialize MultiPhysicsCoupledQD
+  MultiPhysicsCoupledQD * myMPQD; 
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+
+  // Initialize MultiPhysicsCoupledQD
+  MultilevelCoupling * myMLCoupling; 
+  myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
+      myMPQD);
 
   // Delete pointers
   delete myMGT;
