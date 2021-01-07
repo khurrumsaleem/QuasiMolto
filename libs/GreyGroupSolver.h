@@ -164,13 +164,33 @@ class GreyGroupSolver
     bool goldinBCs = false;
     bool diffusionBCs = false;
 
+    /* PETSc variables and functions */
+    // Variables
+    Mat A_p; 
+    Vec x_p,xPast_p,b_p;
+    Vec xPast_p_seq;
+    Mat C_p;
+    Vec currPast_p,d_p,xFlux_p;
+    Vec currPast_p_seq;
+
+    // Functions
+    void assignPETScPointers(Mat * myA,\
+        Vec * myx,\
+        Vec * myxPast,\
+        Vec * myxPast_seq,\
+        Vec * myb);
+
+    void assignMPQDPointer(MultiPhysicsCoupledQD * myMPQD);
+
   private:
     // private variables
     GreyGroupQD * GGQD;
+    MultiPhysicsCoupledQD * MPQD;
     YAML::Node * input;
     Mesh * mesh;
     Materials * materials;
     // indices for accessing index and geometry parameters vectors
+
     int iCF = 0;
     int iWF = 1, iEF = 2, iNF = 3, iSF = 4;
     int iWC = 5, iEC = 6, iNC = 7, iSC = 8;

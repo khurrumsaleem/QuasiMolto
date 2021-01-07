@@ -38,8 +38,19 @@ GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
   currPast.setZero(nCurrentUnknowns);
   d.setZero(nCurrentUnknowns);
 
+  /* Initialize PETSc variables */
+  // Multiphysics system variables 
+  initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,4*nUnknowns);
+  initPETScVec(&currPast_p,nCurrentUnknowns);
+  initPETScVec(&d_p,nCurrentUnknowns);
+  initPETScVec(&xFlux_p,nUnknowns);
+ 
+  // Initialize sequential variables
+  initPETScVec(&currPast_p_seq,nCurrentUnknowns);
+
   // Set number of unknowns if GreyGroupQD object
   GGQD->nUnknowns = nUnknowns;
+  GGQD->nCurrentUnknowns = nCurrentUnknowns;
 
   checkOptionalParams();
 };
@@ -2391,8 +2402,8 @@ void GreyGroupSolver::setFlux()
     for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
       indices = getIndices(iR,iZ);
+    
       (*xPast)(indices[iCF]) = GGQD->sFlux(iZ,iR);
-
       (*xPast)(indices[iWF]) = GGQD->sFluxR(iZ,iR);
       (*xPast)(indices[iEF]) = GGQD->sFluxR(iZ,iR+1);
       (*xPast)(indices[iNF]) = GGQD->sFluxZ(iZ,iR);
@@ -2478,6 +2489,37 @@ void GreyGroupSolver::assignPointers(Eigen::SparseMatrix<double,Eigen::RowMajor>
 };
 //==============================================================================
 
+/* PETSc functions */
+
+//==============================================================================
+/// Assign pointers to linear system components 
+///
+void GreyGroupSolver::assignPETScPointers(Mat * myA,\
+    Vec * myx,\
+    Vec * myxPast,\
+    Vec * myxPast_seq,\
+    Vec * myb)
+{
+
+  A_p = *myA;
+  x_p = *myx;
+  xPast_p = *myxPast;
+  xPast_p_seq = *myxPast_seq;
+  b_p = *myb;
+
+}
+//==============================================================================
+
+//==============================================================================
+/// Assign pointers to linear system components 
+///
+void GreyGroupSolver::assignMPQDPointer(MultiPhysicsCoupledQD * myMPQD)
+{
+  
+  MPQD = myMPQD;
+
+};
+//==============================================================================
 
 //==============================================================================
 /// Check for optional inputs of relevance to this object
