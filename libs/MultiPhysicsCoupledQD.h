@@ -6,7 +6,6 @@
 #include "GreyGroupSolver.h"
 #include "SingleGroupDNP.h"
 #include "WriteData.h"
-#include "PETScWrapper.h"
 
 using namespace std;
 

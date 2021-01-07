@@ -51,14 +51,15 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   initPETScVec(&x_p,nUnknowns);
   initPETScVec(&xPast_p,nUnknowns);
   initPETScVec(&b_p,nUnknowns);
- 
+
   // Initialize sequential variables
   initPETScVec(&xPast_p_seq,nUnknowns);
 
   // Assign pointers in ggqd object
+  ggqd->GGSolver->assignPETScPointers(&A_p,&x_p,&xPast_p,&xPast_p_seq,&b_p);
   ggqd->GGSolver->assignPointers(&A,&x,&xPast,&b);
- 
-   // Initialize xPast 
+
+ // Initialize xPast 
   initializeXPast();
 
   // Check optional parameters
@@ -69,6 +70,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 //==============================================================================
 /// Include a flux source in the linear system
 ///
+
 /// @param [in] iZ axial location 
 /// @param [in] iR radial location
 /// @param [in] iEq equation index
@@ -191,7 +193,6 @@ void MultiPhysicsCoupledQD::buildSteadyStateLinearSystem()
 
 };
 //==============================================================================
-
 
 //==============================================================================
 /// Map values in multiphysics objects into xPast
