@@ -59,7 +59,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   ggqd->GGSolver->assignPETScPointers(&A_p,&x_p,&xPast_p,&xPast_p_seq,&b_p);
   ggqd->GGSolver->assignPointers(&A,&x,&xPast,&b);
 
- // Initialize xPast 
+  // Initialize xPast 
   initializeXPast();
 
   // Check optional parameters
