@@ -533,6 +533,9 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
       myMPQD);
 
+  // Test GGSolver setFlux
+  ierr = VecView(myMPQD->xPast_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+
   // Delete pointers
   delete myMGT;
   delete myMGQD;

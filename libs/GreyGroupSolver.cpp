@@ -2392,25 +2392,68 @@ void GreyGroupSolver::getCurrent()
 
 //==============================================================================
 /// Map values from 2D matrix to 1D solution vector
-void GreyGroupSolver::setFlux()
+int GreyGroupSolver::setFlux()
 {
   vector<int> indices;
+  PetscErrorCode ierr;
+  PetscScalar value[5]; 
+  PetscInt index[5]; 
+  VecScatter     ctx;
 
-  // loop over spatial mesh
-  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  // if PETSc
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
     {
-      indices = getIndices(iR,iZ);
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      {
+        indices = getIndices(iR,iZ);
+        
+        value[0] = GGQD->sFlux(iZ,iR);
+        value[1] = GGQD->sFluxR(iZ,iR);
+        value[2] = GGQD->sFluxR(iZ,iR+1);
+        value[3] = GGQD->sFluxZ(iZ,iR);
+        value[4] = GGQD->sFluxZ(iZ+1,iR);
+      
+        index[0] = indices[iCF];
+        index[1] = indices[iWF]; 
+        index[2] = indices[iEF]; 
+        index[3] = indices[iNF]; 
+        index[4] = indices[iSF]; 
     
-      (*xPast)(indices[iCF]) = GGQD->sFlux(iZ,iR);
-      (*xPast)(indices[iWF]) = GGQD->sFluxR(iZ,iR);
-      (*xPast)(indices[iEF]) = GGQD->sFluxR(iZ,iR+1);
-      (*xPast)(indices[iNF]) = GGQD->sFluxZ(iZ,iR);
-      (*xPast)(indices[iSF]) = GGQD->sFluxZ(iZ+1,iR);
+        ierr = VecSetValues(xPast_p,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
+      }
+    }  
 
+    VecScatterCreateToAll(xPast_p,&ctx,&xPast_p_seq);
+    VecScatterBegin(ctx,xPast_p,xPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,xPast_p,xPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+
+    /* Destroy scatter context */
+    VecScatterDestroy(&ctx);
+
+  }
+  // if anything else
+  else
+  {
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      {
+        indices = getIndices(iR,iZ);
+      
+        (*xPast)(indices[iCF]) = GGQD->sFlux(iZ,iR);
+        (*xPast)(indices[iWF]) = GGQD->sFluxR(iZ,iR);
+        (*xPast)(indices[iEF]) = GGQD->sFluxR(iZ,iR+1);
+        (*xPast)(indices[iNF]) = GGQD->sFluxZ(iZ,iR);
+        (*xPast)(indices[iSF]) = GGQD->sFluxZ(iZ+1,iR);
+
+      }
     }
-  }  
+  }
+ 
 
 };
 //==============================================================================
