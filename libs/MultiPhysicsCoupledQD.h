@@ -31,6 +31,7 @@ class MultiPhysicsCoupledQD
     Eigen::VectorXd x,xPast,b;
     string outputDir = "MPQD/";
     double epsMPQD = 1E-6;
+    int nUnknowns;
    
     // Functions 
     void fluxSource(int iZ,int iR,int iEq,double coeff,\

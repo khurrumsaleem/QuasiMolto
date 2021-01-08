@@ -19,7 +19,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
     Mesh * myMesh,\
     YAML::Node * myInput) 
 {
-  int tempIndexOffset,nUnknowns;
+  int tempIndexOffset;
 
   // Assign inputs to their member variables
   mats = myMats;
@@ -210,13 +210,21 @@ void MultiPhysicsCoupledQD::initializeXPast()
   mgdnp->setCoreDNPConc();  
   mgdnp->setRecircDNPConc();  
 
-  // Calculate currents consistent with fluxes in xPast
-  x = xPast; // getFlux() pulls from x
+  /* Calculate currents consistent with fluxes in xPast */
+  if (mesh->petsc)
+    x_p = xPast_p; // getFlux() pulls from x
+  else
+    x = xPast; // getFlux() pulls from x
+
   ggqd->GGSolver->getFlux();
   ggqd->GGSolver->formBackCalcSystem();
   ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
-  x.setZero(); // Reset x
+
+  if(mesh->petsc)
+    initPETScVec(&x_p,nUnknowns);
+  else
+    x.setZero(); // Reset x
 };
 //==============================================================================
 
