@@ -2334,33 +2334,88 @@ double GreyGroupSolver::getSouthErz(int iZ,int iR)
 
 //==============================================================================
 /// Extract cell average values from solution vector and store
-void GreyGroupSolver::getFlux()
+int GreyGroupSolver::getFlux()
 {
   vector<int> indices;
+  PetscErrorCode ierr;
+  PetscScalar value[5]; 
+  PetscInt index[5]; 
+  VecScatter     ctx;
+  Vec temp_x_p_seq;
 
-  // loop over spatial mesh
-  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+
+    // Initialize temporary vector
+    initPETScVec(&temp_x_p_seq,nUnknowns);
+
+    // Gather values of x_p on all procs
+    VecScatterCreateToAll(x_p,&ctx,&temp_x_p_seq);
+    VecScatterBegin(ctx,x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
     {
-      indices = getIndices(iR,iZ);
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      {
+        indices = getIndices(iR,iZ);
 
-      // Read fluxes into recirculation back calc vector
-      xFlux(indices[iCF]) = (*x)(indices[iCF]);
-      xFlux(indices[iWF]) = (*x)(indices[iWF]);
-      xFlux(indices[iEF]) = (*x)(indices[iEF]);
-      xFlux(indices[iNF]) = (*x)(indices[iNF]);
-      xFlux(indices[iSF]) = (*x)(indices[iSF]);
+        index[0] = indices[iCF];
+        index[1] = indices[iWF];
+        index[2] = indices[iEF];
+        index[3] = indices[iNF];
+        index[4] = indices[iSF];
 
-      // Read fluxes into GGQD object
-      GGQD->sFlux(iZ,iR) = xFlux(indices[iCF]);
-      GGQD->sFluxR(iZ,iR) = xFlux(indices[iWF]);
-      GGQD->sFluxR(iZ,iR+1) = xFlux(indices[iEF]);
-      GGQD->sFluxZ(iZ,iR) = xFlux(indices[iNF]);
-      GGQD->sFluxZ(iZ+1,iR) = xFlux(indices[iSF]);
+        // Read fluxes into flux vector
+        ierr = VecGetValues(temp_x_p_seq,5,index,value);
+        ierr = VecSetValues(xFlux_p,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
 
-    }
-  } 
+        // Read fluxes into GGQD object
+        GGQD->sFlux(iZ,iR) = value[0]; 
+        GGQD->sFluxR(iZ,iR) = value[1];
+        GGQD->sFluxR(iZ,iR+1) = value[2];
+        GGQD->sFluxZ(iZ,iR) = value[3]; 
+        GGQD->sFluxZ(iZ+1,iR) = value[4]; 
+
+      }
+    } 
+        
+    /* Destroy scatter context */
+    VecScatterDestroy(&ctx);
+    VecDestroy(&temp_x_p_seq);
+
+    /* Finalize assembly of xFlux_p */
+    VecAssemblyBegin(xFlux_p);
+    VecAssemblyEnd(xFlux_p);
+
+  }
+  else
+  {
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      {
+        indices = getIndices(iR,iZ);
+
+        // Read fluxes into recirculation back calc vector
+        xFlux(indices[iCF]) = (*x)(indices[iCF]);
+        xFlux(indices[iWF]) = (*x)(indices[iWF]);
+        xFlux(indices[iEF]) = (*x)(indices[iEF]);
+        xFlux(indices[iNF]) = (*x)(indices[iNF]);
+        xFlux(indices[iSF]) = (*x)(indices[iSF]);
+
+        // Read fluxes into GGQD object
+        GGQD->sFlux(iZ,iR) = xFlux(indices[iCF]);
+        GGQD->sFluxR(iZ,iR) = xFlux(indices[iWF]);
+        GGQD->sFluxR(iZ,iR+1) = xFlux(indices[iEF]);
+        GGQD->sFluxZ(iZ,iR) = xFlux(indices[iNF]);
+        GGQD->sFluxZ(iZ+1,iR) = xFlux(indices[iSF]);
+
+      }
+    } 
+  }
 
 };
 //==============================================================================
@@ -2426,6 +2481,11 @@ int GreyGroupSolver::setFlux()
       }
     }  
 
+    // Finalize assembly of xPast_p
+    VecAssemblyBegin(xPast_p);
+    VecAssemblyEnd(xPast_p);
+
+    // Form xPast_p_seq
     VecScatterCreateToAll(xPast_p,&ctx,&xPast_p_seq);
     VecScatterBegin(ctx,xPast_p,xPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
     VecScatterEnd(ctx,xPast_p,xPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
