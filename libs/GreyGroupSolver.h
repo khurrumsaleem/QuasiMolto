@@ -182,6 +182,100 @@ class GreyGroupSolver
 
     void assignMPQDPointer(MultiPhysicsCoupledQD * myMPQD);
 
+    /* STEADY STATE FUNCTIONS */
+
+    // void formSteadyStateLinearSystem_p();
+    // void formSteadyStateBackCalcSystem_p();
+
+    // // functions to enforce governing equations
+    // void assertSteadyStateZerothMoment_p(int iR,int iZ,int iEq);
+    // void applySteadyStateRadialBoundary_p(int iR,int iZ,int iEq);
+    // void applySteadyStateAxialBoundary_p(int iR,int iZ,int iEq);
+
+    // functions to enforce coefficients for steady state facial currents
+    int steadyStateSouthCurrent_p(double coeff,int iR,int iZ,int iEq);
+    int steadyStateNorthCurrent_p(double coeff,int iR,int iZ,int iEq);
+    int steadyStateWestCurrent_p(double coeff,int iR,int iZ,int iEq);
+    int steadyStateEastCurrent_p(double coeff,int iR,int iZ,int iEq);
+    
+    // // functions to enforce coefficients for calculation of facial currents
+    // void calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq);
+    // void calcSteadyStateNorthCurrent_p(int iR,int iZ,int iEq);
+    // void calcSteadyStateWestCurrent_p(int iR,int iZ,int iEq);
+    // void calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq);
+
+    // // wrapper to assert either a steady state flux or current BC
+    // void assertSteadyStateWBC_p(int iR,int iZ,int iEq);
+    // void assertSteadyStateEBC_p(int iR,int iZ,int iEq);
+    // void assertSteadyStateNBC_p(int iR,int iZ,int iEq);
+    // void assertSteadyStateSBC_p(int iR,int iZ,int iEq);
+    
+    // // functions to assert steady state current BCs
+    // void assertSteadyStateWCurrentBC_p(int iR,int iZ,int iEq);
+    // void assertSteadyStateECurrentBC(int iR,int iZ,int iEq);
+    // void assertSteadyStateNCurrentBC(int iR,int iZ,int iEq);
+    // void assertSteadyStateSCurrentBC(int iR,int iZ,int iEq);
+
+    // // functions to assert steady state Gol'din BCs
+    // void assertSteadyStateNGoldinBC_p(int iR,int iZ,int iEq);
+    // void assertSteadyStateSGoldinBC_p(int iR,int iZ,int iEq);
+    // void assertSteadyStateEGoldinBC_p(int iR,int iZ,int iEq);
+
+    // // functions to assert steady state Gol'din BCs
+    // void assertSteadyStateNGoldinP1BC_p(int iR,int iZ,int iEq);
+    // void assertSteadyStateSGoldinP1BC_p(int iR,int iZ,int iEq);
+    // void assertSteadyStateEGoldinP1BC_p(int iR,int iZ,int iEq);
+
+    /* TRANSIENT FUNCTIONS */
+    
+    //void formLinearSystem_p();
+    //void formBackCalcSystem_p();
+
+    // functions to enforce governing equations
+    // void assertZerothMoment_p(int iR,int iZ,int iEq);
+    // void applyRadialBoundary_p(int iR,int iZ,int iEq);
+    // void applyAxialBoundary_p(int iR,int iZ,int iEq);
+
+    // // functions to enforce coefficients for facial currents
+    // void southCurrent_p(double coeff,int iR,int iZ,int iEq);
+    // void northCurrent_p(double coeff,int iR,int iZ,int iEq);
+    // void westCurrent_p(double coeff,int iR,int iZ,int iEq);
+    // void eastCurrent_p(double coeff,int iR,int iZ,int iEq);
+
+    // // functions to enforce coefficients for calculation of facial currents
+    // void calcSouthCurrent_p(int iR,int iZ,int iEq);
+    // void calcNorthCurrent_p(int iR,int iZ,int iEq);
+    // void calcWestCurrent_p(int iR,int iZ,int iEq);
+    // void calcEastCurrent_p(int iR,int iZ,int iEq);
+    
+    // // wrapper to assert either a flux or current BC
+    // void assertWBC_p(int iR,int iZ,int iEq);
+    // void assertEBC_p(int iR,int iZ,int iEq);
+    // void assertNBC_p(int iR,int iZ,int iEq);
+    // void assertSBC_p(int iR,int iZ,int iEq);
+
+    // // functions to assert flux BCs
+    // void assertWFluxBC_p(int iR,int iZ,int iEq);
+    // void assertEFluxBC_p(int iR,int iZ,int iEq);
+    // void assertNFluxBC_p(int iR,int iZ,int iEq);
+    // void assertSFluxBC_p(int iR,int iZ,int iEq);
+
+    // // functions to assert current BCs
+    // void assertWCurrentBC_p(int iR,int iZ,int iEq);
+    // void assertECurrentBC_p(int iR,int iZ,int iEq);
+    // void assertNCurrentBC_p(int iR,int iZ,int iEq);
+    // void assertSCurrentBC_p(int iR,int iZ,int iEq);
+
+    // // functions to assert Gol'din BCs
+    // void assertNGoldinBC_p(int iR,int iZ,int iEq);
+    // void assertSGoldinBC_p(int iR,int iZ,int iEq);
+    // void assertEGoldinBC_p(int iR,int iZ,int iEq);
+
+    // // functions to assert Gol'din diffusion BCs
+    // void assertNGoldinP1BC_p(int iR,int iZ,int iEq);
+    // void assertSGoldinP1BC_p(int iR,int iZ,int iEq);
+    // void assertEGoldinP1BC_p(int iR,int iZ,int iEq);
+
   private:
     // private variables
     GreyGroupQD * GGQD;

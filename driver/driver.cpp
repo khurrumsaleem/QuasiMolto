@@ -536,6 +536,22 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   // Test GGSolver setFlux
   ierr = VecView(myMPQD->xPast_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
 
+  // Test GGSolver steadyStateCurrent functions
+  double testDub = 0.1;
+  int testInt = 0;
+  myMPQD->ggqd->GGSolver->steadyStateSouthCurrent_p(testDub,\
+      testInt,testInt,testInt);
+  cout << "south current" << endl;
+  myMPQD->ggqd->GGSolver->steadyStateNorthCurrent_p(testDub,\
+      testInt,testInt,testInt);
+  cout << "north current" << endl;
+  myMPQD->ggqd->GGSolver->steadyStateWestCurrent_p(testDub,\
+      testInt,testInt,testInt);
+  cout << "west current" << endl;
+  myMPQD->ggqd->GGSolver->steadyStateEastCurrent_p(testDub,\
+      testInt,testInt,testInt);
+  cout << "east current" << endl;
+
   // Delete pointers
   delete myMGT;
   delete myMGQD;
