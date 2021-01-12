@@ -114,19 +114,27 @@ void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
 /// @param [in] iR radial location
 /// @param [in] iEq equation index
 /// @param [in] coeff coefficient of dnp source
-void MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff,\
+int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff,\
     Eigen::SparseMatrix<double,Eigen::RowMajor> * myA)
 {
   int index,indexOffset;
   double groupLambda;
+  PetscErrorCode ierr;
+  PetscScalar value;
 
   for (int iGroup = 0; iGroup < mgdnp->DNPs.size(); ++iGroup)
   {
     indexOffset = mgdnp->DNPs[iGroup]->coreIndexOffset;
     index = mgdnp->DNPs[iGroup]->getIndex(iZ,iR,indexOffset);
     groupLambda = mgdnp->DNPs[iGroup]->lambda;
-
-    myA->coeffRef(iEq,index) += coeff*groupLambda;
+    
+    if (mesh->petsc)
+    {
+      value = coeff*groupLambda;
+      ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+    }
+    else
+      myA->coeffRef(iEq,index) += coeff*groupLambda;
   }
 
 };
