@@ -188,9 +188,9 @@ class GreyGroupSolver
     // void formSteadyStateBackCalcSystem_p();
 
     // // functions to enforce governing equations
-    // void assertSteadyStateZerothMoment_p(int iR,int iZ,int iEq);
-    // void applySteadyStateRadialBoundary_p(int iR,int iZ,int iEq);
-    // void applySteadyStateAxialBoundary_p(int iR,int iZ,int iEq);
+    int assertSteadyStateZerothMoment_p(int iR,int iZ,int iEq);
+    void applySteadyStateRadialBoundary_p(int iR,int iZ,int iEq);
+    void applySteadyStateAxialBoundary_p(int iR,int iZ,int iEq);
 
     // functions to enforce coefficients for steady state facial currents
     int steadyStateSouthCurrent_p(double coeff,int iR,int iZ,int iEq);
@@ -198,33 +198,39 @@ class GreyGroupSolver
     int steadyStateWestCurrent_p(double coeff,int iR,int iZ,int iEq);
     int steadyStateEastCurrent_p(double coeff,int iR,int iZ,int iEq);
     
-    // // functions to enforce coefficients for calculation of facial currents
+    // functions to enforce coefficients for calculation of facial currents
     // void calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq);
     // void calcSteadyStateNorthCurrent_p(int iR,int iZ,int iEq);
     // void calcSteadyStateWestCurrent_p(int iR,int iZ,int iEq);
     // void calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq);
 
-    // // wrapper to assert either a steady state flux or current BC
-    // void assertSteadyStateWBC_p(int iR,int iZ,int iEq);
-    // void assertSteadyStateEBC_p(int iR,int iZ,int iEq);
-    // void assertSteadyStateNBC_p(int iR,int iZ,int iEq);
-    // void assertSteadyStateSBC_p(int iR,int iZ,int iEq);
+    // wrapper to assert either a steady state flux or current BC
+    void assertSteadyStateWBC_p(int iR,int iZ,int iEq);
+    void assertSteadyStateEBC_p(int iR,int iZ,int iEq);
+    void assertSteadyStateNBC_p(int iR,int iZ,int iEq);
+    void assertSteadyStateSBC_p(int iR,int iZ,int iEq);
     
-    // // functions to assert steady state current BCs
-    // void assertSteadyStateWCurrentBC_p(int iR,int iZ,int iEq);
-    // void assertSteadyStateECurrentBC(int iR,int iZ,int iEq);
-    // void assertSteadyStateNCurrentBC(int iR,int iZ,int iEq);
-    // void assertSteadyStateSCurrentBC(int iR,int iZ,int iEq);
+    // functions to assert steady state current BCs
+    void assertSteadyStateWCurrentBC_p(int iR,int iZ,int iEq);
+    void assertSteadyStateECurrentBC_p(int iR,int iZ,int iEq);
+    void assertSteadyStateNCurrentBC_p(int iR,int iZ,int iEq);
+    void assertSteadyStateSCurrentBC_p(int iR,int iZ,int iEq);
 
-    // // functions to assert steady state Gol'din BCs
-    // void assertSteadyStateNGoldinBC_p(int iR,int iZ,int iEq);
-    // void assertSteadyStateSGoldinBC_p(int iR,int iZ,int iEq);
-    // void assertSteadyStateEGoldinBC_p(int iR,int iZ,int iEq);
+    // functions to assert steady state Gol'din BCs
+    int assertSteadyStateNGoldinBC_p(int iR,int iZ,int iEq);
+    int assertSteadyStateSGoldinBC_p(int iR,int iZ,int iEq);
+    int assertSteadyStateEGoldinBC_p(int iR,int iZ,int iEq);
 
-    // // functions to assert steady state Gol'din BCs
-    // void assertSteadyStateNGoldinP1BC_p(int iR,int iZ,int iEq);
-    // void assertSteadyStateSGoldinP1BC_p(int iR,int iZ,int iEq);
-    // void assertSteadyStateEGoldinP1BC_p(int iR,int iZ,int iEq);
+    // functions to assert steady state Gol'din BCs
+    int assertSteadyStateNGoldinP1BC_p(int iR,int iZ,int iEq);
+    int assertSteadyStateSGoldinP1BC_p(int iR,int iZ,int iEq);
+    int assertSteadyStateEGoldinP1BC_p(int iR,int iZ,int iEq);
+
+    // functions to assert flux BCs
+    int assertWFluxBC_p(int iR,int iZ,int iEq);
+    int assertEFluxBC_p(int iR,int iZ,int iEq);
+    int assertNFluxBC_p(int iR,int iZ,int iEq);
+    int assertSFluxBC_p(int iR,int iZ,int iEq);
 
     /* TRANSIENT FUNCTIONS */
     

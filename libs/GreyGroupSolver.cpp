@@ -2596,77 +2596,88 @@ void GreyGroupSolver::assignPointers(Eigen::SparseMatrix<double,Eigen::RowMajor>
 
 /* STEADY STATE */
 
-////==============================================================================
-///// Assert the steady state zeroth moment equation for cell (iR,iZ)
-/////
-///// @param [in] iR radial index of cell
-///// @param [in] iZ axial index of cell
-///// @param [in] iEq row to place equation in
-//void GreyGroupSolver::assertSteadyStateZerothMoment(int iR,int iZ,int iEq)
-//{
-//  vector<int> indices;
-//  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
-//  double deltaT = mesh->dt;
-//  double v = materials->oneGroupXS->neutV(iZ,iR);
-//  double vPast = materials->oneGroupXS->neutVPast(iZ,iR);
-//  double sigT = materials->oneGroupXS->sigT(iZ,iR);
-//  double scatterCoeff, fissionCoeff, keff, cellFlux;
-//
-//  indices = getIndices(iR,iZ);
-//
-//  // Scattering source term (implicit)
-//  scatterCoeff = materials->oneGroupXS->sigS(iZ,iR);
-//  Atemp.insert(iEq,indices[iCF]) = -geoParams[iCF] * scatterCoeff;
-//
-//  // Fission source term (explicit for power iteration)
-//  fissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
-//  keff = materials->oneGroupXS->keff;
-//  cellFlux = GGQD->sFlux(iZ,iR);
-//  (*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
-//              ( fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
-//
-//  // DNP source term
-//  GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF], &Atemp);
-//
-//  // populate entries representing streaming and reaction terms
-//  Atemp.coeffRef(iEq,indices[iCF]) += geoParams[iCF] * (sigT);
-//
-//  steadyStateWestCurrent(-geoParams[iWF],iR,iZ,iEq);
-//
-//  steadyStateEastCurrent(geoParams[iEF],iR,iZ,iEq);
-//
-//  steadyStateNorthCurrent(-geoParams[iNF],iR,iZ,iEq);
-//
-//  steadyStateSouthCurrent(geoParams[iSF],iR,iZ,iEq);
-//
-//};
-////==============================================================================
-//
-////==============================================================================
-///// Apply steady state radial boundary for cell (iR,iZ)
-/////
-///// @param [in] iR radial index of cell
-///// @param [in] iZ axial index of cell
-///// @param [in] iEq row to place equation in
-//void GreyGroupSolver::applySteadyStateRadialBoundary(int iR,int iZ,int iEq)
-//{
-//  steadyStateEastCurrent(1,iR,iZ,iEq);
-//  steadyStateWestCurrent(-1,iR+1,iZ,iEq);
-//}
-////==============================================================================
-//
-////==============================================================================
-///// Apply steady state axial boundary for cell (iR,iZ)
-/////
-///// @param [in] iR radial index of cell
-///// @param [in] iZ axial index of cell
-///// @param [in] iEq row to place equation in
-//void GreyGroupSolver::applySteadyStateAxialBoundary(int iR,int iZ,int iEq)
-//{
-//  steadyStateNorthCurrent(1,iR,iZ+1,iEq);
-//  steadyStateSouthCurrent(-1,iR,iZ,iEq);
-//}
-////==============================================================================
+//==============================================================================
+/// Assert the steady state zeroth moment equation for cell (iR,iZ)
+///
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertSteadyStateZerothMoment_p(int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double vPast = materials->oneGroupXS->neutVPast(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
+  double scatterCoeff, fissionCoeff, keff, cellFlux;
+  PetscErrorCode ierr;
+  PetscScalar value;
+  PetscInt index;
+
+  indices = getIndices(iR,iZ);
+
+  // Scattering source term (implicit)
+  scatterCoeff = materials->oneGroupXS->sigS(iZ,iR);
+  value = -geoParams[iCF] * scatterCoeff; 
+  index = indices[iCF];
+  ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+  //Atemp.insert(iEq,indices[iCF]) = -geoParams[iCF] * scatterCoeff;
+
+  // Fission source term (explicit for power iteration)
+  fissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
+  keff = materials->oneGroupXS->keff;
+  cellFlux = GGQD->sFlux(iZ,iR);
+  value = geoParams[iCF]*(fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
+  ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  //(*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
+              ( fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
+
+  // DNP source term
+  GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF], &Atemp);
+
+  // populate entries representing streaming and reaction terms
+  //Atemp.coeffRef(iEq,indices[iCF]) += geoParams[iCF] * (sigT);
+  value = geoParams[iCF] * sigT;
+  index = indices[iCF];
+  ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+
+  steadyStateWestCurrent_p(-geoParams[iWF],iR,iZ,iEq);
+
+  steadyStateEastCurrent_p(geoParams[iEF],iR,iZ,iEq);
+
+  steadyStateNorthCurrent_p(-geoParams[iNF],iR,iZ,iEq);
+
+  steadyStateSouthCurrent_p(geoParams[iSF],iR,iZ,iEq);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Apply steady state radial boundary for cell (iR,iZ)
+///
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::applySteadyStateRadialBoundary_p(int iR,int iZ,int iEq)
+{
+  steadyStateEastCurrent_p(1,iR,iZ,iEq);
+  steadyStateWestCurrent_p(-1,iR+1,iZ,iEq);
+}
+//==============================================================================
+
+//==============================================================================
+/// Apply steady state axial boundary for cell (iR,iZ)
+///
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::applySteadyStateAxialBoundary_p(int iR,int iZ,int iEq)
+{
+  steadyStateNorthCurrent_p(1,iR,iZ+1,iEq);
+  steadyStateSouthCurrent_p(-1,iR,iZ,iEq);
+}
+//==============================================================================
 
 //==============================================================================
 /// Enforce coefficients for steady state current on south face
@@ -2925,6 +2936,365 @@ int GreyGroupSolver::steadyStateEastCurrent_p(double coeff,int iR,int iZ,int iEq
   //// Enforce zeta coefficient
   //Atemp.coeffRef(iEq,indices[iEF]) -= coeff*zetaL;
 
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert steady state boundary condition on the north face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateNBC_p(int iR,int iZ,int iEq)
+{
+  if (reflectingBCs)
+    assertSteadyStateNCurrentBC_p(iR,iZ,iEq);
+  else if (goldinBCs)
+    assertSteadyStateNGoldinBC_p(iR,iZ,iEq);
+  else if (diffusionBCs)
+    assertSteadyStateNGoldinP1BC_p(iR,iZ,iEq);
+  else
+    assertNFluxBC_p(iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert steady state boundary condition on the south face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateSBC_p(int iR,int iZ,int iEq)
+{
+  if (reflectingBCs)
+    assertSteadyStateSCurrentBC_p(iR,iZ,iEq);
+  else if (goldinBCs)
+    assertSteadyStateSGoldinBC_p(iR,iZ,iEq);
+  else if (diffusionBCs)
+    assertSteadyStateSGoldinP1BC_p(iR,iZ,iEq);
+  else
+    assertSFluxBC_p(iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert steady state boundary condition on the west face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateWBC_p(int iR,int iZ,int iEq)
+{
+  if (reflectingBCs or goldinBCs)
+    assertSteadyStateWCurrentBC_p(iR,iZ,iEq);
+  else
+    // Can't think of a circumstance where there wouldn't be a reflecting BC at
+    //   r = 0 
+    //assertWFluxBC(iR,iZ,iEq);
+    assertSteadyStateWCurrentBC_p(iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert steady state boundary condition on the east face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateEBC_p(int iR,int iZ,int iEq)
+{
+  if (reflectingBCs)
+    assertSteadyStateECurrentBC_p(iR,iZ,iEq);
+  else if (goldinBCs)
+    assertSteadyStateEGoldinBC_p(iR,iZ,iEq);
+  else if (diffusionBCs)
+    assertSteadyStateEGoldinP1BC_p(iR,iZ,iEq);
+  else
+    assertEFluxBC_p(iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the steady state current boundary condition on the north face at 
+/// location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateNCurrentBC_p(int iR,int iZ,int iEq)
+{
+  steadyStateNorthCurrent_p(1,iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the steady state current boundary condition on the south face at 
+/// location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateSCurrentBC_p(int iR,int iZ,int iEq)
+{
+  steadyStateSouthCurrent_p(1,iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the steady state current boundary condition on the west face at 
+/// location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateWCurrentBC_p(int iR,int iZ,int iEq)
+{
+  steadyStateWestCurrent_p(1,iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the steady state current boundary condition on the south face at 
+/// location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+void GreyGroupSolver::assertSteadyStateECurrentBC_p(int iR,int iZ,int iEq)
+{
+  steadyStateEastCurrent_p(1,iR,iZ,iEq);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's boundary condition on the north face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertSteadyStateNGoldinBC_p(int iR,int iZ,int iEq)
+{
+  PetscErrorCode ierr;
+  double value;
+
+  vector<int> indices = getIndices(iR,iZ);
+  double ratio = GGQD->nOutwardCurrToFluxRatioBC(iR);
+  double inFluxWeightRatio = GGQD->nOutwardCurrToFluxRatioInwardWeightedBC(iR);
+  double absCurrent = GGQD->nAbsCurrentBC(iR);
+  double inwardCurrent = GGQD->nInwardCurrentBC(iR);
+  double inwardFlux = GGQD->nInwardFluxBC(iR);
+
+  steadyStateNorthCurrent_p(1.0,iR,iZ,iEq);
+  value = -ratio; 
+  ierr = MatSetValue(A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
+  value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
+  ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+ 
+ // steadyStateNorthCurrent(1.0,iR,iZ,iEq);
+ // Atemp.coeffRef(iEq,indices[iNF]) -= ratio;
+ // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's boundary condition on the south face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertSteadyStateSGoldinBC_p(int iR,int iZ,int iEq)
+{
+  PetscErrorCode ierr;
+  double value;
+
+  vector<int> indices = getIndices(iR,iZ);
+  double ratio = GGQD->sOutwardCurrToFluxRatioBC(iR);
+  double inFluxWeightRatio = GGQD->sOutwardCurrToFluxRatioInwardWeightedBC(iR);
+  double absCurrent = GGQD->sAbsCurrentBC(iR);
+  double inwardCurrent = GGQD->sInwardCurrentBC(iR);
+  double inwardFlux = GGQD->sInwardFluxBC(iR);
+
+  steadyStateSouthCurrent_p(1.0,iR,iZ,iEq);
+  value = -ratio; 
+  ierr = MatSetValue(A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
+  value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
+  ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+ 
+ // steadyStateSouthCurrent(1.0,iR,iZ,iEq);
+ // Atemp.coeffRef(iEq,indices[iSF]) -= ratio;
+ // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's boundary condition on the east face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertSteadyStateEGoldinBC_p(int iR,int iZ,int iEq)
+{
+  PetscErrorCode ierr;
+  double value;
+
+  vector<int> indices = getIndices(iR,iZ);
+  double ratio = GGQD->eOutwardCurrToFluxRatioBC(iZ);
+  double inFluxWeightRatio = GGQD->eOutwardCurrToFluxRatioInwardWeightedBC(iZ);
+  double absCurrent = GGQD->eAbsCurrentBC(iZ);
+  double inwardCurrent = GGQD->eInwardCurrentBC(iZ);
+  double inwardFlux = GGQD->eInwardFluxBC(iZ);
+  
+  steadyStateEastCurrent_p(1.0,iR,iZ,iEq);
+  value = -ratio; 
+  ierr = MatSetValue(A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
+  value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
+  ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+ 
+ // steadyStateEastCurrent(1.0,iR,iZ,iEq);
+ // Atemp.coeffRef(iEq,indices[iEF]) -= ratio;
+ // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's P1 boundary condition on the north face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertSteadyStateNGoldinP1BC_p(int iR,int iZ,int iEq)
+{
+  PetscErrorCode ierr;
+  double value;
+  vector<int> indices = getIndices(iR,iZ);
+
+  steadyStateNorthCurrent_p(1.0,iR,iZ,iEq);
+  value = 1.0/sqrt(3.0); 
+  ierr = MatSetValue(A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
+  
+  //Atemp.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's P1 boundary condition on the south face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertSteadyStateSGoldinP1BC_p(int iR,int iZ,int iEq)
+{
+  PetscErrorCode ierr;
+  double value;
+  vector<int> indices = getIndices(iR,iZ);
+
+  steadyStateSouthCurrent_p(1.0,iR,iZ,iEq);
+  value = -1.0/sqrt(3.0); 
+  ierr = MatSetValue(A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
+  
+  //Atemp.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert Gol'din's P1 boundary condition on the east face at location (iR,iZ)
+/// for steady state solves
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertSteadyStateEGoldinP1BC_p(int iR,int iZ,int iEq)
+{
+  PetscErrorCode ierr;
+  double value;
+  vector<int> indices = getIndices(iR,iZ);
+
+  steadyStateEastCurrent_p(1.0,iR,iZ,iEq);
+  value = -1.0/sqrt(3.0); 
+  ierr = MatSetValue(A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
+  
+  //Atemp.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the flux boundary condition on the north face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertNFluxBC_p(int iR,int iZ,int iEq)
+{
+  PetscErrorCode ierr;
+  double value;
+  vector<int> indices = getIndices(iR,iZ);
+
+  value = 1.0;
+  ierr = MatSetValue(A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
+  value = GGQD->nFluxBC(iR);
+  ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  
+  //Atemp.insert(iEq,indices[iNF]) = 1.0;
+  //(*b)(iEq) = GGQD->nFluxBC(iR);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the flux boundary condition on the south face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertSFluxBC_p(int iR,int iZ,int iEq)
+{
+  PetscErrorCode ierr;
+  double value;
+  vector<int> indices = getIndices(iR,iZ);
+
+  value = 1.0;
+  ierr = MatSetValue(A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
+  value = GGQD->sFluxBC(iR);
+  ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+
+  //Atemp.insert(iEq,indices[iSF]) = 1.0;
+  //(*b)(iEq) = GGQD->sFluxBC(iR);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the flux boundary condition on the west face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertWFluxBC_p(int iR,int iZ,int iEq)
+{
+  PetscErrorCode ierr;
+  double value;
+  vector<int> indices = getIndices(iR,iZ);
+
+  value = 1.0;
+  ierr = MatSetValue(A_p,iEq,indices[iWF],value,ADD_VALUES);CHKERRQ(ierr); 
+  value = GGQD->wFluxBC(iZ);
+  ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  
+  //Atemp.insert(iEq,indices[iWF]) = 1.0;
+  //(*b)(iEq) = GGQD->wFluxBC(iZ);
+};
+//==============================================================================
+
+//==============================================================================
+/// Assert the flux boundary condition on the east face at location (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertEFluxBC_p(int iR,int iZ,int iEq)
+{
+  PetscErrorCode ierr;
+  double value;
+  vector<int> indices = getIndices(iR,iZ);
+
+  value = 1.0;
+  ierr = MatSetValue(A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
+  value = GGQD->eFluxBC(iZ);
+  ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+
+  //Atemp.insert(iEq,indices[iEF]) = 1.0;
+  //(*b)(iEq) = GGQD->eFluxBC(iZ);
 };
 //==============================================================================
 
