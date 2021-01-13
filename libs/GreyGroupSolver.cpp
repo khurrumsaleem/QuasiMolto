@@ -2597,6 +2597,71 @@ void GreyGroupSolver::assignPointers(Eigen::SparseMatrix<double,Eigen::RowMajor>
 /* STEADY STATE */
 
 //==============================================================================
+/// Form a portion of the linear system  
+void GreyGroupSolver::formSteadyStateLinearSystem_p()	      
+{
+
+  int iEq = GGQD->indexOffset;
+  //Atemp.resize(nUnknowns,A->cols());
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+
+      // apply zeroth moment equation
+      assertSteadyStateZerothMoment_p(iR,iZ,iEq);
+      iEq = iEq + 1;
+
+      // south face
+      if (iZ == mesh->dzsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSteadyStateSBC_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on south face
+        applySteadyStateAxialBoundary_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      }
+
+      // east face
+      if (iR == mesh->drsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSteadyStateEBC_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on north face
+        applySteadyStateRadialBoundary_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      }
+
+      // north face
+      if (iZ == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSteadyStateNBC_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSteadyStateWBC_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
+    }
+  }
+};
+//==============================================================================
+
+//==============================================================================
 /// Assert the steady state zeroth moment equation for cell (iR,iZ)
 ///
 /// @param [in] iR radial index of cell

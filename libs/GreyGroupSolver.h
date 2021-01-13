@@ -184,7 +184,7 @@ class GreyGroupSolver
 
     /* STEADY STATE FUNCTIONS */
 
-    // void formSteadyStateLinearSystem_p();
+    void formSteadyStateLinearSystem_p();
     // void formSteadyStateBackCalcSystem_p();
 
     // // functions to enforce governing equations
