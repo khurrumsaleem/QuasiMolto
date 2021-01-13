@@ -82,6 +82,21 @@ class SingleGroupDNP
     double calcPhi(double theta,string fluxLimiter); 
     double calcTheta(double DNPupwindInterface,double DNPinterface);
 
+    /* PETSc functions */   
+
+    // Steady state
+
+    int buildSteadyStateCoreLinearSystem_p();
+    int buildSteadyStateLinearSystem_p(\
+        Mat * myA_p,\
+        Vec * myb_p,\
+        Eigen::MatrixXd myDNPConc,\
+        Eigen::MatrixXd myDNPFlux,\
+        Eigen::MatrixXd myInletDNP,\
+        arma::rowvec dzs,\
+        int myIndexOffset,
+        bool fluxSource = true);
+
   private: 
     Materials * mats;
     Mesh * mesh;
