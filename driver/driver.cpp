@@ -604,6 +604,10 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   myMPQD->heat->buildSteadyStateLinearSystem_p();
   cout << "form heat transfer steady state linear system" << endl;
 
+  // Test build steady state precursor balance linear system call
+  myMPQD->mgdnp->buildSteadyStateCoreLinearSystem_p();
+  cout << "form mgdnp transfer steady state linear system" << endl;
+
   // Delete pointers
   delete myMGT;
   delete myMGQD;
