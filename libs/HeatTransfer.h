@@ -49,6 +49,14 @@ class HeatTransfer
   double calcPhi(double theta,string fluxLimiter);
   double calcTheta(double TupwindInterface,double Tinterface);
   void checkOptionalParams();
+
+  /* PETSc functions */
+
+  // Steady state functions
+
+  int buildSteadyStateLinearSystem_p();
+  
+  // Transient functions
   
   private:
   Materials * mats;
