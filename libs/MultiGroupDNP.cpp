@@ -224,7 +224,6 @@ void MultiGroupDNP::buildSteadyStateCoreLinearSystem()
 };
 //==============================================================================
 
-
 //==============================================================================
 /// Extract core DNP concentrations into 2D matrices in each group 
 ///
@@ -338,3 +337,21 @@ void MultiGroupDNP::solveRecircLinearSystem()
   recircx = solverLU.solve(recircb);
 };
 //==============================================================================
+
+/* PETSc functions */
+
+// Steady state
+
+//==============================================================================
+/// Build linear system for steady state DNPs in multiphysics coupled 
+/// quasidiffusion system
+///
+void MultiGroupDNP::buildSteadyStateCoreLinearSystem_p()
+{
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->buildSteadyStateCoreLinearSystem_p();
+  }
+};
+//==============================================================================
+

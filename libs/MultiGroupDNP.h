@@ -43,6 +43,11 @@ class MultiGroupDNP
     MultiPhysicsCoupledQD * mpqd;
     YAML::Node * input;
 
+    /* PETSc */
+
+    // Steady state
+    void buildSteadyStateCoreLinearSystem_p();
+
   private:
     Materials * mats;
     Mesh * mesh; 
