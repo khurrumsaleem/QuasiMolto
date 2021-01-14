@@ -139,6 +139,24 @@ void GreyGroupQD::buildSteadyStateLinearSystem()
 };
 //==============================================================================
 
+/* PETSc functions */
+
+// Steady state
+
+//==============================================================================
+/// Build linear system for steady state QD equations
+///
+void GreyGroupQD::buildSteadyStateLinearSystem_p()
+{
+
+  GGSolver->formSteadyStateLinearSystem_p(); // Assuming this is the first set of equations
+
+};
+//==============================================================================
+
+
+/* Auxiliary functions */
+
 //==============================================================================
 /// Print BC parameters 
 ///
