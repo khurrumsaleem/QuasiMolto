@@ -174,11 +174,6 @@ class GreyGroupSolver
     Vec currPast_p_seq;
 
     // Functions
-    void assignPETScPointers(Mat * myA,\
-        Vec * myx,\
-        Vec * myxPast,\
-        Vec * myxPast_seq,\
-        Vec * myb);
 
     void assignMPQDPointer(MultiPhysicsCoupledQD * myMPQD);
 
