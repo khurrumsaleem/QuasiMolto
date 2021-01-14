@@ -596,17 +596,26 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   //myMPQD->ggqd->GGSolver->assertWFluxBC_p(testInt,testInt,testInt);
   //cout << "west flux bc" << endl;
 
-  // Test build steady state QD linear system call
-  myMPQD->ggqd->GGSolver->formSteadyStateLinearSystem_p();
-  cout << "form ggqd steady state linear system" << endl;
+  //// Test build steady state QD linear system call
+  //myMPQD->ggqd->GGSolver->formSteadyStateLinearSystem_p();
+  //cout << "form ggqd steady state linear system" << endl;
 
-  // Test build steady state heat transfer linear system call
-  myMPQD->heat->buildSteadyStateLinearSystem_p();
-  cout << "form heat transfer steady state linear system" << endl;
+  //// Test build steady state heat transfer linear system call
+  //myMPQD->heat->buildSteadyStateLinearSystem_p();
+  //cout << "form heat transfer steady state linear system" << endl;
 
-  // Test build steady state precursor balance linear system call
-  myMPQD->mgdnp->buildSteadyStateCoreLinearSystem_p();
-  cout << "form mgdnp transfer steady state linear system" << endl;
+  //// Test build steady state precursor balance linear system call
+  //myMPQD->mgdnp->buildSteadyStateCoreLinearSystem_p();
+  //cout << "form mgdnp transfer steady state linear system" << endl;
+
+  // Build full ELOT system
+  myMPQD->buildSteadyStateLinearSystem_p();
+  ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  myMPQD->solve_p();
+ 
+  // Eigen system to compare to 
+ // myMPQD->buildSteadyStateLinearSystem();
+  //cout << myMPQD->b << endl;
 
   // Delete pointers
   delete myMGT;
