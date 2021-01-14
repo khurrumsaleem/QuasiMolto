@@ -63,6 +63,11 @@ class MultiPhysicsCoupledQD
     KSP ksp;
     PC pc;
 
+    // PETSc steady state functions
+    int buildSteadyStateLinearSystem_p();
+    int solve_p();
+
+
     // Pointers
     HeatTransfer * heat;
     MultiGroupDNP * mgdnp;

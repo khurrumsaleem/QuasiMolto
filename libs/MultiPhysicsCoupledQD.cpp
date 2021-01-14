@@ -56,7 +56,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   initPETScVec(&xPast_p_seq,nUnknowns);
 
   // Assign pointers in ggqd object
-  ggqd->GGSolver->assignPETScPointers(&A_p,&x_p,&xPast_p,&xPast_p_seq,&b_p);
+  ggqd->GGSolver->assignMPQDPointer(this);
   ggqd->GGSolver->assignPointers(&A,&x,&xPast,&b);
 
   // Initialize xPast 
@@ -542,6 +542,94 @@ void MultiPhysicsCoupledQD::solveTransient()
     solveLinearSystem();   
     updateVarsAfterConvergence();
   }
+};
+//==============================================================================
+
+/* PETSc functions */
+
+// Steady state
+
+//==============================================================================
+/// Build linear system for multiphysics coupled quasidiffusion system
+///
+int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
+{
+
+  PetscErrorCode ierr;
+
+  // Reset linear system
+  initPETScMat(&A_p,nUnknowns,4*nUnknowns);
+  //initPETScVec(&x_p,nUnknowns);
+  initPETScVec(&b_p,nUnknowns);
+
+  // Build QD system
+  ggqd->buildSteadyStateLinearSystem_p();
+  cout << "GGQD" << endl;
+  ierr = VecView(b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+
+  // Build heat transfer system
+  heat->buildSteadyStateLinearSystem_p();
+  cout << "heat" << endl;
+  ierr = VecView(b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+
+  // Build delayed neutron precursor balance system in core
+  mgdnp->buildSteadyStateCoreLinearSystem_p();  
+  cout << "mgdnp" << endl;
+  ierr = VecView(b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+
+  // Build delayed neutron precursor balance system in recirculation loop
+  //mgdnp->buildSteadyStateRecircLinearSystem_p();  
+
+  /* Finalize assembly for A_p and b_p */
+  ierr = MatAssemblyBegin(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
+  ierr = VecAssemblyBegin(b_p);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Solve linear system for multiphysics coupled quasidiffusion system with a 
+/// direct solve
+///
+int MultiPhysicsCoupledQD::solve_p()
+{
+
+  string PetscSolver = "bicg";
+  string PetscPreconditioner = "bjacobi";
+  PetscErrorCode ierr;
+  int its,m,n;
+  double norm;
+
+  auto begin = chrono::high_resolution_clock::now();
+  /* Get matrix dimensions */
+  ierr = MatGetSize(A_p, &m, &n); CHKERRQ(ierr);
+
+  /* Create solver */
+  ierr = KSPCreate(PETSC_COMM_WORLD,&ksp);CHKERRQ(ierr);
+  ierr = KSPSetOperators(ksp,A_p,A_p);CHKERRQ(ierr);
+  ierr = KSPSetTolerances(ksp,1.e-9/((m+1)*(n+1)),1.e-50,PETSC_DEFAULT,PETSC_DEFAULT);
+  CHKERRQ(ierr);
+
+  /* Set solver type */
+  ierr = KSPSetType(ksp,PetscSolver.c_str());CHKERRQ(ierr);
+  
+  /* Set preconditioner type */
+  ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
+  ierr = PCSetType(pc,PetscPreconditioner.c_str());CHKERRQ(ierr);
+
+  /* Solve the system */
+  ierr = KSPSolve(ksp,b_p,x_p);CHKERRQ(ierr);
+  auto end = chrono::high_resolution_clock::now();
+  auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+  //ierr = VecView(x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  cout << "solve time: " << elapsed.count()*1e-9 << endl;
+
+  /* Print solve information */
+  ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
+  
 };
 //==============================================================================
 
