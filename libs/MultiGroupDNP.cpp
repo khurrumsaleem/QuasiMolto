@@ -167,6 +167,14 @@ void MultiGroupDNP::readInput()
 
     }
   } 
+
+  /* PETSc variables */
+
+  // Set sizes of matrices in recirculation solve
+  initPETScMat(&recircA_p,nRecircUnknowns,4*nRecircUnknowns);
+  initPETScVec(&recircx_p,nRecircUnknowns);
+  initPETScVec(&recircb_p,nRecircUnknowns);
+
 };
 //==============================================================================
 
@@ -352,6 +360,71 @@ void MultiGroupDNP::buildSteadyStateCoreLinearSystem_p()
   {
     DNPs[iGroup]->buildSteadyStateCoreLinearSystem_p();
   }
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system for steady state DNPs in multiphysics coupled 
+/// quasidiffusion system
+///
+int MultiGroupDNP::buildSteadyStateRecircLinearSystem_p()
+{
+  PetscErrorCode ierr;
+ 
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->buildSteadyStateRecircLinearSystem_p();
+  }
+
+  /* Finalize assembly for A_p and b_p */
+  ierr = MatAssemblyBegin(recircA_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(recircA_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
+  ierr = VecAssemblyBegin(recircb_p);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(recircb_p);CHKERRQ(ierr);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Solve linear system for recirculation loop DNP concentrations
+///
+int MultiGroupDNP::solveRecircLinearSystem_p()
+{
+
+  string PetscSolver = "bicg";
+  string PetscPreconditioner = "bjacobi";
+  PetscErrorCode ierr;
+  int its,m,n;
+  double norm;
+
+  auto begin = chrono::high_resolution_clock::now();
+  /* Get matrix dimensions */
+  ierr = MatGetSize(recircA_p, &m, &n); CHKERRQ(ierr);
+
+  /* Create solver */
+  ierr = KSPCreate(PETSC_COMM_WORLD,&ksp);CHKERRQ(ierr);
+  ierr = KSPSetOperators(ksp,recircA_p,recircA_p);CHKERRQ(ierr);
+  ierr = KSPSetTolerances(ksp,1.e-9/((m+1)*(n+1)),1.e-50,PETSC_DEFAULT,PETSC_DEFAULT);
+  CHKERRQ(ierr);
+
+  /* Set solver type */
+  ierr = KSPSetType(ksp,PetscSolver.c_str());CHKERRQ(ierr);
+  
+  /* Set preconditioner type */
+  ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
+  ierr = PCSetType(pc,PetscPreconditioner.c_str());CHKERRQ(ierr);
+
+  /* Solve the system */
+  ierr = KSPSolve(ksp,recircb_p,recircx_p);CHKERRQ(ierr);
+  auto end = chrono::high_resolution_clock::now();
+  auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+  //ierr = VecView(x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  cout << "solve time: " << elapsed.count()*1e-9 << endl;
+
+  /* Print solve information */
+  ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
+  
 };
 //==============================================================================
 

@@ -75,9 +75,9 @@ class SingleGroupDNP
         Eigen::MatrixXd inletConc,\
         Eigen::VectorXd inletVelocity,\
         arma::rowvec dzs);
-    void getCoreConc();
+    int getCoreConc();
     void setCoreConc();
-    void getRecircConc();
+    int getRecircConc();
     void setRecircConc();
     double calcPhi(double theta,string fluxLimiter); 
     double calcTheta(double DNPupwindInterface,double DNPinterface);
@@ -87,6 +87,7 @@ class SingleGroupDNP
     // Steady state
 
     int buildSteadyStateCoreLinearSystem_p();
+    int buildSteadyStateRecircLinearSystem_p();
     int buildSteadyStateLinearSystem_p(\
         Mat * myA_p,\
         Vec * myb_p,\

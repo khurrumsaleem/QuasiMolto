@@ -545,16 +545,54 @@ int SingleGroupDNP::getIndex(int iZ, int iR,int indexOffset)
 //==============================================================================
 /// Map solution in 1D vector to 2D solution
 ///
-void SingleGroupDNP::getCoreConc()
+int SingleGroupDNP::getCoreConc()
 {
+  PetscErrorCode ierr;
+  PetscScalar value[1]; 
+  PetscInt index[1]; 
+  VecScatter     ctx;
+  Vec temp_x_p_seq;
 
-  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
-    { 
 
-      dnpConc(iZ,iR) = mgdnp->mpqd->x(getIndex(iZ,iR,coreIndexOffset));   
+    // Initialize temporary vector
+    initPETScVec(&temp_x_p_seq,mgdnp->mpqd->nUnknowns);
 
+    // Gather values of x_p on all procs
+    VecScatterCreateToAll(mgdnp->mpqd->x_p,&ctx,&temp_x_p_seq);
+    VecScatterBegin(ctx,mgdnp->mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,mgdnp->mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      {
+
+        // Read fluxes into flux vector
+        index[0] = getIndex(iZ,iR,coreIndexOffset);
+        ierr = VecGetValues(temp_x_p_seq,1,index,value);
+        dnpConc(iZ,iR) = value[0];
+
+      }
+    } 
+        
+    /* Destroy scatter context */
+    VecScatterDestroy(&ctx);
+    VecDestroy(&temp_x_p_seq);
+
+  }
+  else
+  {
+    for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
+      { 
+
+        dnpConc(iZ,iR) = mgdnp->mpqd->x(getIndex(iZ,iR,coreIndexOffset));   
+
+      }
     }
   }
 
@@ -583,16 +621,55 @@ void SingleGroupDNP::setCoreConc()
 //==============================================================================
 /// Map solution in 1D vector to 2D solution
 ///
-void SingleGroupDNP::getRecircConc()
+int SingleGroupDNP::getRecircConc()
 {
 
-  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  PetscErrorCode ierr;
+  PetscScalar value[1]; 
+  PetscInt index[1]; 
+  VecScatter     ctx;
+  Vec temp_x_p_seq;
+
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
-    { 
 
-      recircConc(iZ,iR) = mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset));   
+    // Initialize temporary vector
+    initPETScVec(&temp_x_p_seq,mgdnp->mpqd->nUnknowns);
 
+    // Gather values of x_p on all procs
+    VecScatterCreateToAll(mgdnp->recircx_p,&ctx,&temp_x_p_seq);
+    VecScatterBegin(ctx,mgdnp->recircx_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,mgdnp->recircx_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->nZrecirc; iZ++)
+      {
+
+        // Read fluxes into flux vector
+        index[0] = getIndex(iZ,iR,recircIndexOffset);
+        ierr = VecGetValues(temp_x_p_seq,1,index,value);
+        recircConc(iZ,iR) = value[0];
+
+      }
+    } 
+        
+    /* Destroy scatter context */
+    VecScatterDestroy(&ctx);
+    VecDestroy(&temp_x_p_seq);
+
+  }
+  else
+  {
+    for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
+      { 
+
+        recircConc(iZ,iR) = mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset));   
+
+      }
     }
   }
 
@@ -876,9 +953,9 @@ void SingleGroupDNP::assignBoundaryIndices()
 ///
 Eigen::MatrixXd SingleGroupDNP::getInitialConc(double initConc)
 {
- 
+
   Eigen::MatrixXd conc; 
- 
+
   conc.setZero(mesh->nZ,mesh->nR);    
 
   // Check if a material is stationary. If so, assume it has no initial 
@@ -956,6 +1033,34 @@ int SingleGroupDNP::buildSteadyStateCoreLinearSystem_p()
 //==============================================================================
 
 //==============================================================================
+/// Build linear system governing steady state recirulation DNP concentrations
+///
+int SingleGroupDNP::buildSteadyStateRecircLinearSystem_p()
+{
+
+  Eigen::MatrixXd recircFlux,dumbySigF;
+
+  updateBoundaryConditions();
+
+  recircFlux = calcImplicitFluxes(recircConc,\
+      mats->recircFlowVelocity,\
+      recircInletConc,\
+      recircInletVelocity,\
+      mesh->dzsCornerRecirc);
+
+  buildSteadyStateLinearSystem_p(&(mgdnp->recircA_p),\
+      &(mgdnp->recircb_p),\
+      recircConc,\
+      recircFlux,\
+      recircInletConc,\
+      mesh->dzsCornerRecirc,\
+      recircIndexOffset,\
+      false);
+
+};
+//==============================================================================
+
+//==============================================================================
 /// Build linear system for this precursor group. Utilized for building the core
 ///   and recirculation linear system. 
 ///
@@ -993,7 +1098,7 @@ int SingleGroupDNP::buildSteadyStateLinearSystem_p(\
 
   if (mats->posVelocity) 
   {
-////    #pragma omp parallel for private(myIndex,iEq,iEqTemp)
+    ////    #pragma omp parallel for private(myIndex,iEq,iEqTemp)
     for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
     {
       for (int iR = 0; iR < myDNPConc.cols(); iR++)
@@ -1043,7 +1148,7 @@ int SingleGroupDNP::buildSteadyStateLinearSystem_p(\
   }
   else
   {
-//#pragma omp parallel for private(myIndex,iEq,iEqTemp)
+    //#pragma omp parallel for private(myIndex,iEq,iEqTemp)
     for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
     {
       for (int iR = 0; iR < myDNPConc.cols(); iR++)
@@ -1068,7 +1173,7 @@ int SingleGroupDNP::buildSteadyStateLinearSystem_p(\
         }
 
         // Advection terms
-    
+
         // Upwind cell
         if (iZ == myDNPConc.rows()) // boundary case
         {
@@ -1082,7 +1187,7 @@ int SingleGroupDNP::buildSteadyStateLinearSystem_p(\
           ierr = MatSetValue(*A_p,iEq,upwindIndex,value,ADD_VALUES);CHKERRQ(ierr); 
           //testMat(iEqTemp,upwindIndex) = myDNPFlux(iZ+1,iR)/dzs(iZ);
         }
-    
+
         // Primary cell
         value = -myDNPFlux(iZ,iR)/dzs(iZ);
         ierr = MatSetValue(*A_p,iEq,myIndex,value,ADD_VALUES);CHKERRQ(ierr); 
