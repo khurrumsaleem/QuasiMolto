@@ -2350,9 +2350,9 @@ int GreyGroupSolver::getFlux()
     initPETScVec(&temp_x_p_seq,nUnknowns);
 
     // Gather values of x_p on all procs
-    VecScatterCreateToAll(x_p,&ctx,&temp_x_p_seq);
-    VecScatterBegin(ctx,x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterCreateToAll(MPQD->x_p,&ctx,&temp_x_p_seq);
+    VecScatterBegin(ctx,MPQD->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,MPQD->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
 
     // loop over spatial mesh
     for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
@@ -2477,18 +2477,18 @@ int GreyGroupSolver::setFlux()
         index[3] = indices[iNF]; 
         index[4] = indices[iSF]; 
     
-        ierr = VecSetValues(xPast_p,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
+        ierr = VecSetValues(MPQD->xPast_p,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
       }
     }  
 
     // Finalize assembly of xPast_p
-    VecAssemblyBegin(xPast_p);
-    VecAssemblyEnd(xPast_p);
+    VecAssemblyBegin(MPQD->xPast_p);
+    VecAssemblyEnd(MPQD->xPast_p);
 
     // Form xPast_p_seq
-    VecScatterCreateToAll(xPast_p,&ctx,&xPast_p_seq);
-    VecScatterBegin(ctx,xPast_p,xPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,xPast_p,xPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterCreateToAll(MPQD->xPast_p,&ctx,&(MPQD->xPast_p_seq));
+    VecScatterBegin(ctx,MPQD->xPast_p,MPQD->xPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,MPQD->xPast_p,MPQD->xPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
 
     /* Destroy scatter context */
     VecScatterDestroy(&ctx);
@@ -3293,7 +3293,6 @@ int GreyGroupSolver::assertNFluxBC_p(int iR,int iZ,int iEq)
   value = 1.0;
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = GGQD->nFluxBC(iR);
-  cout << "north boundary value: " << value << endl;
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
   
   //Atemp.insert(iEq,indices[iNF]) = 1.0;
