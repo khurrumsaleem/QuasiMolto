@@ -564,21 +564,15 @@ int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
 
   // Build QD system
   ggqd->buildSteadyStateLinearSystem_p();
-  cout << "GGQD" << endl;
-  ierr = VecView(b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
 
   // Build heat transfer system
   heat->buildSteadyStateLinearSystem_p();
-  cout << "heat" << endl;
-  ierr = VecView(b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
 
   // Build delayed neutron precursor balance system in core
   mgdnp->buildSteadyStateCoreLinearSystem_p();  
-  cout << "mgdnp" << endl;
-  ierr = VecView(b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
 
   // Build delayed neutron precursor balance system in recirculation loop
-  //mgdnp->buildSteadyStateRecircLinearSystem_p();  
+  mgdnp->buildSteadyStateRecircLinearSystem_p();  
 
   /* Finalize assembly for A_p and b_p */
   ierr = MatAssemblyBegin(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -629,6 +623,9 @@ int MultiPhysicsCoupledQD::solve_p()
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
+  
+  /* Solve for recirculation concentrations */
+  mgdnp->solveRecircLinearSystem_p();
   
 };
 //==============================================================================
