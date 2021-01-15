@@ -900,19 +900,56 @@ void HeatTransfer::getTemp()
 Eigen::MatrixXd HeatTransfer::returnCurrentTemp()
 {
   Eigen::MatrixXd currentTemp; 
+  PetscErrorCode ierr;
+  PetscScalar value[1]; 
+  PetscInt index[1]; 
+  VecScatter     ctx;
+  Vec temp_x_p_seq;
 
   currentTemp.setZero(mesh->nZ,mesh->nR);
 
-  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
-    { 
 
-      currentTemp(iZ,iR) = mpqd->x(getIndex(iZ,iR));   
+    // Initialize temporary vector
+    initPETScVec(&temp_x_p_seq,nUnknowns);
 
+    // Gather values of x_p on all procs
+    VecScatterCreateToAll(mpqd->x_p,&ctx,&temp_x_p_seq);
+    VecScatterBegin(ctx,mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      {
+
+        // Read fluxes into flux vector
+        index[0] = getIndex(iZ,iR);
+        ierr = VecGetValues(temp_x_p_seq,1,index,value);
+        currentTemp(iZ,iR) = value[0];   
+
+      }
+    } 
+        
+    /* Destroy scatter context */
+    VecScatterDestroy(&ctx);
+    VecDestroy(&temp_x_p_seq);
+
+  }
+  else
+  {
+    for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
+      { 
+
+        currentTemp(iZ,iR) = mpqd->x(getIndex(iZ,iR));   
+
+      }
     }
   }
-
 
   return currentTemp; 
 };
@@ -946,7 +983,7 @@ void HeatTransfer::setTemp()
 ///
 int HeatTransfer::buildSteadyStateLinearSystem_p()
 {
-  
+
   int myIndex,sIndex,nIndex,wIndex,eIndex,upwindIndex,iEq = indexOffset;
   int iEqTemp = 0;
   int nR = temp.cols()-1;
@@ -967,174 +1004,174 @@ int HeatTransfer::buildSteadyStateLinearSystem_p()
     volAvgGammaDep = calcExplicitAxialFuelFissionEnergy();
   else
     volAvgGammaDep = calcExplicitFissionEnergy();
-  
+
   Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> Atemp;
   Atemp.resize(nUnknowns,mpqd->A.cols());
   Atemp.setZero();
-  
+
   //#pragma omp parallel for private(myIndex,sIndex,nIndex,wIndex,eIndex,\
-    upwindIndex,gParams,cCoeff,coeff,keff,neutronFlux,harmonicAvg,iEq,iEqTemp)
-  for (int iZ = 0; iZ < temp.rows(); iZ++)
-  {
-
-    for (int iR = 0; iR < temp.cols(); iR++)
+  upwindIndex,gParams,cCoeff,coeff,keff,neutronFlux,harmonicAvg,iEq,iEqTemp)
+    for (int iZ = 0; iZ < temp.rows(); iZ++)
     {
-      
-      iEq = getIndex(iZ,iR);
-      iEqTemp = iEq - indexOffset;
 
-      // Reset center coefficient
-      cCoeff = 0;
-
-      // Get cell indices
-      myIndex = getIndex(iZ,iR);     
-      sIndex = getIndex(iZ+1,iR);     
-      nIndex = getIndex(iZ-1,iR);     
-      wIndex = getIndex(iZ,iR-1);     
-      eIndex = getIndex(iZ,iR+1);     
-
-      gParams = mesh->getGeoParams(iR,iZ);
-      
-      // East face
-      if (iR == nR)
+      for (int iR = 0; iR < temp.cols(); iR++)
       {
-        coeff = (-gParams[iEF]*mats->k(iZ,iR)\
-        /mesh->drsCorner(iR))/gParams[iVol];
-        cCoeff -= coeff;
-        value = -coeff*wallT;
-        ierr = VecSetValue(mpqd->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-        //mpqd->b(iEq) -= coeff*wallT; 
-      } else
-      {
-        harmonicAvg = pow(mesh->drsCorner(iR)/mats->k(iZ,iR)\
-          + mesh->drsCorner(iR+1)/mats->k(iZ,iR+1),-1.0);
-        coeff = -2.0*gParams[iEF]*harmonicAvg/gParams[iVol];
-        //Atemp(iEqTemp,eIndex) = coeff;
-        ierr = MatSetValue(mpqd->A_p,iEq,eIndex,coeff,ADD_VALUES);CHKERRQ(ierr); 
-        cCoeff -= coeff;
-      }
 
-      // West face
-      if (iR != 0)
-      {
-        harmonicAvg = pow(mesh->drsCorner(iR-1)/mats->k(iZ,iR-1)\
-          + mesh->drsCorner(iR)/mats->k(iZ,iR),-1.0);
-        coeff = 2.0*gParams[iWF]*harmonicAvg/gParams[iVol];
-        ierr = MatSetValue(mpqd->A_p,iEq,wIndex,-coeff,ADD_VALUES);CHKERRQ(ierr); 
-        //Atemp(iEqTemp,wIndex) = -coeff;
-        cCoeff += coeff;
-      } 
+        iEq = getIndex(iZ,iR);
+        iEqTemp = iEq - indexOffset;
 
-      // North face
-      if (iZ == 0 and mats->posVelocity)
-      {
-        coeff = (gParams[iNF]*mats->k(iZ,iR)\
-        /mesh->dzsCorner(iZ))/gParams[iVol];
-        cCoeff += coeff;
-        value = coeff*inletTemp(1,iR);
-        ierr = VecSetValue(mpqd->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-        //mpqd->b(iEq) += coeff*inletTemp(1,iR);             
-      } else if (iZ != 0)
-      {
-        harmonicAvg = pow(mesh->dzsCorner(iZ-1)/mats->k(iZ-1,iR)\
-          + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
-        coeff = 2.0*gParams[iNF]*harmonicAvg/gParams[iVol];
-        ierr = MatSetValue(mpqd->A_p,iEq,nIndex,-coeff,ADD_VALUES);CHKERRQ(ierr); 
-        //Atemp(iEqTemp,nIndex) = -coeff;
-        cCoeff += coeff;
-      }
+        // Reset center coefficient
+        cCoeff = 0;
 
-      // South face
-      if (iZ == nZ and !(mats->posVelocity))
-      {
-        coeff = -(gParams[iSF]*mats->k(iZ,iR)\
-        /mesh->dzsCorner(iZ))/gParams[iVol];
-        cCoeff -= coeff;
-        value = coeff*inletTemp(0,iR);
-        ierr = VecSetValue(mpqd->b_p,iEq,-value,ADD_VALUES);CHKERRQ(ierr); 
-        //mpqd->b(iEq) -= coeff*inletTemp(0,iR);             
-      } else if (iZ != nZ)
-      {
-        harmonicAvg = pow(mesh->dzsCorner(iZ+1)/mats->k(iZ+1,iR)\
-          + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
-        coeff = -2.0*gParams[iSF]*harmonicAvg/gParams[iVol];
-        ierr = MatSetValue(mpqd->A_p,iEq,sIndex,coeff,ADD_VALUES);CHKERRQ(ierr); 
-        //Atemp(iEqTemp,sIndex) = coeff;
-        cCoeff -= coeff;
-      }
+        // Get cell indices
+        myIndex = getIndex(iZ,iR);     
+        sIndex = getIndex(iZ+1,iR);     
+        nIndex = getIndex(iZ-1,iR);     
+        wIndex = getIndex(iZ,iR-1);     
+        eIndex = getIndex(iZ,iR+1);     
 
-      // Insert cell center coefficient
-      //Atemp.insert(iEqTemp,myIndex) = cCoeff;
-      //Atemp(iEqTemp,myIndex) = cCoeff;
-      ierr = MatSetValue(mpqd->A_p,iEq,myIndex,cCoeff,ADD_VALUES);CHKERRQ(ierr); 
+        gParams = mesh->getGeoParams(iR,iZ);
 
-      // Flux source term 
-      coeff = mats->omega(iZ,iR)*mats->oneGroupXS->sigF(iZ,iR);
-      keff = mats->oneGroupXS->keff; 
-      neutronFlux = mpqd->ggqd->sFlux(iZ,iR);
-       
-      //mpqd->b(iEq) += coeff*neutronFlux/keff; 
-      value = coeff*neutronFlux;
-      ierr = VecSetValue(mpqd->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-      //mpqd->b(iEq) += coeff*neutronFlux; 
-      
-      // Gamma source term 
-      value = mats->gamma(iZ,iR) * volAvgGammaDep(iZ,iR);
-      ierr = VecSetValue(mpqd->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-      //mpqd->b(iEq) += mats->gamma(iZ,iR) * volAvgGammaDep(iZ,iR);
-
-      if (mats->posVelocity) 
-      {
-        upwindIndex = getIndex(iZ-1,iR);     
-
-        // Advection terms
-
-        // Upwind cell
-        if (iZ == 0) // boundary case
+        // East face
+        if (iR == nR)
         {
-          value = flux(iZ,iR)*inletTemp(1,iR)/mesh->dzsCorner(iZ);
+          coeff = (-gParams[iEF]*mats->k(iZ,iR)\
+              /mesh->drsCorner(iR))/gParams[iVol];
+          cCoeff -= coeff;
+          value = -coeff*wallT;
           ierr = VecSetValue(mpqd->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-          //mpqd->b(iEq) += flux(iZ,iR)*inletTemp(1,iR)/mesh->dzsCorner(iZ);
-        }
-        else
+          //mpqd->b(iEq) -= coeff*wallT; 
+        } else
         {
-          value = -flux(iZ,iR)/mesh->dzsCorner(iZ);
-          ierr = MatSetValue(mpqd->A_p,iEq,upwindIndex,value,ADD_VALUES);CHKERRQ(ierr); 
-          //Atemp.coeffRef(iEqTemp,upwindIndex) += -flux(iZ,iR)/mesh->dzsCorner(iZ);
+          harmonicAvg = pow(mesh->drsCorner(iR)/mats->k(iZ,iR)\
+              + mesh->drsCorner(iR+1)/mats->k(iZ,iR+1),-1.0);
+          coeff = -2.0*gParams[iEF]*harmonicAvg/gParams[iVol];
+          //Atemp(iEqTemp,eIndex) = coeff;
+          ierr = MatSetValue(mpqd->A_p,iEq,eIndex,coeff,ADD_VALUES);CHKERRQ(ierr); 
+          cCoeff -= coeff;
         }
 
-        // Primary cell
-        value = flux(iZ+1,iR)/mesh->dzsCorner(iZ);
-        ierr = MatSetValue(mpqd->A_p,iEq,myIndex,value,ADD_VALUES);CHKERRQ(ierr); 
-        //Atemp.coeffRef(iEqTemp,myIndex) += flux(iZ+1,iR)/mesh->dzsCorner(iZ);
-      }
-      else
-      {
-        upwindIndex = getIndex(iZ+1,iR);     
-
-        // Advection terms
-
-        // Upwind cell
-        if (iZ == temp.rows()) // boundary case
+        // West face
+        if (iR != 0)
         {
-          value = flux(iZ+1,iR)*inletTemp(0,iR)/mesh->dzsCorner(iZ);
+          harmonicAvg = pow(mesh->drsCorner(iR-1)/mats->k(iZ,iR-1)\
+              + mesh->drsCorner(iR)/mats->k(iZ,iR),-1.0);
+          coeff = 2.0*gParams[iWF]*harmonicAvg/gParams[iVol];
+          ierr = MatSetValue(mpqd->A_p,iEq,wIndex,-coeff,ADD_VALUES);CHKERRQ(ierr); 
+          //Atemp(iEqTemp,wIndex) = -coeff;
+          cCoeff += coeff;
+        } 
+
+        // North face
+        if (iZ == 0 and mats->posVelocity)
+        {
+          coeff = (gParams[iNF]*mats->k(iZ,iR)\
+              /mesh->dzsCorner(iZ))/gParams[iVol];
+          cCoeff += coeff;
+          value = coeff*inletTemp(1,iR);
+          ierr = VecSetValue(mpqd->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+          //mpqd->b(iEq) += coeff*inletTemp(1,iR);             
+        } else if (iZ != 0)
+        {
+          harmonicAvg = pow(mesh->dzsCorner(iZ-1)/mats->k(iZ-1,iR)\
+              + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
+          coeff = 2.0*gParams[iNF]*harmonicAvg/gParams[iVol];
+          ierr = MatSetValue(mpqd->A_p,iEq,nIndex,-coeff,ADD_VALUES);CHKERRQ(ierr); 
+          //Atemp(iEqTemp,nIndex) = -coeff;
+          cCoeff += coeff;
+        }
+
+        // South face
+        if (iZ == nZ and !(mats->posVelocity))
+        {
+          coeff = -(gParams[iSF]*mats->k(iZ,iR)\
+              /mesh->dzsCorner(iZ))/gParams[iVol];
+          cCoeff -= coeff;
+          value = coeff*inletTemp(0,iR);
           ierr = VecSetValue(mpqd->b_p,iEq,-value,ADD_VALUES);CHKERRQ(ierr); 
-          //mpqd->b(iEq) -= flux(iZ+1,iR)*inletTemp(0,iR)/mesh->dzsCorner(iZ);
+          //mpqd->b(iEq) -= coeff*inletTemp(0,iR);             
+        } else if (iZ != nZ)
+        {
+          harmonicAvg = pow(mesh->dzsCorner(iZ+1)/mats->k(iZ+1,iR)\
+              + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
+          coeff = -2.0*gParams[iSF]*harmonicAvg/gParams[iVol];
+          ierr = MatSetValue(mpqd->A_p,iEq,sIndex,coeff,ADD_VALUES);CHKERRQ(ierr); 
+          //Atemp(iEqTemp,sIndex) = coeff;
+          cCoeff -= coeff;
+        }
+
+        // Insert cell center coefficient
+        //Atemp.insert(iEqTemp,myIndex) = cCoeff;
+        //Atemp(iEqTemp,myIndex) = cCoeff;
+        ierr = MatSetValue(mpqd->A_p,iEq,myIndex,cCoeff,ADD_VALUES);CHKERRQ(ierr); 
+
+        // Flux source term 
+        coeff = mats->omega(iZ,iR)*mats->oneGroupXS->sigF(iZ,iR);
+        keff = mats->oneGroupXS->keff; 
+        neutronFlux = mpqd->ggqd->sFlux(iZ,iR);
+
+        //mpqd->b(iEq) += coeff*neutronFlux/keff; 
+        value = coeff*neutronFlux;
+        ierr = VecSetValue(mpqd->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+        //mpqd->b(iEq) += coeff*neutronFlux; 
+
+        // Gamma source term 
+        value = mats->gamma(iZ,iR) * volAvgGammaDep(iZ,iR);
+        ierr = VecSetValue(mpqd->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+        //mpqd->b(iEq) += mats->gamma(iZ,iR) * volAvgGammaDep(iZ,iR);
+
+        if (mats->posVelocity) 
+        {
+          upwindIndex = getIndex(iZ-1,iR);     
+
+          // Advection terms
+
+          // Upwind cell
+          if (iZ == 0) // boundary case
+          {
+            value = flux(iZ,iR)*inletTemp(1,iR)/mesh->dzsCorner(iZ);
+            ierr = VecSetValue(mpqd->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+            //mpqd->b(iEq) += flux(iZ,iR)*inletTemp(1,iR)/mesh->dzsCorner(iZ);
+          }
+          else
+          {
+            value = -flux(iZ,iR)/mesh->dzsCorner(iZ);
+            ierr = MatSetValue(mpqd->A_p,iEq,upwindIndex,value,ADD_VALUES);CHKERRQ(ierr); 
+            //Atemp.coeffRef(iEqTemp,upwindIndex) += -flux(iZ,iR)/mesh->dzsCorner(iZ);
+          }
+
+          // Primary cell
+          value = flux(iZ+1,iR)/mesh->dzsCorner(iZ);
+          ierr = MatSetValue(mpqd->A_p,iEq,myIndex,value,ADD_VALUES);CHKERRQ(ierr); 
+          //Atemp.coeffRef(iEqTemp,myIndex) += flux(iZ+1,iR)/mesh->dzsCorner(iZ);
         }
         else
         {
-          value = flux(iZ+1,iR)/mesh->dzsCorner(iZ);
-          ierr = MatSetValue(mpqd->A_p,iEq,upwindIndex,value,ADD_VALUES);CHKERRQ(ierr); 
-          //Atemp.coeffRef(iEqTemp,upwindIndex) = flux(iZ+1,iR)/mesh->dzsCorner(iZ);
-        }
+          upwindIndex = getIndex(iZ+1,iR);     
 
-        // Primary cell
-        value = flux(iZ,iR)/mesh->dzsCorner(iZ);
-        ierr = MatSetValue(mpqd->A_p,iEq,myIndex,-value,ADD_VALUES);CHKERRQ(ierr); 
-        //Atemp.coeffRef(iEqTemp,myIndex) -= flux(iZ,iR)/mesh->dzsCorner(iZ);
+          // Advection terms
+
+          // Upwind cell
+          if (iZ == temp.rows()) // boundary case
+          {
+            value = flux(iZ+1,iR)*inletTemp(0,iR)/mesh->dzsCorner(iZ);
+            ierr = VecSetValue(mpqd->b_p,iEq,-value,ADD_VALUES);CHKERRQ(ierr); 
+            //mpqd->b(iEq) -= flux(iZ+1,iR)*inletTemp(0,iR)/mesh->dzsCorner(iZ);
+          }
+          else
+          {
+            value = flux(iZ+1,iR)/mesh->dzsCorner(iZ);
+            ierr = MatSetValue(mpqd->A_p,iEq,upwindIndex,value,ADD_VALUES);CHKERRQ(ierr); 
+            //Atemp.coeffRef(iEqTemp,upwindIndex) = flux(iZ+1,iR)/mesh->dzsCorner(iZ);
+          }
+
+          // Primary cell
+          value = flux(iZ,iR)/mesh->dzsCorner(iZ);
+          ierr = MatSetValue(mpqd->A_p,iEq,myIndex,-value,ADD_VALUES);CHKERRQ(ierr); 
+          //Atemp.coeffRef(iEqTemp,myIndex) -= flux(iZ,iR)/mesh->dzsCorner(iZ);
+        }
       }
     }
-  }
 
   //mpqd->A.middleRows(indexOffset,nUnknowns) = Atemp.sparseView(); 
 
