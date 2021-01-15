@@ -610,12 +610,15 @@ int testELOTPETScCoupling(Materials * myMaterials,\
 
   // Build full ELOT system
   myMPQD->buildSteadyStateLinearSystem_p();
-  ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   myMPQD->solve_p();
+  ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  myMPQD->updateVarsAfterConvergence();
  
-  // Eigen system to compare to 
- // myMPQD->buildSteadyStateLinearSystem();
-  //cout << myMPQD->b << endl;
+  //// Eigen system to compare to 
+  //myMPQD->buildSteadyStateLinearSystem();
+  //myMPQD->solveLinearSystem();
+  //cout << myMPQD->x << endl;
 
   // Delete pointers
   delete myMGT;
