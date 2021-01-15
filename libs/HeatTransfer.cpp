@@ -912,7 +912,7 @@ Eigen::MatrixXd HeatTransfer::returnCurrentTemp()
   {
 
     // Initialize temporary vector
-    initPETScVec(&temp_x_p_seq,nUnknowns);
+    initPETScVec(&temp_x_p_seq,mpqd->nUnknowns);
 
     // Gather values of x_p on all procs
     VecScatterCreateToAll(mpqd->x_p,&ctx,&temp_x_p_seq);
