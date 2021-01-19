@@ -608,13 +608,48 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   //myMPQD->mgdnp->buildSteadyStateCoreLinearSystem_p();
   //cout << "form mgdnp transfer steady state linear system" << endl;
 
+  // Test calcSteadyStateCurrent functions
+  //myMPQD->ggqd->GGSolver->calcSteadyStateSouthCurrent_p(testInt,testInt,testInt);
+  //cout << "calc south current" << endl;
+  //myMPQD->ggqd->GGSolver->calcSteadyStateNorthCurrent_p(testInt,testInt,testInt);
+  //cout << "calc north current" << endl;
+  //myMPQD->ggqd->GGSolver->calcSteadyStateWestCurrent_p(testInt,testInt,testInt);
+  //cout << "calc west current" << endl;
+  //myMPQD->ggqd->GGSolver->calcSteadyStateEastCurrent_p(testInt,testInt,testInt);
+  //cout << "calc east current" << endl;
+
   // Build full ELOT system
-  myMPQD->buildSteadyStateLinearSystem_p();
-  //ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  myMPQD->solve_p();
-  ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  myMPQD->updateVarsAfterConvergence();
- 
+  //myMPQD->buildSteadyStateLinearSystem_p();
+  ////ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //myMPQD->solve_p();
+  //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //myMPQD->updateSteadyStateVarsAfterConvergence_p();
+  if (myMesh->petsc)
+  {
+    cout << "Run ELOT PETSc steady state solve...";
+    myMPQD->solveSteadyState_p();
+    ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    ierr = MatView(myMPQD->ggqd->GGSolver->C_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    cout << " done." << endl;
+  }
+  else
+  {
+    cout << "Run ELOT eigen steady state solve...";
+    myMPQD->solveSteadyState();
+    cout << "x" << endl;
+    cout << myMPQD->x << endl;
+    cout << "b" << endl;
+    cout << myMPQD->b << endl;
+    cout << "A" << endl;
+    cout << myMPQD->A << endl;
+    cout << "C" << endl;
+    cout << myMPQD->ggqd->GGSolver->C << endl;
+    cout << " done." << endl;
+  }
+
+
   //// Eigen system to compare to 
   //myMPQD->buildSteadyStateLinearSystem();
   //myMPQD->solveLinearSystem();
