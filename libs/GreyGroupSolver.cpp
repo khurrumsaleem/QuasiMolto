@@ -2422,25 +2422,73 @@ int GreyGroupSolver::getFlux()
 
 //==============================================================================
 /// Extract cell average values from solution vector and store
-void GreyGroupSolver::getCurrent()
+int GreyGroupSolver::getCurrent()
 {
   vector<int> indices;
+  PetscErrorCode ierr;
+  PetscScalar value[4]; 
+  PetscInt index[4]; 
+  VecScatter     ctx;
+  Vec temp_currPast_p_seq;
 
-  // loop over spatial mesh
-  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+
+    // Initialize temporary vector
+    initPETScVec(&temp_currPast_p_seq,nUnknowns);
+
+    // Gather values of x_p on all procs
+    VecScatterCreateToAll(currPast_p,&ctx,&temp_currPast_p_seq);
+    VecScatterBegin(ctx,currPast_p,temp_currPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,currPast_p,temp_currPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
     {
-      indices = getIndices(iR,iZ);
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      {
+        indices = getIndices(iR,iZ);
 
-      // Get cell currents 
-      GGQD->currentR(iZ,iR) = currPast(indices[iWC]);
-      GGQD->currentR(iZ,iR+1) = currPast(indices[iEC]);
-      GGQD->currentZ(iZ,iR) = currPast(indices[iNC]);
-      GGQD->currentZ(iZ+1,iR) = currPast(indices[iSC]);
+        index[0] = indices[iWC];
+        index[1] = indices[iEC];
+        index[2] = indices[iNC];
+        index[3] = indices[iSC];
 
-    }
-  } 
+        // Read fluxes into flux vector
+        ierr = VecGetValues(temp_currPast_p_seq,4,index,value);
+
+        // Get cell currents 
+        GGQD->currentR(iZ,iR) = value[0];
+        GGQD->currentR(iZ,iR+1) = value[1]; 
+        GGQD->currentZ(iZ,iR) = value[2];
+        GGQD->currentZ(iZ+1,iR) = value[3];
+
+      }
+    } 
+        
+    /* Destroy scatter context */
+    VecScatterDestroy(&ctx);
+    VecDestroy(&temp_currPast_p_seq);
+
+  }
+  else
+  {
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      {
+        indices = getIndices(iR,iZ);
+
+        // Get cell currents 
+        GGQD->currentR(iZ,iR) = currPast(indices[iWC]);
+        GGQD->currentR(iZ,iR+1) = currPast(indices[iEC]);
+        GGQD->currentZ(iZ,iR) = currPast(indices[iNC]);
+        GGQD->currentZ(iZ+1,iR) = currPast(indices[iSC]);
+
+      }
+    } 
+  }
 
 };
 //==============================================================================
@@ -2464,19 +2512,19 @@ int GreyGroupSolver::setFlux()
       for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
       {
         indices = getIndices(iR,iZ);
-        
+
         value[0] = GGQD->sFlux(iZ,iR);
         value[1] = GGQD->sFluxR(iZ,iR);
         value[2] = GGQD->sFluxR(iZ,iR+1);
         value[3] = GGQD->sFluxZ(iZ,iR);
         value[4] = GGQD->sFluxZ(iZ+1,iR);
-      
+
         index[0] = indices[iCF];
         index[1] = indices[iWF]; 
         index[2] = indices[iEF]; 
         index[3] = indices[iNF]; 
         index[4] = indices[iSF]; 
-    
+
         ierr = VecSetValues(MPQD->xPast_p,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
       }
     }  
@@ -2503,7 +2551,7 @@ int GreyGroupSolver::setFlux()
       for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
       {
         indices = getIndices(iR,iZ);
-      
+
         (*xPast)(indices[iCF]) = GGQD->sFlux(iZ,iR);
         (*xPast)(indices[iWF]) = GGQD->sFluxR(iZ,iR);
         (*xPast)(indices[iEF]) = GGQD->sFluxR(iZ,iR+1);
@@ -2513,7 +2561,7 @@ int GreyGroupSolver::setFlux()
       }
     }
   }
- 
+
 
 };
 //==============================================================================
@@ -2662,6 +2710,61 @@ void GreyGroupSolver::formSteadyStateLinearSystem_p()
 //==============================================================================
 
 //==============================================================================
+/// Form a portion of the current back calc linear system that belongs to GGQD 
+///
+int GreyGroupSolver::formSteadyStateBackCalcSystem_p()	      
+{
+  int iEq = GGQD->indexOffset;
+  PetscErrorCode ierr;
+
+  // Reset linear system
+  initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,4*nUnknowns);
+  initPETScVec(&d_p,nCurrentUnknowns);
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+
+      // south face
+      calcSteadyStateSouthCurrent_p(iR,iZ,iEq);
+      iEq = iEq + 1;
+
+      // east face
+      calcSteadyStateEastCurrent_p(iR,iZ,iEq);
+      iEq = iEq + 1;
+
+      // north face
+      if (iZ == 0)
+      {
+        calcSteadyStateNorthCurrent_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        calcSteadyStateWestCurrent_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
+    }
+  }
+
+  /* Finalize assembly for A_p and b_p */
+  ierr = MatAssemblyBegin(C_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(C_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
+  ierr = VecAssemblyBegin(d_p);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(d_p);CHKERRQ(ierr);
+
+};
+
+//==============================================================================
+
+
+//==============================================================================
 /// Assert the steady state zeroth moment equation for cell (iR,iZ)
 ///
 /// @param [in] iR radial index of cell
@@ -2696,7 +2799,7 @@ int GreyGroupSolver::assertSteadyStateZerothMoment_p(int iR,int iZ,int iEq)
   value = geoParams[iCF]*(fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
   //(*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
-              ( fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
+  ( fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
 
   // DNP source term
   GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF], &Atemp);
@@ -2791,7 +2894,7 @@ int GreyGroupSolver::steadyStateSouthCurrent_p(double coeff,int iR,int iZ,int iE
   index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
 
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
-  
+
   ierr = MatSetValues(MPQD->A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   //Atemp.coeffRef(iEq,indices[iSF]) -= coeff*EzzS/deltaZ;
@@ -2849,13 +2952,13 @@ int GreyGroupSolver::steadyStateNorthCurrent_p(double coeff,int iR,int iZ,int iE
   coeff = coeff/(sigT); 
 
   index[0] = indices[iNF]; value[0] = coeff*(EzzN/deltaZ - zetaL);
-                                                                    
+
   index[1] = indices[iCF]; value[1] = -coeff*EzzC/deltaZ;
-                                                                    
+
   index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
-                                                                    
+
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
-  
+
   ierr = MatSetValues(MPQD->A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   //Atemp.coeffRef(iEq,indices[iNF]) += coeff*EzzN/deltaZ;
@@ -2915,25 +3018,25 @@ int GreyGroupSolver::steadyStateWestCurrent_p(double coeff,int iR,int iZ,int iEq
   coeff = coeff/(sigT); 
 
   index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
-                                                                       
+
   index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
-                                                                       
+
   index[2] = indices[iCF]; value[2] = -coeff*hCent*ErrC/(hDown*deltaR);
-                                                                       
+
   index[3] = indices[iWF]; value[3] = coeff*(hDown*ErrW/(hDown*deltaR) - zetaL);
-  
+
   ierr = MatSetValues(MPQD->A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
- // Atemp.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
+  // Atemp.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
 
- // Atemp.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
+  // Atemp.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
 
- // Atemp.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
+  // Atemp.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
 
- // Atemp.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
+  // Atemp.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
 
- // // Enforce zeta coefficient
- // Atemp.coeffRef(iEq,indices[iWF]) -= coeff*zetaL;
+  // // Enforce zeta coefficient
+  // Atemp.coeffRef(iEq,indices[iWF]) -= coeff*zetaL;
 
 };
 //==============================================================================
@@ -2981,13 +3084,13 @@ int GreyGroupSolver::steadyStateEastCurrent_p(double coeff,int iR,int iZ,int iEq
   coeff = coeff/(sigT); 
 
   index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
-                                                                   
+
   index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
-                                                                   
+
   index[2] = indices[iCF]; value[2] = coeff*hCent*ErrC/(hUp*deltaR);
-                                                                   
+
   index[3] = indices[iEF]; value[3] = -coeff*(hUp*ErrE/(hUp*deltaR) + zetaL);
-  
+
   ierr = MatSetValues(MPQD->A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   //Atemp.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
@@ -3000,6 +3103,262 @@ int GreyGroupSolver::steadyStateEastCurrent_p(double coeff,int iR,int iZ,int iEq
 
   //// Enforce zeta coefficient
   //Atemp.coeffRef(iEq,indices[iEF]) -= coeff*zetaL;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on south face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->zNeutV(iZ+1,iR);
+  double vPast = materials->oneGroupXS->zNeutVPast(iZ+1,iR);
+  double sigT = materials->oneGroupXS->zSigTR(iZ+1,iR);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff,\
+    zetaL,mgqdCurrent,mgqdNeutV; 
+  double EzzC,EzzS,ErzW,ErzE;
+  PetscErrorCode ierr;
+  PetscScalar value[4];
+  PetscInt index[4];
+
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zUp-zAvg;
+
+  // get local Eddington factors
+  EzzC = GGQD->Ezz(iZ,iR);
+  EzzS = GGQD->EzzAxial(iZ+1,iR); 
+  ErzW = GGQD->ErzRadial(iZ,iR);
+  ErzE = GGQD->ErzRadial(iZ,iR+1);
+  zetaL = materials->oneGroupXS->zZeta2(iZ+1,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = 1/(sigT); 
+
+  index[0] = indices[iSF]; value[0] = -coeff*(EzzS/deltaZ + zetaL);
+
+  index[1] = indices[iCF]; value[1] = coeff*EzzC/deltaZ;
+
+  index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
+
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+  //C.coeffRef(iEq,indices[iSF]) -= coeff*EzzS/deltaZ;
+
+  //C.coeffRef(iEq,indices[iCF]) += coeff*EzzC/deltaZ;
+
+  //C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  //C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
+
+  //// Enforce zeta coefficient
+  //C.coeffRef(iEq,indices[iSF]) -= coeff*zetaL;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on north face 
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::calcSteadyStateNorthCurrent_p(int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->zNeutV(iZ,iR);
+  double vPast = materials->oneGroupXS->zNeutVPast(iZ,iR);
+  double sigT = materials->oneGroupXS->zSigTR(iZ,iR);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff,\
+    zetaL,mgqdCurrent,mgqdNeutV;
+  double EzzC,EzzN,ErzW,ErzE;
+  PetscErrorCode ierr;
+  PetscScalar value[4];
+  PetscInt index[4];
+
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rDown; deltaZ = zAvg-zDown;
+
+  // get local Eddington factors
+  EzzC = GGQD->Ezz(iZ,iR);
+  EzzN = GGQD->EzzAxial(iZ,iR); 
+  ErzW = GGQD->ErzRadial(iZ,iR);
+  ErzE = GGQD->ErzRadial(iZ,iR+1);
+
+  zetaL = materials->oneGroupXS->zZeta2(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = 1/(sigT); 
+
+  index[0] = indices[iNF]; value[0] = coeff*(EzzN/deltaZ - zetaL);
+
+  index[1] = indices[iCF]; value[1] = -coeff*EzzC/deltaZ;
+
+  index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
+
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+  //C.coeffRef(iEq,indices[iNF]) += coeff*EzzN/deltaZ;
+
+  //C.coeffRef(iEq,indices[iCF]) -= coeff*EzzC/deltaZ;
+
+  //C.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
+
+  //C.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
+
+  //// Enforce zeta coefficient
+  //C.coeffRef(iEq,indices[iNF]) -= coeff*zetaL;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on west face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::calcSteadyStateWestCurrent_p(int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->rNeutV(iZ,iR);
+  double vPast = materials->oneGroupXS->rNeutVPast(iZ,iR);
+  double sigT = materials->oneGroupXS->rSigTR(iZ,iR);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double hCent,hDown,zetaL,mgqdCurrent,mgqdNeutV;
+  double ErzN,ErzS,ErrC,ErrW;  
+  PetscErrorCode ierr;
+  PetscScalar value[4];
+  PetscInt index[4];
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rAvg-rDown; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iWF);
+  hDown = calcIntegratingFactor(iR,iZ,rDown,iWF);
+
+  // get local Eddington factors
+  ErrC = GGQD->Err(iZ,iR);
+  ErrW = GGQD->ErrRadial(iZ,iR); 
+  ErzN = GGQD->ErzAxial(iZ,iR);
+  ErzS = GGQD->ErzAxial(iZ+1,iR);
+  zetaL = materials->oneGroupXS->rZeta2(iZ,iR);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = 1/(sigT);   
+
+  index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
+
+  index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
+
+  index[2] = indices[iCF]; value[2] = -coeff*hCent*ErrC/(hDown*deltaR);
+
+  index[3] = indices[iWF]; value[3] = coeff*(hDown*ErrW/(hDown*deltaR) - zetaL);
+
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+  //C.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
+
+  //C.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
+
+  //C.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
+
+  //C.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
+
+  //// Enforce zeta coefficient
+  //C.coeffRef(iEq,indices[iWF]) -= coeff*zetaL;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Enforce coefficients to calculate steady state current on east face
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->rNeutV(iZ,iR+1);
+  double vPast = materials->oneGroupXS->rNeutVPast(iZ,iR+1);
+  double sigT = materials->oneGroupXS->rSigTR(iZ,iR+1);
+  double rUp,rDown,zUp,zDown,rAvg,zAvg,deltaR,deltaZ,coeff;  
+  double hCent,hUp,zetaL,mgqdCurrent,mgqdNeutV;
+  double ErzN,ErzS,ErrC,ErrE;  
+  PetscErrorCode ierr;
+  PetscScalar value[4];
+  PetscInt index[4];
+
+  // calculate geometric values
+  rUp = mesh->rCornerEdge(iR+1); rDown = mesh->rCornerEdge(iR);
+  zUp = mesh->zCornerEdge(iZ+1); zDown = mesh->zCornerEdge(iZ);
+  rAvg = calcVolAvgR(rDown,rUp); zAvg = (zUp + zDown)/2;
+  deltaR = rUp-rAvg; deltaZ = zUp-zDown;
+  hCent = calcIntegratingFactor(iR,iZ,rAvg,iEF);
+  hUp = calcIntegratingFactor(iR,iZ,rUp,iEF);
+
+  // get local Eddington factors
+  ErrC = GGQD->Err(iZ,iR);
+  ErrE = GGQD->ErrRadial(iZ,iR+1); 
+  ErzN = GGQD->ErzAxial(iZ,iR);
+  ErzS = GGQD->ErzAxial(iZ+1,iR);
+
+  zetaL = materials->oneGroupXS->rZeta2(iZ,iR+1);
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ);
+
+  coeff = 1/(sigT); 
+
+  index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
+
+  index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
+
+  index[2] = indices[iCF]; value[2] = coeff*hCent*ErrC/(hUp*deltaR);
+
+  index[3] = indices[iEF]; value[3] = -coeff*(hUp*ErrE/(hUp*deltaR) + zetaL);
+
+  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+  //C.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
+
+  //C.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
+
+  //C.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrC/(hUp*deltaR);
+
+  //C.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
+
+  //// Enforce zeta coefficient
+  //C.coeffRef(iEq,indices[iEF]) -= coeff*zetaL;
 
 };
 //==============================================================================
@@ -3146,10 +3505,10 @@ int GreyGroupSolver::assertSteadyStateNGoldinBC_p(int iR,int iZ,int iEq)
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
- 
- // steadyStateNorthCurrent(1.0,iR,iZ,iEq);
- // Atemp.coeffRef(iEq,indices[iNF]) -= ratio;
- // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
+
+  // steadyStateNorthCurrent(1.0,iR,iZ,iEq);
+  // Atemp.coeffRef(iEq,indices[iNF]) -= ratio;
+  // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
 
 };
 //==============================================================================
@@ -3177,10 +3536,10 @@ int GreyGroupSolver::assertSteadyStateSGoldinBC_p(int iR,int iZ,int iEq)
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
- 
- // steadyStateSouthCurrent(1.0,iR,iZ,iEq);
- // Atemp.coeffRef(iEq,indices[iSF]) -= ratio;
- // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
+
+  // steadyStateSouthCurrent(1.0,iR,iZ,iEq);
+  // Atemp.coeffRef(iEq,indices[iSF]) -= ratio;
+  // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
 
 };
 //==============================================================================
@@ -3202,16 +3561,16 @@ int GreyGroupSolver::assertSteadyStateEGoldinBC_p(int iR,int iZ,int iEq)
   double absCurrent = GGQD->eAbsCurrentBC(iZ);
   double inwardCurrent = GGQD->eInwardCurrentBC(iZ);
   double inwardFlux = GGQD->eInwardFluxBC(iZ);
-  
+
   steadyStateEastCurrent_p(1.0,iR,iZ,iEq);
   value = -ratio; 
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
- 
- // steadyStateEastCurrent(1.0,iR,iZ,iEq);
- // Atemp.coeffRef(iEq,indices[iEF]) -= ratio;
- // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
+
+  // steadyStateEastCurrent(1.0,iR,iZ,iEq);
+  // Atemp.coeffRef(iEq,indices[iEF]) -= ratio;
+  // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
 
 };
 //==============================================================================
@@ -3231,7 +3590,7 @@ int GreyGroupSolver::assertSteadyStateNGoldinP1BC_p(int iR,int iZ,int iEq)
   steadyStateNorthCurrent_p(1.0,iR,iZ,iEq);
   value = 1.0/sqrt(3.0); 
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //Atemp.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
 
 };
@@ -3252,7 +3611,7 @@ int GreyGroupSolver::assertSteadyStateSGoldinP1BC_p(int iR,int iZ,int iEq)
   steadyStateSouthCurrent_p(1.0,iR,iZ,iEq);
   value = -1.0/sqrt(3.0); 
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //Atemp.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
 
 };
@@ -3273,7 +3632,7 @@ int GreyGroupSolver::assertSteadyStateEGoldinP1BC_p(int iR,int iZ,int iEq)
   steadyStateEastCurrent_p(1.0,iR,iZ,iEq);
   value = -1.0/sqrt(3.0); 
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //Atemp.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
 
 };
@@ -3294,7 +3653,7 @@ int GreyGroupSolver::assertNFluxBC_p(int iR,int iZ,int iEq)
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = GGQD->nFluxBC(iR);
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //Atemp.insert(iEq,indices[iNF]) = 1.0;
   //(*b)(iEq) = GGQD->nFluxBC(iR);
 };
@@ -3336,7 +3695,7 @@ int GreyGroupSolver::assertWFluxBC_p(int iR,int iZ,int iEq)
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iWF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = GGQD->wFluxBC(iZ);
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //Atemp.insert(iEq,indices[iWF]) = 1.0;
   //(*b)(iEq) = GGQD->wFluxBC(iZ);
 };
@@ -3363,6 +3722,17 @@ int GreyGroupSolver::assertEFluxBC_p(int iR,int iZ,int iEq)
 };
 //==============================================================================
 
+//==============================================================================
+/// Compute currents from flux values in x
+///
+int GreyGroupSolver::backCalculateCurrent_p()
+{
+  PetscErrorCode ierr;
+
+  ierr = MatMultAdd(C_p,xFlux_p,d_p,currPast_p);
+}
+//==============================================================================
+
 /* TRANSIENT */
 
 //==============================================================================
@@ -3370,7 +3740,7 @@ int GreyGroupSolver::assertEFluxBC_p(int iR,int iZ,int iEq)
 ///
 void GreyGroupSolver::assignMPQDPointer(MultiPhysicsCoupledQD * myMPQD)
 {
-  
+
   MPQD = myMPQD;
 
 };

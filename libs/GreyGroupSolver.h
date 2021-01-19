@@ -138,7 +138,7 @@ class GreyGroupSolver
 
     // function to parse solution vector
     int getFlux();
-    void getCurrent();
+    int getCurrent();
     int setFlux();
     Eigen::VectorXd getFluxSolutionVector();
     Eigen::VectorXd getCurrentSolutionVector();
@@ -172,6 +172,8 @@ class GreyGroupSolver
     Mat C_p;
     Vec currPast_p,d_p,xFlux_p;
     Vec currPast_p_seq;
+    KSP ksp;
+    PC pc;
 
     // Functions
 
@@ -180,7 +182,8 @@ class GreyGroupSolver
     /* STEADY STATE FUNCTIONS */
 
     void formSteadyStateLinearSystem_p();
-    // void formSteadyStateBackCalcSystem_p();
+    int formSteadyStateBackCalcSystem_p();
+    int backCalculateCurrent_p();
 
     // // functions to enforce governing equations
     int assertSteadyStateZerothMoment_p(int iR,int iZ,int iEq);
@@ -194,10 +197,10 @@ class GreyGroupSolver
     int steadyStateEastCurrent_p(double coeff,int iR,int iZ,int iEq);
     
     // functions to enforce coefficients for calculation of facial currents
-    // void calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq);
-    // void calcSteadyStateNorthCurrent_p(int iR,int iZ,int iEq);
-    // void calcSteadyStateWestCurrent_p(int iR,int iZ,int iEq);
-    // void calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq);
+    int calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq);
+    int calcSteadyStateNorthCurrent_p(int iR,int iZ,int iEq);
+    int calcSteadyStateWestCurrent_p(int iR,int iZ,int iEq);
+    int calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq);
 
     // wrapper to assert either a steady state flux or current BC
     void assertSteadyStateWBC_p(int iR,int iZ,int iEq);
