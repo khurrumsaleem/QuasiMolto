@@ -49,6 +49,7 @@ class MultiPhysicsCoupledQD
     int solveIterativeDiag(Eigen::VectorXd xGuess);
     int solveIterativeILU(Eigen::VectorXd xGuess);
     void solveTransient();
+    void solveSteadyState();
     void updateVarsAfterConvergence();
     void updateSteadyStateVarsAfterConvergence();
     void writeVars();
@@ -66,6 +67,8 @@ class MultiPhysicsCoupledQD
     // PETSc steady state functions
     int buildSteadyStateLinearSystem_p();
     int solve_p();
+    void updateSteadyStateVarsAfterConvergence_p();
+    void solveSteadyState_p();
 
 
     // Pointers

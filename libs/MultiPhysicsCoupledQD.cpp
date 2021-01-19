@@ -440,6 +440,7 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence()
   mgdnp->getRecircDNPConc();
 
   // Back calculate currents
+  // ToDo Add PETSc support for back calc system
   ggqd->GGSolver->formSteadyStateBackCalcSystem();
   ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
@@ -545,6 +546,25 @@ void MultiPhysicsCoupledQD::solveTransient()
 };
 //==============================================================================
 
+//==============================================================================
+/// Converge a steady state ELOT solve 
+///
+void MultiPhysicsCoupledQD::solveSteadyState()
+{
+
+  for (int iT = 0; iT < mesh->dts.size(); iT++)
+  {
+    buildSteadyStateLinearSystem();
+    solveLinearSystem();   
+    updateSteadyStateVarsAfterConvergence();
+  }
+  
+  writeVars();
+
+};
+//==============================================================================
+
+
 /* PETSc functions */
 
 // Steady state
@@ -629,6 +649,55 @@ int MultiPhysicsCoupledQD::solve_p()
   
 };
 //==============================================================================
+
+//==============================================================================
+/// Run transient with multiple solves 
+///
+void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
+{
+
+  // Read solutions from 1D vector to 2D matrices 
+  ggqd->GGSolver->getFlux();
+
+  heat->getTemp();
+
+  mgdnp->getCoreDNPConc();
+
+  mgdnp->getRecircDNPConc();
+
+  // Back calculate currents
+  // ToDo Add PETSc support for back calc system
+  ggqd->GGSolver->formSteadyStateBackCalcSystem_p();
+  ggqd->GGSolver->backCalculateCurrent_p();
+  ggqd->GGSolver->getCurrent();
+
+  // Set xPast and past neutron velocities 
+  xPast_p = x_p;
+  mats->oneGroupXS->neutVPast = mats->oneGroupXS->neutV;  
+  mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;  
+  mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;  
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Converge a steady state ELOT solve 
+///
+void MultiPhysicsCoupledQD::solveSteadyState_p()
+{
+
+  for (int iT = 0; iT < mesh->dts.size(); iT++)
+  {
+    buildSteadyStateLinearSystem_p();
+    solve_p();   
+    updateSteadyStateVarsAfterConvergence_p();
+  }
+  
+  writeVars();
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Check for optional input parameters of relevance to this object
