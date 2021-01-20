@@ -75,14 +75,21 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 /// @param [in] iR radial location
 /// @param [in] iEq equation index
 /// @param [in] coeff coefficient of flux source
-void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
+int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
     Eigen::SparseMatrix<double,Eigen::RowMajor> * myA)
 {
 
   int iCF = 0; // index of cell-average flux value in index vector  
   vector<int> indices = ggqd->GGSolver->getIndices(iR,iZ);
+  PetscErrorCode ierr;
+    
+  if (mesh->petsc)
+  {
+    ierr = MatSetValue(A_p,iEq,indices[0],coeff,ADD_VALUES);CHKERRQ(ierr); 
+  }
+  else
+    myA->coeffRef(iEq,indices[0]) += coeff; 
 
-  myA->coeffRef(iEq,indices[0]) += coeff; 
 
 };
 //==============================================================================
@@ -94,14 +101,20 @@ void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
 /// @param [in] iR radial location
 /// @param [in] iEq equation index
 /// @param [in] coeff coefficient of flux source
-void MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
+int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
     Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA)
 {
 
   int iCF = 0; // index of cell-average flux value in index vector  
   vector<int> indices = ggqd->GGSolver->getIndices(iR,iZ);
+  PetscErrorCode ierr;
 
-  (*myA)(iEq,indices[0]) += coeff; 
+  if (mesh->petsc)
+  {
+    ierr = MatSetValue(A_p,iEq,indices[0],coeff,ADD_VALUES);CHKERRQ(ierr); 
+  }
+  else
+    (*myA)(iEq,indices[0]) += coeff; 
 
 };
 //==============================================================================
@@ -127,7 +140,7 @@ int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff,\
     indexOffset = mgdnp->DNPs[iGroup]->coreIndexOffset;
     index = mgdnp->DNPs[iGroup]->getIndex(iZ,iR,indexOffset);
     groupLambda = mgdnp->DNPs[iGroup]->lambda;
-    
+
     if (mesh->petsc)
     {
       value = coeff*groupLambda;
@@ -241,7 +254,7 @@ void MultiPhysicsCoupledQD::initializeXPast()
 ///
 void MultiPhysicsCoupledQD::solveLinearSystem()
 {
-  
+
   solveSuperLU();
   mgdnp->solveRecircLinearSystem();
 
@@ -304,7 +317,7 @@ int MultiPhysicsCoupledQD::solveSuperLU()
 
   // Return outcome of solve
   return success = solverLU.info();
-  
+
 };
 //==============================================================================
 
@@ -350,7 +363,7 @@ int MultiPhysicsCoupledQD::solveIterativeILU(Eigen::VectorXd xGuess)
 
   // Return outcome of solve
   return success = solver.info();
-  
+
 };
 //==============================================================================
 
@@ -464,7 +477,7 @@ void MultiPhysicsCoupledQD::writeVars()
 
   // Scalar flux
   mesh->output->write(outputDir,"Flux",ggqd->sFlux);
-  
+
   // Face fluxes
   mesh->output->write(outputDir,"Flux_Radial",ggqd->sFluxR);
   mesh->output->write(outputDir,"Flux_Axial",ggqd->sFluxZ);
@@ -472,7 +485,7 @@ void MultiPhysicsCoupledQD::writeVars()
   // Currents
   mesh->output->write(outputDir,"Current_Radial",ggqd->currentR);
   mesh->output->write(outputDir,"Current_Axial",ggqd->currentZ);
-  
+
   // Eddington factors
   mesh->output->write(outputDir,"Err",ggqd->Err);
   mesh->output->write(outputDir,"Ezz",ggqd->Ezz);
@@ -491,7 +504,7 @@ void MultiPhysicsCoupledQD::writeVars()
 
   //  factors
   mesh->output->write(outputDir,"Err",ggqd->Err);
- 
+
   // DNP concentrations
   for (int iDNP = 0; iDNP < mgdnp->DNPs.size(); iDNP++)
   {
@@ -502,7 +515,7 @@ void MultiPhysicsCoupledQD::writeVars()
              + to_string(mgdnp->DNPs[iDNP]->dnpID);
     mesh->output->write(outputDir,name,mgdnp->DNPs[iDNP]->recircConc); 
   }
- 
+
   // Temperature
   mesh->output->write(outputDir,"Temperature",heat->temp);
 
@@ -558,7 +571,7 @@ void MultiPhysicsCoupledQD::solveSteadyState()
     solveLinearSystem();   
     updateSteadyStateVarsAfterConvergence();
   }
-  
+
   writeVars();
 
 };
@@ -628,7 +641,7 @@ int MultiPhysicsCoupledQD::solve_p()
 
   /* Set solver type */
   ierr = KSPSetType(ksp,PetscSolver.c_str());CHKERRQ(ierr);
-  
+
   /* Set preconditioner type */
   ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
   ierr = PCSetType(pc,PetscPreconditioner.c_str());CHKERRQ(ierr);
@@ -643,10 +656,10 @@ int MultiPhysicsCoupledQD::solve_p()
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
-  
+
   /* Solve for recirculation concentrations */
   mgdnp->solveRecircLinearSystem_p();
-  
+
 };
 //==============================================================================
 
@@ -692,7 +705,7 @@ void MultiPhysicsCoupledQD::solveSteadyState_p()
     solve_p();   
     updateSteadyStateVarsAfterConvergence_p();
   }
-  
+
   writeVars();
 
 };
@@ -704,7 +717,7 @@ void MultiPhysicsCoupledQD::solveSteadyState_p()
 void MultiPhysicsCoupledQD::checkOptionalParams()
 {
   string precondInput;
-  
+
   if ((*input)["parameters"]["epsMPQD"])
   {
     epsMPQD=(*input)["parameters"]["epsMPQD"].as<double>();
@@ -718,7 +731,7 @@ void MultiPhysicsCoupledQD::checkOptionalParams()
       preconditioner = iluPreconditioner;
     else if (precondInput == "diagonal" or precondInput == "diag")
       preconditioner = diagPreconditioner;
-      
+
   }
 }
 //==============================================================================

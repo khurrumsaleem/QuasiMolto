@@ -34,9 +34,9 @@ class MultiPhysicsCoupledQD
     int nUnknowns;
    
     // Functions 
-    void fluxSource(int iZ,int iR,int iEq,double coeff,\
+    int fluxSource(int iZ,int iR,int iEq,double coeff,\
       Eigen::SparseMatrix<double,Eigen::RowMajor> * myA);
-    void fluxSource(int iZ,int iR,int iEq,double coeff,\
+    int fluxSource(int iZ,int iR,int iEq,double coeff,\
       Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA);
     int dnpSource(int iZ,int iR,int iEq,double coeff,\
       Eigen::SparseMatrix<double,Eigen::RowMajor> * myA);
