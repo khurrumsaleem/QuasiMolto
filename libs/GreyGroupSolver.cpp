@@ -19,6 +19,9 @@ GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
     Materials * myMaterials,\
     YAML::Node * myInput)	      
 {
+  // PETSc object to broadcast variables 
+  VecScatter     ctx;
+
   // Point to variables for mesh and input file
   GGQD = myGGQD;
   mesh = myMesh;
@@ -45,8 +48,13 @@ GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
   initPETScVec(&d_p,nCurrentUnknowns);
   initPETScVec(&xFlux_p,nUnknowns);
  
-  // Initialize sequential variables
-  initPETScVec(&currPast_p_seq,nCurrentUnknowns);
+  // Broadcast currPast
+  VecScatterCreateToAll(currPast_p,&ctx,&(currPast_p_seq));
+  VecScatterBegin(ctx,currPast_p,currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,currPast_p,currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterDestroy(&ctx);
 
   // Set number of unknowns if GreyGroupQD object
   GGQD->nUnknowns = nUnknowns;

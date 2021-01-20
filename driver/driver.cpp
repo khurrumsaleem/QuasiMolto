@@ -652,6 +652,14 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   //}
 
   /* TRANSIENT */
+
+  //VecScatter     ctx;
+  //VecScatterCreateToAll(myMPQD->ggqd->GGSolver->currPast_p,&ctx,&(myMPQD->ggqd->GGSolver->currPast_p_seq));
+  //VecScatterBegin(ctx,myMPQD->ggqd->GGSolver->currPast_p,myMPQD->ggqd->GGSolver->currPast_p_seq,\
+  //    INSERT_VALUES,SCATTER_FORWARD);
+  //VecScatterEnd(ctx,myMPQD->ggqd->GGSolver->currPast_p,myMPQD->ggqd->GGSolver->currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+
   myMPQD->ggqd->GGSolver->southCurrent_p(testDub,\
       testInt,testInt,testInt);
   cout << "south current" << endl;
@@ -701,7 +709,6 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   // Test build steady state QD linear system call
   myMPQD->ggqd->GGSolver->formLinearSystem_p();
   cout << "form ggqd linear system" << endl;
-
 
   //// Eigen system to compare to 
   //myMPQD->buildSteadyStateLinearSystem();
