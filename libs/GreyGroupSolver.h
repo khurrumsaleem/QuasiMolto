@@ -233,7 +233,7 @@ class GreyGroupSolver
     /* TRANSIENT FUNCTIONS */
     
     void formLinearSystem_p();
-    //void formBackCalcSystem_p();
+    int formBackCalcSystem_p();
 
     // functions to enforce governing equations
     int assertZerothMoment_p(int iR,int iZ,int iEq);
@@ -246,11 +246,11 @@ class GreyGroupSolver
     int westCurrent_p(double coeff,int iR,int iZ,int iEq);
     int eastCurrent_p(double coeff,int iR,int iZ,int iEq);
 
-    // // functions to enforce coefficients for calculation of facial currents
-    // void calcSouthCurrent_p(int iR,int iZ,int iEq);
-    // void calcNorthCurrent_p(int iR,int iZ,int iEq);
-    // void calcWestCurrent_p(int iR,int iZ,int iEq);
-    // void calcEastCurrent_p(int iR,int iZ,int iEq);
+    // functions to enforce coefficients for calculation of facial currents
+    int calcSouthCurrent_p(int iR,int iZ,int iEq);
+    int calcNorthCurrent_p(int iR,int iZ,int iEq);
+    int calcWestCurrent_p(int iR,int iZ,int iEq);
+    int calcEastCurrent_p(int iR,int iZ,int iEq);
     
     // wrapper to assert either a flux or current BC
     void assertWBC_p(int iR,int iZ,int iEq);
