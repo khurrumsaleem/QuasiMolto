@@ -86,8 +86,8 @@ class SingleGroupDNP
 
     // Steady state
 
-    int buildSteadyStateCoreLinearSystem_p();
-    int buildSteadyStateRecircLinearSystem_p();
+    void buildSteadyStateCoreLinearSystem_p();
+    void buildSteadyStateRecircLinearSystem_p();
     int buildSteadyStateLinearSystem_p(\
         Mat * myA_p,\
         Vec * myb_p,\
@@ -96,6 +96,18 @@ class SingleGroupDNP
         Eigen::MatrixXd myInletDNP,\
         arma::rowvec dzs,\
         int myIndexOffset,
+        bool fluxSource = true);
+    
+    // Transient 
+    void buildCoreLinearSystem_p();
+    void buildRecircLinearSystem_p();
+    int buildLinearSystem_p(\
+        Mat * A_p,\
+        Vec * b_p,\
+        Eigen::MatrixXd myDNPConc,\
+        Eigen::MatrixXd myDNPFlux,\
+        arma::rowvec dzs,\
+        int myIndexOffset,\
         bool fluxSource = true);
 
   private: 

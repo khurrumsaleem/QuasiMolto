@@ -49,11 +49,17 @@ class MultiGroupDNP
     Vec recircx_p,recircb_p;
     KSP ksp;
     PC pc;
+   
+    // Dual purpose
+    int solveRecircLinearSystem_p();
 
     // Steady state
     void buildSteadyStateCoreLinearSystem_p();
     int buildSteadyStateRecircLinearSystem_p();
-    int solveRecircLinearSystem_p();
+    
+    // Transient
+    void buildCoreLinearSystem_p();
+    int buildRecircLinearSystem_p();
 
   private:
     Materials * mats;

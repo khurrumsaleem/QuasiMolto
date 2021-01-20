@@ -385,6 +385,45 @@ int MultiGroupDNP::buildSteadyStateRecircLinearSystem_p()
 };
 //==============================================================================
 
+/* TRANSIENT */
+
+//==============================================================================
+/// Build linear system for steady state DNPs in multiphysics coupled 
+/// quasidiffusion system
+///
+void MultiGroupDNP::buildCoreLinearSystem_p()
+{
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->buildCoreLinearSystem_p();
+  }
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system for steady state DNPs in multiphysics coupled 
+/// quasidiffusion system
+///
+int MultiGroupDNP::buildRecircLinearSystem_p()
+{
+  PetscErrorCode ierr;
+ 
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+  {
+    DNPs[iGroup]->buildRecircLinearSystem_p();
+  }
+
+  /* Finalize assembly for A_p and b_p */
+  ierr = MatAssemblyBegin(recircA_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(recircA_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
+  ierr = VecAssemblyBegin(recircb_p);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(recircb_p);CHKERRQ(ierr);
+
+};
+//==============================================================================
+
+/* DUAL PURPOSE */
+
 //==============================================================================
 /// Solve linear system for recirculation loop DNP concentrations
 ///

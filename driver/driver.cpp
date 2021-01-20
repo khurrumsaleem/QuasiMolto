@@ -709,6 +709,20 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   // Test build steady state QD linear system call
   myMPQD->ggqd->GGSolver->formLinearSystem_p();
   cout << "form ggqd linear system" << endl;
+  
+  // Test build heat transfer linear system call
+  myMPQD->heat->buildLinearSystem_p();
+  cout << "form heat transfer linear system" << endl;
+
+  // Test build steady state precursor balance linear system call
+  myMPQD->mgdnp->buildCoreLinearSystem_p();
+  cout << "form mgdnp core linear system" << endl;
+
+  // Test build steady state precursor balance linear system call
+  myMPQD->mgdnp->buildRecircLinearSystem_p();
+  cout << "form mgdnp recirc linear system" << endl;
+
+
 
   //// Eigen system to compare to 
   //myMPQD->buildSteadyStateLinearSystem();

@@ -53,10 +53,10 @@ class HeatTransfer
   /* PETSc functions */
 
   // Steady state functions
-
   int buildSteadyStateLinearSystem_p();
   
   // Transient functions
+  int buildLinearSystem_p();
   
   private:
   Materials * mats;
