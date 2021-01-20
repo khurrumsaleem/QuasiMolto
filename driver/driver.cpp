@@ -534,7 +534,9 @@ int testELOTPETScCoupling(Materials * myMaterials,\
       myMPQD);
 
   // Test GGSolver setFlux
-  ierr = VecView(myMPQD->xPast_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //ierr = VecView(myMPQD->xPast_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+
+  /* STEADY STATE */
 
   // Test GGSolver steadyStateCurrent functions
   double testDub = 0.1;
@@ -624,30 +626,81 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   //myMPQD->solve_p();
   //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   //myMPQD->updateSteadyStateVarsAfterConvergence_p();
-  if (myMesh->petsc)
-  {
-    cout << "Run ELOT PETSc steady state solve...";
-    myMPQD->solveSteadyState_p();
-    ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-    ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-    ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-    ierr = MatView(myMPQD->ggqd->GGSolver->C_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-    cout << " done." << endl;
-  }
-  else
-  {
-    cout << "Run ELOT eigen steady state solve...";
-    myMPQD->solveSteadyState();
-    cout << "x" << endl;
-    cout << myMPQD->x << endl;
-    cout << "b" << endl;
-    cout << myMPQD->b << endl;
-    cout << "A" << endl;
-    cout << myMPQD->A << endl;
-    cout << "C" << endl;
-    cout << myMPQD->ggqd->GGSolver->C << endl;
-    cout << " done." << endl;
-  }
+  //if (myMesh->petsc)
+  //{
+  //  cout << "Run ELOT PETSc steady state solve...";
+  //  myMPQD->solveSteadyState_p();
+  //  ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //  ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //  ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //  ierr = MatView(myMPQD->ggqd->GGSolver->C_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //  cout << " done." << endl;
+  //}
+  //else
+  //{
+  //  cout << "Run ELOT eigen steady state solve...";
+  //  myMPQD->solveSteadyState();
+  //  cout << "x" << endl;
+  //  cout << myMPQD->x << endl;
+  //  cout << "b" << endl;
+  //  cout << myMPQD->b << endl;
+  //  cout << "A" << endl;
+  //  cout << myMPQD->A << endl;
+  //  cout << "C" << endl;
+  //  cout << myMPQD->ggqd->GGSolver->C << endl;
+  //  cout << " done." << endl;
+  //}
+
+  /* TRANSIENT */
+  myMPQD->ggqd->GGSolver->southCurrent_p(testDub,\
+      testInt,testInt,testInt);
+  cout << "south current" << endl;
+  myMPQD->ggqd->GGSolver->northCurrent_p(testDub,\
+      testInt,testInt,testInt);
+  cout << "north current" << endl;
+  myMPQD->ggqd->GGSolver->westCurrent_p(testDub,\
+      testInt,testInt,testInt);
+  cout << "west current" << endl;
+  myMPQD->ggqd->GGSolver->eastCurrent_p(testDub,\
+      testInt,testInt,testInt);
+  cout << "east current" << endl;
+
+  // Test steady-state boundary conditions on current
+  myMPQD->ggqd->GGSolver->assertWCurrentBC_p(testInt,testInt,testInt);
+  cout << "west current bc" << endl;
+  myMPQD->ggqd->GGSolver->assertECurrentBC_p(testInt,testInt,testInt);
+  cout << "east current bc" << endl;
+  myMPQD->ggqd->GGSolver->assertNCurrentBC_p(testInt,testInt,testInt);
+  cout << "north current bc" << endl;
+  myMPQD->ggqd->GGSolver->assertSCurrentBC_p(testInt,testInt,testInt);
+  cout << "south current bc" << endl;
+
+  // Test steady-state boundary conditions on current
+  myMPQD->ggqd->GGSolver->assertNGoldinBC_p(testInt,testInt,testInt);
+  cout << "north current goldin bc" << endl;
+  myMPQD->ggqd->GGSolver->assertSGoldinBC_p(testInt,testInt,testInt);
+  cout << "south current goldin bc" << endl;
+  myMPQD->ggqd->GGSolver->assertEGoldinBC_p(testInt,testInt,testInt);
+  cout << "east current goldin bc" << endl;
+
+  // Test steady-state P1 boundary conditions on current
+  myMPQD->ggqd->GGSolver->assertNGoldinP1BC_p(testInt,testInt,testInt);
+  cout << "north current goldin p1 bc" << endl;
+  myMPQD->ggqd->GGSolver->assertSGoldinP1BC_p(testInt,testInt,testInt);
+  cout << "south current goldin p1 bc" << endl;
+  myMPQD->ggqd->GGSolver->assertEGoldinP1BC_p(testInt,testInt,testInt);
+  cout << "east current goldin p1 bc" << endl;
+
+  myMPQD->ggqd->GGSolver->assertZerothMoment_p(testInt,testInt,testInt);
+  cout << "zeroth moment" << endl;
+  myMPQD->ggqd->GGSolver->applyRadialBoundary_p(testInt,testInt,testInt);
+  cout << "radial boundary" << endl;
+  myMPQD->ggqd->GGSolver->applyAxialBoundary_p(testInt,testInt,testInt);
+  cout << "axial boundary" << endl;
+  
+  // Test build steady state QD linear system call
+  myMPQD->ggqd->GGSolver->formLinearSystem_p();
+  cout << "form ggqd linear system" << endl;
 
 
   //// Eigen system to compare to 

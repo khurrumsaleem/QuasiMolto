@@ -232,19 +232,19 @@ class GreyGroupSolver
 
     /* TRANSIENT FUNCTIONS */
     
-    //void formLinearSystem_p();
+    void formLinearSystem_p();
     //void formBackCalcSystem_p();
 
     // functions to enforce governing equations
-    // void assertZerothMoment_p(int iR,int iZ,int iEq);
-    // void applyRadialBoundary_p(int iR,int iZ,int iEq);
-    // void applyAxialBoundary_p(int iR,int iZ,int iEq);
+    int assertZerothMoment_p(int iR,int iZ,int iEq);
+    void applyRadialBoundary_p(int iR,int iZ,int iEq);
+    void applyAxialBoundary_p(int iR,int iZ,int iEq);
 
-    // // functions to enforce coefficients for facial currents
-    // void southCurrent_p(double coeff,int iR,int iZ,int iEq);
-    // void northCurrent_p(double coeff,int iR,int iZ,int iEq);
-    // void westCurrent_p(double coeff,int iR,int iZ,int iEq);
-    // void eastCurrent_p(double coeff,int iR,int iZ,int iEq);
+    // functions to enforce coefficients for facial currents
+    int southCurrent_p(double coeff,int iR,int iZ,int iEq);
+    int northCurrent_p(double coeff,int iR,int iZ,int iEq);
+    int westCurrent_p(double coeff,int iR,int iZ,int iEq);
+    int eastCurrent_p(double coeff,int iR,int iZ,int iEq);
 
     // // functions to enforce coefficients for calculation of facial currents
     // void calcSouthCurrent_p(int iR,int iZ,int iEq);
@@ -252,33 +252,27 @@ class GreyGroupSolver
     // void calcWestCurrent_p(int iR,int iZ,int iEq);
     // void calcEastCurrent_p(int iR,int iZ,int iEq);
     
-    // // wrapper to assert either a flux or current BC
-    // void assertWBC_p(int iR,int iZ,int iEq);
-    // void assertEBC_p(int iR,int iZ,int iEq);
-    // void assertNBC_p(int iR,int iZ,int iEq);
-    // void assertSBC_p(int iR,int iZ,int iEq);
+    // wrapper to assert either a flux or current BC
+    void assertWBC_p(int iR,int iZ,int iEq);
+    void assertEBC_p(int iR,int iZ,int iEq);
+    void assertNBC_p(int iR,int iZ,int iEq);
+    void assertSBC_p(int iR,int iZ,int iEq);
 
-    // // functions to assert flux BCs
-    // void assertWFluxBC_p(int iR,int iZ,int iEq);
-    // void assertEFluxBC_p(int iR,int iZ,int iEq);
-    // void assertNFluxBC_p(int iR,int iZ,int iEq);
-    // void assertSFluxBC_p(int iR,int iZ,int iEq);
+    // functions to assert current BCs
+    void assertWCurrentBC_p(int iR,int iZ,int iEq);
+    void assertECurrentBC_p(int iR,int iZ,int iEq);
+    void assertNCurrentBC_p(int iR,int iZ,int iEq);
+    void assertSCurrentBC_p(int iR,int iZ,int iEq);
 
-    // // functions to assert current BCs
-    // void assertWCurrentBC_p(int iR,int iZ,int iEq);
-    // void assertECurrentBC_p(int iR,int iZ,int iEq);
-    // void assertNCurrentBC_p(int iR,int iZ,int iEq);
-    // void assertSCurrentBC_p(int iR,int iZ,int iEq);
+    // functions to assert Gol'din BCs
+    int assertNGoldinBC_p(int iR,int iZ,int iEq);
+    int assertSGoldinBC_p(int iR,int iZ,int iEq);
+    int assertEGoldinBC_p(int iR,int iZ,int iEq);
 
-    // // functions to assert Gol'din BCs
-    // void assertNGoldinBC_p(int iR,int iZ,int iEq);
-    // void assertSGoldinBC_p(int iR,int iZ,int iEq);
-    // void assertEGoldinBC_p(int iR,int iZ,int iEq);
-
-    // // functions to assert Gol'din diffusion BCs
-    // void assertNGoldinP1BC_p(int iR,int iZ,int iEq);
-    // void assertSGoldinP1BC_p(int iR,int iZ,int iEq);
-    // void assertEGoldinP1BC_p(int iR,int iZ,int iEq);
+    // functions to assert Gol'din diffusion BCs
+    int assertNGoldinP1BC_p(int iR,int iZ,int iEq);
+    int assertSGoldinP1BC_p(int iR,int iZ,int iEq);
+    int assertEGoldinP1BC_p(int iR,int iZ,int iEq);
 
   private:
     // private variables
