@@ -958,16 +958,38 @@ Eigen::MatrixXd HeatTransfer::returnCurrentTemp()
 //==============================================================================
 /// Map values from 2D matrix into 1D solution vector
 ///
-void HeatTransfer::setTemp()
+int HeatTransfer::setTemp()
 {
 
-  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  VecScatter     ctx;
+  PetscErrorCode ierr;
+  PetscScalar value;
+  PetscInt index;
+
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
-    { 
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      { 
 
-      mpqd->xPast(getIndex(iZ,iR)) = temp(iZ,iR);   
+        value = temp(iZ,iR);
+        index = getIndex(iZ,iR);
+        ierr = VecSetValue(mpqd->xPast_p,index,value,ADD_VALUES);CHKERRQ(ierr); 
 
+      }
+    }
+  }
+  else
+  {
+    for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
+      { 
+
+        mpqd->xPast(getIndex(iZ,iR)) = temp(iZ,iR);   
+
+      }
     }
   }
 
@@ -1257,7 +1279,7 @@ int HeatTransfer::buildLinearSystem_p()
           + mesh->drsCorner(iR)/mats->k(iZ,iR),-1.0);
         coeff = 2.0*gParams[iWF]*harmonicAvg/gParams[iVol];
         value = -mesh->dt*coeff;
-        ierr = MatSetValue(mpqd->A_p,iEq,wIndex,-coeff,ADD_VALUES);CHKERRQ(ierr); 
+        ierr = MatSetValue(mpqd->A_p,iEq,wIndex,value,ADD_VALUES);CHKERRQ(ierr); 
         cCoeff += mesh->dt*coeff;
         //Atemp(iEqTemp,wIndex) = -mesh->dt*coeff;
       } 
@@ -1289,7 +1311,7 @@ int HeatTransfer::buildLinearSystem_p()
         /mesh->dzsCorner(iZ))/gParams[iVol];
         cCoeff -= mesh->dt*coeff;
         value = -mesh->dt*coeff*inletTemp(0,iR);
-        ierr = VecSetValue(mpqd->b_p,iEq,-value,ADD_VALUES);CHKERRQ(ierr); 
+        ierr = VecSetValue(mpqd->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
         //mpqd->b(iEq) -= mesh->dt*coeff*inletTemp(0,iR);             
       } else if (iZ != nZ)
       {
@@ -1297,7 +1319,7 @@ int HeatTransfer::buildLinearSystem_p()
           + mesh->dzsCorner(iZ)/mats->k(iZ,iR),-1.0);
         coeff = -2.0*gParams[iSF]*harmonicAvg/gParams[iVol];
         value = mesh->dt*coeff;
-        ierr = MatSetValue(mpqd->A_p,iEq,sIndex,coeff,ADD_VALUES);CHKERRQ(ierr); 
+        ierr = MatSetValue(mpqd->A_p,iEq,sIndex,value,ADD_VALUES);CHKERRQ(ierr); 
         cCoeff -= mesh->dt*coeff;
         //Atemp(iEqTemp,sIndex) = mesh->dt*coeff;
       }
@@ -1313,7 +1335,7 @@ int HeatTransfer::buildLinearSystem_p()
 
       // Flux source term 
       coeff = -mesh->dt*mats->omega(iZ,iR)*mats->oneGroupXS->sigF(iZ,iR);
-      mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&Atemp);
+      mpqd->fluxSource(iZ,iR,iEq,coeff,&Atemp);
       
       // Gamma source term 
       coeff = mesh->dt;

@@ -102,6 +102,9 @@ class GreyGroupQD
 
     // Steady state
     void buildSteadyStateLinearSystem_p();
+    
+    // Transient
+    void buildLinearSystem_p();
 
   private:
     Materials * materials;

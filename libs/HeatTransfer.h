@@ -42,7 +42,7 @@ class HeatTransfer
   void calcFluxes();
   void calcImplicitFluxes();
   void getTemp();
-  void setTemp();
+  int setTemp();
   Eigen::MatrixXd returnCurrentTemp();
   void assignBoundaryIndices();
   void updateBoundaryConditions();

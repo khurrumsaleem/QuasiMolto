@@ -602,16 +602,37 @@ int SingleGroupDNP::getCoreConc()
 //==============================================================================
 /// Map solution from 2D matrix to 1D vector
 ///
-void SingleGroupDNP::setCoreConc()
+int SingleGroupDNP::setCoreConc()
 {
+  
+  PetscErrorCode ierr;
+  PetscScalar value;
+  PetscInt index;
 
-  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
-    { 
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      { 
 
-      mgdnp->mpqd->xPast(getIndex(iZ,iR,coreIndexOffset)) = dnpConc(iZ,iR);   
+        value = dnpConc(iZ,iR);
+        index = getIndex(iZ,iR,coreIndexOffset);
+        ierr = VecSetValue(mgdnp->mpqd->xPast_p,index,value,ADD_VALUES);CHKERRQ(ierr); 
 
+      }
+    }
+  }
+  else
+  {
+    for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
+      { 
+
+        mgdnp->mpqd->xPast(getIndex(iZ,iR,coreIndexOffset)) = dnpConc(iZ,iR);
+
+      }
     }
   }
 
@@ -654,7 +675,7 @@ int SingleGroupDNP::getRecircConc()
 
       }
     } 
-        
+
     /* Destroy scatter context */
     VecScatterDestroy(&ctx);
     VecDestroy(&temp_x_p_seq);
@@ -679,16 +700,39 @@ int SingleGroupDNP::getRecircConc()
 //==============================================================================
 /// Map solution to 1D vector from 2D solution
 ///
-void SingleGroupDNP::setRecircConc()
+int SingleGroupDNP::setRecircConc()
 {
+  PetscErrorCode ierr;
+  PetscScalar value;
+  PetscInt index;
 
-  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
-    { 
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->nZrecirc; iZ++)
+      { 
 
-      mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset)) = recircConc(iZ,iR);   
+        value = recircConc(iZ,iR);
+        index = getIndex(iZ,iR,recircIndexOffset);
+        ierr = VecSetValue(mgdnp->recircx_p,index,value,ADD_VALUES);CHKERRQ(ierr); 
 
+      }
+    }
+    
+    ierr = VecAssemblyBegin(mgdnp->recircx_p);CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(mgdnp->recircx_p);CHKERRQ(ierr);
+  }
+  else
+  {
+    for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
+      { 
+
+        mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset)) = recircConc(iZ,iR);   
+
+      }
     }
   }
 
@@ -1294,7 +1338,7 @@ int SingleGroupDNP::buildLinearSystem_p(
   Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> testMat;
   PetscErrorCode ierr;
   PetscScalar value;
-  
+
   //#pragma omp parallel for private(myIndex,iEq,iEqTemp)
   for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
   {
@@ -1305,7 +1349,7 @@ int SingleGroupDNP::buildLinearSystem_p(
       iEqTemp = getIndex(iZ,iR,0);     
 
       value = 1 + mesh->dt*lambda;
-      ierr = MatSetValue(*A_p,iEq,myIndex,lambda,ADD_VALUES);CHKERRQ(ierr); 
+      ierr = MatSetValue(*A_p,iEq,myIndex,value,ADD_VALUES);CHKERRQ(ierr); 
       //testMat(iEqTemp,myIndex) = 1 + mesh->dt*lambda; 
 
       // Time term
@@ -1317,7 +1361,7 @@ int SingleGroupDNP::buildLinearSystem_p(
       if (fluxSource)
       {
         coeff = -mesh->dt*mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
-        mgdnp->mpqd->fluxSource(iZ,iR,iEqTemp,coeff,&testMat);
+        mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff,&testMat);
       }
 
       // Advection term
@@ -1328,7 +1372,7 @@ int SingleGroupDNP::buildLinearSystem_p(
 
     }
   }
-  
+
   //myA->middleRows(myIndexOffset,nDNPUnknowns) = Atemp; 
   //myA->middleRows(myIndexOffset,nDNPUnknowns) = testMat.sparseView(); 
 };

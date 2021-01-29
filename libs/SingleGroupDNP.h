@@ -76,9 +76,9 @@ class SingleGroupDNP
         Eigen::VectorXd inletVelocity,\
         arma::rowvec dzs);
     int getCoreConc();
-    void setCoreConc();
+    int setCoreConc();
     int getRecircConc();
-    void setRecircConc();
+    int setRecircConc();
     double calcPhi(double theta,string fluxLimiter); 
     double calcTheta(double DNPupwindInterface,double DNPinterface);
 

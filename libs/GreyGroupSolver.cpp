@@ -251,10 +251,11 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
   northCurrent(-geoParams[iNF],iR,iZ,iEq);
 
   southCurrent(geoParams[iSF],iR,iZ,iEq);
-
+  
   // formulate RHS entry
   (*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
               ( ((*xPast)(indices[iCF])/(vPast*deltaT)) + GGQD->q(iZ,iR));
+
 };
 //==============================================================================
 
@@ -3737,9 +3738,20 @@ int GreyGroupSolver::assertEFluxBC_p(int iR,int iZ,int iEq)
 ///
 int GreyGroupSolver::backCalculateCurrent_p()
 {
+  // PETSc object to broadcast variables 
+  VecScatter     ctx;
   PetscErrorCode ierr;
 
   ierr = MatMultAdd(C_p,xFlux_p,d_p,currPast_p);
+
+  // Broadcast currPast
+  VecScatterCreateToAll(currPast_p,&ctx,&(currPast_p_seq));
+  VecScatterBegin(ctx,currPast_p,currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,currPast_p,currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterDestroy(&ctx);
+
 }
 //==============================================================================
 
@@ -3859,13 +3871,13 @@ int GreyGroupSolver::assertZerothMoment_p(int iR,int iZ,int iEq)
   northCurrent_p(-geoParams[iNF],iR,iZ,iEq);
 
   southCurrent_p(geoParams[iSF],iR,iZ,iEq);
-
+ 
   // formulate RHS entry
   VecGetValues(MPQD->xPast_p_seq,1,&index,&past_flux);CHKERRQ(ierr);
   value = geoParams[iCF]*((past_flux/(vPast*deltaT)) + GGQD->q(iZ,iR));
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
-  (*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
+  //(*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
               ( ((*xPast)(indices[iCF])/(vPast*deltaT)) + GGQD->q(iZ,iR));
 };
 //==============================================================================
@@ -3972,7 +3984,7 @@ int GreyGroupSolver::southCurrent_p(double coeff,int iR,int iZ,int iEq)
       curr_index = indices[iSC];
 
       // Get previous multigroup current and neutron velocity
-      VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+      VecGetValues(GGQD->mgqd->QDSolve->currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
       mgqdNeutV = materials->zNeutVel(iZ+1,iR,iGroup); 
 
       // Set coefficient (curr_value) in RHS vector
@@ -4070,7 +4082,7 @@ int GreyGroupSolver::northCurrent_p(double coeff,int iR,int iZ,int iEq)
       curr_index = indices[iNC];
 
       // Get previous multigroup current and neutron velocity
-      VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+      //VecGetValues(GGQD->mgqd->QDSolve->currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
       mgqdNeutV = materials->zNeutVel(iZ,iR,iGroup); 
 
       // Set coefficient (curr_value) in RHS vector
@@ -4170,7 +4182,7 @@ int GreyGroupSolver::westCurrent_p(double coeff,int iR,int iZ,int iEq)
       curr_index = indices[iWC];
 
       // Get previous multigroup current and neutron velocity
-      VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+      //VecGetValues(GGQD->mgqd->QDSolve->currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
       mgqdNeutV = materials->rNeutVel(iZ,iR,iGroup); 
 
       // Set coefficient (curr_value) in RHS vector
@@ -4271,7 +4283,7 @@ int GreyGroupSolver::eastCurrent_p(double coeff,int iR,int iZ,int iEq)
       curr_index = indices[iEC];
 
       // Get previous multigroup current and neutron velocity
-      VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+      //VecGetValues(GGQD->mgqd->QDSolve->currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
       mgqdNeutV = materials->rNeutVel(iZ,iR+1,iGroup); 
 
       // Set coefficient (curr_value) in RHS vector

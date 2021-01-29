@@ -64,12 +64,18 @@ class MultiPhysicsCoupledQD
     KSP ksp;
     PC pc;
 
-    // PETSc steady state functions
-    int buildSteadyStateLinearSystem_p();
+    // Dual purpose
     int solve_p();
-    void updateSteadyStateVarsAfterConvergence_p();
+
+    // Steady state 
+    int buildSteadyStateLinearSystem_p();
+    int updateSteadyStateVarsAfterConvergence_p();
     void solveSteadyState_p();
 
+    // Transient
+    int buildLinearSystem_p();
+    int updateVarsAfterConvergence_p();
+    void solveTransient_p();
 
     // Pointers
     HeatTransfer * heat;

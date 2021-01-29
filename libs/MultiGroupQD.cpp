@@ -140,6 +140,7 @@ int MultiGroupQD::setInitialCondition()
 {
 
   PetscErrorCode ierr; 
+  VecScatter     ctx;
   // Initialize vectors
   Eigen::VectorXd initialFluxCondition(QDSolve->energyGroups*\
       QDSolve->nGroupUnknowns);
@@ -160,8 +161,22 @@ int MultiGroupQD::setInitialCondition()
   // Set initial conditions in QDSolver object
   if (mesh->petsc)
   {
-    eigenVecToPETScVec(&initialFluxCondition,&(QDSolve->xPast_p_seq));
-    eigenVecToPETScVec(&initialCurrentCondition,&(QDSolve->currPast_p_seq));
+    eigenVecToPETScVec(&initialFluxCondition,&(QDSolve->xPast_p));
+    eigenVecToPETScVec(&initialCurrentCondition,&(QDSolve->currPast_p));
+
+    VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
+    VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+
+    VecScatterCreateToAll(QDSolve->xPast_p,&ctx,&(QDSolve->xPast_p_seq));
+    VecScatterBegin(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+
+    VecScatterDestroy(&ctx);
   }
   else
   {

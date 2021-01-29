@@ -3777,9 +3777,21 @@ int QDSolver::calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq,\
 /// Compute currents from flux values in x
 int QDSolver::backCalculateCurrent_p()
 {
+  
+  // PETSc object to broadcast variables 
+  VecScatter     ctx;
   PetscErrorCode ierr;
 
   ierr = MatMultAdd(C_p,x_p,d_p,currPast_p);
+
+  // Broadcast currPast
+  VecScatterCreateToAll(currPast_p,&ctx,&(currPast_p_seq));
+  VecScatterBegin(ctx,currPast_p,currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,currPast_p,currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterDestroy(&ctx);
+
 }
 //==============================================================================
 

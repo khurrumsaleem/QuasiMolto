@@ -220,6 +220,9 @@ void MultiPhysicsCoupledQD::buildSteadyStateLinearSystem()
 ///
 void MultiPhysicsCoupledQD::initializeXPast()
 {
+  
+  // Object for broadcasting PETSc variable 
+  VecScatter     ctx;
 
   // Set fluxes 
   ggqd->GGSolver->setFlux();
@@ -233,9 +236,21 @@ void MultiPhysicsCoupledQD::initializeXPast()
 
   /* Calculate currents consistent with fluxes in xPast */
   if (mesh->petsc)
+  {
     x_p = xPast_p; // getFlux() pulls from x
+    
+    // Broadcast xPast
+    VecScatterCreateToAll(xPast_p,&ctx,&(xPast_p_seq));
+    VecScatterBegin(ctx,xPast_p,xPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,xPast_p,xPast_p_seq,\
+        INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterDestroy(&ctx);
+  }
   else
+  {
     x = xPast; // getFlux() pulls from x
+  }
 
   ggqd->GGSolver->getFlux();
   ggqd->GGSolver->formBackCalcSystem();
@@ -468,7 +483,7 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence()
 //==============================================================================
 
 //==============================================================================
-/// Run transient with multiple solves 
+/// Write variables out to CSVs
 ///
 void MultiPhysicsCoupledQD::writeVars()
 {
@@ -556,6 +571,8 @@ void MultiPhysicsCoupledQD::solveTransient()
     solveLinearSystem();   
     updateVarsAfterConvergence();
   }
+  
+  writeVars();
 };
 //==============================================================================
 
@@ -580,41 +597,7 @@ void MultiPhysicsCoupledQD::solveSteadyState()
 
 /* PETSc functions */
 
-// Steady state
-
-//==============================================================================
-/// Build linear system for multiphysics coupled quasidiffusion system
-///
-int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
-{
-
-  PetscErrorCode ierr;
-
-  // Reset linear system
-  initPETScMat(&A_p,nUnknowns,4*nUnknowns);
-  //initPETScVec(&x_p,nUnknowns);
-  initPETScVec(&b_p,nUnknowns);
-
-  // Build QD system
-  ggqd->buildSteadyStateLinearSystem_p();
-
-  // Build heat transfer system
-  heat->buildSteadyStateLinearSystem_p();
-
-  // Build delayed neutron precursor balance system in core
-  mgdnp->buildSteadyStateCoreLinearSystem_p();  
-
-  // Build delayed neutron precursor balance system in recirculation loop
-  mgdnp->buildSteadyStateRecircLinearSystem_p();  
-
-  /* Finalize assembly for A_p and b_p */
-  ierr = MatAssemblyBegin(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
-  ierr = VecAssemblyBegin(b_p);CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
-
-};
-//==============================================================================
+// Dual purpose
 
 //==============================================================================
 /// Solve linear system for multiphysics coupled quasidiffusion system with a 
@@ -663,11 +646,50 @@ int MultiPhysicsCoupledQD::solve_p()
 };
 //==============================================================================
 
+// Steady state
+
+//==============================================================================
+/// Build linear system for multiphysics coupled quasidiffusion system
+///
+int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
+{
+
+  PetscErrorCode ierr;
+
+  // Reset linear system
+  initPETScMat(&A_p,nUnknowns,4*nUnknowns);
+  //initPETScVec(&x_p,nUnknowns);
+  initPETScVec(&b_p,nUnknowns);
+
+  // Build QD system
+  ggqd->buildSteadyStateLinearSystem_p();
+
+  // Build heat transfer system
+  heat->buildSteadyStateLinearSystem_p();
+
+  // Build delayed neutron precursor balance system in core
+  mgdnp->buildSteadyStateCoreLinearSystem_p();  
+
+  // Build delayed neutron precursor balance system in recirculation loop
+  mgdnp->buildSteadyStateRecircLinearSystem_p();  
+
+  /* Finalize assembly for A_p and b_p */
+  ierr = MatAssemblyBegin(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
+  ierr = VecAssemblyBegin(b_p);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
+
+};
+//==============================================================================
+
 //==============================================================================
 /// Run transient with multiple solves 
 ///
-void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
+int MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
 {
+
+  // Object for broadcasting PETSc variable 
+  VecScatter     ctx;
 
   // Read solutions from 1D vector to 2D matrices 
   ggqd->GGSolver->getFlux();
@@ -690,6 +712,14 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
   mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;  
   mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;  
 
+  // Broadcast xPast
+  VecScatterCreateToAll(xPast_p,&ctx,&(xPast_p_seq));
+  VecScatterBegin(ctx,xPast_p,xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,xPast_p,xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterDestroy(&ctx);
+
 };
 //==============================================================================
 
@@ -711,6 +741,98 @@ void MultiPhysicsCoupledQD::solveSteadyState_p()
 };
 //==============================================================================
 
+/* TRANSIENT */
+
+//==============================================================================
+/// Run transient with multiple solves 
+///
+void MultiPhysicsCoupledQD::solveTransient_p()
+{
+
+  for (int iT = 0; iT < mesh->dts.size(); iT++)
+  {
+    buildLinearSystem_p();
+    solve_p();   
+    updateVarsAfterConvergence_p();
+  }
+  
+  writeVars();
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system for multiphysics coupled quasidiffusion system
+///
+int MultiPhysicsCoupledQD::buildLinearSystem_p()
+{
+
+  PetscErrorCode ierr;
+
+  // Reset linear system
+  initPETScMat(&A_p,nUnknowns,4*nUnknowns);
+  initPETScVec(&b_p,nUnknowns);
+
+  // Build QD system
+  ggqd->buildLinearSystem_p();
+
+  // Build heat transfer system
+  heat->buildLinearSystem_p();
+
+  // Build delayed neutron precursor balance system in core
+  mgdnp->buildCoreLinearSystem_p();  
+
+  // Build delayed neutron precursor balance system in recirculation loop
+  mgdnp->buildRecircLinearSystem_p();  
+
+  /* Finalize assembly for A_p and b_p */
+  ierr = MatAssemblyBegin(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
+  ierr = VecAssemblyBegin(b_p);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Run transient with multiple solves 
+///
+int MultiPhysicsCoupledQD::updateVarsAfterConvergence_p()
+{
+  // Object for broadcasting PETSc variable 
+  VecScatter     ctx;
+
+  // Read solutions from 1D vector to 2D matrices 
+  ggqd->GGSolver->getFlux();
+
+  heat->getTemp();
+
+  mgdnp->getCoreDNPConc();
+
+  mgdnp->getRecircDNPConc();
+
+  // Back calculate currents
+  // ToDo Add PETSc support for back calc system
+  ggqd->GGSolver->formBackCalcSystem_p();
+  ggqd->GGSolver->backCalculateCurrent_p();
+  ggqd->GGSolver->getCurrent();
+
+  // Set xPast and past neutron velocities 
+  xPast_p = x_p;
+  mats->oneGroupXS->neutVPast = mats->oneGroupXS->neutV;  
+  mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;  
+  mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;  
+
+  // Broadcast xPast
+  VecScatterCreateToAll(xPast_p,&ctx,&(xPast_p_seq));
+  VecScatterBegin(ctx,xPast_p,xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,xPast_p,xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterDestroy(&ctx);
+
+};
+//==============================================================================
 
 //==============================================================================
 /// Check for optional input parameters of relevance to this object
