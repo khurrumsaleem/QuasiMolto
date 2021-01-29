@@ -630,25 +630,25 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   //{
   //  cout << "Run ELOT PETSc steady state solve...";
   //  myMPQD->solveSteadyState_p();
-  //  ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //  ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //  ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //  ierr = MatView(myMPQD->ggqd->GGSolver->C_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //  cout << " done." << endl;
+  //  //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //  //ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //  //ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //  //ierr = MatView(myMPQD->ggqd->GGSolver->C_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //  //cout << " done." << endl;
   //}
   //else
   //{
   //  cout << "Run ELOT eigen steady state solve...";
   //  myMPQD->solveSteadyState();
-  //  cout << "x" << endl;
-  //  cout << myMPQD->x << endl;
-  //  cout << "b" << endl;
-  //  cout << myMPQD->b << endl;
-  //  cout << "A" << endl;
-  //  cout << myMPQD->A << endl;
-  //  cout << "C" << endl;
-  //  cout << myMPQD->ggqd->GGSolver->C << endl;
-  //  cout << " done." << endl;
+  //  //cout << "x" << endl;
+  //  //cout << myMPQD->x << endl;
+  //  //cout << "b" << endl;
+  //  //cout << myMPQD->b << endl;
+  //  //cout << "A" << endl;
+  //  //cout << myMPQD->A << endl;
+  //  //cout << "C" << endl;
+  //  //cout << myMPQD->ggqd->GGSolver->C << endl;
+  //  //cout << " done." << endl;
   //}
 
   /* TRANSIENT */
@@ -718,28 +718,53 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   //myMPQD->mgdnp->buildCoreLinearSystem_p();
   //cout << "form mgdnp core linear system" << endl;
 
-  //// Test build steady state precursor balance linear system call
+  // Test build steady state precursor balance linear system call
   //myMPQD->mgdnp->buildRecircLinearSystem_p();
   //cout << "form mgdnp recirc linear system" << endl;
+  //myMPQD->mgdnp->solveRecircLinearSystem_p();
+  //cout << "solved mgdnp recirc linear system" << endl;
 
   // Test calcSteadyStateCurrent functions
-  myMPQD->ggqd->GGSolver->calcSteadyStateSouthCurrent_p(testInt,testInt,testInt);
-  cout << "calc south current" << endl;
-  myMPQD->ggqd->GGSolver->calcSteadyStateNorthCurrent_p(testInt,testInt,testInt);
-  cout << "calc north current" << endl;
-  myMPQD->ggqd->GGSolver->calcSteadyStateWestCurrent_p(testInt,testInt,testInt);
-  cout << "calc west current" << endl;
-  myMPQD->ggqd->GGSolver->calcEastCurrent_p(testInt,testInt,testInt);
-  cout << "calc east current" << endl;
+  //myMPQD->ggqd->GGSolver->calcSteadyStateSouthCurrent_p(testInt,testInt,testInt);
+  //cout << "calc south current" << endl;
+  //myMPQD->ggqd->GGSolver->calcSteadyStateNorthCurrent_p(testInt,testInt,testInt);
+  //cout << "calc north current" << endl;
+  //myMPQD->ggqd->GGSolver->calcSteadyStateWestCurrent_p(testInt,testInt,testInt);
+  //cout << "calc west current" << endl;
+  //myMPQD->ggqd->GGSolver->calcEastCurrent_p(testInt,testInt,testInt);
+  //cout << "calc east current" << endl;
 
-  // Test formBackCalc functions
-  myMPQD->ggqd->GGSolver->formBackCalcSystem_p();
-  cout << "form back calc system" << endl;
+  //// Test formBackCalc functions
+  //myMPQD->ggqd->GGSolver->formBackCalcSystem_p();
+  //cout << "form back calc system" << endl;
 
-  //// Eigen system to compare to 
-  //myMPQD->buildSteadyStateLinearSystem();
-  //myMPQD->solveLinearSystem();
-  //cout << myMPQD->x << endl;
+  //PETSc system 
+  if (myMesh->petsc)
+  {
+    myMPQD->solveTransient_p();
+    //cout << "x_p" << endl;
+    //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    //cout << "b_p" << endl;
+    //ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    //cout << "A_p" << endl;
+    //ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  }
+  // Eigen system 
+  else
+  {
+    myMPQD->solveTransient();
+    //cout << "x" << endl;
+    //cout << myMPQD->x << endl;
+    //cout << "b" << endl;
+    //cout << myMPQD->b << endl;
+    //cout << "A" << endl;
+    //cout << myMPQD->A << endl;
+    //cout << "C" << endl;
+    //cout << myMPQD->ggqd->GGSolver->C << endl;
+    //cout << " done." << endl;
+
+  }
+
 
   // Delete pointers
   delete myMGT;
