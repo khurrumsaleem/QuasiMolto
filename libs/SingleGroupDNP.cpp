@@ -122,7 +122,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
   Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> testMat;
   testMat.resize(nDNPUnknowns,myA->cols());
   testMat.setZero();
-
+  
   #pragma omp parallel for private(myIndex,iEq,iEqTemp)
   for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
   {
@@ -1368,7 +1368,6 @@ int SingleGroupDNP::buildLinearSystem_p(
       value = (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
       ierr = VecSetValue(*b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
       //(*myb)(iEq) += (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
-
 
     }
   }
