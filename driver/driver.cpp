@@ -52,6 +52,10 @@ int testMGQDPETScCoupling(Materials * myMaterials,\
 int testELOTPETScCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
+int testMultilevelPETScCoupling(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input);
+
 
 int main(int argc, char** argv) {
 
@@ -145,6 +149,8 @@ int main(int argc, char** argv) {
       testMGQDPETScCoupling(myMaterials,myMesh,input);
     else if (solveType == "testELOTPETScCoupling")
       testELOTPETScCoupling(myMaterials,myMesh,input);
+    else if (solveType == "testMultilevelPETScCoupling")
+      testMultilevelPETScCoupling(myMaterials,myMesh,input);
     else
       myMGT->solveTransportOnly();
   }
@@ -626,30 +632,30 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   //myMPQD->solve_p();
   //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   //myMPQD->updateSteadyStateVarsAfterConvergence_p();
-  //if (myMesh->petsc)
-  //{
-  //  cout << "Run ELOT PETSc steady state solve...";
-  //  myMPQD->solveSteadyState_p();
-  //  //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //  //ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //  //ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //  //ierr = MatView(myMPQD->ggqd->GGSolver->C_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //  //cout << " done." << endl;
-  //}
-  //else
-  //{
-  //  cout << "Run ELOT eigen steady state solve...";
-  //  myMPQD->solveSteadyState();
-  //  //cout << "x" << endl;
-  //  //cout << myMPQD->x << endl;
-  //  //cout << "b" << endl;
-  //  //cout << myMPQD->b << endl;
-  //  //cout << "A" << endl;
-  //  //cout << myMPQD->A << endl;
-  //  //cout << "C" << endl;
-  //  //cout << myMPQD->ggqd->GGSolver->C << endl;
-  //  //cout << " done." << endl;
-  //}
+  if (myMesh->petsc)
+  {
+    cout << "Run ELOT PETSc steady state solve...";
+    myMPQD->solveSteadyState_p();
+    //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    //ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    //ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    //ierr = MatView(myMPQD->ggqd->GGSolver->C_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+    //cout << " done." << endl;
+  }
+  else
+  {
+    cout << "Run ELOT eigen steady state solve...";
+    myMPQD->solveSteadyState();
+    //cout << "x" << endl;
+    //cout << myMPQD->x << endl;
+    //cout << "b" << endl;
+    //cout << myMPQD->b << endl;
+    //cout << "A" << endl;
+    //cout << myMPQD->A << endl;
+    //cout << "C" << endl;
+    //cout << myMPQD->ggqd->GGSolver->C << endl;
+    //cout << " done." << endl;
+  }
 
   /* TRANSIENT */
 
@@ -739,32 +745,75 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   //cout << "form back calc system" << endl;
 
   //PETSc system 
+  //if (myMesh->petsc)
+  //{
+  //  myMPQD->solveTransient_p();
+  //  //cout << "x_p" << endl;
+  //  //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //  //cout << "b_p" << endl;
+  //  //ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //  //cout << "A_p" << endl;
+  //  //ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //}
+  //// Eigen system 
+  //else
+  //{
+  //  myMPQD->solveTransient();
+  //  //cout << "x" << endl;
+  //  //cout << myMPQD->x << endl;
+  //  //cout << "b" << endl;
+  //  //cout << myMPQD->b << endl;
+  //  //cout << "A" << endl;
+  //  //cout << myMPQD->A << endl;
+  //  //cout << "C" << endl;
+  //  //cout << myMPQD->ggqd->GGSolver->C << endl;
+  //  //cout << " done." << endl;
+
+  //}
+
+
+  // Delete pointers
+  delete myMGT;
+  delete myMGQD;
+  delete myMPQD;
+  delete myMLCoupling;
+
+}
+
+int testMultilevelPETScCoupling(Materials * myMaterials,\
+  Mesh * myMesh,\
+  YAML::Node * input){
+  
+  PetscErrorCode ierr;
+  
+  // initialize multigroup transport object
+  MultiGroupTransport * myMGT; 
+  myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
+
+  // initialize multigroup quasidiffusion object
+  MultiGroupQD * myMGQD; 
+  myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
+
+  // Initialize MultiPhysicsCoupledQD
+  MultiPhysicsCoupledQD * myMPQD; 
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+
+  // Initialize MultiPhysicsCoupledQD
+  MultilevelCoupling * myMLCoupling; 
+  myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
+      myMPQD);
+
+  // Set state to zero for initial steady state solve
+  myMesh->state=0;
+  
+  cout << "Initialized steady state solve" << endl;
+
   if (myMesh->petsc)
-  {
-    myMPQD->solveTransient_p();
-    //cout << "x_p" << endl;
-    //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-    //cout << "b_p" << endl;
-    //ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-    //cout << "A_p" << endl;
-    //ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  }
-  // Eigen system 
+    myMLCoupling->solveSteadyStateResidualBalance_p(true);
   else
-  {
-    myMPQD->solveTransient();
-    //cout << "x" << endl;
-    //cout << myMPQD->x << endl;
-    //cout << "b" << endl;
-    //cout << myMPQD->b << endl;
-    //cout << "A" << endl;
-    //cout << myMPQD->A << endl;
-    //cout << "C" << endl;
-    //cout << myMPQD->ggqd->GGSolver->C << endl;
-    //cout << " done." << endl;
+    myMLCoupling->solveSteadyStateResidualBalance(true);
 
-  }
-
+  cout << "Completed steady state solve" << endl;
 
   // Delete pointers
   delete myMGT;
