@@ -3115,11 +3115,11 @@ void QDSolver::assertSteadyStateNBC_p(int iR,int iZ,int iEq,int energyGroup,\
   if (reflectingBCs)
     assertSteadyStateNCurrentBC_p(iR,iZ,iEq,energyGroup,SGQD);
   else if (goldinBCs)
-    assertSteadyStateNGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertSteadyStateNGoldinBC_p(iR,iZ,iEq,energyGroup,SGQD);
   else if (diffusionBCs)
-    assertSteadyStateNGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
+    assertSteadyStateNGoldinP1BC_p(iR,iZ,iEq,energyGroup,SGQD);
   else
-    assertNFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertNFluxBC_p(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
 
@@ -3140,7 +3140,7 @@ void QDSolver::assertSteadyStateSBC_p(int iR,int iZ,int iEq,int energyGroup,\
   else if (diffusionBCs)
     assertSteadyStateSGoldinP1BC_p(iR,iZ,iEq,energyGroup,SGQD);
   else
-    assertSFluxBC(iR,iZ,iEq,energyGroup,SGQD);
+    assertSFluxBC_p(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
 
