@@ -253,20 +253,59 @@ void MultiGroupDNP::getCumulativeDNPDecaySource()
 {
   double groupLambda,localGroupConc;
   int groupOffset; 
+  PetscErrorCode ierr;
+  PetscScalar value[1]; 
+  PetscInt index[1]; 
+  VecScatter     ctx;
+  Vec temp_x_p_seq;
+
   dnpSource.setZero();
-  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
-  {
-    groupLambda = DNPs[iGroup]->lambda;
-    groupOffset = DNPs[iGroup]->coreIndexOffset;
-    for (int iR = 0; iR < mesh->nR; iR++)
+
+  if (mesh->petsc)
+  { 
+
+    // Gather values of x_p on all procs
+    VecScatterCreateToAll(mpqd->x_p,&ctx,&temp_x_p_seq);
+    VecScatterBegin(ctx,mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+
+    for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
     {
-      for (int iZ = 0; iZ < mesh->nZ; iZ++)
+      groupLambda = DNPs[iGroup]->lambda;
+      groupOffset = DNPs[iGroup]->coreIndexOffset;
+      for (int iR = 0; iR < mesh->nR; iR++)
       {
-        localGroupConc = mpqd->x(DNPs[iGroup]->getIndex(iZ,iR,groupOffset)); 
-        dnpSource(iZ,iR) += groupLambda*localGroupConc;  
+        for (int iZ = 0; iZ < mesh->nZ; iZ++)
+        {
+          index[0] = DNPs[iGroup]->getIndex(iZ,iR,groupOffset);
+          ierr = VecGetValues(temp_x_p_seq,1,index,value);
+          localGroupConc = value[0];
+          //localGroupConc = mpqd->x(DNPs[iGroup]->getIndex(iZ,iR,groupOffset)); 
+          dnpSource(iZ,iR) += groupLambda*localGroupConc;  
+        }
       }
     }
-    //dnpSource += DNPs[iGroup]->lambda*DNPs[iGroup]->dnpConc;
+    
+    /* Destroy scatter context */
+    VecScatterDestroy(&ctx);
+    VecDestroy(&temp_x_p_seq);
+  }
+  else
+  {
+    for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+    {
+      groupLambda = DNPs[iGroup]->lambda;
+      groupOffset = DNPs[iGroup]->coreIndexOffset;
+      for (int iR = 0; iR < mesh->nR; iR++)
+      {
+        for (int iZ = 0; iZ < mesh->nZ; iZ++)
+        {
+          localGroupConc = mpqd->x(DNPs[iGroup]->getIndex(iZ,iR,groupOffset)); 
+          dnpSource(iZ,iR) += groupLambda*localGroupConc;  
+        }
+      }
+      //dnpSource += DNPs[iGroup]->lambda*DNPs[iGroup]->dnpConc;
+    }
   }
 };
 //==============================================================================
@@ -374,7 +413,7 @@ int MultiGroupDNP::buildSteadyStateRecircLinearSystem_p()
   // Reset linear system of recirculation loop
   initPETScMat(&recircA_p,nRecircUnknowns,4*nRecircUnknowns);
   initPETScVec(&recircb_p,nRecircUnknowns);
- 
+
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
     DNPs[iGroup]->buildSteadyStateRecircLinearSystem_p();
@@ -411,11 +450,11 @@ void MultiGroupDNP::buildCoreLinearSystem_p()
 int MultiGroupDNP::buildRecircLinearSystem_p()
 {
   PetscErrorCode ierr;
-  
+
   // Reset linear system of recirculation loop
   initPETScMat(&recircA_p,nRecircUnknowns,4*nRecircUnknowns);
   initPETScVec(&recircb_p,nRecircUnknowns);
- 
+
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
     DNPs[iGroup]->buildRecircLinearSystem_p();
@@ -438,7 +477,7 @@ int MultiGroupDNP::buildRecircLinearSystem_p()
 int MultiGroupDNP::solveRecircLinearSystem_p()
 {
 
-  string PetscSolver = "bicg";
+  string PetscSolver = "gmres";
   string PetscPreconditioner = "bjacobi";
   PetscErrorCode ierr;
   int its,m,n;
@@ -456,7 +495,7 @@ int MultiGroupDNP::solveRecircLinearSystem_p()
 
   /* Set solver type */
   ierr = KSPSetType(ksp,PetscSolver.c_str());CHKERRQ(ierr);
-  
+
   /* Set preconditioner type */
   ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
   ierr = PCSetType(pc,PetscPreconditioner.c_str());CHKERRQ(ierr);
@@ -465,13 +504,12 @@ int MultiGroupDNP::solveRecircLinearSystem_p()
   ierr = KSPSolve(ksp,recircb_p,recircx_p);CHKERRQ(ierr);
   auto end = chrono::high_resolution_clock::now();
   auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-  //ierr = VecView(x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
   cout << "solve time: " << elapsed.count()*1e-9 << endl;
 
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
-  
+
 };
 //==============================================================================
 
