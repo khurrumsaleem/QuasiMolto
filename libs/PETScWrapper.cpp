@@ -83,5 +83,31 @@ int eigenVecToPETScVec(Eigen::VectorXd *x_e,Vec *x_p)
   ierr = VecAssemblyEnd(*x_p);CHKERRQ(ierr);
 }
 
+int petscVecToEigenVec(Vec *x_p,Eigen::VectorXd *x_e)
+{
+  PetscErrorCode ierr;
+  PetscScalar value;
+  PetscInt vecSize;
+  VecScatter     ctx;
+  Vec temp;
+
+  // Collect values from all procs
+  VecScatterCreateToAll(*x_p,&ctx,&temp);
+  VecScatterBegin(ctx,*x_p,temp,INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,*x_p,temp,INSERT_VALUES,SCATTER_FORWARD);
+
+  // Set set of Eigen vector
+  ierr = VecGetSize(*x_p, &vecSize);
+  (*x_e).setZero(vecSize);
+
+  for (int idx = 0; idx < vecSize; idx++)
+  {
+    ierr = VecGetValues(temp,1,&idx,&value);CHKERRQ(ierr);
+    (*x_e)(idx) = value;
+  }
+  
+  VecScatterDestroy(&ctx);
+}
+
 
 //==============================================================================
