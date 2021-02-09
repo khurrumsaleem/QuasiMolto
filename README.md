@@ -1,3 +1,43 @@
 # QuasiMolto [![Build Status](https://travis-ci.org/aaronjamesreynolds/QuasiMolto.svg?branch=master)](https://travis-ci.org/aaronjamesreynolds/QuasiMolto)
-A multiphysics solver for molten salt reactors that uses quasi-diffusion acceleration.
+
+A multigroup, multiphysics, multilevel transport solver for circulating fuel reactor kinetics. 
+Contains transient and steady-state solvers. 
+
+## Build instructions
+  * Clone the QuasiMolto repository and its submodules
+
+    ```git clone --recurse-submodules git@github.com:aaronjamesreynolds/QuasiMolto.git```
+
+  * Build the third-party libraries
+  
+    ```cd QuasiMolto/TPLs/```
+    
+    ```./build-tpls.sh```
+   
+  * Make a build directory and compile `QuasiMolto`
+  
+    ```cd ../../```
+    
+    ```mkdir build_directory```
+    
+    ```cd build_directory```
+    
+    ```cmake -DCMAKE_BUILD_TYPE=Release ../QuasiMolto/```
+    
+    ```make all```
+    
+    ```make test```
+    
+  * The `QuasiMolto` executable is in the `bin` directory within `build_directory`. 
+    A simple input file is located in `QuasiMolto/examples/homogeneous/`. 
+    A simulation directory can be built, and the sample input run, with the following commands. 
+    
+    ```cd ../```
+    
+    ```mkdir myRun```
+    
+    ```cd myRun```
+    
+    ```../build_directory/bin/QuasiMolto ../QuasiMolto/examples/homogeneous/homogeneous.yaml```
+
 ![alt text](https://vignette.wikia.nocookie.net/monstermovies/images/4/46/Quasimodo.png/revision/latest?cb=20140628171627 "Quasi Moto")

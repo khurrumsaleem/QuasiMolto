@@ -143,9 +143,9 @@ int main(int argc, char** argv) {
       testMultiPhysicsCoupledQD(myMaterials,myMesh,input);
     else if (solveType == "testMultiGroupToGreyGroupCoupling")
       testMultiGroupToGreyGroupCoupling(myMaterials,myMesh,input);
-    else if (solveType == "testMultilevelCoupling")
+    else if (solveType == "transient")
       testMultilevelCoupling(myMaterials,myMesh,input);
-    else if (solveType == "testSteadyState")
+    else if (solveType == "steady_state")
       testSteadyState(myMaterials,myMesh,input);
     else if (solveType == "testSteadyStateThenTransient")
       testSteadyStateThenTransient(myMaterials,myMesh,input);
@@ -316,14 +316,15 @@ void testMultilevelCoupling(Materials * myMaterials,\
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
       myMPQD);
 
-  cout << "Initialized multilevel coupling" << endl;
+  cout << "Initialized multilevel transient solve." << endl;
 
-  myMLCoupling->solveTransient();
+  if (myMesh->petsc)
+    myMLCoupling->solveTransient_p();
+  else
+    myMLCoupling->solveTransient();
   
-  cout << "Completed multilevel solve" << endl;
+  cout << "Completed multilevel transient solve." << endl;
   
-//  myMaterials->oneGroupXS->print();
-//  myMPQD->ggqd->printBCParams();
 }
 
 void testSteadyState(Materials * myMaterials,\
@@ -350,11 +351,15 @@ void testSteadyState(Materials * myMaterials,\
   // Set state to zero for initial steady state solve
   myMesh->state=0;
   
-  cout << "Initialized steady state solve" << endl;
+  cout << "Initialized multilevel steady state solve." << endl;
 
-  myMLCoupling->solveSteadyStateResidualBalance(true);
+  if (myMesh->petsc)
+    myMLCoupling->solveSteadyStateResidualBalance_p(true);
+  else
+    myMLCoupling->solveSteadyStateResidualBalance(true);
+    
 
-  cout << "Completed steady state solve" << endl;
+  cout << "Completed multilevel steady state solve." << endl;
   
   // Delete pointers
 
