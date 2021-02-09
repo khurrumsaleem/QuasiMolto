@@ -126,6 +126,7 @@ bool TransportToQDCoupling::calcEddingtonFactors()
       cellAvgConverged = cellAvgConverged and true;
     else
       cellAvgConverged = cellAvgConverged and false;
+
   } //iGroup
 
 
@@ -137,6 +138,7 @@ bool TransportToQDCoupling::calcEddingtonFactors()
   
   // Calculate g0 and g1 coefficients used in integrating factor 
   calcIntFactorCoeffs();
+
 
   return (cellAvgConverged and interfaceConverged);
 }
