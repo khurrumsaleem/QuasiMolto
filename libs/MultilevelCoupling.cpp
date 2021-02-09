@@ -936,7 +936,7 @@ void MultilevelCoupling::solveMGLOQD()
 
   // Build flux system
   mgqd->buildLinearSystem();
-
+  
   // Solve flux system
   if (iterativeMGLOQD)
     mgqd->solveLinearSystemIterative();
@@ -991,6 +991,9 @@ void MultilevelCoupling::solveELOT(Eigen::VectorXd xGuess)
     mpqd->solveLinearSystemIterative(xGuess);
   else
     mpqd->solveLinearSystem();
+  
+  //cout << "ELOT x" << endl;
+  //cout << mpqd->x << endl;
 
 };
 //==============================================================================
@@ -1012,8 +1015,6 @@ void MultilevelCoupling::solveSteadyStateELOT(Eigen::VectorXd xGuess)
 
 };
 //==============================================================================
-
-
 
 //==============================================================================
 /// Collapse nuclear data with flux and current weighting 
@@ -1425,7 +1426,6 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
 };
 //==============================================================================
 
-
 //==============================================================================
 /// Perform a steady state solve at the MGLOQD level 
 ///
@@ -1461,19 +1461,360 @@ void MultilevelCoupling::solveSteadyStateELOT_p()
 };
 //==============================================================================
 
+// TRANSIENT
+
+//==============================================================================
+void MultilevelCoupling::solveSteadyStateTransientResidualBalance_p(bool outputVars)
+{
+  mesh->state=0;
+  solveSteadyStateResidualBalance_p(outputVars);
+  mesh->advanceOneTimeStep();
+  solveTransient_p();
+}
+//==============================================================================
+
+//==============================================================================
+/// Collapse nuclear data with flux and current weighting 
+///
+void MultilevelCoupling::solveTransient_p()
+{
+
+  // Timing variables
+  double duration,totalDuration = 0.0;
+  clock_t startTime;
+
+  // Write mesh info
+  mesh->writeVars();
+
+  for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
+  {
+    cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
+    cout << endl;
+
+    startTime = clock(); 
+    if(solveOneStepResidualBalance_p(mesh->outputOnStep[iTime]))
+    {
+      // Report solution time
+      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      totalDuration = totalDuration + duration; 
+      cout << "Solution computed in " << duration << " seconds." << endl;      
+
+      // Output and update variables
+      mgqd->updateVarsAfterConvergence(); 
+      mpqd->updateVarsAfterConvergence_p(); 
+      if (mesh->outputOnStep[iTime])
+      {
+        mgqd->writeVars();
+        mpqd->writeVars(); 
+        mats->oneGroupXS->writeVars();
+        mesh->output->write(outputDir,"Solve_Time",duration);
+      }
+      mesh->advanceOneTimeStep();
+    }  
+    else 
+    {
+      // Report solution time
+      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      totalDuration = totalDuration + duration; 
+      cout << "Solution aborted after " << duration << " seconds." << endl;      
+      mesh->output->write(outputDir,"Solve_Time",duration);
+
+      cout << "Solve not converged." << endl;
+      cout << "Transient aborted." << endl;
+      break;
+    }
+  } 
+
+  // Report total solve time
+  cout << "Total solve time: " << totalDuration << " seconds." << endl;      
+  mesh->output->write(outputDir,"Solve_Time",totalDuration,true);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Collapse nuclear data with flux and current weighting 
+///
+bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
+{
+
+  Eigen::VectorXd xCurrentIter, xLastMGHOTIter, xLastMGLOQDIter,xLastELOTIter,\
+    residualVector;
+  vector<double> lastResidualELOT, lastResidualMGLOQD, residualMGHOT = {1,1,1},\
+    residualMGLOQD = {1,1,1}, residualELOT = {1,1,1};
+  bool eddingtonConverged;
+  bool convergedMGHOT=false, convergedMGLOQD=false, convergedELOT=false;
+  int itersMGHOT = 0, itersMGLOQD = 0, itersELOT = 0;
+  vector<int> iters;
+  vector<double> tempResMGHOT,tempResMGLOQD,tempResELOT,tempResiduals;
+  vector<double> fluxResMGHOT,fluxResMGLOQD,fluxResELOT,fluxResiduals;
+ 
+  // Timing variables 
+  double duration,totalDuration = 0.0,elotDuration = 0,\
+    mgloqdDuration = 0, mghotDuration = 0;
+  clock_t startTime;
+
+  while (not convergedMGHOT){ 
+
+    ////////////////////
+    // MGHOT SOLUTION // 
+    ////////////////////
+
+    // Only solve the MGHOT after we've got an estimate for the ELOT solution
+    if (itersMGHOT != 0 and not p1Approx)
+    {
+      // Solve MGHOT problem
+      cout << "MGHOT solve...";
+      startTime = clock(); 
+      solveMGHOT();
+      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      mghotDuration = mghotDuration + duration;
+      cout << " done. ("<< duration << " seconds)" << endl;
+      iters.push_back(3);
+
+      // Calculate Eddington factors for MGQD problem
+      cout << "Calculating MGLOQD Eddington factors...";
+      eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
+      cout << " done."<< endl;
+
+      // Calculate BCs for MGQD problem 
+      cout << "Calculating MGLOQD boundary conditions...";
+      MGTToMGQD->calcBCs();
+      cout << " done."<< endl;
+    }
+
+    // Store last iterate of ELOT solution used in MGHOT level
+    //xLastMGHOTIter = mpqd->x;
+    petscVecToEigenVec(&(mpqd->x_p),&xLastMGHOTIter);
+    
+    while (not convergedMGLOQD){
+
+      /////////////////////
+      // MGLOQD SOLUTION //
+      /////////////////////
+
+      // Solve MGLOQD problem
+      cout << "    ";
+      cout << "MGLOQD solve..." << endl;
+      startTime = clock(); 
+      solveMGLOQD_p();
+      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      mgloqdDuration = mgloqdDuration + duration;
+      cout << "    ";
+      cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
+      iters.push_back(2);
+
+      // Get group fluxes to use in group collapse
+      mgqd->getFluxes();
+      
+      // Store last iterate of ELOT solution used in MGLOQD level
+      //xLastMGLOQDIter = mpqd->x;
+      petscVecToEigenVec(&(mpqd->x_p),&xLastMGLOQDIter);
+    
+      while (not convergedELOT) {
+        
+        ///////////////////
+        // ELOT SOLUTION //
+        ///////////////////
+
+        // Calculate collapsed nuclear data
+        cout << "        ";
+        cout << "Collapsing MGLOQD data for ELOT solve...";
+        MGQDToMPQD->collapseNuclearData();
+        cout << " done."<< endl;
+        
+        // Store last iterate of ELOT solution used in ELOT level
+        cout << "        ";
+        cout << "Storing last solution...";
+        //xLastELOTIter = mpqd->x;
+        petscVecToEigenVec(&(mpqd->x_p),&xLastELOTIter);
+        cout << " done."<< endl;
+      
+        // Solve ELOT problem
+        cout << "        ";
+        cout << "ELOT solve..." << endl;
+        startTime = clock(); 
+        solveELOT_p();
+        duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+        elotDuration = elotDuration + duration;
+        cout << "        ";
+        cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
+        iters.push_back(1);
+
+        // Store newest iterate 
+        //xCurrentIter = mpqd->x;
+        petscVecToEigenVec(&(mpqd->x_p),&xCurrentIter);
+
+        lastResidualELOT = residualELOT; 
+
+        // Calculate and print ELOT residual  
+        residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
+        residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
+        cout << "        ";
+        cout << "ELOT Residual: " << residualELOT[0]; 
+        cout << ", " << residualELOT[1] << endl;
+
+        // Update iterate counters, store residuals
+        itersELOT++;
+        fluxResELOT.push_back(residualELOT[0]);
+        tempResELOT.push_back(residualELOT[1]);
+
+        // Calculate collapsed nuclear data at new temperature
+        mats->updateTemperature(mpqd->heat->returnCurrentTemp());
+
+        // Check if residuals are too big or if the residuals have increased
+        // from the last MGLOQD residual 
+        if (residualELOT[0]/lastResidualELOT[0] > resetThreshold and\
+            residualELOT[1]/lastResidualELOT[1] > resetThreshold) 
+        {
+          // Jump back to MGLOQD level
+          break;
+        }
+       
+        // Check converge criteria 
+        if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
+            eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1]) 
+        {
+          convergedELOT = true;
+        }
+
+      } // ELOT
+    
+      // Reset convergence indicator
+      convergedELOT = false; 
+      
+      // Store one group fluxes and DNPs for MGHOT and MGLOQD sources 
+      mpqd->ggqd->GGSolver->getFlux();
+      mpqd->mgdnp->getCumulativeDNPDecaySource();
+    
+      lastResidualMGLOQD = residualMGLOQD;
+ 
+      // Calculate and print MGLOQD residual 
+      residualMGLOQD = MGQDToMPQD->calcResidual(xLastMGLOQDIter,xCurrentIter);
+      residualMGLOQD = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGLOQDIter);
+      cout << endl;
+      cout << "    ";
+      cout << "MGLOQD Residual: " << residualMGLOQD[0];
+      cout << ", " << residualMGLOQD[1] << endl;
+      cout << endl;
+        
+      // Update iterate counters, store residuals
+      itersMGLOQD++;
+
+      fluxResMGLOQD.push_back(residualMGLOQD[0]);
+      fluxResMGLOQD.insert(fluxResMGLOQD.end(),\
+          fluxResELOT.begin(),fluxResELOT.end());
+      fluxResELOT.clear();
+
+      tempResMGLOQD.push_back(residualMGLOQD[1]);
+      tempResMGLOQD.insert(tempResMGLOQD.end(),\
+          tempResELOT.begin(),tempResELOT.end());
+      tempResELOT.clear();
+
+      // Check if residuals are too big or if the residuals have increased
+      // from the last MGLOQD residual 
+      if (residualMGLOQD[0]/lastResidualMGLOQD[0] > resetThreshold or\
+          residualMGLOQD[1]/lastResidualMGLOQD[1] > resetThreshold) 
+      {
+        // Jump back to MGHOT level
+        break;
+      }
+
+      // Check converge criteria 
+      if (eps(residualMGHOT[0],relaxTolMGLOQD) > residualMGLOQD[0] and\
+          eps(residualMGHOT[1],relaxTolMGLOQD) > residualMGLOQD[1])
+      { 
+        convergedMGLOQD = true;
+      }
+
+    } // MGLOQD
+    
+    // Reset convergence indicator
+    convergedMGLOQD = false;
+     
+    // Calculate and print MGHOT residual 
+    residualMGHOT = MGQDToMPQD->calcResidual(xLastMGHOTIter,xCurrentIter);
+    residualMGHOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGHOTIter);
+    cout << "MGHOT Residual: " << residualMGHOT[0];
+    cout << ", " << residualMGHOT[1] << endl;
+    cout << endl;
+      
+    // Update iterate counters, store residuals
+    itersMGHOT++;
+    
+    if (itersMGHOT != 1) fluxResMGHOT.push_back(residualMGHOT[0]);
+    fluxResMGHOT.insert(fluxResMGHOT.end(),\
+        fluxResMGLOQD.begin(),fluxResMGLOQD.end());
+    fluxResMGLOQD.clear();
+    
+    if (itersMGHOT != 1) tempResMGHOT.push_back(residualMGHOT[1]);
+    tempResMGHOT.insert(tempResMGHOT.end(),\
+        tempResMGLOQD.begin(),tempResMGLOQD.end());
+    tempResMGLOQD.clear();
+
+    // Update persistent iteration record
+    fluxResiduals.insert(fluxResiduals.end(),fluxResMGHOT.begin(),\
+        fluxResMGHOT.end());
+    fluxResMGHOT.clear();
+    
+    tempResiduals.insert(tempResiduals.end(),tempResMGHOT.begin(),\
+        tempResMGHOT.end());
+    tempResMGHOT.clear();
+      
+    // Check converge criteria 
+    if (eps(mpqd->epsMPQD) > residualMGHOT[0] and\
+        eps(mpqd->epsMPQD) > residualMGHOT[1]) 
+    {
+      convergedMGHOT = true;
+    }
+
+  } //MGHOT
+    
+  cout << endl;
+   
+  // Write iteration countrs to console 
+  cout << "MGHOT iterations: " << itersMGHOT << endl;
+  cout << "MGLOQD iterations: " << itersMGLOQD << endl;
+  cout << "ELOT iterations: " << itersELOT << endl;
+ 
+  // Output iteration counts 
+  if (outputVars)
+  {
+    mesh->output->write(outputDir,"MGHOT_iters",itersMGHOT);
+    mesh->output->write(outputDir,"MGLOQD_iters",itersMGLOQD);
+    mesh->output->write(outputDir,"ELOT_iters",itersELOT);
+    mesh->output->write(outputDir,"iterates",iters);
+    mesh->output->write(outputDir,"flux_residuals",fluxResiduals);
+    mesh->output->write(outputDir,"temp_residuals",tempResiduals);
+    mesh->output->write(outputDir,"MGHOT_Time",mghotDuration);
+    mesh->output->write(outputDir,"MGLOQD_Time",mgloqdDuration);
+    mesh->output->write(outputDir,"ELOT_Time",elotDuration);
+  }
+
+  return true;
+
+};
+//==============================================================================
+
 //==============================================================================
 /// Perform a solve at the MGLOQD level 
 ///
 void MultilevelCoupling::solveMGLOQD_p()
 {
+  
+  PetscErrorCode ierr;
 
   // Build flux system
   mgqd->buildLinearSystem_p();
 
+  // Solve flux system
   mgqd->solveLinearSystem_p();
-
+  
   // Build neutron current system
   mgqd->buildBackCalcSystem_p();
+  
+  //cout << "MGLOQD b_p" << endl;
+  //VecView(mgqd->QDSolve->b_p,PETSC_VIEWER_STDOUT_WORLD);
 
   // Solve neutron current system
   mgqd->backCalculateCurrent_p();
@@ -1491,9 +1832,13 @@ void MultilevelCoupling::solveELOT_p()
   mpqd->buildLinearSystem_p();
 
   mpqd->solve_p();
+  
+  //cout << "ELOT x_p" << endl;
+  //VecView(mpqd->x_p,PETSC_VIEWER_STDOUT_WORLD);
 
 };
 //==============================================================================
+
 
 //==============================================================================
 /// Read in optional parameters that might be specified in the input 
