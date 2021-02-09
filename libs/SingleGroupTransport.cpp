@@ -8,7 +8,6 @@
 #include "SimpleCornerBalance.h"
 
 using namespace std; 
-using namespace arma;
 
 //==============================================================================
 /// Class object constructor
@@ -393,6 +392,12 @@ double SingleGroupTransport::calcAlpha(string calcType)
   vector<int> indices;
   Eigen::MatrixXd alpha_old = alpha;
   Eigen::MatrixXd alphaDiff;
+  PetscErrorCode ierr = 0;
+  PetscScalar value;
+  PetscInt index;
+  Vec            x_p_seq,xPrev_p_seq;
+  VecScatter     ctx;
+
 
   // Set alpha to zero
   alpha.setZero();
@@ -403,17 +408,43 @@ double SingleGroupTransport::calcAlpha(string calcType)
       alpha.setZero();
     else
     {
-      for (int iZ = 0; iZ < alpha.rows(); ++iZ){
-        for (int iR = 0; iR < alpha.cols(); ++iR){
+      if (mesh->petsc) 
+      {
 
-          // Get local values
-          indices = MGT->mgqd->QDSolve->getIndices(iR,iZ,energyGroup); 
-          localFlux = MGT->mgqd->QDSolve->x(indices[0]);
-          localFluxPrev = MGT->mgqd->QDSolve->xPast(indices[0]);
-          alpha(iZ,iR) = (1.0/deltaT)*log(localFlux/localFluxPrev);
+        VecScatterCreateToAll(MGT->mgqd->QDSolve->x_p,&ctx,&x_p_seq);
+        VecScatterBegin(ctx,MGT->mgqd->QDSolve->x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+        VecScatterEnd(ctx,MGT->mgqd->QDSolve->x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+        
+        for (int iZ = 0; iZ < alpha.rows(); ++iZ){
+          for (int iR = 0; iR < alpha.cols(); ++iR){
+            
+            index = MGT->mgqd->QDSolve->getIndices(iR,iZ,energyGroup)[0]; 
 
-        } // iR
-      } // iZ
+            // Get local values
+            ierr = VecGetValues(x_p_seq,1,&index,&localFlux);CHKERRQ(ierr);
+            ierr = VecGetValues(MGT->mgqd->QDSolve->xPast_p_seq,1,&index,&localFluxPrev);CHKERRQ(ierr);
+            alpha(iZ,iR) = (1.0/deltaT)*log(localFlux/localFluxPrev);
+
+          } // iR
+        } // iZ
+    
+        VecScatterDestroy(&ctx);
+        VecDestroy(&x_p_seq);
+      } 
+      else
+      {
+        for (int iZ = 0; iZ < alpha.rows(); ++iZ){
+          for (int iR = 0; iR < alpha.cols(); ++iR){
+
+            // Get local values
+            indices = MGT->mgqd->QDSolve->getIndices(iR,iZ,energyGroup); 
+            localFlux = MGT->mgqd->QDSolve->x(indices[0]);
+            localFluxPrev = MGT->mgqd->QDSolve->xPast(indices[0]);
+            alpha(iZ,iR) = (1.0/deltaT)*log(localFlux/localFluxPrev);
+
+          } // iR
+        } // iZ
+      }
     }
   }
   else

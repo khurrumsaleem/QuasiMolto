@@ -7,7 +7,6 @@
 #include "QuasidiffusionSolver.h"
 
 using namespace std;
-using namespace arma;
 
 //==============================================================================
 //! SingleGroupQD class that holds quasidiffusion information
@@ -92,6 +91,12 @@ class SingleGroupQD
     void checkOptionalParams();
     void printEddingtons();
     void writeFlux();
+
+    /* PETSc function */
+    void formContributionToLinearSystem_p();
+    void formContributionToBackCalcSystem_p();
+    void formSteadyStateContributionToLinearSystem_p();
+    void formSteadyStateContributionToBackCalcSystem_p();
 
   private:
     MultiGroupQD * MGQD;

@@ -5,7 +5,6 @@
 #include "SimpleCornerBalance.h"
 
 using namespace std; 
-using namespace arma;
 
 //==============================================================================
 /// SimpleCornerBalance object constructor
@@ -90,8 +89,8 @@ SimpleCornerBalance::SimpleCornerBalance(Mesh * myMesh,\
 /// @param [in] alpha Alpha in each cell
 /// @param [in] energyGroup Energy group associated with this solve. Used in 
 /// determining which nuclear data to use
-void SimpleCornerBalance::solve(cube * aFlux,\
-  cube * halfAFlux,\
+void SimpleCornerBalance::solve(arma::cube * aFlux,\
+  arma::cube * halfAFlux,\
   Eigen::MatrixXd * source,\
   Eigen::MatrixXd * alpha,\
   int energyGroup)
@@ -108,8 +107,8 @@ void SimpleCornerBalance::solve(cube * aFlux,\
 //==============================================================================
 
 //==============================================================================
-void SimpleCornerBalance::solveAngularFlux(cube * aFlux,\
-  cube * halfAFlux,\
+void SimpleCornerBalance::solveAngularFlux(arma::cube * aFlux,\
+  arma::cube * halfAFlux,\
   Eigen::MatrixXd * source,\
   Eigen::MatrixXd * alpha,\
   int energyGroup,int iXi,int iMu){
@@ -125,8 +124,8 @@ void SimpleCornerBalance::solveAngularFlux(cube * aFlux,\
 //==============================================================================
 
 //==============================================================================
-void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
-  cube * halfAFlux,\
+void SimpleCornerBalance::solveAngularFluxNegMu(arma::cube * aFlux,\
+  arma::cube * halfAFlux,\
   Eigen::MatrixXd * source,\
   Eigen::MatrixXd * alpha,\
   int energyGroup,int iXi,int iMu){
@@ -459,8 +458,8 @@ void SimpleCornerBalance::solveAngularFluxNegMu(cube * aFlux,\
 //==============================================================================
 
 //==============================================================================
-void SimpleCornerBalance::solveAngularFluxPosMu(cube * aFlux,\
-  cube * halfAFlux,\
+void SimpleCornerBalance::solveAngularFluxPosMu(arma::cube * aFlux,\
+  arma::cube * halfAFlux,\
   Eigen::MatrixXd * source,\
   Eigen::MatrixXd * alpha,\
   int energyGroup,int iXi,int iMu){

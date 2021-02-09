@@ -55,7 +55,7 @@ SingleGroupQD::SingleGroupQD(int myEnergyGroup,\
 
   // initialize source 
   q.setOnes(mesh->zCornerCent.size(),mesh->rCornerCent.size());
-  q = 0.0*q;
+  q = q * 0.0;
 
   // initialize flux and current matrices
   sFlux.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size());
@@ -108,9 +108,34 @@ void SingleGroupQD::formContributionToLinearSystem()
 
 //==============================================================================
 /// Build the portion of low order QD linear system belonging to this object
+void SingleGroupQD::formContributionToLinearSystem_p()
+{
+  MGQD->QDSolve->formLinearSystem_p(this);
+}
+//==============================================================================
+
+//==============================================================================
+/// Build the portion of linear system, used to calculate currents, belonging 
+/// to this object
+void SingleGroupQD::formContributionToBackCalcSystem_p()
+{
+  MGQD->QDSolve->formBackCalcSystem_p(this);
+}
+//==============================================================================
+
+//==============================================================================
+/// Build the portion of low order QD linear system belonging to this object
 void SingleGroupQD::formSteadyStateContributionToLinearSystem()
 {
   MGQD->QDSolve->formSteadyStateLinearSystem(this);
+}
+//==============================================================================
+
+//==============================================================================
+/// Build the portion of low order QD linear system belonging to this object
+void SingleGroupQD::formSteadyStateContributionToLinearSystem_p()
+{
+  MGQD->QDSolve->formSteadyStateLinearSystem_p(this);
 }
 //==============================================================================
 
@@ -132,6 +157,14 @@ void SingleGroupQD::formSteadyStateContributionToBackCalcSystem()
 }
 //==============================================================================
 
+//==============================================================================
+/// Build the portion of linear system, used to calculate currents, belonging 
+/// to this object
+void SingleGroupQD::formSteadyStateContributionToBackCalcSystem_p()
+{
+  MGQD->QDSolve->formSteadyStateBackCalcSystem_p(this);
+}
+//==============================================================================
 
 //==============================================================================
 /// Get the flux for this object

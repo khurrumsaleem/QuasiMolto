@@ -108,7 +108,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
     Eigen::VectorXd * myb,\
     Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myDNPFlux,\
-    rowvec dzs,\
+    arma::rowvec dzs,\
     int myIndexOffset,\
     bool fluxSource)
 {
@@ -122,7 +122,7 @@ void SingleGroupDNP::buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajo
   Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> testMat;
   testMat.resize(nDNPUnknowns,myA->cols());
   testMat.setZero();
-
+  
   #pragma omp parallel for private(myIndex,iEq,iEqTemp)
   for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
   {
@@ -176,7 +176,7 @@ void SingleGroupDNP::buildSteadyStateLinearSystem(\
     Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myDNPFlux,\
     Eigen::MatrixXd myInletDNP,\
-    rowvec dzs,\
+    arma::rowvec dzs,\
     int myIndexOffset,\
     bool fluxSource)
 {
@@ -391,7 +391,7 @@ Eigen::MatrixXd SingleGroupDNP::calcFluxes(Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myDirac,\
     Eigen::MatrixXd myInletConc,\
     Eigen::VectorXd myInletVelocity,\
-    rowvec dzs)
+    arma::rowvec dzs)
 {
 
   // Declare temporary variables
@@ -470,7 +470,7 @@ Eigen::MatrixXd SingleGroupDNP::calcImplicitFluxes(Eigen::MatrixXd myDNPConc,\
     Eigen::MatrixXd myFlowVelocity,\
     Eigen::MatrixXd myInletConc,\
     Eigen::VectorXd myInletVelocity,
-    rowvec dzs)
+    arma::rowvec dzs)
 {
 
   // Declare temporary variables
@@ -545,16 +545,54 @@ int SingleGroupDNP::getIndex(int iZ, int iR,int indexOffset)
 //==============================================================================
 /// Map solution in 1D vector to 2D solution
 ///
-void SingleGroupDNP::getCoreConc()
+int SingleGroupDNP::getCoreConc()
 {
+  PetscErrorCode ierr;
+  PetscScalar value[1]; 
+  PetscInt index[1]; 
+  VecScatter     ctx;
+  Vec temp_x_p_seq;
 
-  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
-    { 
 
-      dnpConc(iZ,iR) = mgdnp->mpqd->x(getIndex(iZ,iR,coreIndexOffset));   
+    // Initialize temporary vector
+    initPETScVec(&temp_x_p_seq,mgdnp->mpqd->nUnknowns);
 
+    // Gather values of x_p on all procs
+    VecScatterCreateToAll(mgdnp->mpqd->x_p,&ctx,&temp_x_p_seq);
+    VecScatterBegin(ctx,mgdnp->mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,mgdnp->mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      {
+
+        // Read fluxes into flux vector
+        index[0] = getIndex(iZ,iR,coreIndexOffset);
+        ierr = VecGetValues(temp_x_p_seq,1,index,value);
+        dnpConc(iZ,iR) = value[0];
+
+      }
+    } 
+        
+    /* Destroy scatter context */
+    VecScatterDestroy(&ctx);
+    VecDestroy(&temp_x_p_seq);
+
+  }
+  else
+  {
+    for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
+      { 
+
+        dnpConc(iZ,iR) = mgdnp->mpqd->x(getIndex(iZ,iR,coreIndexOffset));   
+
+      }
     }
   }
 
@@ -564,16 +602,37 @@ void SingleGroupDNP::getCoreConc()
 //==============================================================================
 /// Map solution from 2D matrix to 1D vector
 ///
-void SingleGroupDNP::setCoreConc()
+int SingleGroupDNP::setCoreConc()
 {
+  
+  PetscErrorCode ierr;
+  PetscScalar value;
+  PetscInt index;
 
-  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
-    { 
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+      { 
 
-      mgdnp->mpqd->xPast(getIndex(iZ,iR,coreIndexOffset)) = dnpConc(iZ,iR);   
+        value = dnpConc(iZ,iR);
+        index = getIndex(iZ,iR,coreIndexOffset);
+        ierr = VecSetValue(mgdnp->mpqd->xPast_p,index,value,ADD_VALUES);CHKERRQ(ierr); 
 
+      }
+    }
+  }
+  else
+  {
+    for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh-> dzsCorner.size(); iZ++)
+      { 
+
+        mgdnp->mpqd->xPast(getIndex(iZ,iR,coreIndexOffset)) = dnpConc(iZ,iR);
+
+      }
     }
   }
 
@@ -583,16 +642,55 @@ void SingleGroupDNP::setCoreConc()
 //==============================================================================
 /// Map solution in 1D vector to 2D solution
 ///
-void SingleGroupDNP::getRecircConc()
+int SingleGroupDNP::getRecircConc()
 {
 
-  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  PetscErrorCode ierr;
+  PetscScalar value[1]; 
+  PetscInt index[1]; 
+  VecScatter     ctx;
+  Vec temp_x_p_seq;
+
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
-    { 
 
-      recircConc(iZ,iR) = mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset));   
+    // Initialize temporary vector
+    initPETScVec(&temp_x_p_seq,mgdnp->mpqd->nUnknowns);
 
+    // Gather values of x_p on all procs
+    VecScatterCreateToAll(mgdnp->recircx_p,&ctx,&temp_x_p_seq);
+    VecScatterBegin(ctx,mgdnp->recircx_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctx,mgdnp->recircx_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+
+    // loop over spatial mesh
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->nZrecirc; iZ++)
+      {
+
+        // Read fluxes into flux vector
+        index[0] = getIndex(iZ,iR,recircIndexOffset);
+        ierr = VecGetValues(temp_x_p_seq,1,index,value);
+        recircConc(iZ,iR) = value[0];
+
+      }
+    } 
+
+    /* Destroy scatter context */
+    VecScatterDestroy(&ctx);
+    VecDestroy(&temp_x_p_seq);
+
+  }
+  else
+  {
+    for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
+      { 
+
+        recircConc(iZ,iR) = mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset));   
+
+      }
     }
   }
 
@@ -602,16 +700,39 @@ void SingleGroupDNP::getRecircConc()
 //==============================================================================
 /// Map solution to 1D vector from 2D solution
 ///
-void SingleGroupDNP::setRecircConc()
+int SingleGroupDNP::setRecircConc()
 {
+  PetscErrorCode ierr;
+  PetscScalar value;
+  PetscInt index;
 
-  for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+  if (mesh->petsc)
   {
-    for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
-    { 
+    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh->nZrecirc; iZ++)
+      { 
 
-      mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset)) = recircConc(iZ,iR);   
+        value = recircConc(iZ,iR);
+        index = getIndex(iZ,iR,recircIndexOffset);
+        ierr = VecSetValue(mgdnp->recircx_p,index,value,ADD_VALUES);CHKERRQ(ierr); 
 
+      }
+    }
+    
+    ierr = VecAssemblyBegin(mgdnp->recircx_p);CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(mgdnp->recircx_p);CHKERRQ(ierr);
+  }
+  else
+  {
+    for (int iR = 0; iR < mesh-> drsCorner.size(); iR++)
+    {
+      for (int iZ = 0; iZ < mesh-> nZrecirc; iZ++)
+      { 
+
+        mgdnp->recircx(getIndex(iZ,iR,recircIndexOffset)) = recircConc(iZ,iR);   
+
+      }
     }
   }
 
@@ -876,9 +997,9 @@ void SingleGroupDNP::assignBoundaryIndices()
 ///
 Eigen::MatrixXd SingleGroupDNP::getInitialConc(double initConc)
 {
- 
+
   Eigen::MatrixXd conc; 
- 
+
   conc.setZero(mesh->nZ,mesh->nR);    
 
   // Check if a material is stationary. If so, assume it has no initial 
@@ -895,7 +1016,6 @@ Eigen::MatrixXd SingleGroupDNP::getInitialConc(double initConc)
   return conc;
 };
 //==============================================================================
-
 
 //==============================================================================
 /// Update boundary conditions 
@@ -926,4 +1046,334 @@ void SingleGroupDNP::updateBoundaryConditions()
 };
 //==============================================================================
 
+/* PETSc */
+
+/* STEADY STATE */
+
+//==============================================================================
+/// Build linear system governing steady state core DNP concentrations
+///
+void SingleGroupDNP::buildSteadyStateCoreLinearSystem_p()
+{
+
+  Eigen::MatrixXd coreFlux;
+
+  updateBoundaryConditions();
+
+  coreFlux = calcImplicitFluxes(dnpConc,\
+      mats->flowVelocity,\
+      inletConc,\
+      inletVelocity,\
+      mesh->dzsCorner);
+
+  buildSteadyStateLinearSystem_p(&(mgdnp->mpqd->A_p),\
+      &(mgdnp->mpqd->b_p),\
+      dnpConc,\
+      coreFlux,\
+      inletConc,\
+      mesh->dzsCorner,\
+      coreIndexOffset);
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system governing steady state recirulation DNP concentrations
+///
+void SingleGroupDNP::buildSteadyStateRecircLinearSystem_p()
+{
+
+  Eigen::MatrixXd recircFlux,dumbySigF;
+
+  updateBoundaryConditions();
+
+  recircFlux = calcImplicitFluxes(recircConc,\
+      mats->recircFlowVelocity,\
+      recircInletConc,\
+      recircInletVelocity,\
+      mesh->dzsCornerRecirc);
+
+  buildSteadyStateLinearSystem_p(&(mgdnp->recircA_p),\
+      &(mgdnp->recircb_p),\
+      recircConc,\
+      recircFlux,\
+      recircInletConc,\
+      mesh->dzsCornerRecirc,\
+      recircIndexOffset,\
+      false);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system for this precursor group. Utilized for building the core
+///   and recirculation linear system. 
+///
+/// @param [in] myA pointer to linear system to build in
+/// @param [in] myb pointer to RHS of linear system
+/// @param [in] myDNPConc DNP concentration at last time step
+/// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
+/// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
+/// @param [in] dzs axial heights on advecting mesh
+/// @param [in] myIndexOffset row to start building linear system on 
+/// @param [in] fluxSource indicator for whether a flux source is present 
+int SingleGroupDNP::buildSteadyStateLinearSystem_p(\
+    Mat * A_p,\
+    Vec * b_p,\
+    Eigen::MatrixXd myDNPConc,\
+    Eigen::MatrixXd myDNPFlux,\
+    Eigen::MatrixXd myInletDNP,\
+    arma::rowvec dzs,\
+    int myIndexOffset,\
+    bool fluxSource)
+{
+
+  //int myIndex,iEq = myIndexOffset;
+  int upwindIndex,myIndex,iEq = myIndexOffset;
+  int iEqTemp=0,nDNPUnknowns = myDNPConc.rows()*myDNPConc.cols();
+  double fissionCoeff,keff,neutronFlux;
+  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> testMat;
+  PetscErrorCode ierr;
+  PetscScalar value;
+
+  //testMat.resize(nDNPUnknowns,myA->cols());
+  //testMat.setZero();
+  //Atemp.resize(nDNPUnknowns,myA->cols());
+  //Atemp.reserve(2*nDNPUnknowns);
+
+  if (mats->posVelocity) 
+  {
+    ////    #pragma omp parallel for private(myIndex,iEq,iEqTemp)
+    for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
+    {
+      for (int iR = 0; iR < myDNPConc.cols(); iR++)
+      {
+        myIndex = getIndex(iZ,iR,myIndexOffset);     
+        upwindIndex = getIndex(iZ-1,iR,myIndexOffset);     
+        iEq = getIndex(iZ,iR,myIndexOffset);     
+        iEqTemp = getIndex(iZ,iR,0);     
+
+        // DNP decay term
+        ierr = MatSetValue(*A_p,iEq,myIndex,lambda,ADD_VALUES);CHKERRQ(ierr); 
+        //testMat(iEqTemp,myIndex) = lambda; 
+
+        // Flux source term 
+        if (fluxSource)
+        {
+          fissionCoeff = mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
+          keff = mats->oneGroupXS->keff; 
+          neutronFlux = mgdnp->mpqd->ggqd->sFlux(iZ,iR);
+          value = fissionCoeff*neutronFlux/keff;
+          ierr = VecSetValue(*b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+          //(*myb)(iEq) = fissionCoeff*neutronFlux/keff;
+        }
+
+        // Advection terms
+
+        // Upwind cell
+        if (iZ == 0) // boundary case
+        {
+          value = myDNPFlux(iZ,iR)*myInletDNP(1,iR)/dzs(iZ);
+          ierr = VecSetValue(*b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+          //(*myb)(iEq) += myDNPFlux(iZ,iR)*myInletDNP(1,iR)/dzs(iZ);
+        }
+        else
+        {
+          value = -myDNPFlux(iZ,iR)/dzs(iZ);
+          ierr = MatSetValue(*A_p,iEq,upwindIndex,value,ADD_VALUES);CHKERRQ(ierr); 
+          //testMat(iEqTemp,upwindIndex) = -myDNPFlux(iZ,iR)/dzs(iZ);
+        }
+
+        // Primary cell
+        value = myDNPFlux(iZ+1,iR)/dzs(iZ);
+        ierr = MatSetValue(*A_p,iEq,myIndex,value,ADD_VALUES);CHKERRQ(ierr); 
+        //testMat(iEqTemp,myIndex) += myDNPFlux(iZ+1,iR)/dzs(iZ);
+      }
+    }
+  }
+  else
+  {
+    //#pragma omp parallel for private(myIndex,iEq,iEqTemp)
+    for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
+    {
+      for (int iR = 0; iR < myDNPConc.cols(); iR++)
+      {
+        myIndex = getIndex(iZ,iR,myIndexOffset);     
+        upwindIndex = getIndex(iZ+1,iR,myIndexOffset);     
+        iEq = getIndex(iZ,iR,myIndexOffset);     
+        iEqTemp = getIndex(iZ,iR,0);     
+
+        //testMat(iEqTemp,myIndex) = lambda; 
+        ierr = MatSetValue(*A_p,iEq,myIndex,lambda,ADD_VALUES);CHKERRQ(ierr); 
+
+        // Flux source term 
+        if (fluxSource)
+        {
+          fissionCoeff = mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
+          keff = mats->oneGroupXS->keff; 
+          neutronFlux = mgdnp->mpqd->ggqd->sFlux(iZ,iR);
+          value = fissionCoeff*neutronFlux/keff;
+          ierr = VecSetValue(*b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+          //(*myb)(iEq) = fissionCoeff*neutronFlux/keff;
+        }
+
+        // Advection terms
+
+        // Upwind cell
+        if (iZ == myDNPConc.rows()) // boundary case
+        {
+          value = -myDNPFlux(iZ+1,iR)*myInletDNP(0,iR)/dzs(iZ);
+          ierr = VecSetValue(*b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+          //(*myb)(iEq) -= myDNPFlux(iZ+1,iR)*myInletDNP(0,iR)/dzs(iZ);
+        }
+        else
+        {
+          value = myDNPFlux(iZ+1,iR)/dzs(iZ);
+          ierr = MatSetValue(*A_p,iEq,upwindIndex,value,ADD_VALUES);CHKERRQ(ierr); 
+          //testMat(iEqTemp,upwindIndex) = myDNPFlux(iZ+1,iR)/dzs(iZ);
+        }
+
+        // Primary cell
+        value = -myDNPFlux(iZ,iR)/dzs(iZ);
+        ierr = MatSetValue(*A_p,iEq,myIndex,value,ADD_VALUES);CHKERRQ(ierr); 
+        //testMat(iEqTemp,myIndex) -= myDNPFlux(iZ,iR)/dzs(iZ);
+      }
+    }
+  }
+
+  // Splice testMat into linear system
+  //myA->middleRows(myIndexOffset,nDNPUnknowns) = testMat.sparseView(); 
+};
+//==============================================================================
+
+/* TRANSIENT */
+
+//==============================================================================
+/// Build linear system governing transient core DNP concentrations
+///
+void SingleGroupDNP::buildCoreLinearSystem_p()
+{
+
+  Eigen::MatrixXd coreDirac,coreFlux;
+
+  updateBoundaryConditions();
+
+  coreDirac = calcDiracs(dnpConc,\
+      inletConc,\
+      outletConc);
+
+  coreFlux = calcFluxes(dnpConc,\
+      mats->flowVelocity,\
+      coreDirac,\
+      inletConc,\
+      inletVelocity,\
+      mesh->dzsCorner);
+
+  buildLinearSystem_p(&(mgdnp->mpqd->A_p),\
+      &(mgdnp->mpqd->b_p),\
+      dnpConc,\
+      coreFlux,\
+      mesh->dzsCorner,\
+      coreIndexOffset);
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system governing transient recirulation DNP concentrations
+///
+void SingleGroupDNP::buildRecircLinearSystem_p()
+{
+
+  Eigen::MatrixXd recircDirac,recircFlux,dumbySigF;
+
+  updateBoundaryConditions();
+
+  recircDirac = calcDiracs(recircConc,\
+      recircInletConc,\
+      recircOutletConc);
+
+  recircFlux = calcFluxes(recircConc,\
+      mats->recircFlowVelocity,\
+      recircDirac,\
+      recircInletConc,\
+      recircInletVelocity,\
+      mesh->dzsCornerRecirc);
+
+  buildLinearSystem_p(&(mgdnp->recircA_p),\
+      &(mgdnp->recircb_p),\
+      recircConc,\
+      recircFlux,\
+      mesh->dzsCornerRecirc,\
+      recircIndexOffset,\
+      false);
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system for this precursor group. Utilized for building the core
+///   and recirculation linear system. 
+///
+/// @param [in] myA pointer to linear system to build in
+/// @param [in] myb pointer to RHS of linear system
+/// @param [in] myDNPConc DNP concentration at last time step
+/// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
+/// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
+/// @param [in] dzs axial heights on advecting mesh
+/// @param [in] myIndexOffset row to start building linear system on 
+/// @param [in] fluxSource indicator for whether a flux source is present 
+int SingleGroupDNP::buildLinearSystem_p(
+    Mat * A_p,\
+    Vec * b_p,\
+    Eigen::MatrixXd myDNPConc,\
+    Eigen::MatrixXd myDNPFlux,\
+    arma::rowvec dzs,\
+    int myIndexOffset,\
+    bool fluxSource)
+{
+
+  //int myIndex,iEq = myIndexOffset;
+  int myIndex,iEq = myIndexOffset;
+  int iEqTemp=0,nDNPUnknowns = myDNPConc.rows()*myDNPConc.cols();
+  double coeff;
+  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> testMat;
+  PetscErrorCode ierr;
+  PetscScalar value;
+
+  //#pragma omp parallel for private(myIndex,iEq,iEqTemp)
+  for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
+  {
+    for (int iR = 0; iR < myDNPConc.cols(); iR++)
+    {
+      myIndex = getIndex(iZ,iR,myIndexOffset);     
+      iEq = getIndex(iZ,iR,myIndexOffset);     
+      iEqTemp = getIndex(iZ,iR,0);     
+
+      value = 1 + mesh->dt*lambda;
+      ierr = MatSetValue(*A_p,iEq,myIndex,value,ADD_VALUES);CHKERRQ(ierr); 
+      //testMat(iEqTemp,myIndex) = 1 + mesh->dt*lambda; 
+
+      // Time term
+      value = myDNPConc(iZ,iR);
+      ierr = VecSetValue(*b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+      //(*myb)(iEq) = myDNPConc(iZ,iR);
+
+      // Flux source term 
+      if (fluxSource)
+      {
+        coeff = -mesh->dt*mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
+        mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff,&testMat);
+      }
+
+      // Advection term
+      value = (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
+      ierr = VecSetValue(*b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+      //(*myb)(iEq) += (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
+
+    }
+  }
+
+  //myA->middleRows(myIndexOffset,nDNPUnknowns) = Atemp; 
+  //myA->middleRows(myIndexOffset,nDNPUnknowns) = testMat.sparseView(); 
+};
+//==============================================================================
 

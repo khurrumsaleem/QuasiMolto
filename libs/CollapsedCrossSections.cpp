@@ -5,7 +5,6 @@
 #include "CollapsedCrossSections.h"
 
 using namespace std; 
-using namespace arma;
 
 ///==============================================================================
 /// CollapsedCrossSections class object constructor

@@ -3,6 +3,7 @@
 
 #include "Mesh.h"
 #include "Materials.h"
+#include "PETScWrapper.h"
 
 using namespace std;
 
@@ -42,6 +43,23 @@ class MultiGroupDNP
     void solveRecircLinearSystem();
     MultiPhysicsCoupledQD * mpqd;
     YAML::Node * input;
+
+    /* PETSc */
+    Mat recircA_p;
+    Vec recircx_p,recircb_p;
+    KSP ksp;
+    PC pc;
+   
+    // Dual purpose
+    int solveRecircLinearSystem_p();
+
+    // Steady state
+    void buildSteadyStateCoreLinearSystem_p();
+    int buildSteadyStateRecircLinearSystem_p();
+    
+    // Transient
+    void buildCoreLinearSystem_p();
+    int buildRecircLinearSystem_p();
 
   private:
     Materials * mats;

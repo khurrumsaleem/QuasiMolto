@@ -5,7 +5,6 @@
 #include "Materials.h"
 
 using namespace std; 
-using namespace arma;
 
 //==============================================================================
 /// Material class object constructor
@@ -294,6 +293,8 @@ void Materials::readFlowVelocity()
       }
     }
   }
+  cout << "Core flow velocity" << endl;
+  cout << flowVelocity << endl;
 
   // Check whether velocities are all positive 
   posVelocity = -1E-10 < flowVelocity.minCoeff();

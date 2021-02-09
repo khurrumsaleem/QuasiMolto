@@ -47,7 +47,7 @@ class SingleGroupDNP
         Eigen::VectorXd * myb,\
         Eigen::MatrixXd myDNPConc,\
         Eigen::MatrixXd myDNPFlux,\
-        rowvec dzs,\
+        arma::rowvec dzs,\
         int myIndexOffset,
         bool fluxSource = true);
     void buildSteadyStateLinearSystem(\
@@ -56,7 +56,7 @@ class SingleGroupDNP
         Eigen::MatrixXd myDNPConc,\
         Eigen::MatrixXd myDNPFlux,\
         Eigen::MatrixXd myInletDNP,\
-        rowvec dzs,\
+        arma::rowvec dzs,\
         int myIndexOffset,
         bool fluxSource = true);
 
@@ -69,18 +69,46 @@ class SingleGroupDNP
         Eigen::MatrixXd dirac,\
         Eigen::MatrixXd inletConc,\
         Eigen::VectorXd inletVelocity,\
-        rowvec dzs);
+        arma::rowvec dzs);
     Eigen::MatrixXd calcImplicitFluxes(Eigen::MatrixXd myDNPConc,\
         Eigen::MatrixXd myFlowVelocity,\
         Eigen::MatrixXd inletConc,\
         Eigen::VectorXd inletVelocity,\
-        rowvec dzs);
-    void getCoreConc();
-    void setCoreConc();
-    void getRecircConc();
-    void setRecircConc();
+        arma::rowvec dzs);
+    int getCoreConc();
+    int setCoreConc();
+    int getRecircConc();
+    int setRecircConc();
     double calcPhi(double theta,string fluxLimiter); 
     double calcTheta(double DNPupwindInterface,double DNPinterface);
+
+    /* PETSc functions */   
+
+    // Steady state
+
+    void buildSteadyStateCoreLinearSystem_p();
+    void buildSteadyStateRecircLinearSystem_p();
+    int buildSteadyStateLinearSystem_p(\
+        Mat * myA_p,\
+        Vec * myb_p,\
+        Eigen::MatrixXd myDNPConc,\
+        Eigen::MatrixXd myDNPFlux,\
+        Eigen::MatrixXd myInletDNP,\
+        arma::rowvec dzs,\
+        int myIndexOffset,
+        bool fluxSource = true);
+    
+    // Transient 
+    void buildCoreLinearSystem_p();
+    void buildRecircLinearSystem_p();
+    int buildLinearSystem_p(\
+        Mat * A_p,\
+        Vec * b_p,\
+        Eigen::MatrixXd myDNPConc,\
+        Eigen::MatrixXd myDNPFlux,\
+        arma::rowvec dzs,\
+        int myIndexOffset,\
+        bool fluxSource = true);
 
   private: 
     Materials * mats;

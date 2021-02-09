@@ -5,7 +5,6 @@
 #include "WriteData.h"
 
 using namespace std; 
-using namespace arma;
 
 //==============================================================================
 //! Class the holds collapsed one-group nuclear data

@@ -16,11 +16,11 @@ class StartingAngle
     StartingAngle(Mesh * myMesh,
         Materials * myMaterials,\
         YAML::Node * myInput);
-    void calcStartingAngle(cube * halfAFlux,\
+    void calcStartingAngle(arma::cube * halfAFlux,\
         Eigen::MatrixXd * source,\
         Eigen::MatrixXd * alpha,\
         int energyGroup);
-    void solveAngularFlux(cube * halfAFlux,\
+    void solveAngularFlux(arma::cube * halfAFlux,\
         Eigen::MatrixXd * source,\
         Eigen::MatrixXd * alpha,\
         int energyGroup,\

@@ -16,9 +16,14 @@ set(LIBS_DIR ${CMAKE_SOURCE_DIR}/libs)
 
 # The following folder will be included
 include_directories("${PROJECT_SOURCE_DIR}")
-include_directories(TPLs/yaml-cpp/include)
-include_directories(TPLs/armadillo/include)
-include_directories(TPLs/superlu/include)
+include_directories(${TPLS_DIR}/yaml-cpp/include)
+include_directories(${TPLS_DIR}/armadillo/include)
+include_directories(${TPLS_DIR}/superlu/include)
+include_directories(${TPLS_DIR}/petsc/include)
+include_directories(${TPLS_DIR}/petsc/arch-linux-c-debug/include)
+
+# Link directories
+link_directories(${TPLS_DIR}/petsc/arch-linux-c-debug/lib)
 
 # Add subdirectories
 add_subdirectory(${DRIVER_DIR})
@@ -53,13 +58,16 @@ add_executable(QuasiMolto
                ${PROJECT_SOURCE_DIR}/libs/GreyGroupSolver.cpp
                ${PROJECT_SOURCE_DIR}/libs/CollapsedCrossSections.cpp
                ${PROJECT_SOURCE_DIR}/libs/WriteData.cpp
-               ${PROJECT_SOURCE_DIR}/libs/MultilevelCoupling.cpp)
+               ${PROJECT_SOURCE_DIR}/libs/MultilevelCoupling.cpp
+               ${PROJECT_SOURCE_DIR}/libs/PETScWrapper.cpp
+               )
 
 target_link_libraries(
     QuasiMolto
     PUBLIC
     superlu
     ${ARMADILLO_LIBRARIES} 
+    petsc
     PRIVATE
     yaml-cpp  # This is the "target" exposed by 
               # yaml-cpp's CMakeLists.txt file

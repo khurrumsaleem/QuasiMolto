@@ -12,6 +12,7 @@
 #include "MultiGroupQDToMultiPhysicsQDCoupling.h"
 #include "GreyGroupQD.h"
 #include "WriteData.h"
+#include "PETScWrapper.h"
 
 using namespace std;
 
@@ -48,6 +49,20 @@ class MultilevelCoupling
     double relaxedEpsK(double residual, double relaxationTolerance = 1E-14);
     void checkOptionalParameters();
     string outputDir = "Solve_Metrics/";
+    
+    /* PETSc FUNCTIONS */
+
+    // Steady state
+    void solveSteadyStateResidualBalance_p(bool outputVars);
+    void solveSteadyStateMGLOQD_p();
+    void solveSteadyStateELOT_p();
+
+    // Transient
+    bool solveOneStepResidualBalance_p(bool outputVars);
+    void solveTransient_p();
+    void solveSteadyStateTransientResidualBalance_p(bool outputVars);
+    void solveMGLOQD_p();
+    void solveELOT_p();
     
 
   private:

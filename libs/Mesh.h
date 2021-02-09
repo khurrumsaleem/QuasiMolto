@@ -6,7 +6,9 @@
 #include <iomanip>
 #include <cmath>
 #include <vector>
+#include <chrono>
 #include <armadillo>
+#include <petsc.h>
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 #include "../TPLs/eigen-git-mirror/Eigen/Eigen"
 #include "../TPLs/eigen-git-mirror/Eigen/IterativeLinearSolvers"
@@ -14,7 +16,6 @@
 #include "../TPLs/eigen-git-mirror/Eigen/SuperLUSupport"
 
 using namespace std;
-using namespace arma;
 
 class WriteData; // forward declaration
 
@@ -57,7 +58,7 @@ class Mesh
   	int n,nAngles,nR,nZ;		
         int state = 1; 
         double dz,dr,drCorner,dzCorner,Z,R,dt,T,totalWeight; 
-        bool verbose = false;
+        bool verbose = false,petsc = false;
   	vector< vector<double> > quadSet;
   	vector< vector<double> > alpha;
         vector< vector<double> > tau;
@@ -66,17 +67,17 @@ class Mesh
         vector<double> dts;
         vector<double> ts;
         vector<bool> outputOnStep;
-        rowvec dzs,dzsCorner;
-        rowvec drs,drsCorner;
-	rowvec rEdge;
-	rowvec zEdge;
-        rowvec rCent;
-        rowvec zCent;
-	rowvec rCornerEdge;
-	rowvec zCornerEdge;
-        rowvec rCornerCent;
-        rowvec zCornerCent;
-        rowvec rVWCornerCent;
+        arma::rowvec dzs,dzsCorner;
+        arma::rowvec drs,drsCorner;
+	arma::rowvec rEdge;
+	arma::rowvec zEdge;
+        arma::rowvec rCent;
+        arma::rowvec zCent;
+	arma::rowvec rCornerEdge;
+	arma::rowvec zCornerEdge;
+        arma::rowvec rCornerCent;
+        arma::rowvec zCornerCent;
+        arma::rowvec rVWCornerCent;
         vector<quadLevel> quadrature;
 	vector<qdCell> qdCells; 
         Eigen::MatrixXd volume;
@@ -86,8 +87,8 @@ class Mesh
         // Recirculation loop parameters
         double dzCornerRecirc,recircZ;
         int nZrecirc;
-	rowvec zCornerEdgeRecirc,dzsCornerRecirc;
-        rowvec zCornerCentRecirc;
+	arma::rowvec zCornerEdgeRecirc,dzsCornerRecirc;
+        arma::rowvec zCornerCentRecirc;
 
         // Functions
   	vector<int> getQDCellIndices(int iR, int iZ);

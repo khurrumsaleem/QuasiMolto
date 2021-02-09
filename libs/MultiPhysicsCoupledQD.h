@@ -31,13 +31,14 @@ class MultiPhysicsCoupledQD
     Eigen::VectorXd x,xPast,b;
     string outputDir = "MPQD/";
     double epsMPQD = 1E-6;
+    int nUnknowns;
    
     // Functions 
-    void fluxSource(int iZ,int iR,int iEq,double coeff,\
+    int fluxSource(int iZ,int iR,int iEq,double coeff,\
       Eigen::SparseMatrix<double,Eigen::RowMajor> * myA);
-    void fluxSource(int iZ,int iR,int iEq,double coeff,\
+    int fluxSource(int iZ,int iR,int iEq,double coeff,\
       Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA);
-    void dnpSource(int iZ,int iR,int iEq,double coeff,\
+    int dnpSource(int iZ,int iR,int iEq,double coeff,\
       Eigen::SparseMatrix<double,Eigen::RowMajor> * myA);
     void initializeXPast();
     void buildLinearSystem();
@@ -48,12 +49,33 @@ class MultiPhysicsCoupledQD
     int solveIterativeDiag(Eigen::VectorXd xGuess);
     int solveIterativeILU(Eigen::VectorXd xGuess);
     void solveTransient();
+    void solveSteadyState();
     void updateVarsAfterConvergence();
     void updateSteadyStateVarsAfterConvergence();
     void writeVars();
     void printVars();
     void checkOptionalParams();
     int preconditioner = 1;
+
+    // PETSc variables
+    Vec x_p,xPast_p,b_p;
+    Vec xPast_p_seq;
+    Mat A_p;
+    KSP ksp;
+    PC pc;
+
+    // Dual purpose
+    int solve_p();
+
+    // Steady state 
+    int buildSteadyStateLinearSystem_p();
+    int updateSteadyStateVarsAfterConvergence_p();
+    void solveSteadyState_p();
+
+    // Transient
+    int buildLinearSystem_p();
+    int updateVarsAfterConvergence_p();
+    void solveTransient_p();
 
     // Pointers
     HeatTransfer * heat;

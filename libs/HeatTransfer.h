@@ -42,13 +42,21 @@ class HeatTransfer
   void calcFluxes();
   void calcImplicitFluxes();
   void getTemp();
-  void setTemp();
+  int setTemp();
   Eigen::MatrixXd returnCurrentTemp();
   void assignBoundaryIndices();
   void updateBoundaryConditions();
   double calcPhi(double theta,string fluxLimiter);
   double calcTheta(double TupwindInterface,double Tinterface);
   void checkOptionalParams();
+
+  /* PETSc functions */
+
+  // Steady state functions
+  int buildSteadyStateLinearSystem_p();
+  
+  // Transient functions
+  int buildLinearSystem_p();
   
   private:
   Materials * mats;

@@ -16,23 +16,23 @@ class SimpleCornerBalance
   SimpleCornerBalance(Mesh * myMesh,\
     Materials * myMaterials,\
     YAML::Node * myInput);
-  void solve(cube * aFlux,\
-    cube * halfAFlux,\
+  void solve(arma::cube * aFlux,\
+    arma::cube * halfAFlux,\
     Eigen::MatrixXd * source,\
     Eigen::MatrixXd * alpha,\
     int energyGroup);
-  void solveAngularFlux(cube * aFlux,\
-    cube * halfAFlux,\
+  void solveAngularFlux(arma::cube * aFlux,\
+    arma::cube * halfAFlux,\
     Eigen::MatrixXd * source,\
     Eigen::MatrixXd * alpha,\
     int energyGroup,int iXi,int iMu);
-  void solveAngularFluxNegMu(cube * aFlux,\
-    cube * halfAFlux,\
+  void solveAngularFluxNegMu(arma::cube * aFlux,\
+    arma::cube * halfAFlux,\
     Eigen::MatrixXd * source,\
     Eigen::MatrixXd * alpha,\
     int energyGroup,int iXi,int iMu);
-  void solveAngularFluxPosMu(cube * aFlux,\
-    cube * halfAFlux,\
+  void solveAngularFluxPosMu(arma::cube * aFlux,\
+    arma::cube * halfAFlux,\
     Eigen::MatrixXd * source,\
     Eigen::MatrixXd * alpha,\
     int energyGroup,int iXi,int iMu);

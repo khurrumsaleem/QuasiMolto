@@ -7,7 +7,6 @@
 #include "StartingAngle.h"
 
 using namespace std; 
-using namespace arma;
 
 //==============================================================================
 /// StartingAngle object constructor
@@ -91,7 +90,7 @@ StartingAngle::StartingAngle(Mesh * myMesh,\
 /// in RZ geometry. The simplification comes about by substituting quadrature 
 /// values that correspond to the starting half angle, and results in the 
 /// elimination of the angular redistribution term. 
-void StartingAngle::calcStartingAngle(cube * halfAFlux,\
+void StartingAngle::calcStartingAngle(arma::cube * halfAFlux,\
     Eigen::MatrixXd * source,\
     Eigen::MatrixXd * alpha,\
     int energyGroup)
@@ -111,7 +110,7 @@ void StartingAngle::calcStartingAngle(cube * halfAFlux,\
 /// in RZ geometry. The simplification comes about by substituting quadrature 
 /// values that correspond to the starting half angle, and results in the 
 /// elimination of the angular redistribution term. 
-void StartingAngle::solveAngularFlux(cube * halfAFlux,\
+void StartingAngle::solveAngularFlux(arma::cube * halfAFlux,\
     Eigen::MatrixXd * source,\
     Eigen::MatrixXd * alpha,\
     int energyGroup,int iXi)

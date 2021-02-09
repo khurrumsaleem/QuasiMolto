@@ -8,7 +8,6 @@
 #include "WriteData.h"
 
 using namespace std;
-using namespace arma;
 
 //==============================================================================
 /// Constructor for qdCell object.
@@ -1023,6 +1022,12 @@ void Mesh::checkOptionalParams()
   {
     verbose=(*input)["parameters"]["verbose"].as<bool>();
   }
+
+  if ((*input)["parameters"]["petsc"])
+  {
+    petsc=(*input)["parameters"]["petsc"].as<bool>();
+  }
+
 
 }
 //==============================================================================
