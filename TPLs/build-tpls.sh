@@ -11,5 +11,5 @@ make install
 # PETSc
 cd ../petsc
 ./configure --with-fc=0
-make PETSC_DIR=. PETSC_ARCH=arch-linux-c-debug all
-make PETSC_DIR=. PETSC_ARCH=arch-linux-c-debug check
+make PETSC_DIR=$(pwd) PETSC_ARCH=arch-linux-c-debug all
+make PETSC_DIR=$(pwd) PETSC_ARCH=arch-linux-c-debug check
