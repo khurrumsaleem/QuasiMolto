@@ -1116,7 +1116,7 @@ void MultilevelCoupling::solveTransient()
 
   // Report total solve time
   cout << "Total solve time: " << totalDuration << " seconds." << endl;      
-  mesh->output->write(outputDir,"Solve_Time",totalDuration,true);
+  mesh->output->write(outputDir,"Solve_Time",duration,true);
 
 };
 //==============================================================================
@@ -1535,6 +1535,8 @@ void MultilevelCoupling::solveTransient_p()
 
   // Write mesh info
   mesh->writeVars();
+  
+  auto outerBegin = chrono::high_resolution_clock::now();
 
   for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
   {
@@ -1581,10 +1583,15 @@ void MultilevelCoupling::solveTransient_p()
       break;
     }
   } 
+  
+  auto outerEnd = chrono::high_resolution_clock::now();
+  auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(outerEnd - outerBegin);
+  duration = elapsed.count()*1e-9;
+  cout << "Outer solve time: " << duration << " seconds." << endl;      
 
   // Report total solve time
   cout << "Total solve time: " << totalDuration << " seconds." << endl;      
-  mesh->output->write(outputDir,"Solve_Time",totalDuration,true);
+  mesh->output->write(outputDir,"Solve_Time",duration,true);
 
 };
 //==============================================================================
