@@ -245,6 +245,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
   double duration,totalDuration = 0.0,elotDuration = 0,\
     mgloqdDuration = 0, mghotDuration = 0;
   clock_t startTime;
+  auto begin = chrono::high_resolution_clock::now();
 
   while (not convergedMGHOT){ 
 
@@ -257,9 +258,13 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
     {
       // Solve MGHOT problem
       cout << "MGHOT solve...";
-      startTime = clock(); 
+      //startTime = clock(); 
+      auto begin = chrono::high_resolution_clock::now();
       solveMGHOT();
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
       mghotDuration = mghotDuration + duration;
       cout << " done. ("<< duration << " seconds)" << endl;
       iters.push_back(3);
@@ -287,9 +292,13 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
       // Solve MGLOQD problem
       cout << "    ";
       cout << "MGLOQD solve..." << endl;
-      startTime = clock(); 
+      //startTime = clock(); 
+      auto begin = chrono::high_resolution_clock::now();
       solveMGLOQD();
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
       mgloqdDuration = mgloqdDuration + duration;
       cout << "    ";
       cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
@@ -322,9 +331,13 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
         // Solve ELOT problem
         cout << "        ";
         cout << "ELOT solve..." << endl;
-        startTime = clock(); 
+        //startTime = clock(); 
+        auto begin = chrono::high_resolution_clock::now();
         solveELOT(mpqd->x);
-        duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+        auto end = chrono::high_resolution_clock::now();
+        auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        duration = elapsed.count()*1e-9;
+        //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
         elotDuration = elotDuration + duration;
         cout << "        ";
         cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
@@ -539,9 +552,13 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     {
       // Solve MGHOT problem
       cout << "MGHOT solve...";
-      startTime = clock(); 
+      //startTime = clock(); 
+      auto begin = chrono::high_resolution_clock::now();
       solveSteadyStateMGHOT();
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
       totalDuration = totalDuration + duration; 
       mghotDuration = mghotDuration + duration; 
       cout << " done. ("<< duration << " seconds)" << endl;
@@ -571,9 +588,13 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
       // Solve MGLOQD problem
       cout << "    ";
       cout << "MGLOQD solve..." << endl;
-      startTime = clock(); 
+      //startTime = clock(); 
+      auto begin = chrono::high_resolution_clock::now();
       solveSteadyStateMGLOQD();
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
       totalDuration = totalDuration + duration; 
       mgloqdDuration = mgloqdDuration + duration; 
       cout << "    ";
@@ -608,9 +629,13 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
         // Solve ELOT problem
         cout << "        ";
         cout << "ELOT solve..." << endl;
-        startTime = clock(); 
+        //startTime = clock(); 
+        auto begin = chrono::high_resolution_clock::now();
         solveSteadyStateELOT(mpqd->x);
-        duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+        auto end = chrono::high_resolution_clock::now();
+        auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        duration = elapsed.count()*1e-9;
+        //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
         totalDuration = totalDuration + duration; 
         elotDuration = elotDuration + duration; 
         cout << "        ";
@@ -1037,16 +1062,22 @@ void MultilevelCoupling::solveTransient()
   cout << "Initial solve completed." << endl;
   cout << endl;
 
+  auto outerBegin = chrono::high_resolution_clock::now();
+
   for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
   {
     cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
     cout << endl;
 
-    startTime = clock(); 
+    //startTime = clock(); 
+    auto begin = chrono::high_resolution_clock::now();
     if(solveOneStepResidualBalance(mesh->outputOnStep[iTime]))
     {
       // Report solution time
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
       cout << "Solution computed in " << duration << " seconds." << endl;      
 
@@ -1065,7 +1096,10 @@ void MultilevelCoupling::solveTransient()
     else 
     {
       // Report solution time
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
       cout << "Solution aborted after " << duration << " seconds." << endl;      
       mesh->output->write(outputDir,"Solve_Time",duration);
@@ -1075,6 +1109,10 @@ void MultilevelCoupling::solveTransient()
       break;
     }
   } 
+  auto outerEnd = chrono::high_resolution_clock::now();
+  auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(outerEnd - outerBegin);
+  duration = elapsed.count()*1e-9;
+  cout << "Outer solve time: " << duration << " seconds." << endl;      
 
   // Report total solve time
   cout << "Total solve time: " << totalDuration << " seconds." << endl;      
@@ -1142,9 +1180,13 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
     {
       // Solve MGHOT problem
       cout << "MGHOT solve...";
-      startTime = clock(); 
+      //startTime = clock(); 
+      auto begin = chrono::high_resolution_clock::now();
       solveSteadyStateMGHOT();
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
       mghotDuration = mghotDuration + duration; 
       cout << " done. ("<< duration << " seconds)" << endl;
@@ -1176,9 +1218,13 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
       // Solve MGLOQD problem
       cout << "    ";
       cout << "MGLOQD solve..." << endl;
-      startTime = clock(); 
+      //startTime = clock(); 
+      auto begin = chrono::high_resolution_clock::now();
       solveSteadyStateMGLOQD_p();
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
       mgloqdDuration = mgloqdDuration + duration; 
       cout << "    ";
@@ -1215,9 +1261,13 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
         // Solve ELOT problem
         cout << "        ";
         cout << "ELOT solve..." << endl;
-        startTime = clock(); 
+        //startTime = clock(); 
+        auto begin = chrono::high_resolution_clock::now();
         solveSteadyStateELOT_p();
-        duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+        //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+        auto end = chrono::high_resolution_clock::now();
+        auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        duration = elapsed.count()*1e-9;
         totalDuration = totalDuration + duration; 
         elotDuration = elotDuration + duration; 
         cout << "        ";
@@ -1491,11 +1541,15 @@ void MultilevelCoupling::solveTransient_p()
     cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
     cout << endl;
 
-    startTime = clock(); 
+    //startTime = clock(); 
+    auto begin = chrono::high_resolution_clock::now();
     if(solveOneStepResidualBalance_p(mesh->outputOnStep[iTime]))
     {
       // Report solution time
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
       cout << "Solution computed in " << duration << " seconds." << endl;      
 
@@ -1514,7 +1568,10 @@ void MultilevelCoupling::solveTransient_p()
     else 
     {
       // Report solution time
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
       cout << "Solution aborted after " << duration << " seconds." << endl;      
       mesh->output->write(outputDir,"Solve_Time",duration);
@@ -1565,9 +1622,13 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
     {
       // Solve MGHOT problem
       cout << "MGHOT solve...";
-      startTime = clock(); 
+      //startTime = clock(); 
+      auto begin = chrono::high_resolution_clock::now();
       solveMGHOT();
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
       mghotDuration = mghotDuration + duration;
       cout << " done. ("<< duration << " seconds)" << endl;
       iters.push_back(3);
@@ -1596,9 +1657,13 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
       // Solve MGLOQD problem
       cout << "    ";
       cout << "MGLOQD solve..." << endl;
-      startTime = clock(); 
+      //startTime = clock(); 
+      auto begin = chrono::high_resolution_clock::now();
       solveMGLOQD_p();
-      duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      auto end = chrono::high_resolution_clock::now();
+      auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+      duration = elapsed.count()*1e-9;
       mgloqdDuration = mgloqdDuration + duration;
       cout << "    ";
       cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
@@ -1633,9 +1698,13 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
         // Solve ELOT problem
         cout << "        ";
         cout << "ELOT solve..." << endl;
-        startTime = clock(); 
+        //startTime = clock(); 
+        auto begin = chrono::high_resolution_clock::now();
         solveELOT_p();
-        duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+        //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+        auto end = chrono::high_resolution_clock::now();
+        auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+        duration = elapsed.count()*1e-9;
         elotDuration = elotDuration + duration;
         cout << "        ";
         cout << "ELOT solve done. ("<< duration << " seconds)" << endl;

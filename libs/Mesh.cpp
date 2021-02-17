@@ -731,7 +731,8 @@ void Mesh::calcTimeMesh(){
       } // end iTime
 
       // Ensure the variables on the last step are output
-      outputOnStep.back() = true;
+      if (interval <= nT)
+        outputOnStep.back() = true;
     }
     else
     {
