@@ -472,6 +472,9 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
   } //MGHOT
     
   cout << endl;
+  
+  // Correct MGHOT iteration count. (process starts with MGLOQD solve)
+  itersMGHOT = itersMGHOT - 1;
    
   // Write iteration countrs to console 
   cout << "MGHOT iterations: " << itersMGHOT << endl;
@@ -817,6 +820,9 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   mpqd->writeVars(); 
   mgqd->writeVars(); 
   mats->oneGroupXS->writeVars();
+  
+  // Correct MGHOT iteration count. (process starts with MGLOQD solve)
+  itersMGHOT = itersMGHOT - 1;
 
   cout << "MGHOT iterations: " << itersMGHOT << endl;
   cout << "MGLOQD iterations: " << itersMGLOQD << endl;
@@ -1452,6 +1458,9 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
   mpqd->writeVars(); 
   mgqd->writeVars(); 
   mats->oneGroupXS->writeVars();
+  
+  // Correct MGHOT iteration count. (process starts with MGLOQD solve)
+  itersMGHOT = itersMGHOT - 1;
 
   cout << "MGHOT iterations: " << itersMGHOT << endl;
   cout << "MGLOQD iterations: " << itersMGLOQD << endl;
@@ -1847,6 +1856,9 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
   } //MGHOT
     
   cout << endl;
+
+  // Correct MGHOT iteration count. (process starts with MGLOQD solve)
+  itersMGHOT = itersMGHOT - 1;
    
   // Write iteration countrs to console 
   cout << "MGHOT iterations: " << itersMGHOT << endl;
