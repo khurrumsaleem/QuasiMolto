@@ -46,7 +46,7 @@ parameters:
   initial previous flux: [1.0,1.0]
   initial dnp concentration: 0.0
   initial recirc dnp concentration: 0.0
-  solve type: transient # steady_state for keff solve
+  solve type: transient # change to steady_state for keff solve
   wallTemp: 920
   inletTemp: 920
   mgqd-bcs: goldin

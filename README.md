@@ -38,6 +38,8 @@ Contains transient and steady-state solvers.
     
     ```cd myRun```
     
-    ```../build_directory/bin/QuasiMolto ../QuasiMolto/examples/homogeneous/homogeneous.yaml```
+    ```cp ../QuasiMolto/examples/homogeneous/* .```
+    
+    ```../build_directory/bin/QuasiMolto homogeneous.yaml```
 
 ![alt text](https://vignette.wikia.nocookie.net/monstermovies/images/4/46/Quasimodo.png/revision/latest?cb=20140628171627 "Quasi Moto")
