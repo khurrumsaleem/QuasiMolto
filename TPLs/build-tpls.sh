@@ -2,12 +2,12 @@
 
 # Armadillo
 cd armadillo/
-cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
+cmake . -DCMAKE_INSTALL_PREFIX:PATH=$(pwd)
 make
 make install
 # SuperLU
-cd ../superlu/
-cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
+cd ../superlu
+cmake . -DCMAKE_INSTALL_PREFIX:PATH=$(pwd)
 make
 make install
 # PETSc
