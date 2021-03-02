@@ -18,7 +18,7 @@ Contains transient and steady-state solvers.
    
   * Make a build directory and compile `QuasiMolto`
   
-    ```cd ../../```
+    ```cd ../../../```
     
     ```mkdir build_directory```
     
