@@ -1,9 +1,6 @@
 [submodule "TPLs/yaml-cpp"]
 	path = TPLs/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
-[submodule "TPLs/armadillo"]
-	path = TPLs/armadillo
-        url = https://gitlab.com/conradsnicta/armadillo-code.git
 [submodule "TPLs/eigen-git-mirror"]
 	path = TPLs/eigen-git-mirror
 	url = https://github.com/eigenteam/eigen-git-mirror.git
