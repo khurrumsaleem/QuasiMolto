@@ -14,7 +14,7 @@ Contains transient and steady-state solvers.
 	
     ```chmod +x build-tpls.sh```
     
-    ```./build-tpls.sh```
+    ```source ./build-tpls.sh```
    
   * Make a build directory and compile `QuasiMolto`
   
