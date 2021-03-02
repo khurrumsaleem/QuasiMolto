@@ -10,3 +10,6 @@
 [submodule "TPLs/petsc"]
 	path = TPLs/petsc
 	url = https://github.com/petsc/petsc.git
+[submodule "TPLs/armadillo"]
+	path = TPLs/armadillo
+	url = https://gitlab.com/conradsnicta/armadillo-code.git
