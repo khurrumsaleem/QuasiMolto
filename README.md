@@ -11,6 +11,8 @@ Contains transient and steady-state solvers.
   * Build the third-party libraries
   
     ```cd QuasiMolto/TPLs/```
+	
+    ```chmod +x build-tpls.sh```
     
     ```./build-tpls.sh```
    
