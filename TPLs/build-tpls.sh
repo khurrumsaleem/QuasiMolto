@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Armadillo
 cd armadillo/
 cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
