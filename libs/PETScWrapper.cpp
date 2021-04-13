@@ -4,7 +4,7 @@ using namespace std;
 
 //==============================================================================
 
-int initPETScMat(Mat *A, int squareSize, int nonZeros)
+int initPETScMat(Mat * A, int squareSize, int nonZeros)
 {
   PetscErrorCode ierr; 
 
@@ -25,6 +25,8 @@ int initPETScMat(Mat *A, int squareSize, int nonZeros)
   CHKERRQ(ierr);
   ierr = MatSeqAIJSetPreallocation(*A,nonZeros,NULL);
   CHKERRQ(ierr);
+
+  return ierr;
 
 }
 
@@ -49,6 +51,8 @@ int initPETScRectMat(Mat *A, int rows, int cols, int nonZeros)
   CHKERRQ(ierr);
   ierr = MatSeqAIJSetPreallocation(*A,nonZeros,NULL);
   CHKERRQ(ierr);
+  
+  return ierr;
 
 }
 
@@ -69,6 +73,8 @@ int initPETScVec(Vec *x, int size)
   ierr = VecSetFromOptions(*x);
   CHKERRQ(ierr);
   
+  return ierr;
+  
 }
 
 int eigenVecToPETScVec(Eigen::VectorXd *x_e,Vec *x_p)
@@ -81,6 +87,8 @@ int eigenVecToPETScVec(Eigen::VectorXd *x_e,Vec *x_p)
   }
   ierr = VecAssemblyBegin(*x_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(*x_p);CHKERRQ(ierr);
+  
+  return ierr;
 }
 
 int petscVecToEigenVec(Vec *x_p,Eigen::VectorXd *x_e)
@@ -107,6 +115,8 @@ int petscVecToEigenVec(Vec *x_p,Eigen::VectorXd *x_e)
   }
   
   VecScatterDestroy(&ctx);
+  
+  return ierr;
 }
 
 

@@ -596,6 +596,8 @@ int SingleGroupDNP::getCoreConc()
     }
   }
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -635,6 +637,8 @@ int SingleGroupDNP::setCoreConc()
       }
     }
   }
+  
+  return ierr;
 
 };
 //==============================================================================
@@ -694,6 +698,8 @@ int SingleGroupDNP::getRecircConc()
     }
   }
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -735,6 +741,8 @@ int SingleGroupDNP::setRecircConc()
       }
     }
   }
+  
+  return ierr;
 
 };
 //==============================================================================
@@ -1242,6 +1250,9 @@ int SingleGroupDNP::buildSteadyStateLinearSystem_p(\
 
   // Splice testMat into linear system
   //myA->middleRows(myIndexOffset,nDNPUnknowns) = testMat.sparseView(); 
+
+  return ierr;
+  
 };
 //==============================================================================
 
@@ -1374,6 +1385,9 @@ int SingleGroupDNP::buildLinearSystem_p(
 
   //myA->middleRows(myIndexOffset,nDNPUnknowns) = Atemp; 
   //myA->middleRows(myIndexOffset,nDNPUnknowns) = testMat.sparseView(); 
+  
+  return ierr;
+  
 };
 //==============================================================================
 

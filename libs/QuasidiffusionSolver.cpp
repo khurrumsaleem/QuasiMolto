@@ -2843,6 +2843,9 @@ int QDSolver::assertSteadyStateZerothMoment_p(int iR,int iZ,int iEq,\
   // external source entry
   value = geoParams[iCF] * (SGQD->q(iZ,iR));
   ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -2924,6 +2927,8 @@ int QDSolver::steadyStateSouthCurrent_p(double coeff,int iR,int iZ,int iEq,\
   
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -2974,6 +2979,8 @@ int QDSolver::steadyStateNorthCurrent_p(double coeff,int iR,int iZ,int iEq,\
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
   
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -3037,6 +3044,8 @@ int QDSolver::steadyStateWestCurrent_p(double coeff,int iR,int iZ,int iEq,
   
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3098,6 +3107,8 @@ int QDSolver::steadyStateEastCurrent_p(double coeff,int iR,int iZ,int iEq,\
   index[3] = indices[iEF]; value[3] = -coeff*hUp*ErrE/(hUp*deltaR);
   
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -3274,6 +3285,8 @@ int QDSolver::assertSteadyStateNGoldinBC_p(int iR,int iZ,int iEq,\
   //A.coeffRef(iEq,indices[iNF]) -= ratio;
   //b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3304,6 +3317,8 @@ int QDSolver::assertSteadyStateSGoldinBC_p(int iR,int iZ,int iEq,\
 
   //A.coeffRef(iEq,indices[iSF]) -= ratio;
   //b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -3337,6 +3352,8 @@ int QDSolver::assertSteadyStateEGoldinBC_p(int iR,int iZ,int iEq,\
   //A.coeffRef(iEq,indices[iEF]) -= ratio;
   //b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3364,6 +3381,8 @@ int QDSolver::assertSteadyStateNGoldinP1BC_p(int iR,int iZ,int iEq,\
 
   //A.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3389,6 +3408,8 @@ int QDSolver::assertSteadyStateSGoldinP1BC_p(int iR,int iZ,int iEq,\
   ierr = MatSetValue(A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //A.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -3416,6 +3437,8 @@ int QDSolver::assertSteadyStateEGoldinP1BC_p(int iR,int iZ,int iEq,\
   
   //A.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3441,6 +3464,9 @@ int QDSolver::assertNFluxBC_p(int iR,int iZ,int iEq,int energyGroup,\
 
   //A.insert(iEq,indices[iNF]) = 1.0;
   //b(iEq) = SGQD->nFluxBC(iR);
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3466,6 +3492,9 @@ int QDSolver::assertSFluxBC_p(int iR,int iZ,int iEq,int energyGroup,\
 
   //A.insert(iEq,indices[iSF]) = 1.0;
   //b(iEq) = SGQD->sFluxBC(iR);
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3491,6 +3520,9 @@ int QDSolver::assertWFluxBC_p(int iR,int iZ,int iEq,int energyGroup,\
   
   //A.insert(iEq,indices[iWF]) = 1.0;
   //b(iEq) = SGQD->wFluxBC(iZ);
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3516,6 +3548,9 @@ int QDSolver::assertEFluxBC_p(int iR,int iZ,int iEq,int energyGroup,\
   
   //A.insert(iEq,indices[iEF]) = 1.0;
   //b(iEq) = SGQD->eFluxBC(iZ);
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3610,6 +3645,8 @@ int QDSolver::calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq,\
   
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3660,6 +3697,8 @@ int QDSolver::calcSteadyStateNorthCurrent_p(int iR,int iZ,int iEq,\
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
   
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -3716,6 +3755,8 @@ int QDSolver::calcSteadyStateWestCurrent_p(int iR,int iZ,int iEq,\
   
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3770,6 +3811,8 @@ int QDSolver::calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq,\
   
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3791,6 +3834,8 @@ int QDSolver::backCalculateCurrent_p()
   VecScatterEnd(ctx,currPast_p,currPast_p_seq,\
       INSERT_VALUES,SCATTER_FORWARD);
   VecScatterDestroy(&ctx);
+
+  return ierr;
 
 }
 //==============================================================================
@@ -3841,6 +3886,9 @@ int QDSolver::steadyStateGreyGroupSources_p(int iR,int iZ,int iEq,\
   //b(iEq) += geoParams[iCF]*((localUpscatterCoeff\
         + localChiP*localFissionCoeff/keff)*localFlux + localChiD*localDNPSource);
   ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3884,6 +3932,8 @@ int QDSolver::solve_p()
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4023,6 +4073,9 @@ int QDSolver::assertZerothMoment_p(int iR,int iZ,int iEq,int energyGroup,\
   
   //b(iEq) = b(iEq) + geoParams[iCF]*\
            ( (xPast(indices[iCF])/(v*deltaT)) + SGQD->q(iZ,iR));
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4121,6 +4174,9 @@ int QDSolver::southCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,
   VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
   curr_value = -coeff*(curr_value/(v*deltaT));
   ierr = VecSetValue(b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4190,6 +4246,8 @@ int QDSolver::northCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,
   VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
   curr_value = -coeff*(curr_value/(v*deltaT));
   ierr = VecSetValue(b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4264,6 +4322,8 @@ int QDSolver::westCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   curr_value = -coeff*(curr_value/(v*deltaT));
   ierr = VecSetValue(b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4336,6 +4396,8 @@ int QDSolver::eastCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
   curr_value = -coeff*(curr_value/(v*deltaT));
   ierr = VecSetValue(b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4505,6 +4567,8 @@ int QDSolver::assertNGoldinBC_p(int iR,int iZ,int iEq,int energyGroup,\
 //  A.coeffRef(iEq,indices[iNF]) -= ratio;
 //  b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4533,6 +4597,8 @@ int QDSolver::assertSGoldinBC_p(int iR,int iZ,int iEq,int energyGroup,\
 
   //A.coeffRef(iEq,indices[iSF]) -= ratio;
   //b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4563,6 +4629,8 @@ int QDSolver::assertEGoldinBC_p(int iR,int iZ,int iEq,int energyGroup,\
   //A.coeffRef(iEq,indices[iEF]) -= ratio;
   //b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4587,6 +4655,8 @@ int QDSolver::assertNGoldinP1BC_p(int iR,int iZ,int iEq,int energyGroup,\
   ierr = MatSetValue(A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //A.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4613,6 +4683,8 @@ int QDSolver::assertSGoldinP1BC_p(int iR,int iZ,int iEq,int energyGroup,\
 
   //A.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4637,6 +4709,8 @@ int QDSolver::assertEGoldinP1BC_p(int iR,int iZ,int iEq,int energyGroup,\
   ierr = MatSetValue(A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //A.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4686,6 +4760,9 @@ int QDSolver::greyGroupSources_p(int iR,int iZ,int iEq,int toEnergyGroup,\
   
   //b(iEq) += geoParams[iCF]*((localUpscatterCoeff\
         + localChiP*localFissionCoeff)*localFlux + localChiD*localDNPSource);
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4797,6 +4874,8 @@ int QDSolver::calcSouthCurrent_p(int iR,int iZ,int iEq,\
   
   ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4864,6 +4943,8 @@ int QDSolver::calcNorthCurrent_p(int iR,int iZ,int iEq,\
   rhsValue = coeff*(past_curr/(v*deltaT));
   
   ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4936,6 +5017,8 @@ int QDSolver::calcWestCurrent_p(int iR,int iZ,int iEq,\
   
   ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -5006,6 +5089,8 @@ int QDSolver::calcEastCurrent_p(int iR,int iZ,int iEq,\
   rhsValue = coeff*(past_curr/(v*deltaT));
   
   ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
+
+  return ierr;
 
 };
 //==============================================================================

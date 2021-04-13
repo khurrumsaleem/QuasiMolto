@@ -136,7 +136,7 @@ void MultiGroupQD::backCalculateCurrent()
 //==============================================================================
 /// Set the initial previous solution vectors to the values currently held in 
 /// the flux and current matrices
-int MultiGroupQD::setInitialCondition()
+void MultiGroupQD::setInitialCondition()
 {
 
   PetscErrorCode ierr; 
@@ -400,6 +400,8 @@ int MultiGroupQD::buildLinearSystem_p()
   ierr = VecAssemblyBegin(QDSolve->b_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(QDSolve->b_p);CHKERRQ(ierr);
 
+  return ierr;
+
 }
 //==============================================================================
 
@@ -428,6 +430,8 @@ int MultiGroupQD::buildBackCalcSystem_p()
   ierr = MatAssemblyEnd(QDSolve->C_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
   ierr = VecAssemblyBegin(QDSolve->d_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(QDSolve->d_p);CHKERRQ(ierr);
+
+  return ierr;
 
 }
 //==============================================================================

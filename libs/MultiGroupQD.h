@@ -32,7 +32,7 @@ class MultiGroupQD
     void buildBackCalcSystem();
     void buildSteadyStateBackCalcSystem();
     void backCalculateCurrent();
-    int setInitialCondition();
+    void setInitialCondition();
     void solveMGQDOnly();
     void getFluxes();
     void updateVarsAfterConvergence();

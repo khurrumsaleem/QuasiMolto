@@ -69,12 +69,12 @@ class MultiPhysicsCoupledQD
 
     // Steady state 
     int buildSteadyStateLinearSystem_p();
-    int updateSteadyStateVarsAfterConvergence_p();
+    void updateSteadyStateVarsAfterConvergence_p();
     void solveSteadyState_p();
 
     // Transient
     int buildLinearSystem_p();
-    int updateVarsAfterConvergence_p();
+    void updateVarsAfterConvergence_p();
     void solveTransient_p();
 
     // Pointers

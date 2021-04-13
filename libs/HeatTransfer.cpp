@@ -993,6 +993,8 @@ int HeatTransfer::setTemp()
     }
   }
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -1192,6 +1194,8 @@ int HeatTransfer::buildSteadyStateLinearSystem_p()
 
   //mpqd->A.middleRows(indexOffset,nUnknowns) = Atemp.sparseView(); 
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -1355,6 +1359,8 @@ int HeatTransfer::buildLinearSystem_p()
   
     }
   }
+
+  return ierr;
 
 };
 //==============================================================================

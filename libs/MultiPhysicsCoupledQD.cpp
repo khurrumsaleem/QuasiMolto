@@ -1,4 +1,4 @@
-// File: MultiPhysicsCoupledQD.cpp     
+//// File: MultiPhysicsCoupledQD.cpp     
 // Purpose: Contains precursor, heat, and grey group quasidiffusion objects. 
 //   Also owns and is responsible for solving the coupled system each of 
 //   of those object contribute to.
@@ -90,7 +90,7 @@ int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
   else
     myA->coeffRef(iEq,indices[0]) += coeff; 
 
-
+  return ierr;
 };
 //==============================================================================
 
@@ -115,6 +115,8 @@ int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
   }
   else
     (*myA)(iEq,indices[0]) += coeff; 
+
+  return ierr;
 
 };
 //==============================================================================
@@ -149,6 +151,8 @@ int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff,\
     else
       myA->coeffRef(iEq,index) += coeff*groupLambda;
   }
+
+  return ierr;
 
 };
 //==============================================================================
@@ -287,7 +291,6 @@ void MultiPhysicsCoupledQD::solveLinearSystemIterative(Eigen::VectorXd xGuess)
   clock_t startTime;
   int n = Eigen::nbThreads();
   int solveOutcome;
-  //cout << "number procs: " << n << endl;
 
   if (preconditioner == iluPreconditioner) 
     solveOutcome = solveIterativeILU(xGuess);
@@ -468,7 +471,6 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence()
   mgdnp->getRecircDNPConc();
 
   // Back calculate currents
-  // ToDo Add PETSc support for back calc system
   ggqd->GGSolver->formSteadyStateBackCalcSystem();
   ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
@@ -643,6 +645,8 @@ int MultiPhysicsCoupledQD::solve_p()
   /* Solve for recirculation concentrations */
   mgdnp->solveRecircLinearSystem_p();
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -678,6 +682,8 @@ int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
   ierr = MatAssemblyEnd(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
   ierr = VecAssemblyBegin(b_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
+  
+  return ierr;
 
 };
 //==============================================================================
@@ -685,7 +691,7 @@ int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
 //==============================================================================
 /// Run transient with multiple solves 
 ///
-int MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
+void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
 {
 
   // Object for broadcasting PETSc variable 
@@ -791,13 +797,15 @@ int MultiPhysicsCoupledQD::buildLinearSystem_p()
   ierr = VecAssemblyBegin(b_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
 
+  return ierr;
+
 };
 //==============================================================================
 
 //==============================================================================
 /// Run transient with multiple solves 
 ///
-int MultiPhysicsCoupledQD::updateVarsAfterConvergence_p()
+void MultiPhysicsCoupledQD::updateVarsAfterConvergence_p()
 {
   // Object for broadcasting PETSc variable 
   VecScatter     ctx;

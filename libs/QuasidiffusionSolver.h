@@ -221,7 +221,6 @@ class QDSolver
     bool useMPQDSources = false;
     MultiPhysicsCoupledQD * mpqd;
 
-
     /* PETSc stuff */
     // PETSc variables (the p denotes a petsc variable)
     Vec x_p,b_p,d_p;

@@ -425,6 +425,8 @@ int MultiGroupDNP::buildSteadyStateRecircLinearSystem_p()
   ierr = VecAssemblyBegin(recircb_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(recircb_p);CHKERRQ(ierr);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -465,6 +467,8 @@ int MultiGroupDNP::buildRecircLinearSystem_p()
   ierr = MatAssemblyEnd(recircA_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
   ierr = VecAssemblyBegin(recircb_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(recircb_p);CHKERRQ(ierr);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -509,6 +513,8 @@ int MultiGroupDNP::solveRecircLinearSystem_p()
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
+
+  return ierr;
 
 };
 //==============================================================================
