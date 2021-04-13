@@ -55,11 +55,9 @@ int testELOTPETScCoupling(Materials * myMaterials,\
 int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
-int testTransientMultilevelPETScCoupling(Materials * myMaterials,\
+void testTransientMultilevelPETScCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
-
-
 
 int main(int argc, char** argv) {
 
@@ -70,7 +68,7 @@ int main(int argc, char** argv) {
   // initialize PETSc
   PetscInitialize(&argc,&argv,(char*)0,help);
   ierr = MPI_Comm_size(PETSC_COMM_WORLD,&size); CHKERRQ(ierr);
-
+    
   // get input file
   YAML::Node * input;
   input = new YAML::Node;
@@ -834,7 +832,7 @@ int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
 
 }
 
-int testTransientMultilevelPETScCoupling(Materials * myMaterials,\
+void testTransientMultilevelPETScCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input){
   
@@ -852,12 +850,10 @@ int testTransientMultilevelPETScCoupling(Materials * myMaterials,\
   MultiPhysicsCoupledQD * myMPQD; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
 
-  // Initialize MultiPhysicsCoupledQD
+  // Initialize MultilevelCoupling
   MultilevelCoupling * myMLCoupling; 
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
       myMPQD);
-
-  cout << "Initialized transient solve" << endl;
 
   if (myMesh->petsc)
     myMLCoupling->solveTransient_p();
