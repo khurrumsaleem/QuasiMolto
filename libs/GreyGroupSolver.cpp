@@ -2426,6 +2426,8 @@ int GreyGroupSolver::getFlux()
     } 
   }
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -2499,6 +2501,8 @@ int GreyGroupSolver::getCurrent()
     } 
   }
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -2571,6 +2575,7 @@ int GreyGroupSolver::setFlux()
     }
   }
 
+  return ierr;
 
 };
 //==============================================================================
@@ -2768,6 +2773,8 @@ int GreyGroupSolver::formSteadyStateBackCalcSystem_p()
   ierr = VecAssemblyBegin(d_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(d_p);CHKERRQ(ierr);
 
+  return ierr;
+
 };
 
 //==============================================================================
@@ -2826,6 +2833,8 @@ int GreyGroupSolver::assertSteadyStateZerothMoment_p(int iR,int iZ,int iEq)
   steadyStateNorthCurrent_p(-geoParams[iNF],iR,iZ,iEq);
 
   steadyStateSouthCurrent_p(geoParams[iSF],iR,iZ,iEq);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -2917,6 +2926,8 @@ int GreyGroupSolver::steadyStateSouthCurrent_p(double coeff,int iR,int iZ,int iE
   //// Enforce zeta coefficient
   //Atemp.coeffRef(iEq,indices[iSF]) -= coeff*zetaL;
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -2980,6 +2991,8 @@ int GreyGroupSolver::steadyStateNorthCurrent_p(double coeff,int iR,int iZ,int iE
 
   //// Enforce zeta coefficient
   //Atemp.coeffRef(iEq,indices[iNF]) -= coeff*zetaL;
+  
+  return ierr;
 
 };
 //==============================================================================
@@ -3047,6 +3060,8 @@ int GreyGroupSolver::steadyStateWestCurrent_p(double coeff,int iR,int iZ,int iEq
   // // Enforce zeta coefficient
   // Atemp.coeffRef(iEq,indices[iWF]) -= coeff*zetaL;
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3113,6 +3128,8 @@ int GreyGroupSolver::steadyStateEastCurrent_p(double coeff,int iR,int iZ,int iEq
   //// Enforce zeta coefficient
   //Atemp.coeffRef(iEq,indices[iEF]) -= coeff*zetaL;
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3175,6 +3192,8 @@ int GreyGroupSolver::calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq)
 
   //// Enforce zeta coefficient
   //C.coeffRef(iEq,indices[iSF]) -= coeff*zetaL;
+
+  return ierr;
 
 };
 //==============================================================================
@@ -3240,6 +3259,8 @@ int GreyGroupSolver::calcSteadyStateNorthCurrent_p(int iR,int iZ,int iEq)
   //// Enforce zeta coefficient
   //C.coeffRef(iEq,indices[iNF]) -= coeff*zetaL;
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3303,6 +3324,8 @@ int GreyGroupSolver::calcSteadyStateWestCurrent_p(int iR,int iZ,int iEq)
 
   //// Enforce zeta coefficient
   //C.coeffRef(iEq,indices[iWF]) -= coeff*zetaL;
+
+  return ierr;
 
 };
 //==============================================================================
@@ -3368,6 +3391,8 @@ int GreyGroupSolver::calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq)
 
   //// Enforce zeta coefficient
   //C.coeffRef(iEq,indices[iEF]) -= coeff*zetaL;
+
+  return ierr;
 
 };
 //==============================================================================
@@ -3519,6 +3544,8 @@ int GreyGroupSolver::assertSteadyStateNGoldinBC_p(int iR,int iZ,int iEq)
   // Atemp.coeffRef(iEq,indices[iNF]) -= ratio;
   // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3549,6 +3576,8 @@ int GreyGroupSolver::assertSteadyStateSGoldinBC_p(int iR,int iZ,int iEq)
   // steadyStateSouthCurrent(1.0,iR,iZ,iEq);
   // Atemp.coeffRef(iEq,indices[iSF]) -= ratio;
   // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -3581,6 +3610,8 @@ int GreyGroupSolver::assertSteadyStateEGoldinBC_p(int iR,int iZ,int iEq)
   // Atemp.coeffRef(iEq,indices[iEF]) -= ratio;
   // (*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3601,6 +3632,8 @@ int GreyGroupSolver::assertSteadyStateNGoldinP1BC_p(int iR,int iZ,int iEq)
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //Atemp.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -3623,6 +3656,8 @@ int GreyGroupSolver::assertSteadyStateSGoldinP1BC_p(int iR,int iZ,int iEq)
 
   //Atemp.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3643,6 +3678,8 @@ int GreyGroupSolver::assertSteadyStateEGoldinP1BC_p(int iR,int iZ,int iEq)
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //Atemp.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -3667,6 +3704,9 @@ int GreyGroupSolver::assertNFluxBC_p(int iR,int iZ,int iEq)
 
   //Atemp.insert(iEq,indices[iNF]) = 1.0;
   //(*b)(iEq) = GGQD->nFluxBC(iR);
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3688,6 +3728,9 @@ int GreyGroupSolver::assertSFluxBC_p(int iR,int iZ,int iEq)
 
   //Atemp.insert(iEq,indices[iSF]) = 1.0;
   //(*b)(iEq) = GGQD->sFluxBC(iR);
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3709,6 +3752,9 @@ int GreyGroupSolver::assertWFluxBC_p(int iR,int iZ,int iEq)
 
   //Atemp.insert(iEq,indices[iWF]) = 1.0;
   //(*b)(iEq) = GGQD->wFluxBC(iZ);
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3730,6 +3776,9 @@ int GreyGroupSolver::assertEFluxBC_p(int iR,int iZ,int iEq)
 
   //Atemp.insert(iEq,indices[iEF]) = 1.0;
   //(*b)(iEq) = GGQD->eFluxBC(iZ);
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -3751,6 +3800,8 @@ int GreyGroupSolver::backCalculateCurrent_p()
   VecScatterEnd(ctx,currPast_p,currPast_p_seq,\
       INSERT_VALUES,SCATTER_FORWARD);
   VecScatterDestroy(&ctx);
+
+  return ierr;
 
 }
 //==============================================================================
@@ -3879,6 +3930,9 @@ int GreyGroupSolver::assertZerothMoment_p(int iR,int iZ,int iEq)
 
   //(*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
               ( ((*xPast)(indices[iCF])/(vPast*deltaT)) + GGQD->q(iZ,iR));
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4006,6 +4060,8 @@ int GreyGroupSolver::southCurrent_p(double coeff,int iR,int iZ,int iEq)
     //(*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iSC])/(vPast*deltaT));
   }
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4104,6 +4160,9 @@ int GreyGroupSolver::northCurrent_p(double coeff,int iR,int iZ,int iEq)
 
     //(*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iNC])/(vPast*deltaT));
   }
+
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4205,6 +4264,8 @@ int GreyGroupSolver::westCurrent_p(double coeff,int iR,int iZ,int iEq)
     //(*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iWC])/(v*deltaT));
   }
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4305,6 +4366,8 @@ int GreyGroupSolver::eastCurrent_p(double coeff,int iR,int iZ,int iEq)
 
     //(*b)(iEq) = (*b)(iEq) - coeff*(currPast(indices[iEC])/(vPast*deltaT));  
   }
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4450,6 +4513,8 @@ int GreyGroupSolver::assertNGoldinBC_p(int iR,int iZ,int iEq)
   //Atemp.coeffRef(iEq,indices[iNF]) -= ratio;
   //(*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4478,6 +4543,8 @@ int GreyGroupSolver::assertSGoldinBC_p(int iR,int iZ,int iEq)
   //southCurrent(1.0,iR,iZ,iEq);
   //Atemp.coeffRef(iEq,indices[iSF]) -= ratio;
   //(*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4508,6 +4575,8 @@ int GreyGroupSolver::assertEGoldinBC_p(int iR,int iZ,int iEq)
   //Atemp.coeffRef(iEq,indices[iEF]) -= ratio;
   //(*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4528,6 +4597,8 @@ int GreyGroupSolver::assertNGoldinP1BC_p(int iR,int iZ,int iEq)
   
   //northCurrent(1.0,iR,iZ,iEq);
   //Atemp.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4550,6 +4621,8 @@ int GreyGroupSolver::assertSGoldinP1BC_p(int iR,int iZ,int iEq)
   //southCurrent(1.0,iR,iZ,iEq);
   //Atemp.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
 
+  return ierr;
+
 };
 //==============================================================================
 
@@ -4570,6 +4643,8 @@ int GreyGroupSolver::assertEGoldinP1BC_p(int iR,int iZ,int iEq)
 
   //eastCurrent(1.0,iR,iZ,iEq);
   //Atemp.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4623,6 +4698,8 @@ int GreyGroupSolver::formBackCalcSystem_p()
   ierr = MatAssemblyEnd(C_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
   ierr = VecAssemblyBegin(d_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(d_p);CHKERRQ(ierr);
+
+  return ierr;
 
 };
 
@@ -4700,7 +4777,8 @@ int GreyGroupSolver::calcSouthCurrent_p(int iR,int iZ,int iEq)
       curr_index = indices[iSC];
 
       // Get previous multigroup current and neutron velocity
-      VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+      VecGetValues(GGQD->mgqd->QDSolve->currPast_p_seq,1,&curr_index,\
+          &curr_value);CHKERRQ(ierr);
       mgqdNeutV = materials->zNeutVel(iZ+1,iR,iGroup); 
 
       // Set coefficient (curr_value) in RHS vector
@@ -4719,6 +4797,8 @@ int GreyGroupSolver::calcSouthCurrent_p(int iR,int iZ,int iEq)
     ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
     //d(iEq) = coeff*(currPast(indices[iSC])/(vPast*deltaT));
   }
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4794,7 +4874,8 @@ int GreyGroupSolver::calcNorthCurrent_p(int iR,int iZ,int iEq)
       curr_index = indices[iNC];
 
       // Get previous multigroup current and neutron velocity
-      VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+      VecGetValues(GGQD->mgqd->QDSolve->currPast_p_seq,\
+          1,&curr_index,&curr_value);CHKERRQ(ierr);
       mgqdNeutV = materials->zNeutVel(iZ,iR,iGroup); 
 
       // Set coefficient (curr_value) in RHS vector
@@ -4813,6 +4894,8 @@ int GreyGroupSolver::calcNorthCurrent_p(int iR,int iZ,int iEq)
     ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
     //d(iEq) = coeff*(currPast(indices[iNC])/(vPast*deltaT));  
   }
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4888,7 +4971,8 @@ int GreyGroupSolver::calcWestCurrent_p(int iR,int iZ,int iEq)
       curr_index = indices[iWC];
 
       // Get previous multigroup current and neutron velocity
-      VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+      VecGetValues(GGQD->mgqd->QDSolve->currPast_p_seq,\
+          1,&curr_index,&curr_value);CHKERRQ(ierr);
       mgqdNeutV = materials->rNeutVel(iZ,iR,iGroup); 
 
       // Set coefficient (curr_value) in RHS vector
@@ -4907,6 +4991,8 @@ int GreyGroupSolver::calcWestCurrent_p(int iR,int iZ,int iEq)
     ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
     //d(iEq) = coeff*(currPast(indices[iWC])/(vPast*deltaT));
   }
+
+  return ierr;
 
 };
 //==============================================================================
@@ -4983,13 +5069,14 @@ int GreyGroupSolver::calcEastCurrent_p(int iR,int iZ,int iEq)
       curr_index = indices[iEC];
 
       // Get previous multigroup current and neutron velocity
-      VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+      VecGetValues(GGQD->mgqd->QDSolve->currPast_p_seq,\
+          1,&curr_index,&curr_value);CHKERRQ(ierr);
       mgqdNeutV = materials->rNeutVel(iZ,iR+1,iGroup); 
 
       // Set coefficient (curr_value) in RHS vector
       curr_value = (coeff/deltaT)*(curr_value/mgqdNeutV);;
       ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
-
+//
       //indices = GGQD->mgqd->QDSolve->getIndices(iR,iZ,iGroup);
       //mgqdCurrent = GGQD->mgqd->QDSolve->currPast(indices[iEC]); 
       //mgqdNeutV = materials->rNeutVel(iZ,iR+1,iGroup); 
@@ -5002,6 +5089,8 @@ int GreyGroupSolver::calcEastCurrent_p(int iR,int iZ,int iEq)
     ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
     //d(iEq) = coeff*(currPast(indices[iEC])/(vPast*deltaT));
   }
+
+  return ierr;
 
 };
 //==============================================================================
