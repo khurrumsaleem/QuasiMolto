@@ -1552,12 +1552,10 @@ void MultilevelCoupling::solveTransient_p()
     cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
     cout << endl;
 
-    //startTime = clock(); 
     auto begin = chrono::high_resolution_clock::now();
     if(solveOneStepResidualBalance_p(mesh->outputOnStep[iTime]))
     {
       // Report solution time
-      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
       auto end = chrono::high_resolution_clock::now();
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
@@ -1565,8 +1563,8 @@ void MultilevelCoupling::solveTransient_p()
       cout << "Solution computed in " << duration << " seconds." << endl;      
 
       // Output and update variables
-      mgqd->updateVarsAfterConvergence(); 
-      mpqd->updateVarsAfterConvergence_p(); 
+      //mgqd->updateVarsAfterConvergence(); 
+      //mpqd->updateVarsAfterConvergence_p(); 
       if (mesh->outputOnStep[iTime])
       {
         mgqd->writeVars();
@@ -1579,7 +1577,6 @@ void MultilevelCoupling::solveTransient_p()
     else 
     {
       // Report solution time
-      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
       auto end = chrono::high_resolution_clock::now();
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
@@ -1638,10 +1635,8 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
     {
       // Solve MGHOT problem
       cout << "MGHOT solve...";
-      //startTime = clock(); 
       auto begin = chrono::high_resolution_clock::now();
       solveMGHOT();
-      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
       auto end = chrono::high_resolution_clock::now();
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
@@ -1673,10 +1668,8 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
       // Solve MGLOQD problem
       cout << "    ";
       cout << "MGLOQD solve..." << endl;
-      //startTime = clock(); 
       auto begin = chrono::high_resolution_clock::now();
-      solveMGLOQD_p();
-      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+      //solveMGLOQD_p();
       auto end = chrono::high_resolution_clock::now();
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
@@ -1686,11 +1679,11 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
       iters.push_back(2);
 
       // Get group fluxes to use in group collapse
-      mgqd->getFluxes();
+      //mgqd->getFluxes();
       
       // Store last iterate of ELOT solution used in MGLOQD level
       //xLastMGLOQDIter = mpqd->x;
-      petscVecToEigenVec(&(mpqd->x_p),&xLastMGLOQDIter);
+      //petscVecToEigenVec(&(mpqd->x_p),&xLastMGLOQDIter);
     
       while (not convergedELOT) {
         
@@ -1708,16 +1701,14 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
         cout << "        ";
         cout << "Storing last solution...";
         //xLastELOTIter = mpqd->x;
-        petscVecToEigenVec(&(mpqd->x_p),&xLastELOTIter);
+        //petscVecToEigenVec(&(mpqd->x_p),&xLastELOTIter);
         cout << " done."<< endl;
       
         // Solve ELOT problem
         cout << "        ";
         cout << "ELOT solve..." << endl;
-        //startTime = clock(); 
         auto begin = chrono::high_resolution_clock::now();
-        solveELOT_p();
-        //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
+        //solveELOT_p();
         auto end = chrono::high_resolution_clock::now();
         auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
         duration = elapsed.count()*1e-9;
@@ -1733,8 +1724,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
         lastResidualELOT = residualELOT; 
 
         // Calculate and print ELOT residual  
-        residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
-        residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
+        //residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
         cout << "        ";
         cout << "ELOT Residual: " << residualELOT[0]; 
         cout << ", " << residualELOT[1] << endl;
@@ -1745,7 +1735,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
         tempResELOT.push_back(residualELOT[1]);
 
         // Calculate collapsed nuclear data at new temperature
-        mats->updateTemperature(mpqd->heat->returnCurrentTemp());
+        //mats->updateTemperature(mpqd->heat->returnCurrentTemp());
 
         // Check if residuals are too big or if the residuals have increased
         // from the last MGLOQD residual 
@@ -1769,19 +1759,18 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
       convergedELOT = false; 
       
       // Store one group fluxes and DNPs for MGHOT and MGLOQD sources 
-      mpqd->ggqd->GGSolver->getFlux();
-      mpqd->mgdnp->getCumulativeDNPDecaySource();
+      //mpqd->ggqd->GGSolver->getFlux();
+      //mpqd->mgdnp->getCumulativeDNPDecaySource();
     
       lastResidualMGLOQD = residualMGLOQD;
  
       // Calculate and print MGLOQD residual 
-      residualMGLOQD = MGQDToMPQD->calcResidual(xLastMGLOQDIter,xCurrentIter);
-      residualMGLOQD = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGLOQDIter);
-      cout << endl;
-      cout << "    ";
-      cout << "MGLOQD Residual: " << residualMGLOQD[0];
-      cout << ", " << residualMGLOQD[1] << endl;
-      cout << endl;
+      //residualMGLOQD = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGLOQDIter);
+      //cout << endl;
+      //cout << "    ";
+      //cout << "MGLOQD Residual: " << residualMGLOQD[0];
+      //cout << ", " << residualMGLOQD[1] << endl;
+      //cout << endl;
         
       // Update iterate counters, store residuals
       itersMGLOQD++;
@@ -1818,11 +1807,10 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
     convergedMGLOQD = false;
      
     // Calculate and print MGHOT residual 
-    residualMGHOT = MGQDToMPQD->calcResidual(xLastMGHOTIter,xCurrentIter);
-    residualMGHOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGHOTIter);
-    cout << "MGHOT Residual: " << residualMGHOT[0];
-    cout << ", " << residualMGHOT[1] << endl;
-    cout << endl;
+    //residualMGHOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGHOTIter);
+    //cout << "MGHOT Residual: " << residualMGHOT[0];
+    //cout << ", " << residualMGHOT[1] << endl;
+    //cout << endl;
       
     // Update iterate counters, store residuals
     itersMGHOT++;
