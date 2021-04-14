@@ -262,7 +262,7 @@ void MultiPhysicsCoupledQD::initializeXPast()
   ggqd->GGSolver->getCurrent();
 
   if(mesh->petsc)
-    initPETScVec(&x_p,nUnknowns);
+    VecZeroEntries(x_p);
   else
     x.setZero(); // Reset x
 };
@@ -661,9 +661,8 @@ int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
   PetscErrorCode ierr;
 
   // Reset linear system
-  initPETScMat(&A_p,nUnknowns,4*nUnknowns);
-  //initPETScVec(&x_p,nUnknowns);
-  initPETScVec(&b_p,nUnknowns);
+  MatZeroEntries(A_p);
+  VecZeroEntries(b_p);
 
   // Build QD system
   ggqd->buildSteadyStateLinearSystem_p();
@@ -776,8 +775,8 @@ int MultiPhysicsCoupledQD::buildLinearSystem_p()
   PetscErrorCode ierr;
 
   // Reset linear system
-  initPETScMat(&A_p,nUnknowns,4*nUnknowns);
-  initPETScVec(&b_p,nUnknowns);
+  MatZeroEntries(A_p);
+  VecZeroEntries(b_p);
 
   // Build QD system
   ggqd->buildLinearSystem_p();

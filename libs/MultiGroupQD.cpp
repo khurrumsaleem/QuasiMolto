@@ -359,8 +359,8 @@ int MultiGroupQD::buildSteadyStateLinearSystem_p()
   PetscErrorCode ierr;
   
   /* Reset linear system */  
-  initPETScMat(&(QDSolve->A_p),QDSolve->nUnknowns,4*QDSolve->nUnknowns);
-  initPETScVec(&(QDSolve->b_p),QDSolve->nUnknowns);
+  MatZeroEntries(QDSolve->A_p);
+  VecZeroEntries(QDSolve->b_p);
   
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
@@ -372,6 +372,8 @@ int MultiGroupQD::buildSteadyStateLinearSystem_p()
   ierr = MatAssemblyEnd(QDSolve->A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
   ierr = VecAssemblyBegin(QDSolve->b_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(QDSolve->b_p);CHKERRQ(ierr);
+
+  return ierr;
 
 }
 //==============================================================================
@@ -386,8 +388,8 @@ int MultiGroupQD::buildLinearSystem_p()
   VecScatter     ctx;
   
   /* Reset linear system */  
-  initPETScMat(&(QDSolve->A_p),QDSolve->nUnknowns,4*QDSolve->nUnknowns);
-  initPETScVec(&(QDSolve->b_p),QDSolve->nUnknowns);
+  MatZeroEntries(QDSolve->A_p);
+  VecZeroEntries(QDSolve->b_p);
 
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
@@ -417,8 +419,8 @@ int MultiGroupQD::buildBackCalcSystem_p()
                           tempFluxUnknowns=QDSolve->nUnknowns;
   
   /* Reset linear system */
-  initPETScRectMat(&(QDSolve->C_p),tempCurrUnknowns,tempFluxUnknowns,4*tempFluxUnknowns);
-  initPETScVec(&(QDSolve->d_p),tempCurrUnknowns);
+  MatZeroEntries(QDSolve->C_p);
+  VecZeroEntries(QDSolve->d_p);
 
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
@@ -455,8 +457,8 @@ int MultiGroupQD::buildSteadyStateBackCalcSystem_p()
                           tempFluxUnknowns=QDSolve->nUnknowns;
   
   /* Reset linear system */
-  initPETScRectMat(&(QDSolve->C_p),tempCurrUnknowns,tempFluxUnknowns,4*tempFluxUnknowns);
-  initPETScVec(&(QDSolve->d_p),tempCurrUnknowns);
+  MatZeroEntries(QDSolve->C_p);
+  VecZeroEntries(QDSolve->d_p);
 
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
@@ -469,6 +471,7 @@ int MultiGroupQD::buildSteadyStateBackCalcSystem_p()
   ierr = VecAssemblyBegin(QDSolve->d_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(QDSolve->d_p);CHKERRQ(ierr);
 
+  return ierr;
 }
 //==============================================================================
 

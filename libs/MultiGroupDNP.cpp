@@ -411,8 +411,8 @@ int MultiGroupDNP::buildSteadyStateRecircLinearSystem_p()
   PetscErrorCode ierr;
 
   // Reset linear system of recirculation loop
-  initPETScMat(&recircA_p,nRecircUnknowns,4*nRecircUnknowns);
-  initPETScVec(&recircb_p,nRecircUnknowns);
+  MatZeroEntries(recircA_p);
+  VecZeroEntries(recircb_p);
 
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
@@ -454,8 +454,8 @@ int MultiGroupDNP::buildRecircLinearSystem_p()
   PetscErrorCode ierr;
 
   // Reset linear system of recirculation loop
-  initPETScMat(&recircA_p,nRecircUnknowns,4*nRecircUnknowns);
-  initPETScVec(&recircb_p,nRecircUnknowns);
+  MatZeroEntries(recircA_p);
+  VecZeroEntries(recircb_p);
 
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {

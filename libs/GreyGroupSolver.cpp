@@ -2732,8 +2732,8 @@ int GreyGroupSolver::formSteadyStateBackCalcSystem_p()
   PetscErrorCode ierr;
 
   // Reset linear system
-  initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,4*nUnknowns);
-  initPETScVec(&d_p,nCurrentUnknowns);
+  MatZeroEntries(C_p);
+  VecZeroEntries(d_p);
 
   // loop over spatial mesh
   for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
@@ -4658,8 +4658,8 @@ int GreyGroupSolver::formBackCalcSystem_p()
   PetscErrorCode ierr;
 
   // Reset linear system
-  initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,4*nUnknowns);
-  initPETScVec(&d_p,nCurrentUnknowns);
+  MatZeroEntries(C_p);
+  VecZeroEntries(d_p);
 
   // loop over spatial mesh
   for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
