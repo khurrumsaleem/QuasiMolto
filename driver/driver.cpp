@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
   // initialize PETSc
   PetscInitialize(&argc,&argv,(char*)0,help);
   ierr = MPI_Comm_size(PETSC_COMM_WORLD,&size); CHKERRQ(ierr);
-    
+
   // get input file
   YAML::Node * input;
   input = new YAML::Node;
@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
   } else {
     *input = YAML::LoadFile("input.yaml");
   }
-       
+
   // initialize mesh object
   Mesh * myMesh; 
   myMesh = new Mesh(input);
@@ -86,15 +86,15 @@ int main(int argc, char** argv) {
   // initialize materials object
   Materials * myMaterials;
   myMaterials = new Materials(myMesh,input);
-      
+
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
-  
+
   // initialize multigroup quasidiffusion object
   MultiGroupQD * myMGQD; 
   myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
-  
+
   // initialize T2QD coupling object
   TransportToQDCoupling * myT2QD; 
   myT2QD = new TransportToQDCoupling(myMaterials,myMesh,input,myMGT,myMGQD);
@@ -120,18 +120,18 @@ int main(int argc, char** argv) {
     solveType=(*input)["parameters"]["solve type"].as<string>();
 
     cout << solveType << endl;
-  
+
     if (solveType == "MMS" or solveType == "mms")    
       myMMS->timeDependent();
     else if (solveType == "MGQD" or solveType == "mgqd") 
       myMGQD->solveMGQDOnly();
     else if (solveType == "TQD" or solveType == "TQD")
     { 
-     // myMGT->solveTransportOnly();
-     // myT2QD->calcEddingtonFactors();
-     // myT2QD->calcBCs();
-     // myMGQD->solveMGQDOnly();
-     myT2QD->solveTransportWithQDAcceleration();
+      // myMGT->solveTransportOnly();
+      // myT2QD->calcEddingtonFactors();
+      // myT2QD->calcBCs();
+      // myMGQD->solveMGQDOnly();
+      myT2QD->solveTransportWithQDAcceleration();
     }
     else if (solveType == "testHeatTransfer")
       testHeatTransfer(myMaterials,myMesh,input);
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
 }
 
 void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input){
-  
+
   MultiPhysicsCoupledQD * myMPQD; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
   myMPQD->heat->updateBoundaryConditions();
@@ -205,13 +205,13 @@ void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input){
   cout << myMPQD->x << endl;;
   myMPQD->heat->getTemp();
   cout << myMPQD->heat->temp << endl;;
-  
+
 }
 
 void testMultiGroupPrecursor(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input){
-  
+    Mesh * myMesh,\
+    YAML::Node * input){
+
   MultiPhysicsCoupledQD * myMPQD; 
   MultiGroupDNP * myMGP; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
@@ -223,11 +223,11 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
 
   cout << myMPQD->mgdnp->beta << endl;
   cout << "recirculation Z: " << myMesh->recircZ << endl;
-  
+
   myMPQD->mgdnp->DNPs[0]->assignBoundaryIndices();
   myMPQD->mgdnp->DNPs[0]->updateBoundaryConditions();
   cout << "Updated boundary conditions" << endl;
- 
+
   myMPQD->mgdnp->DNPs[0]->calcRecircDNPFluxes();
   myMPQD->mgdnp->DNPs[0]->calcCoreDNPFluxes();
   cout << "Setting size of A and b..." << endl;
@@ -245,7 +245,7 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   cout << myMPQD->x << endl;
   cout << "building recirc system..." << endl;
   myMPQD->mgdnp->recircA.resize(myMesh->nZrecirc*myMesh->nR,\
-    myMesh->nZrecirc*myMesh->nR);
+      myMesh->nZrecirc*myMesh->nR);
   myMPQD->mgdnp->recircb.resize(myMesh->nZrecirc*myMesh->nR);
   myMPQD->mgdnp->DNPs[0]->buildRecircLinearSystem();
   cout << "built recirc system" << endl;
@@ -259,18 +259,18 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
 }
 
 void testMultiPhysicsCoupledQD(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input){
-  
+    Mesh * myMesh,\
+    YAML::Node * input){
+
   MultiPhysicsCoupledQD * myMPQD; 
   myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
   myMPQD->solveTransient();
 }
 
 void testMultiGroupToGreyGroupCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input){
-  
+    Mesh * myMesh,\
+    YAML::Node * input){
+
   // initialize multigroup quasidiffusion object
   MultiGroupQD * myMGQD; 
   myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
@@ -289,14 +289,14 @@ void testMultiGroupToGreyGroupCoupling(Materials * myMaterials,\
   myMGToGG->solveTransient();
   myMaterials->oneGroupXS->print();
   myMPQD->ggqd->printBCParams();
-  
+
   cout << "Collapsed nuclear data" << endl;
 }
 
 void testMultilevelCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input){
-  
+    Mesh * myMesh,\
+    YAML::Node * input){
+
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
@@ -320,15 +320,15 @@ void testMultilevelCoupling(Materials * myMaterials,\
     myMLCoupling->solveTransient_p();
   else
     myMLCoupling->solveTransient();
-  
+
   cout << "Completed multilevel transient solve." << endl;
-  
+
 }
 
 void testSteadyState(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input){
-  
+    Mesh * myMesh,\
+    YAML::Node * input){
+
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
@@ -348,17 +348,17 @@ void testSteadyState(Materials * myMaterials,\
 
   // Set state to zero for initial steady state solve
   myMesh->state=0;
-  
+
   cout << "Initialized multilevel steady state solve." << endl;
 
   if (myMesh->petsc)
     myMLCoupling->solveSteadyStateResidualBalance_p(true);
   else
     myMLCoupling->solveSteadyStateResidualBalance(true);
-    
+
 
   cout << "Completed multilevel steady state solve." << endl;
-  
+
   // Delete pointers
 
   delete myMGT;
@@ -369,9 +369,9 @@ void testSteadyState(Materials * myMaterials,\
 }
 
 void testSteadyStateThenTransient(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input){
-  
+    Mesh * myMesh,\
+    YAML::Node * input){
+
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
@@ -392,7 +392,7 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
   cout << "Starting solves..." << endl;
 
   myMLCoupling->solveSteadyStateTransientResidualBalance(true);
-  
+
   cout << "Completed multilevel solve" << endl;
 
   // Delete pointers
@@ -405,11 +405,11 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
 }
 
 int testMGQDPETScCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input){
-  
+    Mesh * myMesh,\
+    YAML::Node * input){
+
   PetscErrorCode ierr;
-  
+
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
@@ -426,82 +426,82 @@ int testMGQDPETScCoupling(Materials * myMaterials,\
   MultilevelCoupling * myMLCoupling; 
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
       myMPQD);
-//
-//  /* PETSc steady state*/  
-//  cout << "Build PETSc MGQD linear system...";
-//  myMGQD->buildSteadyStateLinearSystem_p();
-//  cout << " done." << endl;
-//  
-//  cout << "Solve system...";
-//  myMGQD->solveLinearSystem_p();
-//  cout << " done." << endl;
-//
-//  cout << "Build system to back calculate current...";
-//  myMGQD->buildSteadyStateBackCalcSystem_p();
-//  cout << " done." << endl;
-//  
-//  cout << "Solve system...";
-//  myMGQD->backCalculateCurrent_p();
-//  cout << " done." << endl;
-//  myMGQD->getFluxes();
-//  myMGQD->writeVars();
-//
-//  /* EIGEN steady state*/  
-//  cout << "Build Eigen MGQD linear system...";
-//  myMGQD->buildSteadyStateLinearSystem();
-//  cout << " done." << endl;
-//  
-//  cout << "Solve system...";
-//  myMGQD->QDSolve->solveSuperLU();
-//  cout << " done." << endl;
-//  
-//  cout << "Build system to back calculate current...";
-//  myMGQD->buildSteadyStateBackCalcSystem();
-//  cout << " done." << endl;
-//  
-//  cout << "Solve system...";
-//  myMGQD->backCalculateCurrent();
-//  cout << " done." << endl;
-//
-//  /* PETSc transient*/  
-//  cout << "Build transient PETSc MGQD linear system...";
-//  myMGQD->buildLinearSystem_p();
-//  cout << " done." << endl;
-//  
-//  cout << "Solve system...";
-//  myMGQD->solveLinearSystem_p();
-//  cout << " done." << endl;
-//  //ierr = VecView(myMGQD->QDSolve->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-//
-//  cout << "Build system to back calculate current...";
-//  myMGQD->buildBackCalcSystem_p();
-//  cout << " done." << endl;
-//
-//  cout << "Solve system...";
-//  myMGQD->backCalculateCurrent_p();
-//  cout << " done." << endl;
-//  ierr = VecView(myMGQD->QDSolve->currPast_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-//  //myMGQD->getFluxes();
-//  //myMGQD->writeVars();
-//
-//  /* EIGEN transient*/  
-//  cout << "Build Eigen MGQD linear system...";
-//  myMGQD->buildLinearSystem();
-//  cout << " done." << endl;
-//  
-//  cout << "Solve system...";
-//  myMGQD->QDSolve->solveSuperLU();
-//  cout << " done." << endl;
-//  //cout << myMGQD->QDSolve->x << endl;
-//  
-//  cout << "Build system to back calculate current...";
-//  myMGQD->buildBackCalcSystem();
-//  cout << " done." << endl;
-//  
-//  cout << "Solve system...";
-//  myMGQD->backCalculateCurrent();
-//  cout << " done." << endl;
-//  cout << myMGQD->QDSolve->currPast<< endl;
+  //
+  //  /* PETSc steady state*/  
+  //  cout << "Build PETSc MGQD linear system...";
+  //  myMGQD->buildSteadyStateLinearSystem_p();
+  //  cout << " done." << endl;
+  //  
+  //  cout << "Solve system...";
+  //  myMGQD->solveLinearSystem_p();
+  //  cout << " done." << endl;
+  //
+  //  cout << "Build system to back calculate current...";
+  //  myMGQD->buildSteadyStateBackCalcSystem_p();
+  //  cout << " done." << endl;
+  //  
+  //  cout << "Solve system...";
+  //  myMGQD->backCalculateCurrent_p();
+  //  cout << " done." << endl;
+  //  myMGQD->getFluxes();
+  //  myMGQD->writeVars();
+  //
+  //  /* EIGEN steady state*/  
+  //  cout << "Build Eigen MGQD linear system...";
+  //  myMGQD->buildSteadyStateLinearSystem();
+  //  cout << " done." << endl;
+  //  
+  //  cout << "Solve system...";
+  //  myMGQD->QDSolve->solveSuperLU();
+  //  cout << " done." << endl;
+  //  
+  //  cout << "Build system to back calculate current...";
+  //  myMGQD->buildSteadyStateBackCalcSystem();
+  //  cout << " done." << endl;
+  //  
+  //  cout << "Solve system...";
+  //  myMGQD->backCalculateCurrent();
+  //  cout << " done." << endl;
+  //
+  //  /* PETSc transient*/  
+  //  cout << "Build transient PETSc MGQD linear system...";
+  //  myMGQD->buildLinearSystem_p();
+  //  cout << " done." << endl;
+  //  
+  //  cout << "Solve system...";
+  //  myMGQD->solveLinearSystem_p();
+  //  cout << " done." << endl;
+  //  //ierr = VecView(myMGQD->QDSolve->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //
+  //  cout << "Build system to back calculate current...";
+  //  myMGQD->buildBackCalcSystem_p();
+  //  cout << " done." << endl;
+  //
+  //  cout << "Solve system...";
+  //  myMGQD->backCalculateCurrent_p();
+  //  cout << " done." << endl;
+  //  ierr = VecView(myMGQD->QDSolve->currPast_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+  //  //myMGQD->getFluxes();
+  //  //myMGQD->writeVars();
+  //
+  //  /* EIGEN transient*/  
+  //  cout << "Build Eigen MGQD linear system...";
+  //  myMGQD->buildLinearSystem();
+  //  cout << " done." << endl;
+  //  
+  //  cout << "Solve system...";
+  //  myMGQD->QDSolve->solveSuperLU();
+  //  cout << " done." << endl;
+  //  //cout << myMGQD->QDSolve->x << endl;
+  //  
+  //  cout << "Build system to back calculate current...";
+  //  myMGQD->buildBackCalcSystem();
+  //  cout << " done." << endl;
+  //  
+  //  cout << "Solve system...";
+  //  myMGQD->backCalculateCurrent();
+  //  cout << " done." << endl;
+  //  cout << myMGQD->QDSolve->currPast<< endl;
 
   /* PETSc transient*/  
   if (myMesh->petsc)
@@ -526,11 +526,11 @@ int testMGQDPETScCoupling(Materials * myMaterials,\
 }
 
 int testELOTPETScCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input){
-  
+    Mesh * myMesh,\
+    YAML::Node * input){
+
   PetscErrorCode ierr;
-  
+
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
@@ -673,7 +673,7 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   //VecScatterBegin(ctx,myMPQD->ggqd->GGSolver->currPast_p,myMPQD->ggqd->GGSolver->currPast_p_seq,\
   //    INSERT_VALUES,SCATTER_FORWARD);
   //VecScatterEnd(ctx,myMPQD->ggqd->GGSolver->currPast_p,myMPQD->ggqd->GGSolver->currPast_p_seq,\
-      INSERT_VALUES,SCATTER_FORWARD);
+  INSERT_VALUES,SCATTER_FORWARD);
 
   //myMPQD->ggqd->GGSolver->southCurrent_p(testDub,\
   //    testInt,testInt,testInt);
@@ -790,11 +790,11 @@ int testELOTPETScCoupling(Materials * myMaterials,\
 }
 
 int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input){
-  
+    Mesh * myMesh,\
+    YAML::Node * input){
+
   PetscErrorCode ierr;
-  
+
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
@@ -814,7 +814,7 @@ int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
 
   // Set state to zero for initial steady state solve
   myMesh->state=0;
-  
+
   cout << "Initialized steady state solve" << endl;
 
   if (myMesh->petsc)
@@ -833,11 +833,11 @@ int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
 }
 
 void testTransientMultilevelPETScCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input){
-  
+    Mesh * myMesh,\
+    YAML::Node * input){
+
   PetscErrorCode ierr;
-  
+
   // initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
