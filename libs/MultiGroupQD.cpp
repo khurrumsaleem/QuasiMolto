@@ -226,31 +226,34 @@ void MultiGroupQD::updateVarsAfterConvergence()
 {
   if (mesh->petsc)
   {
-    VecScatter     ctx;
+    VecScatter     ctxFlux,ctxCurr;
 
     QDSolve->xPast_p = QDSolve->x_p;
 
     /* Collect flux solutions */
-    VecScatterCreateToAll(QDSolve->xPast_p,&ctx,&(QDSolve->xPast_p_seq));
-    VecScatterBegin(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+    VecDestroy(&(QDSolve->xPast_p_seq));
+    VecScatterCreateToAll(QDSolve->xPast_p,&ctxFlux,&(QDSolve->xPast_p_seq));
+    VecScatterBegin(ctxFlux,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
         INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+    VecScatterEnd(ctxFlux,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
         INSERT_VALUES,SCATTER_FORWARD);
 
     buildBackCalcSystem_p();
     backCalculateCurrent_p();
       
     /* Collect current solutions */
-    VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
-    VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+    VecDestroy(&(QDSolve->currPast_p_seq));
+    VecScatterCreateToAll(QDSolve->currPast_p,&ctxCurr,&(QDSolve->currPast_p_seq));
+    VecScatterBegin(ctxCurr,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
         INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+    VecScatterEnd(ctxCurr,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
         INSERT_VALUES,SCATTER_FORWARD);
 
     getFluxes();
 
     /* Destory scatter context */
-    VecScatterDestroy(&ctx);
+    VecScatterDestroy(&ctxFlux);
+    VecScatterDestroy(&ctxCurr);
   }
   else
   {

@@ -2552,7 +2552,8 @@ int QDSolver::getFlux(SingleGroupQD * SGQD)
   PetscScalar value;
   PetscInt index;
   Vec            x_p_seq,currPast_p_seq_temp;
-  VecScatter     ctx;
+  VecScatter     ctxFlux;
+  VecScatter     ctxCurr;
 
   // Store past current values. These are used in the group collapse calc.
   SGQD->sFluxPrev = SGQD->sFlux;
@@ -2563,14 +2564,14 @@ int QDSolver::getFlux(SingleGroupQD * SGQD)
   
   if (mesh->petsc)
   {  
-    VecScatterCreateToAll(x_p,&ctx,&x_p_seq);
-    VecScatterBegin(ctx,x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterCreateToAll(x_p,&ctxFlux,&x_p_seq);
+    VecScatterBegin(ctxFlux,x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+    VecScatterEnd(ctxFlux,x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
   
-    VecScatterCreateToAll(currPast_p,&ctx,&currPast_p_seq_temp);
-    VecScatterBegin(ctx,currPast_p,currPast_p_seq_temp,\
+    VecScatterCreateToAll(currPast_p,&ctxCurr,&currPast_p_seq_temp);
+    VecScatterBegin(ctxCurr,currPast_p,currPast_p_seq_temp,\
         INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,currPast_p,currPast_p_seq_temp,\
+    VecScatterEnd(ctxCurr,currPast_p,currPast_p_seq_temp,\
         INSERT_VALUES,SCATTER_FORWARD);
 
     // loop over spatial mesh
@@ -2622,7 +2623,8 @@ int QDSolver::getFlux(SingleGroupQD * SGQD)
     } 
 
     /* Destroy temporary PETSc variables */
-    VecScatterDestroy(&ctx);
+    VecScatterDestroy(&ctxFlux);
+    VecScatterDestroy(&ctxCurr);
     VecDestroy(&x_p_seq);
     VecDestroy(&currPast_p_seq_temp);
   }
@@ -3828,6 +3830,7 @@ int QDSolver::backCalculateCurrent_p()
   ierr = MatMultAdd(C_p,x_p,d_p,currPast_p);
 
   // Broadcast currPast
+  VecDestroy(&(currPast_p_seq));
   VecScatterCreateToAll(currPast_p,&ctx,&(currPast_p_seq));
   VecScatterBegin(ctx,currPast_p,currPast_p_seq,\
       INSERT_VALUES,SCATTER_FORWARD);
@@ -3931,6 +3934,10 @@ int QDSolver::solve_p()
 
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
+  
+  /* Destroy solver */
+  ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
+
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
 
   return ierr;

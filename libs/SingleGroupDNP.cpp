@@ -556,9 +556,6 @@ int SingleGroupDNP::getCoreConc()
   if (mesh->petsc)
   {
 
-    // Initialize temporary vector
-    initPETScVec(&temp_x_p_seq,mgdnp->mpqd->nUnknowns);
-
     // Gather values of x_p on all procs
     VecScatterCreateToAll(mgdnp->mpqd->x_p,&ctx,&temp_x_p_seq);
     VecScatterBegin(ctx,mgdnp->mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
@@ -657,9 +654,6 @@ int SingleGroupDNP::getRecircConc()
 
   if (mesh->petsc)
   {
-
-    // Initialize temporary vector
-    initPETScVec(&temp_x_p_seq,mgdnp->mpqd->nUnknowns);
 
     // Gather values of x_p on all procs
     VecScatterCreateToAll(mgdnp->recircx_p,&ctx,&temp_x_p_seq);

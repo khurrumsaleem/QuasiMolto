@@ -2355,9 +2355,6 @@ int GreyGroupSolver::getFlux()
   if (mesh->petsc)
   {
 
-    // Initialize temporary vector
-    initPETScVec(&temp_x_p_seq,nUnknowns);
-
     // Gather values of x_p on all procs
     VecScatterCreateToAll(MPQD->x_p,&ctx,&temp_x_p_seq);
     VecScatterBegin(ctx,MPQD->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
@@ -2444,9 +2441,6 @@ int GreyGroupSolver::getCurrent()
 
   if (mesh->petsc)
   {
-
-    // Initialize temporary vector
-    initPETScVec(&temp_currPast_p_seq,nUnknowns);
 
     // Gather values of x_p on all procs
     VecScatterCreateToAll(currPast_p,&ctx,&temp_currPast_p_seq);
@@ -3794,6 +3788,7 @@ int GreyGroupSolver::backCalculateCurrent_p()
   ierr = MatMultAdd(C_p,xFlux_p,d_p,currPast_p);
 
   // Broadcast currPast
+  VecDestroy(&(currPast_p_seq));
   VecScatterCreateToAll(currPast_p,&ctx,&(currPast_p_seq));
   VecScatterBegin(ctx,currPast_p,currPast_p_seq,\
       INSERT_VALUES,SCATTER_FORWARD);

@@ -115,6 +115,7 @@ int petscVecToEigenVec(Vec *x_p,Eigen::VectorXd *x_e)
   }
   
   VecScatterDestroy(&ctx);
+  VecDestroy(&temp);
   
   return ierr;
 }

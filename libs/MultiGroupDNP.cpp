@@ -512,6 +512,9 @@ int MultiGroupDNP::solveRecircLinearSystem_p()
 
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
+
+  /* Destroy solver */
+  ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
 
   return ierr;

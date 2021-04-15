@@ -900,7 +900,6 @@ void HeatTransfer::getTemp()
 Eigen::MatrixXd HeatTransfer::returnCurrentTemp()
 {
   Eigen::MatrixXd currentTemp; 
-  PetscErrorCode ierr;
   PetscScalar value[1]; 
   PetscInt index[1]; 
   VecScatter     ctx;
@@ -910,9 +909,6 @@ Eigen::MatrixXd HeatTransfer::returnCurrentTemp()
 
   if (mesh->petsc)
   {
-
-    // Initialize temporary vector
-    initPETScVec(&temp_x_p_seq,mpqd->nUnknowns);
 
     // Gather values of x_p on all procs
     VecScatterCreateToAll(mpqd->x_p,&ctx,&temp_x_p_seq);
@@ -927,7 +923,7 @@ Eigen::MatrixXd HeatTransfer::returnCurrentTemp()
 
         // Read fluxes into flux vector
         index[0] = getIndex(iZ,iR);
-        ierr = VecGetValues(temp_x_p_seq,1,index,value);
+        VecGetValues(temp_x_p_seq,1,index,value);
         currentTemp(iZ,iR) = value[0];   
 
       }

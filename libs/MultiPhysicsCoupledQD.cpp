@@ -641,6 +641,9 @@ int MultiPhysicsCoupledQD::solve_p()
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
+  
+  /* Destroy solver */
+  ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
 
   /* Solve for recirculation concentrations */
   mgdnp->solveRecircLinearSystem_p();
@@ -831,6 +834,7 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence_p()
   mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;  
 
   // Broadcast xPast
+  VecDestroy(&(xPast_p_seq));
   VecScatterCreateToAll(xPast_p,&ctx,&(xPast_p_seq));
   VecScatterBegin(ctx,xPast_p,xPast_p_seq,\
       INSERT_VALUES,SCATTER_FORWARD);
