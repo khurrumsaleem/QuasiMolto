@@ -975,6 +975,9 @@ int HeatTransfer::setTemp()
 
       }
     }
+    
+    ierr = VecAssemblyBegin(mpqd->xPast_p);CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(mpqd->xPast_p);CHKERRQ(ierr);
   }
   else
   {

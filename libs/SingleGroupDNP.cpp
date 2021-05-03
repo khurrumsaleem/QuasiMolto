@@ -621,6 +621,9 @@ int SingleGroupDNP::setCoreConc()
 
       }
     }
+    
+    ierr = VecAssemblyBegin(mgdnp->mpqd->xPast_p);CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(mgdnp->mpqd->xPast_p);CHKERRQ(ierr);
   }
   else
   {
