@@ -110,6 +110,18 @@ class SingleGroupDNP
         int myIndexOffset,\
         bool fluxSource = true);
 
+    // Pseudo-transient 
+    void buildPsuedoTransientCoreLinearSystem_p();
+    int buildPsuedoTransientLinearSystem_p(\
+        Mat * A_p,\
+        Vec * b_p,\
+        Eigen::MatrixXd myDNPConc,\
+        Eigen::MatrixXd myDNPFlux,\
+        arma::rowvec dzs,\
+        int myIndexOffset,\
+        bool fluxSource = true);
+
+
   private: 
     Materials * mats;
     Mesh * mesh;

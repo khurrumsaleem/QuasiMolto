@@ -1388,3 +1388,99 @@ int SingleGroupDNP::buildLinearSystem_p(
 };
 //==============================================================================
 
+//==============================================================================
+/// Build linear system governing transient core DNP concentrations
+///
+void SingleGroupDNP::buildPsuedoTransientCoreLinearSystem_p()
+{
+
+  Eigen::MatrixXd coreDirac,coreFlux;
+
+  updateBoundaryConditions();
+
+  coreDirac = calcDiracs(dnpConc,\
+      inletConc,\
+      outletConc);
+
+  coreFlux = calcFluxes(dnpConc,\
+      mats->flowVelocity,\
+      coreDirac,\
+      inletConc,\
+      inletVelocity,\
+      mesh->dzsCorner);
+
+  buildPsuedoTransientLinearSystem_p(&(mgdnp->mpqd->A_p),\
+      &(mgdnp->mpqd->b_p),\
+      dnpConc,\
+      coreFlux,\
+      mesh->dzsCorner,\
+      coreIndexOffset);
+};
+//==============================================================================
+
+//==============================================================================
+/// Build linear system for this precursor group. Utilized for building the core
+///   and recirculation linear system. 
+///
+/// @param [in] myA pointer to linear system to build in
+/// @param [in] myb pointer to RHS of linear system
+/// @param [in] myDNPConc DNP concentration at last time step
+/// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
+/// @param [in] myDNPFlux DNP fluxes for modeling axial advection 
+/// @param [in] dzs axial heights on advecting mesh
+/// @param [in] myIndexOffset row to start building linear system on 
+/// @param [in] fluxSource indicator for whether a flux source is present 
+int SingleGroupDNP::buildPsuedoTransientLinearSystem_p(
+    Mat * A_p,\
+    Vec * b_p,\
+    Eigen::MatrixXd myDNPConc,\
+    Eigen::MatrixXd myDNPFlux,\
+    arma::rowvec dzs,\
+    int myIndexOffset,\
+    bool fluxSource)
+{
+
+  //int myIndex,iEq = myIndexOffset;
+  int myIndex,iEq = myIndexOffset;
+  int iEqTemp=0,nDNPUnknowns = myDNPConc.rows()*myDNPConc.cols();
+  double coeff,keff;
+  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> testMat;
+  PetscErrorCode ierr;
+  PetscScalar value;
+
+  //#pragma omp parallel for private(myIndex,iEq,iEqTemp)
+  for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
+  {
+    for (int iR = 0; iR < myDNPConc.cols(); iR++)
+    {
+      myIndex = getIndex(iZ,iR,myIndexOffset);     
+      iEq = getIndex(iZ,iR,myIndexOffset);     
+      iEqTemp = getIndex(iZ,iR,0);     
+
+      value = 1 + mesh->dt*lambda;
+      ierr = MatSetValue(*A_p,iEq,myIndex,value,ADD_VALUES);CHKERRQ(ierr); 
+
+      // Time term
+      value = myDNPConc(iZ,iR);
+      ierr = VecSetValue(*b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+
+      // Flux source term 
+      if (fluxSource)
+      {
+        keff = mats->oneGroupXS->keff; 
+        coeff = -mesh->dt*mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID)/keff; 
+        mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff,&testMat);
+      }
+
+      // Advection term
+      value = (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
+      ierr = VecSetValue(*b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+
+    }
+  }
+  
+  return ierr;
+  
+};
+//==============================================================================
+
