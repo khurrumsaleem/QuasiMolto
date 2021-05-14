@@ -523,6 +523,8 @@ int testMGQDPETScCoupling(Materials * myMaterials,\
   delete myMPQD;
   delete myMLCoupling;
 
+  return(0);
+
 }
 
 int testELOTPETScCoupling(Materials * myMaterials,\
@@ -787,6 +789,8 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   delete myMPQD;
   delete myMLCoupling;
 
+  return(0);
+
 }
 
 int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
@@ -829,6 +833,8 @@ int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
   delete myMGQD;
   delete myMPQD;
   delete myMLCoupling;
+
+  return(0);
 
 }
 
