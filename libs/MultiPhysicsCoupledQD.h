@@ -77,6 +77,9 @@ class MultiPhysicsCoupledQD
     void updateVarsAfterConvergence_p();
     void solveTransient_p();
 
+    // Pseudo transient
+    int buildPsuedoTransientLinearSystem_p();
+
     // Pointers
     HeatTransfer * heat;
     MultiGroupDNP * mgdnp;

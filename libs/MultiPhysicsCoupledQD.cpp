@@ -804,8 +804,45 @@ int MultiPhysicsCoupledQD::buildLinearSystem_p()
 };
 //==============================================================================
 
+// Build psuedo-transient system
+
 //==============================================================================
-/// Run transient with multiple solves 
+/// Build linear system for multiphysics coupled quasidiffusion system
+///
+int MultiPhysicsCoupledQD::buildPsuedoTransientLinearSystem_p()
+{
+
+  PetscErrorCode ierr;
+
+  // Reset linear system
+  MatZeroEntries(A_p);
+  VecZeroEntries(b_p);
+
+  // Build QD system
+  ggqd->buildSteadyStateLinearSystem_p();
+
+  // Build heat transfer system
+  heat->buildLinearSystem_p();
+
+  // Build delayed neutron precursor balance system in core
+  mgdnp->buildPsuedoTransientCoreLinearSystem_p();  
+
+  // Build delayed neutron precursor balance system in recirculation loop
+  mgdnp->buildRecircLinearSystem_p();  
+
+  /* Finalize assembly for A_p and b_p */
+  ierr = MatAssemblyBegin(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
+  ierr = VecAssemblyBegin(b_p);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
+  
+  return ierr;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Update variables after convergence
 ///
 void MultiPhysicsCoupledQD::updateVarsAfterConvergence_p()
 {
