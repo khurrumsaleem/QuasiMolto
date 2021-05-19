@@ -63,7 +63,13 @@ class MultilevelCoupling
     void solveSteadyStateTransientResidualBalance_p(bool outputVars);
     void solveMGLOQD_p();
     void solveELOT_p();
-    
+
+    // Psuedo transient
+    void solveSteadyStatePsuedoTransient_p(bool outputVars);
+    void solvePsuedoTransient_p();
+    bool solvePsuedoTransientResidualBalance_p(bool outputVars);
+    void solvePsuedoTransientELOT_p();
+
 
   private:
     Mesh * mesh; 
