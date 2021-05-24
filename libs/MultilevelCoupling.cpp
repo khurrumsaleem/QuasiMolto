@@ -900,6 +900,25 @@ double MultilevelCoupling::eps(double residual, double relaxationTolerance)
 //==============================================================================
 /// Dynamically determines a convergence threshold 
 ///
+double MultilevelCoupling::epsTemp(double residual, double relaxationTolerance)
+{
+
+  double eps;
+
+  if (residual*relaxationTolerance > mpqd->epsMPQDTemp)
+    eps = residual*relaxationTolerance;
+  else
+    eps = mpqd->epsMPQDTemp; 
+
+  return eps;
+
+};
+//==============================================================================
+
+
+//==============================================================================
+/// Dynamically determines a convergence threshold 
+///
 double MultilevelCoupling::relaxedEpsK(double residual, double relaxationTolerance)
 {
 
@@ -1917,8 +1936,9 @@ void MultilevelCoupling::solveELOT_p()
 void MultilevelCoupling::solveSteadyStatePsuedoTransient_p(bool outputVars)
 {
   mesh->state=0;
-  solveSteadyStateResidualBalance_p(outputVars);
+  solveSteadyStateResidualBalance_p(true);
   mesh->advanceOneTimeStep();
+  MatSetOption(mpqd->A_p, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
   solvePsuedoTransient_p();
 }
 //==============================================================================
@@ -1945,6 +1965,9 @@ void MultilevelCoupling::solvePsuedoTransient_p()
     cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
     cout << endl;
 
+    // Evaluate material velocites at current time step
+    mats->readFlowVelocity(mesh->ts[iTime+1]);
+
     //startTime = clock(); 
     auto begin = chrono::high_resolution_clock::now();
     if(solvePsuedoTransientResidualBalance_p(mesh->outputOnStep[iTime]))
@@ -1957,8 +1980,6 @@ void MultilevelCoupling::solvePsuedoTransient_p()
       cout << "Solution computed in " << duration << " seconds." << endl;      
 
       // Output and update variables
-      //mgqd->updateVarsAfterConvergence(); 
-      //mpqd->updateVarsAfterConvergence(); 
       if (mesh->outputOnStep[iTime])
       {
         mgqd->writeVars();
@@ -2198,12 +2219,16 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
           // Jump back to MGLOQD level
           break;
           
+        } 
+        else if (not mesh->verbose)
+        { 
+          mesh->output->deleteLines(12);
         }
 
 
         // Check converge criteria 
         if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
-            eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1] and\
+            epsTemp(residualMGLOQD[1], relaxTolELOT) > residualELOT[1] and\
             relaxedEpsK(residualMGLOQD[0], relaxTolELOT) > kdiff)
         {
           convergedELOT = true;
@@ -2257,7 +2282,7 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
 
       // Check converge criteria 
       if (eps(residualMGHOT[0],relaxTolMGLOQD) > residualMGLOQD[0] and\
-          eps(residualMGHOT[1],relaxTolMGLOQD) > residualMGLOQD[1])
+          epsTemp(residualMGHOT[1],relaxTolMGLOQD) > residualMGLOQD[1])
       { 
         convergedMGLOQD = true;
       }
@@ -2298,7 +2323,7 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
 
     // Check converge criteria 
     if (eps(mpqd->epsMPQD) > residualMGHOT[0] and\
-        eps(mpqd->epsMPQD) > residualMGHOT[1] and\
+        epsTemp(mpqd->epsMPQD) > residualMGHOT[1] and\
         relaxedEpsK(mpqd->epsMPQD) > kdiff) 
     {
       convergedMGHOT = true;
@@ -2310,9 +2335,6 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
   // Write vars
   mpqd->updateSteadyStateVarsAfterConvergence_p(); 
   mgqd->updateSteadyStateVarsAfterConvergence(); 
-  mpqd->writeVars(); 
-  mgqd->writeVars(); 
-  mats->oneGroupXS->writeVars();
   
   // Correct MGHOT iteration count. (process starts with MGLOQD solve)
   itersMGHOT = itersMGHOT - 1;

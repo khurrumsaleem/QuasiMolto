@@ -46,6 +46,7 @@ class MultilevelCoupling
     double calcK(Eigen::MatrixXd oldFlux, Eigen::MatrixXd newFlux,\
         Eigen::MatrixXd volume, double kold);
     double eps(double residual, double relaxationTolerance = 1E-14);
+    double epsTemp(double residual, double relaxationTolerance = 1E-14);
     double relaxedEpsK(double residual, double relaxationTolerance = 1E-14);
     void checkOptionalParameters();
     string outputDir = "Solve_Metrics/";
