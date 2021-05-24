@@ -618,16 +618,23 @@ int MultiPhysicsCoupledQD::solve_p()
   string PetscPreconditioner = "bjacobi";
   PetscErrorCode ierr;
   int its,m,n;
-  double norm;
+  double norm,relTol,absTol;
 
   auto begin = chrono::high_resolution_clock::now();
   /* Get matrix dimensions */
   ierr = MatGetSize(A_p, &m, &n); CHKERRQ(ierr);
+  
+  // Set solve tolerances
+  absTol= 1e-50;
+  relTol = 1.e-9/((m+1)*(n+1));
+  if (relTol < 0.0)
+    relTol = 1.e-14;
 
   /* Create solver */
   ierr = KSPCreate(PETSC_COMM_WORLD,&ksp);CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp,A_p,A_p);CHKERRQ(ierr);
-  ierr = KSPSetTolerances(ksp,1.e-9/((m+1)*(n+1)),1.e-50,PETSC_DEFAULT,PETSC_DEFAULT);
+  //ierr = KSPSetTolerances(ksp,1.e-9/((m+1)*(n+1)),1.e-50,PETSC_DEFAULT,PETSC_DEFAULT);
+  ierr = KSPSetTolerances(ksp,relTol,absTol,PETSC_DEFAULT,PETSC_DEFAULT);
   CHKERRQ(ierr);
 
   /* Set solver type */
