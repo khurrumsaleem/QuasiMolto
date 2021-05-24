@@ -19,7 +19,6 @@ class Material
         double k; // thermal conductivity
         double cP; // specific heat
         double omega; // energy release per fission	
-        double flowVelocity; // energy release per fission	
         bool stationary = true; // is the material stationary
         
         // public functions
@@ -30,6 +29,7 @@ class Material
                 vector<Eigen::MatrixXd> mySigF,\
                 vector<Eigen::MatrixXd> myNu,\
                 vector<Eigen::MatrixXd> myNeutV,\
+                Eigen::MatrixXd myFlowVelocity,\
                 Eigen::VectorXd myChiP,\
                 Eigen::VectorXd myChiD,\
                 double myDensity,\
@@ -37,19 +37,20 @@ class Material
                 double myK,\
                 double mycP,\
                 double myOmega,\
-                double flowVelocity=0,\
                 bool myStationary=true);
         double getSigT(int eIdx,double temp);
         double getSigF(int eIdx,double temp);
         double getSigS(int eIdxPrime,int eIdx,double temp);
         double getNu(int eIdx,double temp);
         double getNeutV(int eIdx,double temp);
+        double getFlowVelocity(double time);
         double interpolateParameter(Eigen::MatrixXd param,double temp);
         void checkMat();
 	void edit();
 
         private:
         vector<Eigen::MatrixXd> sigT,sigF,sigS,neutV,nu;
+        Eigen::MatrixXd flowVelocity;
 
 };
 

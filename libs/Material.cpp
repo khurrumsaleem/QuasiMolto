@@ -25,6 +25,7 @@ Material::Material(int myMatID,\
   vector<Eigen::MatrixXd> mySigF,\
   vector<Eigen::MatrixXd> myNu,\
   vector<Eigen::MatrixXd> myNeutV,\
+  Eigen::MatrixXd myFlowVelocity,\
   Eigen::VectorXd myChiP,\
   Eigen::VectorXd myChiD,\
   double myDensity,\
@@ -32,7 +33,6 @@ Material::Material(int myMatID,\
   double myK,\
   double mycP,\
   double myOmega,\
-  double myFlowVelocity,\
   bool myStationary)
 {
   // Assign inputs to their member variables
@@ -123,6 +123,18 @@ double Material::getNeutV(int eIdx,double temp)
 
 //==============================================================================
 
+//=============================================================================
+/// Return flow velocity 
+/// 
+/// @param [in] time to evaluate neutron velocity at 
+/// @param [out] interpolated flow velocity 
+double Material::getFlowVelocity(double time)
+{
+  return interpolateParameter(flowVelocity,time); 
+};
+
+//==============================================================================
+
 //==============================================================================
 /// Interpolates parameters 
 /// 
@@ -158,12 +170,12 @@ double Material::interpolateParameter(Eigen::MatrixXd param,double temp)
     // Check if temperature is greater than specified in table 
     for (int iRow = 0; iRow < param.rows(); iRow++)
     {
-      if (temp + eps > param(iRow,0))
+      if (temp + eps < param(iRow + 1,0))
       {
-        lowerTemp = param(iRow,0); 
-        lowerParam = param(iRow,1); 
-        upperTemp = param(iRow+1,0); 
-        upperParam = param(iRow+1,1); 
+        lowerTemp = param(iRow, 0); 
+        lowerParam = param(iRow, 1); 
+        upperTemp = param(iRow + 1, 0); 
+        upperParam = param(iRow + 1, 1); 
         break; 
       }
     }

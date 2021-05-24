@@ -27,7 +27,7 @@ class Materials
         Materials(Mesh * myMesh,YAML::Node * myInput);
 	void readMats();
 	void readGeom();
-	void readFlowVelocity();
+	void readFlowVelocity(double time = 0);
         void setMatRegion(int myIndex,double rIn,double rOut,\
 		double zUp,double zLow);
 	double sigT(int zIdx,int rIdx,int eIndx);
@@ -46,19 +46,20 @@ class Materials
 	double k(int zIdx,int rIdx);
 	double cP(int zIdx,int rIdx);
 	double omega(int zIdx,int rIdx);
-	double coreFlowVelocity(int zIdx,int rIdx);
+	double coreFlowVelocity(int zIdx,int rIdx, double time = 0);
         void updateTemperature(Eigen::MatrixXd myTemp);
         vector<Eigen::MatrixXd> readTempDependentYaml(string file);
+        Eigen::MatrixXd readTimeDependentYaml(string file);
         void checkMats();
         void initCollapsedXS();
         void edit();
+	vector<shared_ptr<Material>> matBank;
 
         private:
-        // private functions
+        // private variables
         YAML::Node * input;
         Mesh * mesh;
 	map<string,int> mat2idx;
-	vector<shared_ptr<Material>> matBank;
 
 };
 

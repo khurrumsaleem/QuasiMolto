@@ -137,9 +137,11 @@ void Materials::readMats()
   string name;
   vector<double> sigTInp,sigSInp,sigFInp,chiPInp,chiDInp,nuInp,neutVInp;
   vector<Eigen::MatrixXd> sigT,sigS,sigF,nu,neutV;
+  double flowVelocityInp;
+  Eigen::MatrixXd flowVelocity;
   Eigen::VectorXd chiP,chiD; 
   int ID,size;
-  double density,gamma,k,cP,omega,flowVelocity;
+  double density,gamma,k,cP,omega;
   bool stationary;
 
   int iCount=0;
@@ -227,6 +229,21 @@ void Materials::readMats()
       }
     }
 
+    // Pull flow velocity values from input
+    if (it->second["materialVelocityFile"])
+      flowVelocity = readTimeDependentYaml(it->second["materialVelocityFile"].as<string>());
+    else
+    {
+      if (it->second["material velocity"])
+        flowVelocityInp = it->second["material velocity"].as<double>();
+      else
+        flowVelocityInp = 0.0;
+        
+      flowVelocity.setZero(1,2);
+      flowVelocity(0,1) = flowVelocityInp;
+    }
+
+    cout << "flowVelocity: " << flowVelocity << endl;
 
     chiPInp = it->second["chiP"].as<vector<double>>();
     chiDInp = it->second["chiD"].as<vector<double>>();
@@ -235,10 +252,7 @@ void Materials::readMats()
     k = it->second["k"].as<double>();
     cP = it->second["cP"].as<double>();
     omega = it->second["omega"].as<double>();
-    
-    if (it->second["material velocity"]) 
-      flowVelocity = it->second["material velocity"].as<double>();
-    
+
     if (it->second["stationary"]) 
       stationary = it->second["stationary"].as<bool>();
 
@@ -256,7 +270,7 @@ void Materials::readMats()
 
     // Add material to bank
     shared_ptr<Material> newMat (new Material(iCount,name,sigT,sigS,\
-          sigF,nu,neutV,chiP,chiD,density,gamma,k,cP,omega,flowVelocity,\
+          sigF,nu,neutV,flowVelocity,chiP,chiD,density,gamma,k,cP,omega,\
           stationary));
     matBank.push_back(std::move(newMat));
     ++iCount;
@@ -270,7 +284,7 @@ void Materials::readMats()
 //==============================================================================
 /// Build matrix describing flow rate in each cell 
 ///
-void Materials::readFlowVelocity()
+void Materials::readFlowVelocity(double time)
 {
 
   double inputFlowVelocity;
@@ -288,7 +302,7 @@ void Materials::readFlowVelocity()
       // If the material here is not stationary, assign the input flow velocity
       if (!matBank[matMap(iZ,iR)]->stationary){
 
-        flowVelocity(iZ,iR) = coreFlowVelocity(iZ,iR);
+        flowVelocity(iZ,iR) = coreFlowVelocity(iZ,iR,time);
 
       }
     }
@@ -387,7 +401,7 @@ double Materials::zSigT(int zIdx,int rIdx,int eIdx){
     dzDown = mesh->dzsCorner(zIdx-1);
     tempDown = temperature(zIdx-1,rIdx);
     sigTDown = matBank[matMap(zIdx-1,rIdx)]->getSigT(eIdx,tempDown);
-    
+
     dzUp = mesh->dzsCorner(zIdx);
     tempUp = temperature(zIdx,rIdx);
     sigTUp = matBank[matMap(zIdx,rIdx)]->getSigT(eIdx,tempUp);
@@ -425,7 +439,7 @@ double Materials::rSigT(int zIdx,int rIdx,int eIdx){
     drLeft = mesh->drsCorner(rIdx-1);
     tempLeft = temperature(zIdx,rIdx-1);
     sigTLeft = matBank[matMap(zIdx,rIdx-1)]->getSigT(eIdx,tempLeft);
-    
+
     drRight = mesh->drsCorner(rIdx);
     tempRight = temperature(zIdx,rIdx);
     sigTRight = matBank[matMap(zIdx,rIdx)]->getSigT(eIdx,tempRight);
@@ -563,7 +577,7 @@ double Materials::zNeutVel(int zIdx,int rIdx,int eIdx){
     dzDown = mesh->dzsCorner(zIdx-1);
     tempDown = temperature(zIdx-1,rIdx);
     neutVelDown = matBank[matMap(zIdx-1,rIdx)]->getNeutV(eIdx,tempDown);
-    
+
     dzUp = mesh->dzsCorner(zIdx);
     tempUp = temperature(zIdx,rIdx);
     neutVelUp = matBank[matMap(zIdx,rIdx)]->getNeutV(eIdx,tempUp);
@@ -602,7 +616,7 @@ double Materials::rNeutVel(int zIdx,int rIdx,int eIdx){
     drLeft = mesh->drsCorner(rIdx-1);
     tempLeft = temperature(zIdx,rIdx-1);
     neutVelLeft = matBank[matMap(zIdx,rIdx-1)]->getNeutV(eIdx,tempLeft);
-    
+
     drRight = mesh->drsCorner(rIdx);
     tempRight = temperature(zIdx,rIdx);
     neutVelRight = matBank[matMap(zIdx,rIdx)]->getNeutV(eIdx,tempRight);
@@ -694,9 +708,9 @@ double Materials::omega(int zIdx,int rIdx){
 ///
 /// @param [in] zIdx Z index of location 
 /// @param [in] rIdx R index of location 
-double Materials::coreFlowVelocity(int zIdx,int rIdx){
+double Materials::coreFlowVelocity(int zIdx,int rIdx, double time){
 
-  double flowVelocity = matBank[matMap(zIdx,rIdx)]->flowVelocity;
+  double flowVelocity = matBank[matMap(zIdx,rIdx)]->getFlowVelocity(time);
 
   return flowVelocity;
 };
@@ -745,6 +759,32 @@ vector<Eigen::MatrixXd> Materials::readTempDependentYaml(string fileName)
 };
 //==============================================================================
 
+//==============================================================================
+/// Read in temperature dependent data from a YAML file 
+///
+Eigen::MatrixXd Materials::readTimeDependentYaml(string fileName)
+{
+  vector<double> myTemps,myXSs;
+  double myTemp,myXS;
+  Eigen::MatrixXd myMatrix;
+
+  YAML::Node input;
+  input = YAML::LoadFile(fileName);
+  for (YAML::const_iterator energy=input.begin();energy!=input.end();++energy) 
+  {
+    myTemps = energy->second["time"].as<vector<double>>();
+    myXSs = energy->second["data"].as<vector<double>>();
+    myMatrix.setZero(myTemps.size(),2);
+
+    for (int iRow = 0; iRow < myMatrix.rows(); iRow++)
+    {
+      myMatrix(iRow,0) = myTemps[iRow];
+      myMatrix(iRow,1) = myXSs[iRow];
+    }
+  }
+  return myMatrix;
+};
+//==============================================================================
 
 //==============================================================================
 /// Check to see if nuclear data defined on each group is sensible
