@@ -30,7 +30,7 @@ class MultiPhysicsCoupledQD
     Eigen::SparseMatrix<double,Eigen::RowMajor> A;
     Eigen::VectorXd x,xPast,b;
     string outputDir = "MPQD/";
-    double epsMPQD = 1E-6;
+    double epsMPQD = 1E-6, epsMPQDTemp = 1E-6;
     int nUnknowns;
    
     // Functions 

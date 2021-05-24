@@ -891,7 +891,14 @@ void MultiPhysicsCoupledQD::checkOptionalParams()
   if ((*input)["parameters"]["epsMPQD"])
   {
     epsMPQD=(*input)["parameters"]["epsMPQD"].as<double>();
+    epsMPQDTemp=epsMPQD;
   }
+
+  if ((*input)["parameters"]["epsMPQDTemp"])
+  {
+    epsMPQDTemp=(*input)["parameters"]["epsMPQDTemp"].as<double>();
+  }
+
 
   if ((*input)["parameters"]["preconditionerELOT"])
   {
