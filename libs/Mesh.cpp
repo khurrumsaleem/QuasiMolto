@@ -759,8 +759,8 @@ void Mesh::advanceOneTimeStep()
 }
 //==============================================================================
 
-
-//==============================================================================   /// Return geometry parameters for the cell located at (iR,iZ)
+//==============================================================================
+/// Return geometry parameters for the cell located at (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [out] gParams vector containing volume and surfaces areas of the
