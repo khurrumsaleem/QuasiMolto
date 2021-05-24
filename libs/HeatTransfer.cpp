@@ -1237,7 +1237,7 @@ int HeatTransfer::buildLinearSystem_p()
 
     for (int iR = 0; iR < temp.cols(); iR++)
     {
-      
+
       iEq = getIndex(iZ,iR);
       iEqTemp = iEq - indexOffset;
 
