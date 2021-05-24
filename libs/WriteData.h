@@ -52,6 +52,7 @@ class WriteData
         string parameterName,\
         int myData,\
         bool noTimeLabel = false);
+    void deleteLines(int num_lines = 1);
     string getOutputPath(string myDirName,\
         bool noTimeLabel = false); 
 

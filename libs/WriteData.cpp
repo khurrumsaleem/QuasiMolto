@@ -239,6 +239,39 @@ void WriteData::write(string myDirName,\
 };
 //==============================================================================
 
+//===============================================================================
+/// Delete a number of console lines
+///
+/// @param [in] num_lines Number of lines to delete on the console
+void WriteData::deleteLines(int num_lines)
+{
+  string erase_line = "\33[2K";
+  string move_up = "\033[A";
+  string carriage_return = "\r";
+  
+  // Erase first lines
+  //printf(erase_line);
+  printf("\33[2K");
+
+  // Erase additional lines if necessary
+  for (int lines = 1; lines < num_lines; lines++)
+  {
+
+    //printf(move_up);
+    //printf(erase_line);
+    printf("\033[A");
+    printf("\33[2K");
+
+  }
+
+  // Place cursor to beginning of line
+  //printf(carriage_return);
+  printf("\r");
+
+};
+//==============================================================================
+
+
 //==============================================================================
 /// Get path of output directory 
 ///
