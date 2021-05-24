@@ -904,8 +904,7 @@ void testSteadyStateThenPsuedoTransient(Materials * myMaterials,\
 
   cout << "Starting solves..." << endl;
 
-  //myMLCoupling->solveSteadyStatePsuedoTransient_p(true);
-  myMLCoupling->solvePsuedoTransient_p();
+  myMLCoupling->solveSteadyStatePsuedoTransient_p(true);
 
   cout << "Completed multilevel solve" << endl;
 

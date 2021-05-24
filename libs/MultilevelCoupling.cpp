@@ -1936,7 +1936,7 @@ void MultilevelCoupling::solveELOT_p()
 void MultilevelCoupling::solveSteadyStatePsuedoTransient_p(bool outputVars)
 {
   mesh->state=0;
-  solveSteadyStateResidualBalance_p(true);
+  solveSteadyStateResidualBalance_p(outputVars);
   mesh->advanceOneTimeStep();
   MatSetOption(mpqd->A_p, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
   solvePsuedoTransient_p();
