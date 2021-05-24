@@ -36,31 +36,36 @@ QDSolver::QDSolver(Mesh * myMesh,\
   nCurrentUnknowns = energyGroups*nGroupCurrentUnknowns;
 
   // initialize size of linear system
-  A.resize(nUnknowns,nUnknowns);
-  A.reserve(3*nUnknowns+nUnknowns/5);
-  C.resize(nCurrentUnknowns,nUnknowns);
-  C.reserve(4*nCurrentUnknowns);
-  x.setZero(nUnknowns);
-  xPast.setZero(nUnknowns);
-  currPast.setZero(energyGroups*nGroupCurrentUnknowns);
-  b.setZero(nUnknowns);
-  d.setZero(nCurrentUnknowns);
+  if (!mesh->petsc)
+  {
+    A.resize(nUnknowns,nUnknowns);
+    A.reserve(3*nUnknowns+nUnknowns/5);
+    C.resize(nCurrentUnknowns,nUnknowns);
+    C.reserve(4*nCurrentUnknowns);
+    x.setZero(nUnknowns);
+    xPast.setZero(nUnknowns);
+    currPast.setZero(energyGroups*nGroupCurrentUnknowns);
+    b.setZero(nUnknowns);
+    d.setZero(nCurrentUnknowns);
+  }
+  else
+  {
+    /* Initialize PETSc variables */
+    // Flux system variables 
+    initPETScMat(&A_p,nUnknowns,4*nUnknowns);
+    initPETScVec(&x_p,nUnknowns);
+    initPETScVec(&xPast_p,nUnknowns);
+    initPETScVec(&b_p,nUnknowns);
 
-  /* Initialize PETSc variables */
-  // Flux system variables 
-  initPETScMat(&A_p,nUnknowns,4*nUnknowns);
-  initPETScVec(&x_p,nUnknowns);
-  initPETScVec(&xPast_p,nUnknowns);
-  initPETScVec(&b_p,nUnknowns);
- 
-  // Current system variables 
-  initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,4*nUnknowns);
-  initPETScVec(&currPast_p,nCurrentUnknowns);
-  initPETScVec(&d_p,nCurrentUnknowns);
+    // Current system variables 
+    initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,4*nUnknowns);
+    initPETScVec(&currPast_p,nCurrentUnknowns);
+    initPETScVec(&d_p,nCurrentUnknowns);
 
-  // Initialize sequential variables
-  initPETScVec(&xPast_p_seq,nUnknowns);
-  initPETScVec(&currPast_p_seq,nCurrentUnknowns);
+    // Initialize sequential variables
+    initPETScVec(&xPast_p_seq,nUnknowns);
+    initPETScVec(&currPast_p_seq,nCurrentUnknowns);
+  }
 
   checkOptionalParams();
 };
@@ -205,7 +210,7 @@ void QDSolver::formSteadyStateLinearSystem(SingleGroupQD * SGQD)
 ///
 void QDSolver::solve()
 {
-  
+
   solveSuperLU();
 
 };
@@ -269,7 +274,7 @@ int QDSolver::solveSuperLU()
 
   // Return outcome of solve
   return success = solverLU.info();
-  
+
 };
 //==============================================================================
 
@@ -315,7 +320,7 @@ int QDSolver::solveIterativeILU()
 
   // Return outcome of solve
   return success = solver.info();
-  
+
 };
 //==============================================================================
 
@@ -659,7 +664,7 @@ void QDSolver::westCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   ErrW = SGQD->ErrRadial(iZ,iR); 
   ErzN = SGQD->ErzAxial(iZ,iR);
   ErzS = SGQD->ErzAxial(iZ+1,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
@@ -710,7 +715,7 @@ void QDSolver::eastCurrent(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   ErrE = SGQD->ErrRadial(iZ,iR+1); 
   ErzN = SGQD->ErzAxial(iZ,iR);
   ErzS = SGQD->ErzAxial(iZ+1,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
@@ -853,7 +858,7 @@ void QDSolver::steadyStateWestCurrent(double coeff,int iR,int iZ,int iEq,
   ErrW = SGQD->ErrRadial(iZ,iR); 
   ErzN = SGQD->ErzAxial(iZ,iR);
   ErzS = SGQD->ErzAxial(iZ+1,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
@@ -902,7 +907,7 @@ void QDSolver::steadyStateEastCurrent(double coeff,int iR,int iZ,int iEq,\
   ErrE = SGQD->ErrRadial(iZ,iR+1); 
   ErzN = SGQD->ErzAxial(iZ,iR);
   ErzS = SGQD->ErzAxial(iZ+1,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
@@ -1035,7 +1040,7 @@ void QDSolver::calcSouthCurrent(int iR,int iZ,int iEq,\
   EzzS = SGQD->EzzAxial(iZ+1,iR); 
   ErzW = SGQD->ErzRadial(iZ,iR);
   ErzE = SGQD->ErzRadial(iZ,iR+1);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
@@ -1233,7 +1238,7 @@ void QDSolver::calcSteadyStateSouthCurrent(int iR,int iZ,int iEq,\
   EzzS = SGQD->EzzAxial(iZ+1,iR); 
   ErzW = SGQD->ErzRadial(iZ,iR);
   ErzE = SGQD->ErzRadial(iZ,iR+1);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
@@ -2561,13 +2566,13 @@ int QDSolver::getFlux(SingleGroupQD * SGQD)
   SGQD->sFluxZPrev = SGQD->sFluxZ;
   SGQD->currentRPrev = SGQD->currentR;
   SGQD->currentZPrev = SGQD->currentZ;
-  
+
   if (mesh->petsc)
   {  
     VecScatterCreateToAll(x_p,&ctxFlux,&x_p_seq);
     VecScatterBegin(ctxFlux,x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
     VecScatterEnd(ctxFlux,x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-  
+
     VecScatterCreateToAll(currPast_p,&ctxCurr,&currPast_p_seq_temp);
     VecScatterBegin(ctxCurr,currPast_p,currPast_p_seq_temp,\
         INSERT_VALUES,SCATTER_FORWARD);
@@ -2585,12 +2590,12 @@ int QDSolver::getFlux(SingleGroupQD * SGQD)
         index = indices[iCF];
         ierr = VecGetValues(x_p_seq,1,&index,&value);CHKERRQ(ierr);
         SGQD->sFlux(iZ,iR) = value;
-        
+
         // Get cell interface fluxes
         index = indices[iWF];
         ierr = VecGetValues(x_p_seq,1,&index,&value);CHKERRQ(ierr);
         SGQD->sFluxR(iZ,iR) = value;
-        
+
         index = indices[iEF];
         ierr = VecGetValues(x_p_seq,1,&index,&value);CHKERRQ(ierr);
         SGQD->sFluxR(iZ,iR+1) = value;
@@ -2926,7 +2931,7 @@ int QDSolver::steadyStateSouthCurrent_p(double coeff,int iR,int iZ,int iEq,\
   index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
 
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
-  
+
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
@@ -2973,13 +2978,13 @@ int QDSolver::steadyStateNorthCurrent_p(double coeff,int iR,int iZ,int iEq,\
   coeff = coeff/(sigT); 
 
   index[0] = indices[iNF]; value[0] = coeff*EzzN/deltaZ;
-                                                                    
+
   index[1] = indices[iCF]; value[1] = -coeff*EzzC/deltaZ;
-                                                                    
+
   index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
-                                                                    
+
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
-  
+
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
@@ -3022,7 +3027,7 @@ int QDSolver::steadyStateWestCurrent_p(double coeff,int iR,int iZ,int iEq,
   ErrW = SGQD->ErrRadial(iZ,iR); 
   ErzN = SGQD->ErzAxial(iZ,iR);
   ErzS = SGQD->ErzAxial(iZ+1,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
@@ -3037,13 +3042,13 @@ int QDSolver::steadyStateWestCurrent_p(double coeff,int iR,int iZ,int iEq,
   //A.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
 
   index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
-                                                                       
+
   index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
-                                                                       
+
   index[2] = indices[iCF]; value[2] = -coeff*hCent*ErrC/(hDown*deltaR);
-                                                                       
+
   index[3] = indices[iWF]; value[3] = coeff*hDown*ErrW/(hDown*deltaR);
-  
+
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
@@ -3086,7 +3091,7 @@ int QDSolver::steadyStateEastCurrent_p(double coeff,int iR,int iZ,int iEq,\
   ErrE = SGQD->ErrRadial(iZ,iR+1); 
   ErzN = SGQD->ErzAxial(iZ,iR);
   ErzS = SGQD->ErzAxial(iZ+1,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
@@ -3101,13 +3106,13 @@ int QDSolver::steadyStateEastCurrent_p(double coeff,int iR,int iZ,int iEq,\
   //A.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
 
   index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
-                                                                   
+
   index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
-                                                                   
+
   index[2] = indices[iCF]; value[2] = coeff*hCent*ErrC/(hUp*deltaR);
-                                                                   
+
   index[3] = indices[iEF]; value[3] = -coeff*hUp*ErrE/(hUp*deltaR);
-  
+
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
@@ -3283,7 +3288,7 @@ int QDSolver::assertSteadyStateNGoldinBC_p(int iR,int iZ,int iEq,\
   ierr = MatSetValue(A_p,iEq,indices[iNF],-ratio,ADD_VALUES);CHKERRQ(ierr); 
   value = inwardCurrent-ratio*inwardFlux; 
   ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //A.coeffRef(iEq,indices[iNF]) -= ratio;
   //b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
 
@@ -3305,7 +3310,7 @@ int QDSolver::assertSteadyStateSGoldinBC_p(int iR,int iZ,int iEq,\
 {
   PetscErrorCode ierr;
   double value;
-  
+
   vector<int> indices = getIndices(iR,iZ,energyGroup);
   double ratio = SGQD->sOutwardCurrToFluxRatioBC(iR);
   double absCurrent = SGQD->sAbsCurrentBC(iR);
@@ -3370,7 +3375,7 @@ int QDSolver::assertSteadyStateEGoldinBC_p(int iR,int iZ,int iEq,\
 int QDSolver::assertSteadyStateNGoldinP1BC_p(int iR,int iZ,int iEq,\
     int energyGroup,SingleGroupQD * SGQD)
 {
-  
+
   PetscErrorCode ierr;
   double value;
 
@@ -3429,14 +3434,14 @@ int QDSolver::assertSteadyStateEGoldinP1BC_p(int iR,int iZ,int iEq,\
 {
   PetscErrorCode ierr;
   double value;
-  
+
   // Note: assumes vacuum boundary condition
   vector<int> indices = getIndices(iR,iZ,energyGroup);
 
   steadyStateEastCurrent_p(1.0,iR,iZ,iEq,energyGroup,SGQD);
   value = -1.0/sqrt(3.0); 
   ierr = MatSetValue(A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //A.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
 
   return ierr;
@@ -3458,7 +3463,7 @@ int QDSolver::assertNFluxBC_p(int iR,int iZ,int iEq,int energyGroup,\
   double value;
 
   vector<int> indices = getIndices(iR,iZ,energyGroup);
-  
+
   value = 1.0;
   ierr = MatSetValue(A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = SGQD->nFluxBC(iR);
@@ -3484,7 +3489,7 @@ int QDSolver::assertSFluxBC_p(int iR,int iZ,int iEq,int energyGroup,\
 {
   PetscErrorCode ierr;
   double value;
-  
+
   vector<int> indices = getIndices(iR,iZ,energyGroup);
 
   value = 1.0;
@@ -3512,14 +3517,14 @@ int QDSolver::assertWFluxBC_p(int iR,int iZ,int iEq,int energyGroup,\
 {
   PetscErrorCode ierr;
   double value;
-    
+
   vector<int> indices = getIndices(iR,iZ,energyGroup);
 
   value = 1.0;
   ierr = MatSetValue(A_p,iEq,indices[iWF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = SGQD->wFluxBC(iZ);
   ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //A.insert(iEq,indices[iWF]) = 1.0;
   //b(iEq) = SGQD->wFluxBC(iZ);
 
@@ -3540,14 +3545,14 @@ int QDSolver::assertEFluxBC_p(int iR,int iZ,int iEq,int energyGroup,\
 {
   PetscErrorCode ierr;
   double value;
-  
+
   vector<int> indices = getIndices(iR,iZ,energyGroup);
 
   value = 1.0;
   ierr = MatSetValue(A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = SGQD->eFluxBC(iZ);
   ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //A.insert(iEq,indices[iEF]) = 1.0;
   //b(iEq) = SGQD->eFluxBC(iZ);
 
@@ -3631,7 +3636,7 @@ int QDSolver::calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq,\
   EzzS = SGQD->EzzAxial(iZ+1,iR); 
   ErzW = SGQD->ErzRadial(iZ,iR);
   ErzE = SGQD->ErzRadial(iZ,iR+1);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
@@ -3644,7 +3649,7 @@ int QDSolver::calcSteadyStateSouthCurrent_p(int iR,int iZ,int iEq,\
   index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
 
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
-  
+
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
@@ -3691,13 +3696,13 @@ int QDSolver::calcSteadyStateNorthCurrent_p(int iR,int iZ,int iEq,\
   coeff = 1/(sigT); 
 
   index[0] = indices[iNF]; value[0] = coeff*EzzN/deltaZ;
-                                                                    
+
   index[1] = indices[iCF]; value[1] = -coeff*EzzC/deltaZ;
-                                                                    
+
   index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
-                                                                    
+
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
-  
+
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
@@ -3748,13 +3753,13 @@ int QDSolver::calcSteadyStateWestCurrent_p(int iR,int iZ,int iEq,\
   coeff = 1/(sigT); 
 
   index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
-                                                                       
+
   index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
-                                                                       
+
   index[2] = indices[iCF]; value[2] = -coeff*hCent*ErrC/(hDown*deltaR);
-                                                                       
+
   index[3] = indices[iWF]; value[3] = coeff*hDown*ErrW/(hDown*deltaR);
-  
+
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
@@ -3804,13 +3809,13 @@ int QDSolver::calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq,\
   coeff = 1/(sigT); 
 
   index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
-                                                                   
+
   index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
-                                                                   
+
   index[2] = indices[iCF]; value[2] = coeff*hCent*ErrC/(hUp*deltaR);
-                                                                   
+
   index[3] = indices[iEF]; value[3] = -coeff*hUp*ErrE/(hUp*deltaR);
-  
+
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
@@ -3822,7 +3827,7 @@ int QDSolver::calcSteadyStateEastCurrent_p(int iR,int iZ,int iEq,\
 /// Compute currents from flux values in x
 int QDSolver::backCalculateCurrent_p()
 {
-  
+
   // PETSc object to broadcast variables 
   VecScatter     ctx;
   PetscErrorCode ierr;
@@ -3882,12 +3887,12 @@ int QDSolver::steadyStateGreyGroupSources_p(int iR,int iZ,int iEq,\
   localFissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
   localFlux = mpqd->ggqd->sFlux(iZ,iR); 
   keff = materials->oneGroupXS->keff;
-  
+
   value = geoParams[iCF]*((localUpscatterCoeff\
         + localChiP*localFissionCoeff/keff)*localFlux + localChiD*localDNPSource);
 
   //b(iEq) += geoParams[iCF]*((localUpscatterCoeff\
-        + localChiP*localFissionCoeff/keff)*localFlux + localChiD*localDNPSource);
+  + localChiP*localFissionCoeff/keff)*localFlux + localChiD*localDNPSource);
   ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
@@ -3920,7 +3925,7 @@ int QDSolver::solve_p()
 
   /* Set solver type */
   ierr = KSPSetType(ksp,PetscSolver.c_str());CHKERRQ(ierr);
-  
+
   /* Set preconditioner type */
   ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
   ierr = PCSetType(pc,PetscPreconditioner.c_str());CHKERRQ(ierr);
@@ -3934,7 +3939,7 @@ int QDSolver::solve_p()
 
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
-  
+
   /* Destroy solver */
   ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
 
@@ -4058,7 +4063,7 @@ int QDSolver::assertZerothMoment_p(int iR,int iZ,int iEq,int energyGroup,\
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
-  
+
   value = geoParams[iCF] * ((1/(v*deltaT)) + sigT);
   index = indices[iCF];
   ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
@@ -4077,9 +4082,9 @@ int QDSolver::assertZerothMoment_p(int iR,int iZ,int iEq,int energyGroup,\
   VecGetValues(xPast_p_seq,1,&index,&past_flux);CHKERRQ(ierr);
   value = geoParams[iCF]*( (past_flux/(v*deltaT)) + SGQD->q(iZ,iR));
   ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //b(iEq) = b(iEq) + geoParams[iCF]*\
-           ( (xPast(indices[iCF])/(v*deltaT)) + SGQD->q(iZ,iR));
+  ( (xPast(indices[iCF])/(v*deltaT)) + SGQD->q(iZ,iR));
 
   return ierr;
 
@@ -4156,15 +4161,15 @@ int QDSolver::southCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-//  A.coeffRef(iEq,indices[iSF]) -= coeff*EzzS/deltaZ;
-//
-//  A.coeffRef(iEq,indices[iCF]) += coeff*EzzC/deltaZ;
-//
-//  A.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
-//
-//  A.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
-//
-//  b(iEq) = b(iEq) - coeff*(currPast(indices[iSC])/(v*deltaT));
+  //  A.coeffRef(iEq,indices[iSF]) -= coeff*EzzS/deltaZ;
+  //
+  //  A.coeffRef(iEq,indices[iCF]) += coeff*EzzC/deltaZ;
+  //
+  //  A.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
+  //
+  //  A.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
+  //
+  //  b(iEq) = b(iEq) - coeff*(currPast(indices[iSC])/(v*deltaT));
 
   index[0] = indices[iSF]; value[0] = -coeff*EzzS/deltaZ;
 
@@ -4173,7 +4178,7 @@ int QDSolver::southCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,
   index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
 
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
-  
+
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
@@ -4227,25 +4232,25 @@ int QDSolver::northCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-//  A.coeffRef(iEq,indices[iNF]) += coeff*EzzN/deltaZ;
-//
-//  A.coeffRef(iEq,indices[iCF]) -= coeff*EzzC/deltaZ;
-//
-//  A.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
-//
-//  A.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
-//
-//  // formulate RHS entry
-//  b(iEq) = b(iEq) - coeff*(currPast(indices[iNC])/(v*deltaT));
+  //  A.coeffRef(iEq,indices[iNF]) += coeff*EzzN/deltaZ;
+  //
+  //  A.coeffRef(iEq,indices[iCF]) -= coeff*EzzC/deltaZ;
+  //
+  //  A.coeffRef(iEq,indices[iWF]) += coeff*(rDown*ErzW/(rAvg*deltaR));
+  //
+  //  A.coeffRef(iEq,indices[iEF]) -= coeff*rUp*ErzE/(rAvg*deltaR);
+  //
+  //  // formulate RHS entry
+  //  b(iEq) = b(iEq) - coeff*(currPast(indices[iNC])/(v*deltaT));
 
   index[0] = indices[iNF]; value[0] = coeff*EzzN/deltaZ;
-                                                                        
+
   index[1] = indices[iCF]; value[1] = -coeff*EzzC/deltaZ;
-                                                                        
+
   index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
-                                                                        
+
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
-  
+
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
@@ -4296,31 +4301,31 @@ int QDSolver::westCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   ErrW = SGQD->ErrRadial(iZ,iR); 
   ErzN = SGQD->ErzAxial(iZ,iR);
   ErzS = SGQD->ErzAxial(iZ+1,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-//  A.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
-//
-//  A.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
-//
-//  A.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
-//
-//  A.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
-//
-//  // formulate RHS entry
-//  b(iEq) = b(iEq) - coeff*(currPast(indices[iWC])/(v*deltaT));
+  //  A.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
+  //
+  //  A.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
+  //
+  //  A.coeffRef(iEq,indices[iCF]) -= coeff*hCent*ErrC/(hDown*deltaR);
+  //
+  //  A.coeffRef(iEq,indices[iWF]) += coeff*hDown*ErrW/(hDown*deltaR);
+  //
+  //  // formulate RHS entry
+  //  b(iEq) = b(iEq) - coeff*(currPast(indices[iWC])/(v*deltaT));
 
   index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
-                                                                       
+
   index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
-                                                                       
+
   index[2] = indices[iCF]; value[2] = -coeff*hCent*ErrC/(hDown*deltaR);
-                                                                       
+
   index[3] = indices[iWF]; value[3] = coeff*hDown*ErrW/(hDown*deltaR);
-  
+
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
@@ -4371,31 +4376,31 @@ int QDSolver::eastCurrent_p(double coeff,int iR,int iZ,int iEq,int energyGroup,\
   ErrE = SGQD->ErrRadial(iZ,iR+1); 
   ErzN = SGQD->ErzAxial(iZ,iR);
   ErzS = SGQD->ErzAxial(iZ+1,iR);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
   coeff = coeff/((1/(v*deltaT))+sigT); 
 
-//  A.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
-//
-//  A.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
-//
-//  A.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrC/(hUp*deltaR);
-//
-//  A.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
-//
-//  // formulate RHS entry
-//  b(iEq) = b(iEq) - coeff*(currPast(indices[iEC])/(v*deltaT));
+  //  A.coeffRef(iEq,indices[iSF]) -= coeff*ErzS/deltaZ;
+  //
+  //  A.coeffRef(iEq,indices[iNF]) += coeff*ErzN/deltaZ;
+  //
+  //  A.coeffRef(iEq,indices[iCF]) += coeff*hCent*ErrC/(hUp*deltaR);
+  //
+  //  A.coeffRef(iEq,indices[iEF]) -= coeff*hUp*ErrE/(hUp*deltaR);
+  //
+  //  // formulate RHS entry
+  //  b(iEq) = b(iEq) - coeff*(currPast(indices[iEC])/(v*deltaT));
 
   index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
-                                                                     
+
   index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
-                                                                     
+
   index[2] = indices[iCF]; value[2] = coeff*hCent*ErrC/(hUp*deltaR);
-                                                                     
+
   index[3] = indices[iEF]; value[3] = -coeff*hUp*ErrE/(hUp*deltaR);
-  
+
   ierr = MatSetValues(A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
@@ -4564,15 +4569,15 @@ int QDSolver::assertNGoldinBC_p(int iR,int iZ,int iEq,int energyGroup,\
   double absCurrent = SGQD->nAbsCurrentBC(iR);
   double inwardCurrent = SGQD->nInwardCurrentBC(iR);
   double inwardFlux = SGQD->nInwardFluxBC(iR);
-  
+
   northCurrent_p(1.0,iR,iZ,iEq,energyGroup,SGQD);
   ierr = MatSetValue(A_p,iEq,indices[iNF],-ratio,ADD_VALUES);CHKERRQ(ierr); 
   value = inwardCurrent-ratio*inwardFlux; 
   ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
-//  northCurrent_p(1.0,iR,iZ,iEq,energyGroup,SGQD);
-//  A.coeffRef(iEq,indices[iNF]) -= ratio;
-//  b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
+  //  northCurrent_p(1.0,iR,iZ,iEq,energyGroup,SGQD);
+  //  A.coeffRef(iEq,indices[iNF]) -= ratio;
+  //  b(iEq) = b(iEq) + (inwardCurrent-ratio*inwardFlux);
 
   return ierr;
 
@@ -4746,7 +4751,7 @@ int QDSolver::greyGroupSources_p(int iR,int iZ,int iEq,int toEnergyGroup,\
     //indices = getIndices(iR,iZ,iFromEnergyGroup);
     //localSigS = materials->sigS(iZ,iR,iFromEnergyGroup,toEnergyGroup);
     //A.insert(iEq,indices[iCF]) = -geoParams[iCF] * localSigS;
-    
+
     index = getIndices(iR,iZ,iFromEnergyGroup)[iCF];
     localSigS = materials->sigS(iZ,iR,iFromEnergyGroup,toEnergyGroup);
     value = -geoParams[iCF] * localSigS;
@@ -4760,13 +4765,13 @@ int QDSolver::greyGroupSources_p(int iR,int iZ,int iEq,int toEnergyGroup,\
       toEnergyGroup);
   localFissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
   localFlux = mpqd->ggqd->sFlux(iZ,iR); 
-  
+
   value = geoParams[iCF]*((localUpscatterCoeff\
         + localChiP*localFissionCoeff)*localFlux + localChiD*localDNPSource);
   ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //b(iEq) += geoParams[iCF]*((localUpscatterCoeff\
-        + localChiP*localFissionCoeff)*localFlux + localChiD*localDNPSource);
+  + localChiP*localFissionCoeff)*localFlux + localChiD*localDNPSource);
 
   return ierr;
 
@@ -4848,7 +4853,7 @@ int QDSolver::calcSouthCurrent_p(int iR,int iZ,int iEq,\
   EzzS = SGQD->EzzAxial(iZ+1,iR); 
   ErzW = SGQD->ErzRadial(iZ,iR);
   ErzE = SGQD->ErzRadial(iZ,iR+1);
-  
+
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ,energyGroup);
 
@@ -4872,13 +4877,13 @@ int QDSolver::calcSouthCurrent_p(int iR,int iZ,int iEq,\
   index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
 
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
-  
+
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   rhsIndex = indices[iSC];
   VecGetValues(currPast_p_seq,1,&rhsIndex,&past_curr);CHKERRQ(ierr);
   rhsValue = coeff*(past_curr/(v*deltaT));
-  
+
   ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
@@ -4936,19 +4941,19 @@ int QDSolver::calcNorthCurrent_p(int iR,int iZ,int iEq,\
   //d(iEq) = coeff*(currPast(indices[iNC])/(v*deltaT));
 
   index[0] = indices[iNF]; value[0] = coeff*EzzN/deltaZ;
-                                                                       
+
   index[1] = indices[iCF]; value[1] = -coeff*EzzC/deltaZ;
-                                                                       
+
   index[2] = indices[iWF]; value[2] = coeff*(rDown*ErzW/(rAvg*deltaR));
-                                                                       
+
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
-  
+
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   rhsIndex = indices[iNC];
   VecGetValues(currPast_p_seq,1,&rhsIndex,&past_curr);CHKERRQ(ierr);
   rhsValue = coeff*(past_curr/(v*deltaT));
-  
+
   ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
@@ -5009,19 +5014,19 @@ int QDSolver::calcWestCurrent_p(int iR,int iZ,int iEq,\
   //d(iEq) = coeff*(currPast(indices[iWC])/(v*deltaT));
 
   index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
-                                                                       
+
   index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
-                                                                       
+
   index[2] = indices[iCF]; value[2] = -coeff*hCent*ErrC/(hDown*deltaR);
-                                                                       
+
   index[3] = indices[iWF]; value[3] = coeff*hDown*ErrW/(hDown*deltaR);
-  
+
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   rhsIndex = indices[iWC];
   VecGetValues(currPast_p_seq,1,&rhsIndex,&past_curr);CHKERRQ(ierr);
   rhsValue = coeff*(past_curr/(v*deltaT));
-  
+
   ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
@@ -5082,19 +5087,19 @@ int QDSolver::calcEastCurrent_p(int iR,int iZ,int iEq,\
   //d(iEq) = coeff*(currPast(indices[iEC])/(v*deltaT));
 
   index[0] = indices[iSF]; value[0] = -coeff*ErzS/deltaZ;
-                                                                     
+
   index[1] = indices[iNF]; value[1] = coeff*ErzN/deltaZ;
-                                                                     
+
   index[2] = indices[iCF]; value[2] = coeff*hCent*ErrC/(hUp*deltaR);
-                                                                     
+
   index[3] = indices[iEF]; value[3] = -coeff*hUp*ErrE/(hUp*deltaR);
-  
+
   ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   rhsIndex = indices[iEC];
   VecGetValues(currPast_p_seq,1,&rhsIndex,&past_curr);CHKERRQ(ierr);
   rhsValue = coeff*(past_curr/(v*deltaT));
-  
+
   ierr = VecSetValue(d_p,iEq,rhsValue,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;

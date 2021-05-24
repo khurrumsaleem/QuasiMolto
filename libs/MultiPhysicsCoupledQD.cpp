@@ -40,20 +40,26 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 
   // Set size of linear system
   nUnknowns = ggqd->nUnknowns + heat->nUnknowns + mgdnp->nCoreUnknowns;
-  A.resize(nUnknowns,nUnknowns); 
-  x.setZero(nUnknowns); 
-  xPast.setOnes(nUnknowns); 
-  b.setZero(nUnknowns);
+  if (!mesh->petsc)
+  {
+    A.resize(nUnknowns,nUnknowns); 
+    x.setZero(nUnknowns); 
+    xPast.setOnes(nUnknowns); 
+    b.setZero(nUnknowns);
+  }
+  else
+  {
 
-  /* Initialize PETSc variables */
-  // Multiphysics system variables 
-  initPETScMat(&A_p,nUnknowns,4*nUnknowns);
-  initPETScVec(&x_p,nUnknowns);
-  initPETScVec(&xPast_p,nUnknowns);
-  initPETScVec(&b_p,nUnknowns);
+    /* Initialize PETSc variables */
+    // Multiphysics system variables 
+    initPETScMat(&A_p,nUnknowns,4*nUnknowns);
+    initPETScVec(&x_p,nUnknowns);
+    initPETScVec(&xPast_p,nUnknowns);
+    initPETScVec(&b_p,nUnknowns);
 
-  // Initialize sequential variables
-  initPETScVec(&xPast_p_seq,nUnknowns);
+    // Initialize sequential variables
+    initPETScVec(&xPast_p_seq,nUnknowns);
+  }
 
   // Assign pointers in ggqd object
   ggqd->GGSolver->assignMPQDPointer(this);
@@ -82,7 +88,7 @@ int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
   int iCF = 0; // index of cell-average flux value in index vector  
   vector<int> indices = ggqd->GGSolver->getIndices(iR,iZ);
   PetscErrorCode ierr;
-    
+
   if (mesh->petsc)
   {
     ierr = MatSetValue(A_p,iEq,indices[0],coeff,ADD_VALUES);CHKERRQ(ierr); 
@@ -224,7 +230,7 @@ void MultiPhysicsCoupledQD::buildSteadyStateLinearSystem()
 ///
 void MultiPhysicsCoupledQD::initializeXPast()
 {
-  
+
   // Object for broadcasting PETSc variable 
   VecScatter     ctx;
 
@@ -242,7 +248,7 @@ void MultiPhysicsCoupledQD::initializeXPast()
   if (mesh->petsc)
   {
     x_p = xPast_p; // getFlux() pulls from x
-    
+
     // Broadcast xPast
     VecScatterCreateToAll(xPast_p,&ctx,&(xPast_p_seq));
     VecScatterBegin(ctx,xPast_p,xPast_p_seq,\
@@ -573,7 +579,7 @@ void MultiPhysicsCoupledQD::solveTransient()
     solveLinearSystem();   
     updateVarsAfterConvergence();
   }
-  
+
   writeVars();
 };
 //==============================================================================
@@ -641,7 +647,7 @@ int MultiPhysicsCoupledQD::solve_p()
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
-  
+
   /* Destroy solver */
   ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
 
@@ -684,7 +690,7 @@ int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
   ierr = MatAssemblyEnd(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
   ierr = VecAssemblyBegin(b_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
-  
+
   return ierr;
 
 };
@@ -835,7 +841,7 @@ int MultiPhysicsCoupledQD::buildPsuedoTransientLinearSystem_p()
   ierr = MatAssemblyEnd(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
   ierr = VecAssemblyBegin(b_p);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
-  
+
   return ierr;
 
 };
