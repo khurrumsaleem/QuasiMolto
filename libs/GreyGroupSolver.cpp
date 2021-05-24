@@ -43,11 +43,11 @@ GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
 
   /* Initialize PETSc variables */
   // Multiphysics system variables 
-  initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,4*nUnknowns);
+  initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,20);
   initPETScVec(&currPast_p,nCurrentUnknowns);
   initPETScVec(&d_p,nCurrentUnknowns);
   initPETScVec(&xFlux_p,nUnknowns);
- 
+
   // Broadcast currPast
   VecScatterCreateToAll(currPast_p,&ctx,&(currPast_p_seq));
   VecScatterBegin(ctx,currPast_p,currPast_p_seq,\
@@ -251,7 +251,7 @@ void GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
   northCurrent(-geoParams[iNF],iR,iZ,iEq);
 
   southCurrent(geoParams[iSF],iR,iZ,iEq);
-  
+
   // formulate RHS entry
   (*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
               ( ((*xPast)(indices[iCF])/(vPast*deltaT)) + GGQD->q(iZ,iR));
@@ -2386,7 +2386,7 @@ int GreyGroupSolver::getFlux()
 
       }
     } 
-        
+
     /* Destroy scatter context */
     VecScatterDestroy(&ctx);
     VecDestroy(&temp_x_p_seq);
@@ -2470,7 +2470,7 @@ int GreyGroupSolver::getCurrent()
 
       }
     } 
-        
+
     /* Destroy scatter context */
     VecScatterDestroy(&ctx);
     VecDestroy(&temp_currPast_p_seq);
@@ -2985,7 +2985,7 @@ int GreyGroupSolver::steadyStateNorthCurrent_p(double coeff,int iR,int iZ,int iE
 
   //// Enforce zeta coefficient
   //Atemp.coeffRef(iEq,indices[iNF]) -= coeff*zetaL;
-  
+
   return ierr;
 
 };
@@ -3895,7 +3895,7 @@ int GreyGroupSolver::assertZerothMoment_p(int iR,int iZ,int iEq)
   value = -geoParams[iCF] * groupSourceCoeff; 
   index = indices[iCF];
   ierr = MatSetValue(MPQD->A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //groupSourceCoeff = calcScatterAndFissionCoeff(iR,iZ);
   //Atemp.insert(iEq,indices[iCF]) = -geoParams[iCF] * groupSourceCoeff;
 
@@ -3917,14 +3917,14 @@ int GreyGroupSolver::assertZerothMoment_p(int iR,int iZ,int iEq)
   northCurrent_p(-geoParams[iNF],iR,iZ,iEq);
 
   southCurrent_p(geoParams[iSF],iR,iZ,iEq);
- 
+
   // formulate RHS entry
   VecGetValues(MPQD->xPast_p_seq,1,&index,&past_flux);CHKERRQ(ierr);
   value = geoParams[iCF]*((past_flux/(vPast*deltaT)) + GGQD->q(iZ,iR));
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   //(*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
-              ( ((*xPast)(indices[iCF])/(vPast*deltaT)) + GGQD->q(iZ,iR));
+  ( ((*xPast)(indices[iCF])/(vPast*deltaT)) + GGQD->q(iZ,iR));
 
   return ierr;
 
@@ -4027,7 +4027,7 @@ int GreyGroupSolver::southCurrent_p(double coeff,int iR,int iZ,int iEq)
   {
     for (int iGroup = 0; iGroup < materials->nGroups; iGroup++)
     {
-      
+
       // Get index of current
       indices = GGQD->mgqd->QDSolve->getIndices(iR,iZ,iGroup);
       curr_index = indices[iSC];
@@ -4503,7 +4503,7 @@ int GreyGroupSolver::assertNGoldinBC_p(int iR,int iZ,int iEq)
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //northCurrent(1.0,iR,iZ,iEq);
   //Atemp.coeffRef(iEq,indices[iNF]) -= ratio;
   //(*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
@@ -4534,7 +4534,7 @@ int GreyGroupSolver::assertSGoldinBC_p(int iR,int iZ,int iEq)
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //southCurrent(1.0,iR,iZ,iEq);
   //Atemp.coeffRef(iEq,indices[iSF]) -= ratio;
   //(*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
@@ -4565,7 +4565,7 @@ int GreyGroupSolver::assertEGoldinBC_p(int iR,int iZ,int iEq)
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //eastCurrent(1.0,iR,iZ,iEq);
   //Atemp.coeffRef(iEq,indices[iEF]) -= ratio;
   //(*b)(iEq) = (*b)(iEq) + (inwardCurrent-inFluxWeightRatio*inwardFlux);
@@ -4589,7 +4589,7 @@ int GreyGroupSolver::assertNGoldinP1BC_p(int iR,int iZ,int iEq)
   northCurrent_p(1.0,iR,iZ,iEq);
   value = 1.0/sqrt(3.0); 
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
-  
+
   //northCurrent(1.0,iR,iZ,iEq);
   //Atemp.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
 
@@ -5071,7 +5071,7 @@ int GreyGroupSolver::calcEastCurrent_p(int iR,int iZ,int iEq)
       // Set coefficient (curr_value) in RHS vector
       curr_value = (coeff/deltaT)*(curr_value/mgqdNeutV);;
       ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
-//
+      //
       //indices = GGQD->mgqd->QDSolve->getIndices(iR,iZ,iGroup);
       //mgqdCurrent = GGQD->mgqd->QDSolve->currPast(indices[iEC]); 
       //mgqdNeutV = materials->rNeutVel(iZ,iR+1,iGroup); 

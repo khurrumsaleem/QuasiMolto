@@ -52,13 +52,13 @@ QDSolver::QDSolver(Mesh * myMesh,\
   {
     /* Initialize PETSc variables */
     // Flux system variables 
-    initPETScMat(&A_p,nUnknowns,4*nUnknowns);
+    initPETScMat(&A_p,nUnknowns,20);
     initPETScVec(&x_p,nUnknowns);
     initPETScVec(&xPast_p,nUnknowns);
     initPETScVec(&b_p,nUnknowns);
 
     // Current system variables 
-    initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,4*nUnknowns);
+    initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,20);
     initPETScVec(&currPast_p,nCurrentUnknowns);
     initPETScVec(&d_p,nCurrentUnknowns);
 

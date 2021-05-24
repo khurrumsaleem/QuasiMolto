@@ -52,7 +52,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 
     /* Initialize PETSc variables */
     // Multiphysics system variables 
-    initPETScMat(&A_p,nUnknowns,4*nUnknowns);
+    initPETScMat(&A_p,nUnknowns,20);
     initPETScVec(&x_p,nUnknowns);
     initPETScVec(&xPast_p,nUnknowns);
     initPETScVec(&b_p,nUnknowns);

@@ -171,9 +171,10 @@ void MultiGroupDNP::readInput()
   /* PETSc variables */
 
   // Set sizes of matrices in recirculation solve
-  initPETScMat(&recircA_p,nRecircUnknowns,4*nRecircUnknowns);
+  initPETScMat(&recircA_p,nRecircUnknowns,5);
   initPETScVec(&recircx_p,nRecircUnknowns);
   initPETScVec(&recircb_p,nRecircUnknowns);
+  MatSetOption(recircA_p, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
 
 };
 //==============================================================================
