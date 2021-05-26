@@ -2257,7 +2257,8 @@ double QDSolver::calcIntegratingFactor(int iR,int iZ,double rEval,\
 vector<int> QDSolver::getIndices(int iR,int iZ,int energyGroup)
 {
 
-  vector<int> indices,oneGroupIndices;
+  //vector<int> indices(9),oneGroupIndices(9);
+  vector<int> oneGroupIndices;
 
   // Set flux and current offsets according to energy group
   int offsetFlux = energyGroup*nGroupUnknowns;
@@ -2267,15 +2268,15 @@ vector<int> QDSolver::getIndices(int iR,int iZ,int energyGroup)
   oneGroupIndices = mesh->getQDCellIndices(iR,iZ);
 
   // Offset by specified energy group
-  indices.push_back(oneGroupIndices[iCF] + offsetFlux);
-  indices.push_back(oneGroupIndices[iWF] + offsetFlux);
-  indices.push_back(oneGroupIndices[iEF] + offsetFlux);
-  indices.push_back(oneGroupIndices[iNF] + offsetFlux);
-  indices.push_back(oneGroupIndices[iSF] + offsetFlux);
-  indices.push_back(oneGroupIndices[iWC] + offsetCurr);
-  indices.push_back(oneGroupIndices[iEC] + offsetCurr);
-  indices.push_back(oneGroupIndices[iNC] + offsetCurr);
-  indices.push_back(oneGroupIndices[iSC] + offsetCurr);
+  vector<int> indices {oneGroupIndices[iCF] + offsetFlux,
+                       oneGroupIndices[iWF] + offsetFlux,
+                       oneGroupIndices[iEF] + offsetFlux,
+                       oneGroupIndices[iNF] + offsetFlux,
+                       oneGroupIndices[iSF] + offsetFlux,
+                       oneGroupIndices[iWC] + offsetCurr,
+                       oneGroupIndices[iEC] + offsetCurr,
+                       oneGroupIndices[iNC] + offsetCurr,
+                       oneGroupIndices[iSC] + offsetCurr};
 
   return indices;
 };
