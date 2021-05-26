@@ -1194,6 +1194,8 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
   // Write mesh info 
   mesh->writeVars();
   
+  auto outerBegin = chrono::high_resolution_clock::now();
+  
   while (not convergedMGHOT){ 
 
     ////////////////////
@@ -1469,7 +1471,11 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
     }
 
   } //MGHOT
-
+  
+  auto outerEnd = chrono::high_resolution_clock::now();
+  auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(outerEnd - outerBegin);
+  duration = elapsed.count()*1e-9;
+  cout << "Outer solve time: " << duration << " seconds." << endl;      
 
   // Write vars
   mpqd->updateSteadyStateVarsAfterConvergence_p(); 
