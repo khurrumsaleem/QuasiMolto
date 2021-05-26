@@ -2055,21 +2055,22 @@ double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval,int iLo
 vector<int> GreyGroupSolver::getIndices(int iR,int iZ)
 {
 
-  vector<int> indices,oneGroupIndices;
+  vector<int> oneGroupIndices;
 
   // Get indices for a single energy group 
   oneGroupIndices = mesh->getQDCellIndices(iR,iZ);
 
-  // Offset by specified energy group
-  indices.push_back(oneGroupIndices[iCF] + GGQD->indexOffset);
-  indices.push_back(oneGroupIndices[iWF] + GGQD->indexOffset);
-  indices.push_back(oneGroupIndices[iEF] + GGQD->indexOffset);
-  indices.push_back(oneGroupIndices[iNF] + GGQD->indexOffset);
-  indices.push_back(oneGroupIndices[iSF] + GGQD->indexOffset);
-  indices.push_back(oneGroupIndices[iWC]);
-  indices.push_back(oneGroupIndices[iEC]);
-  indices.push_back(oneGroupIndices[iNC]);
-  indices.push_back(oneGroupIndices[iSC]);
+  vector<int> indices {oneGroupIndices[iCF] + GGQD->indexOffset, 
+                       oneGroupIndices[iWF] + GGQD->indexOffset, 
+                       oneGroupIndices[iEF] + GGQD->indexOffset, 
+                       oneGroupIndices[iNF] + GGQD->indexOffset, 
+                       oneGroupIndices[iSF] + GGQD->indexOffset,
+                       oneGroupIndices[iWC],
+                       oneGroupIndices[iEC],
+                       oneGroupIndices[iNC],
+                       oneGroupIndices[iSC]};
+
+
 
   return indices;
 };

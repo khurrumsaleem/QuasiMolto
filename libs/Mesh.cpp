@@ -767,7 +767,6 @@ void Mesh::advanceOneTimeStep()
 ///   west, east, north, and south faces, in that order.
 vector<double> Mesh::getGeoParams(int iR,int iZ)
 {
-  vector<double> gParams;
   double rDown,rUp,zDown,zUp,volume,wFaceSA,eFaceSA,nFaceSA,sFaceSA;
   // get boundaries of this cell
   rDown = rCornerEdge(iR); rUp = rCornerEdge(iR+1);
@@ -778,24 +777,26 @@ vector<double> Mesh::getGeoParams(int iR,int iZ)
   sFaceSA = nFaceSA;
   eFaceSA = 2*M_PI*rUp*(zUp-zDown);
   wFaceSA = 2*M_PI*rDown*(zUp-zDown);
-  // add parameters to the vector and return it
-  gParams.push_back(volume);
-  gParams.push_back(wFaceSA);
-  gParams.push_back(eFaceSA);
-  gParams.push_back(nFaceSA);
-  gParams.push_back(sFaceSA);
+  
+  // List initialization
+  vector<double> gParams {volume,
+                          wFaceSA,
+                          eFaceSA,
+                          nFaceSA,
+                          sFaceSA};
+
   return gParams;
 };
 //============================================================================== 
 
-//==============================================================================   /// Return geometry parameters for the cell located at (iR,iZ) of recirc loop
+//==============================================================================   
+/// Return geometry parameters for the cell located at (iR,iZ) of recirc loop
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [out] gParams vector containing volume and surfaces areas of the
 ///   west, east, north, and south faces, in that order.
 vector<double> Mesh::getRecircGeoParams(int iR,int iZ)
 {
-  vector<double> gParams;
   double rDown,rUp,zDown,zUp,volume,wFaceSA,eFaceSA,nFaceSA,sFaceSA;
   // get boundaries of this cell
   rDown = rCornerEdge(iR); rUp = rCornerEdge(iR+1);
@@ -806,12 +807,14 @@ vector<double> Mesh::getRecircGeoParams(int iR,int iZ)
   sFaceSA = nFaceSA;
   eFaceSA = 2*M_PI*rUp*(zUp-zDown);
   wFaceSA = 2*M_PI*rDown*(zUp-zDown);
-  // add parameters to the vector and return it
-  gParams.push_back(volume);
-  gParams.push_back(wFaceSA);
-  gParams.push_back(eFaceSA);
-  gParams.push_back(nFaceSA);
-  gParams.push_back(sFaceSA);
+
+  // List initialization
+  vector<double> gParams {volume,
+                          wFaceSA,
+                          eFaceSA,
+                          nFaceSA,
+                          sFaceSA};
+
   return gParams;
 };
 //============================================================================== 
@@ -823,18 +826,18 @@ vector<double> Mesh::getRecircGeoParams(int iR,int iZ)
 vector<int> Mesh::getQDCellIndices(int iR,int iZ)
 {        
 
-  vector<int> qdCellIndices;
   int qdCellIndex = getQDCellIndex(iR,iZ);
 
-  qdCellIndices.push_back(qdCells[qdCellIndex].cFIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].wFIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].eFIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].nFIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].sFIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].wCIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].eCIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].nCIndex);
-  qdCellIndices.push_back(qdCells[qdCellIndex].sCIndex);
+  // List initialization
+  vector<int> qdCellIndices{qdCells[qdCellIndex].cFIndex,
+                            qdCells[qdCellIndex].wFIndex,
+                            qdCells[qdCellIndex].eFIndex,
+                            qdCells[qdCellIndex].nFIndex,
+                            qdCells[qdCellIndex].sFIndex,
+                            qdCells[qdCellIndex].wCIndex,
+                            qdCells[qdCellIndex].eCIndex,
+                            qdCells[qdCellIndex].nCIndex,
+                            qdCells[qdCellIndex].sCIndex};
 
   return qdCellIndices;
 
