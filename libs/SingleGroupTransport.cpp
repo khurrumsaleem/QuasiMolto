@@ -395,7 +395,7 @@ double SingleGroupTransport::calcAlpha(string calcType)
   PetscErrorCode ierr = 0;
   PetscScalar value;
   PetscInt index;
-  Vec            x_p_seq,xPrev_p_seq;
+  Vec            x_p_seq;
   VecScatter     ctx;
 
 
