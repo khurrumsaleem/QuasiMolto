@@ -734,6 +734,7 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
   mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;  
 
   // Broadcast xPast
+  VecDestroy(&(xPast_p_seq));
   VecScatterCreateToAll(xPast_p,&ctx,&(xPast_p_seq));
   VecScatterBegin(ctx,xPast_p,xPast_p_seq,\
       INSERT_VALUES,SCATTER_FORWARD);
