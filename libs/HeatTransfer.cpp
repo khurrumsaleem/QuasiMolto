@@ -957,7 +957,6 @@ Eigen::MatrixXd HeatTransfer::returnCurrentTemp()
 int HeatTransfer::setTemp()
 {
 
-  VecScatter     ctx;
   PetscErrorCode ierr;
   PetscScalar value;
   PetscInt index;

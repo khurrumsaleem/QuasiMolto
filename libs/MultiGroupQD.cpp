@@ -388,7 +388,6 @@ int MultiGroupQD::buildLinearSystem_p()
 {
   
   PetscErrorCode ierr;
-  VecScatter     ctx;
   
   /* Reset linear system */  
   MatZeroEntries(QDSolve->A_p);
