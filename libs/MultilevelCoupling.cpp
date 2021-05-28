@@ -1207,10 +1207,8 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
     {
       // Solve MGHOT problem
       cout << "MGHOT solve...";
-      //startTime = clock(); 
       auto begin = chrono::high_resolution_clock::now();
       solveSteadyStateMGHOT();
-      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
       auto end = chrono::high_resolution_clock::now();
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
@@ -1245,10 +1243,8 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
       // Solve MGLOQD problem
       cout << "    ";
       cout << "MGLOQD solve..." << endl;
-      //startTime = clock(); 
       auto begin = chrono::high_resolution_clock::now();
       solveSteadyStateMGLOQD_p();
-      //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
       auto end = chrono::high_resolution_clock::now();
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
@@ -1262,7 +1258,6 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
       mgqd->getFluxes();
 
       // Store last iterate of ELOT solution used in MGLOQD level
-      //xLastMGLOQDIter = mpqd->x_p;
       petscVecToEigenVec(&(mpqd->x_p),&xLastMGLOQDIter);
 
       while (not convergedELOT)
@@ -1281,17 +1276,14 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
         // Store last iterate of ELOT solution used in ELOT level
         cout << "        ";
         cout << "Storing last solution...";
-        //xLastELOTIter = mpqd->x_p;
         petscVecToEigenVec(&(mpqd->x_p),&xLastELOTIter);
         cout << " done."<< endl;
 
         // Solve ELOT problem
         cout << "        ";
         cout << "ELOT solve..." << endl;
-        //startTime = clock(); 
         auto begin = chrono::high_resolution_clock::now();
         solveSteadyStateELOT_p();
-        //duration = (clock() - startTime)/(double)CLOCKS_PER_SEC;
         auto end = chrono::high_resolution_clock::now();
         auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
         duration = elapsed.count()*1e-9;
@@ -1302,7 +1294,6 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
         iters.push_back(1);
 
         // Store newest iterate 
-        //xCurrentIter = mpqd->x_p;
         petscVecToEigenVec(&(mpqd->x_p),&xCurrentIter);
 
         lastResidualELOT = residualELOT; 
@@ -1380,6 +1371,7 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
         {
           //break;
         }
+
       } // ELOT
 
       // Reset convergence indicator
