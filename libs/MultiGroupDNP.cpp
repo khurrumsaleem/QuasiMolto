@@ -532,14 +532,14 @@ int MultiGroupDNP::solveRecircLinearSystem_p()
   ierr = KSPSolve(ksp,recircb_p,recircx_p);CHKERRQ(ierr);
   auto end = chrono::high_resolution_clock::now();
   auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-  cout << "solve time: " << elapsed.count()*1e-9 << endl;
+  //cout << "solve time: " << elapsed.count()*1e-9 << endl;
 
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
 
   /* Destroy solver */
   ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
+  //ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
 
   return ierr;
 

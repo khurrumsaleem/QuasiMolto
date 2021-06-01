@@ -1206,7 +1206,7 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
     if (itersMGHOT != 0 and not p1Approx)
     {
       // Solve MGHOT problem
-      cout << "MGHOT solve...";
+      PetscPrintf(PETSC_COMM_WORLD,"MGHOT solve...");
       auto begin = chrono::high_resolution_clock::now();
       solveSteadyStateMGHOT();
       auto end = chrono::high_resolution_clock::now();
@@ -1214,18 +1214,18 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
       duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
       mghotDuration = mghotDuration + duration; 
-      cout << " done. ("<< duration << " seconds)" << endl;
+      PetscPrintf(PETSC_COMM_WORLD," done. (%6.4e seconds)\n",duration);
       iters.push_back(3);
 
       // Calculate Eddington factors for MGQD problem
-      cout << "Calculating MGLOQD Eddington factors...";
+      PetscPrintf(PETSC_COMM_WORLD,"Calculating MGLOQD Eddington factors...");
       eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
-      cout << " done."<< endl;
+      PetscPrintf(PETSC_COMM_WORLD," done.\n");
 
       // Calculate BCs for MGQD problem 
-      cout << "Calculating MGLOQD boundary conditions...";
+      PetscPrintf(PETSC_COMM_WORLD,"Calculating MGLOQD boundary conditions...");
       MGTToMGQD->calcBCs();
-      cout << " done."<< endl;
+      PetscPrintf(PETSC_COMM_WORLD," done.\n\n");
     }
 
     // Store last iterate of ELOT solution used in MGHOT level
@@ -1241,8 +1241,8 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
       /////////////////////
 
       // Solve MGLOQD problem
-      cout << "    ";
-      cout << "MGLOQD solve..." << endl;
+      PetscPrintf(PETSC_COMM_WORLD,"    ");
+      PetscPrintf(PETSC_COMM_WORLD,"MGLOQD solve...\n");
       auto begin = chrono::high_resolution_clock::now();
       solveSteadyStateMGLOQD_p();
       auto end = chrono::high_resolution_clock::now();
@@ -1250,8 +1250,8 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
       duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
       mgloqdDuration = mgloqdDuration + duration; 
-      cout << "    ";
-      cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
+      PetscPrintf(PETSC_COMM_WORLD,"    ");
+      PetscPrintf(PETSC_COMM_WORLD,"MGLOQD solve done. (%6.4e seconds)\n\n",duration);
       iters.push_back(2);
 
       // Get group fluxes to use in group collapse
@@ -1268,20 +1268,17 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
         ///////////////////
 
         // Calculate collapsed nuclear data
-        cout << "        ";
-        cout << "Collapsing MGLOQD data for ELOT solve...";
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"Collapsing MGLOQD data for ELOT solve...");
         MGQDToMPQD->collapseNuclearData();
-        cout << " done."<< endl;
+        PetscPrintf(PETSC_COMM_WORLD," done.\n");
 
         // Store last iterate of ELOT solution used in ELOT level
-        cout << "        ";
-        cout << "Storing last solution...";
         petscVecToEigenVec(&(mpqd->x_p),&xLastELOTIter);
-        cout << " done."<< endl;
 
         // Solve ELOT problem
-        cout << "        ";
-        cout << "ELOT solve..." << endl;
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"ELOT solve...\n");
         auto begin = chrono::high_resolution_clock::now();
         solveSteadyStateELOT_p();
         auto end = chrono::high_resolution_clock::now();
@@ -1289,8 +1286,8 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
         duration = elapsed.count()*1e-9;
         totalDuration = totalDuration + duration; 
         elotDuration = elotDuration + duration; 
-        cout << "        ";
-        cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"ELOT solve done. (%6.4e seconds)\n",duration);
         iters.push_back(1);
 
         // Store newest iterate 
@@ -1299,12 +1296,12 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
         lastResidualELOT = residualELOT; 
 
         // Calculate and print ELOT residual  
-        
+
         residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
         residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
-        cout << "        ";
-        cout << "ELOT Residual: " << residualELOT[0]; 
-        cout << ", " << residualELOT[1] << endl;
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"ELOT Residual: %6.4e, %6.4e \n",residualELOT[0],\
+            residualELOT[1]);
 
         // Update iterate counters, store residuals
         itersELOT++;
@@ -1327,7 +1324,7 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
 
         // Store k
         kHist.push_back(mats->oneGroupXS->keff);
-        
+
         // Calculate power
         power = omega.cwiseProduct(mats->oneGroupXS->sigF)\
                 .cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
@@ -1336,10 +1333,8 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
         mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
 
         // Print eigenvalue 
-        cout << "        ";
-        cout << "k: " << setprecision(10) <<mats->oneGroupXS->keff;
-        cout << setprecision(6) <<scientific << endl;
-        cout << endl;
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"k: %11.10e \n\n",mats->oneGroupXS->keff);
 
         // Calculate difference in past and current eigenvalue
         kdiff = abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff);
@@ -1354,7 +1349,7 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
         {
           // Jump back to MGLOQD level
           break;
-          
+
         }
 
 
@@ -1385,11 +1380,10 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
       // Calculate and print MGLOQD residual 
       residualMGLOQD = MGQDToMPQD->calcResidual(xLastMGLOQDIter,xCurrentIter);
       residualMGLOQD = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGLOQDIter);
-      cout << endl;
-      cout << "    ";
-      cout << "MGLOQD Residual: " << residualMGLOQD[0];
-      cout << ", " << residualMGLOQD[1] << endl;
-      cout << endl;
+      //PetscPrintf(PETSC_COMM_WORLD,"\n");
+      PetscPrintf(PETSC_COMM_WORLD,"    ");
+      PetscPrintf(PETSC_COMM_WORLD,"MGLOQD Residual: %6.4e, %6.4e \n\n",residualMGLOQD[0],\
+          residualMGLOQD[1]);
 
       // Update iterate counters, store residuals
       itersMGLOQD++;
@@ -1428,9 +1422,8 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
     // Calculate and print MGHOT residual 
     residualMGHOT = MGQDToMPQD->calcResidual(xLastMGHOTIter,xCurrentIter);
     residualMGHOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGHOTIter);
-    cout << "MGHOT Residual: " << residualMGHOT[0];
-    cout << ", " << residualMGHOT[1] << endl;
-    cout << endl;
+    PetscPrintf(PETSC_COMM_WORLD,"MGHOT Residual: %6.4e, %6.4e \n\n",residualMGHOT[0],\
+        residualMGHOT[1]);
 
     // Update iterate counters, store residuals
     itersMGHOT++;
@@ -1463,11 +1456,12 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
     }
 
   } //MGHOT
-  
+
   auto outerEnd = chrono::high_resolution_clock::now();
   auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(outerEnd - outerBegin);
   duration = elapsed.count()*1e-9;
-  cout << "Outer solve time: " << duration << " seconds." << endl;      
+  //cout << "Outer solve time: " << duration << " seconds." << endl;      
+  PetscPrintf(PETSC_COMM_WORLD,"Outer solve time: %6.4e\n", duration);
 
   // Write vars
   mpqd->updateSteadyStateVarsAfterConvergence_p(); 
@@ -1475,14 +1469,14 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
   mpqd->writeVars(); 
   mgqd->writeVars(); 
   mats->oneGroupXS->writeVars();
-  
+
   // Correct MGHOT iteration count. (process starts with MGLOQD solve)
   itersMGHOT = itersMGHOT - 1;
 
-  cout << "MGHOT iterations: " << itersMGHOT << endl;
-  cout << "MGLOQD iterations: " << itersMGLOQD << endl;
-  cout << "ELOT iterations: " << itersELOT << endl;
- 
+  PetscPrintf(PETSC_COMM_WORLD,"MGHOT iterations: %i\n", itersMGHOT);
+  PetscPrintf(PETSC_COMM_WORLD,"MGLOQD iterations: %i\n", itersMGLOQD);
+  PetscPrintf(PETSC_COMM_WORLD,"ELOT iterations: %i\n", itersELOT);
+
   // Output iteration counts 
   if (outputVars)
   {
@@ -1561,13 +1555,14 @@ void MultilevelCoupling::solveTransient_p()
 
   // Write mesh info
   mesh->writeVars();
-  
+
   auto outerBegin = chrono::high_resolution_clock::now();
 
   for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
   {
-    cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
-    cout << endl;
+    //cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
+    //cout << endl;
+    PetscPrintf(PETSC_COMM_WORLD,"Solve for t = %6.4e\n\n",mesh->ts[iTime+1]);
 
     auto begin = chrono::high_resolution_clock::now();
     if(solveOneStepResidualBalance_p(mesh->outputOnStep[iTime]))
@@ -1577,7 +1572,8 @@ void MultilevelCoupling::solveTransient_p()
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
-      cout << "Solution computed in " << duration << " seconds." << endl;      
+      //cout << "Solution computed in " << duration << " seconds." << endl;      
+      PetscPrintf(PETSC_COMM_WORLD,"Solution computed in %6.4e seconds.\n", duration); 
 
       // Output and update variables
       mgqd->updateVarsAfterConvergence(); 
@@ -1598,22 +1594,27 @@ void MultilevelCoupling::solveTransient_p()
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
-      cout << "Solution aborted after " << duration << " seconds." << endl;      
+      //cout << "Solution aborted after " << duration << " seconds." << endl;      
+      PetscPrintf(PETSC_COMM_WORLD,"Solution aborted after %6.4e seconds.\n", duration); 
       mesh->output->write(outputDir,"Solve_Time",duration);
 
-      cout << "Solve not converged." << endl;
-      cout << "Transient aborted." << endl;
+      //cout << "Solve not converged." << endl;
+      //cout << "Transient aborted." << endl;
+      PetscPrintf(PETSC_COMM_WORLD,"Solve not converged\n"); 
+      PetscPrintf(PETSC_COMM_WORLD,"Transient aborted.\n"); 
       break;
     }
   } 
-  
+
   auto outerEnd = chrono::high_resolution_clock::now();
   auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(outerEnd - outerBegin);
   duration = elapsed.count()*1e-9;
-  cout << "Outer solve time: " << duration << " seconds." << endl;      
+  //cout << "Outer solve time: " << duration << " seconds." << endl;      
+  PetscPrintf(PETSC_COMM_WORLD,"Outer solve time: %6.4e\n", duration);
 
   // Report total solve time
-  cout << "Total solve time: " << totalDuration << " seconds." << endl;      
+  //cout << "Total solve time: " << totalDuration << " seconds." << endl;      
+  PetscPrintf(PETSC_COMM_WORLD,"Total solve time: %6.4e\n", totalDuration);
   mesh->output->write(outputDir,"Solve_Time",duration,true);
 
 };
@@ -1628,17 +1629,17 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
   Eigen::VectorXd xCurrentIter, xLastMGHOTIter, xLastMGLOQDIter,xLastELOTIter,\
     residualVector;
   vector<double> lastResidualELOT, lastResidualMGLOQD, residualMGHOT = {1,1,1},\
-    residualMGLOQD = {1,1,1}, residualELOT = {1,1,1};
+                                                                       residualMGLOQD = {1,1,1}, residualELOT = {1,1,1};
   bool eddingtonConverged;
   bool convergedMGHOT=false, convergedMGLOQD=false, convergedELOT=false;
   int itersMGHOT = 0, itersMGLOQD = 0, itersELOT = 0;
   vector<int> iters;
   vector<double> tempResMGHOT,tempResMGLOQD,tempResELOT,tempResiduals;
   vector<double> fluxResMGHOT,fluxResMGLOQD,fluxResELOT,fluxResiduals;
- 
+
   // Timing variables 
   double duration,totalDuration = 0.0,elotDuration = 0,\
-    mgloqdDuration = 0, mghotDuration = 0;
+                                  mgloqdDuration = 0, mghotDuration = 0;
   clock_t startTime;
 
   while (not convergedMGHOT){ 
@@ -1651,30 +1652,30 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
     if (itersMGHOT != 0 and not p1Approx)
     {
       // Solve MGHOT problem
-      cout << "MGHOT solve...";
+      PetscPrintf(PETSC_COMM_WORLD,"MGHOT solve...");
       auto begin = chrono::high_resolution_clock::now();
       solveMGHOT();
       auto end = chrono::high_resolution_clock::now();
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
       mghotDuration = mghotDuration + duration;
-      cout << " done. ("<< duration << " seconds)" << endl;
+      PetscPrintf(PETSC_COMM_WORLD," done. (%6.4e seconds)\n",duration);
       iters.push_back(3);
 
       // Calculate Eddington factors for MGQD problem
-      cout << "Calculating MGLOQD Eddington factors...";
+      PetscPrintf(PETSC_COMM_WORLD,"Calculating MGLOQD Eddington factors...");
       eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
-      cout << " done."<< endl;
+      PetscPrintf(PETSC_COMM_WORLD," done.\n");
 
       // Calculate BCs for MGQD problem 
-      cout << "Calculating MGLOQD boundary conditions...";
+      PetscPrintf(PETSC_COMM_WORLD,"Calculating MGLOQD boundary conditions...");
       MGTToMGQD->calcBCs();
-      cout << " done."<< endl;
+      PetscPrintf(PETSC_COMM_WORLD," done.\n\n");
     }
 
     // Store last iterate of ELOT solution used in MGHOT level
     petscVecToEigenVec(&(mpqd->x_p),&xLastMGHOTIter);
-    
+
     while (not convergedMGLOQD){
 
       /////////////////////
@@ -1682,53 +1683,50 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
       /////////////////////
 
       // Solve MGLOQD problem
-      cout << "    ";
-      cout << "MGLOQD solve..." << endl;
+      PetscPrintf(PETSC_COMM_WORLD,"    ");
+      PetscPrintf(PETSC_COMM_WORLD,"MGLOQD solve...\n");
       auto begin = chrono::high_resolution_clock::now();
       solveMGLOQD_p();
       auto end = chrono::high_resolution_clock::now();
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
       mgloqdDuration = mgloqdDuration + duration;
-      cout << "    ";
-      cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
+      PetscPrintf(PETSC_COMM_WORLD,"    ");
+      PetscPrintf(PETSC_COMM_WORLD,"MGLOQD solve done. (%6.4e seconds)\n\n",duration);
       iters.push_back(2);
 
       // Get group fluxes to use in group collapse
       mgqd->getFluxes();
-      
+
       // Store last iterate of ELOT solution used in MGLOQD level
       petscVecToEigenVec(&(mpqd->x_p),&xLastMGLOQDIter);
-    
+
       while (not convergedELOT) {
-        
+
         ///////////////////
         // ELOT SOLUTION //
         ///////////////////
 
         // Calculate collapsed nuclear data
-        cout << "        ";
-        cout << "Collapsing MGLOQD data for ELOT solve...";
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"Collapsing MGLOQD data for ELOT solve...");
         MGQDToMPQD->collapseNuclearData();
-        cout << " done."<< endl;
-        
+        PetscPrintf(PETSC_COMM_WORLD," done.\n");
+
         // Store last iterate of ELOT solution used in ELOT level
-        cout << "        ";
-        cout << "Storing last solution...";
         petscVecToEigenVec(&(mpqd->x_p),&xLastELOTIter);
-        cout << " done."<< endl;
-      
+
         // Solve ELOT problem
-        cout << "        ";
-        cout << "ELOT solve..." << endl;
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"ELOT solve...\n");
         auto begin = chrono::high_resolution_clock::now();
         solveELOT_p();
         auto end = chrono::high_resolution_clock::now();
         auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
         duration = elapsed.count()*1e-9;
         elotDuration = elotDuration + duration;
-        cout << "        ";
-        cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"ELOT solve done. (%6.4e seconds)\n",duration);
         iters.push_back(1);
 
         // Store newest iterate 
@@ -1738,9 +1736,9 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
 
         // Calculate and print ELOT residual  
         residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
-        cout << "        ";
-        cout << "ELOT Residual: " << residualELOT[0]; 
-        cout << ", " << residualELOT[1] << endl;
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"ELOT Residual: %6.4e, %6.4e \n\n",residualELOT[0],\
+            residualELOT[1]);
 
         // Update iterate counters, store residuals
         itersELOT++;
@@ -1758,7 +1756,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
           // Jump back to MGLOQD level
           break;
         }
-       
+
         // Check converge criteria 
         if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
             eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1]) 
@@ -1767,24 +1765,22 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
         }
 
       } // ELOT
-    
+
       // Reset convergence indicator
       convergedELOT = false; 
-      
+
       // Store one group fluxes and DNPs for MGHOT and MGLOQD sources 
       mpqd->ggqd->GGSolver->getFlux();
       mpqd->mgdnp->getCumulativeDNPDecaySource();
-    
+
       lastResidualMGLOQD = residualMGLOQD;
- 
+
       // Calculate and print MGLOQD residual 
       residualMGLOQD = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGLOQDIter);
-      cout << endl;
-      cout << "    ";
-      cout << "MGLOQD Residual: " << residualMGLOQD[0];
-      cout << ", " << residualMGLOQD[1] << endl;
-      cout << endl;
-        
+      PetscPrintf(PETSC_COMM_WORLD,"    ");
+      PetscPrintf(PETSC_COMM_WORLD,"MGLOQD Residual: %6.4e, %6.4e \n\n",residualMGLOQD[0],\
+        residualMGLOQD[1]);
+
       // Update iterate counters, store residuals
       itersMGLOQD++;
 
@@ -1815,24 +1811,23 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
       }
 
     } // MGLOQD
-    
+
     // Reset convergence indicator
     convergedMGLOQD = false;
-     
+
     // Calculate and print MGHOT residual 
     residualMGHOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGHOTIter);
-    cout << "MGHOT Residual: " << residualMGHOT[0];
-    cout << ", " << residualMGHOT[1] << endl;
-    cout << endl;
-      
+    PetscPrintf(PETSC_COMM_WORLD,"MGHOT Residual: %6.4e, %6.4e \n\n",residualMGHOT[0],\
+        residualMGHOT[1]);
+
     // Update iterate counters, store residuals
     itersMGHOT++;
-    
+
     if (itersMGHOT != 1) fluxResMGHOT.push_back(residualMGHOT[0]);
     fluxResMGHOT.insert(fluxResMGHOT.end(),\
         fluxResMGLOQD.begin(),fluxResMGLOQD.end());
     fluxResMGLOQD.clear();
-    
+
     if (itersMGHOT != 1) tempResMGHOT.push_back(residualMGHOT[1]);
     tempResMGHOT.insert(tempResMGHOT.end(),\
         tempResMGLOQD.begin(),tempResMGLOQD.end());
@@ -1842,11 +1837,11 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
     fluxResiduals.insert(fluxResiduals.end(),fluxResMGHOT.begin(),\
         fluxResMGHOT.end());
     fluxResMGHOT.clear();
-    
+
     tempResiduals.insert(tempResiduals.end(),tempResMGHOT.begin(),\
         tempResMGHOT.end());
     tempResMGHOT.clear();
-      
+
     // Check converge criteria 
     if (eps(mpqd->epsMPQD) > residualMGHOT[0] and\
         eps(mpqd->epsMPQD) > residualMGHOT[1]) 
@@ -1855,17 +1850,17 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
     }
 
   } //MGHOT
-    
+
   cout << endl;
 
   // Correct MGHOT iteration count. (process starts with MGLOQD solve)
   itersMGHOT = itersMGHOT - 1;
-   
+
   // Write iteration countrs to console 
-  cout << "MGHOT iterations: " << itersMGHOT << endl;
-  cout << "MGLOQD iterations: " << itersMGLOQD << endl;
-  cout << "ELOT iterations: " << itersELOT << endl;
- 
+  PetscPrintf(PETSC_COMM_WORLD,"MGHOT iterations: %i\n", itersMGHOT);
+  PetscPrintf(PETSC_COMM_WORLD,"MGLOQD iterations: %i\n", itersMGLOQD);
+  PetscPrintf(PETSC_COMM_WORLD,"ELOT iterations: %i\n", itersELOT);
+
   // Output iteration counts 
   if (outputVars)
   {
@@ -1890,7 +1885,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
 ///
 void MultilevelCoupling::solveMGLOQD_p()
 {
-  
+
   PetscErrorCode ierr;
 
   // Build flux system
@@ -1898,10 +1893,10 @@ void MultilevelCoupling::solveMGLOQD_p()
 
   // Solve flux system
   mgqd->solveLinearSystem_p();
-  
+
   // Build neutron current system
   mgqd->buildBackCalcSystem_p();
-  
+
   //cout << "MGLOQD b_p" << endl;
   //VecView(mgqd->QDSolve->b_p,PETSC_VIEWER_STDOUT_WORLD);
 
@@ -1921,7 +1916,7 @@ void MultilevelCoupling::solveELOT_p()
   mpqd->buildLinearSystem_p();
 
   mpqd->solve_p();
-  
+
   //cout << "ELOT x_p" << endl;
   //VecView(mpqd->x_p,PETSC_VIEWER_STDOUT_WORLD);
 
@@ -1962,8 +1957,9 @@ void MultilevelCoupling::solvePsuedoTransient_p()
 
   for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
   {
-    cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
-    cout << endl;
+    //cout << "Solve for t = "<< mesh->ts[iTime+1] << endl;
+    //cout << endl;
+    PetscPrintf(PETSC_COMM_WORLD,"Solve for t = %6.4e\n\n",mesh->ts[iTime+1]);
 
     // Evaluate material velocites at current time step
     mats->readFlowVelocity(mesh->ts[iTime+1]);
@@ -1977,7 +1973,8 @@ void MultilevelCoupling::solvePsuedoTransient_p()
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
-      cout << "Solution computed in " << duration << " seconds." << endl;      
+      //cout << "Solution computed in " << duration << " seconds." << endl;      
+      PetscPrintf(PETSC_COMM_WORLD,"Solution computed in %6.4e seconds.\n", duration); 
 
       // Output and update variables
       if (mesh->outputOnStep[iTime])
@@ -1996,21 +1993,26 @@ void MultilevelCoupling::solvePsuedoTransient_p()
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
-      cout << "Solution aborted after " << duration << " seconds." << endl;      
+      //cout << "Solution aborted after " << duration << " seconds." << endl;      
+      PetscPrintf(PETSC_COMM_WORLD,"Solution aborted after %6.4e seconds.\n", duration); 
       mesh->output->write(outputDir,"Solve_Time",duration);
 
-      cout << "Solve not converged." << endl;
-      cout << "Transient aborted." << endl;
+      //cout << "Solve not converged." << endl;
+      //cout << "Transient aborted." << endl;
+      PetscPrintf(PETSC_COMM_WORLD,"Solve not converged\n"); 
+      PetscPrintf(PETSC_COMM_WORLD,"Transient aborted.\n"); 
       break;
     }
   } 
   auto outerEnd = chrono::high_resolution_clock::now();
   auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(outerEnd - outerBegin);
   duration = elapsed.count()*1e-9;
-  cout << "Outer solve time: " << duration << " seconds." << endl;      
+  //cout << "Outer solve time: " << duration << " seconds." << endl;      
+  PetscPrintf(PETSC_COMM_WORLD,"Outer solve time: %6.4e\n", duration);
 
   // Report total solve time
-  cout << "Total solve time: " << totalDuration << " seconds." << endl;      
+  //cout << "Total solve time: " << totalDuration << " seconds." << endl;      
+  PetscPrintf(PETSC_COMM_WORLD,"Total solve time: %6.4e\n", totalDuration);
   mesh->output->write(outputDir,"Solve_Time",duration,true);
 
 };
@@ -2025,7 +2027,7 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
   Eigen::VectorXd xCurrentIter, xLastMGHOTIter, xLastMGLOQDIter,xLastELOTIter,\
     residualVector;
   vector<double> lastResidualELOT, lastResidualMGLOQD, residualMGHOT = {1,1,1},\
-    residualMGLOQD = {1,1,1}, residualELOT = {1,1,1};
+                                                                       residualMGLOQD = {1,1,1}, residualELOT = {1,1,1};
   bool eddingtonConverged;
   bool convergedMGHOT=false, convergedMGLOQD=false, convergedELOT=false;
   int itersMGHOT = 0, itersMGLOQD = 0, itersELOT = 0;
@@ -2034,10 +2036,10 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
   vector<double> fluxResMGHOT,fluxResMGLOQD,fluxResELOT,fluxResiduals;
   vector<double> kHist;
   double power,kdiff;
- 
+
   // Timing variables 
   double duration,totalDuration = 0.0,elotDuration = 0,\
-    mgloqdDuration = 0, mghotDuration = 0;
+                                  mgloqdDuration = 0, mghotDuration = 0;
   clock_t startTime;
 
   Eigen::MatrixXd volume,omega,oldFlux,newFlux;
@@ -2053,14 +2055,14 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
       omega(iZ,iR) = mats->omega(iZ,iR);
     }
   }
-        
+
   // Store initial guess for k
   mats->oneGroupXS->keff=1.0;
   kHist.push_back(mats->oneGroupXS->keff);
-  
+
   // Write mesh info 
   mesh->writeVars();
-  
+
   while (not convergedMGHOT){ 
 
     ////////////////////
@@ -2071,7 +2073,7 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
     if (itersMGHOT != 0 and not p1Approx)
     {
       // Solve MGHOT problem
-      cout << "MGHOT solve...";
+      PetscPrintf(PETSC_COMM_WORLD,"MGHOT solve...");
       auto begin = chrono::high_resolution_clock::now();
       solveSteadyStateMGHOT();
       auto end = chrono::high_resolution_clock::now();
@@ -2079,18 +2081,18 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
       duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
       mghotDuration = mghotDuration + duration; 
-      cout << " done. ("<< duration << " seconds)" << endl;
+      PetscPrintf(PETSC_COMM_WORLD," done. (%6.4e seconds)\n",duration);
       iters.push_back(3);
 
       // Calculate Eddington factors for MGQD problem
-      cout << "Calculating MGLOQD Eddington factors...";
+      PetscPrintf(PETSC_COMM_WORLD,"Calculating MGLOQD Eddington factors...");
       eddingtonConverged = MGTToMGQD->calcEddingtonFactors();
-      cout << " done."<< endl;
+      PetscPrintf(PETSC_COMM_WORLD," done.\n");
 
       // Calculate BCs for MGQD problem 
-      cout << "Calculating MGLOQD boundary conditions...";
+      PetscPrintf(PETSC_COMM_WORLD,"Calculating MGLOQD boundary conditions...");
       MGTToMGQD->calcBCs();
-      cout << " done."<< endl;
+      PetscPrintf(PETSC_COMM_WORLD," done.\n\n");
     }
 
     // Store last iterate of ELOT solution used in MGHOT level
@@ -2104,8 +2106,8 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
       /////////////////////
 
       // Solve MGLOQD problem
-      cout << "    ";
-      cout << "MGLOQD solve..." << endl;
+      PetscPrintf(PETSC_COMM_WORLD,"    ");
+      PetscPrintf(PETSC_COMM_WORLD,"MGLOQD solve...\n");
       auto begin = chrono::high_resolution_clock::now();
       solveSteadyStateMGLOQD_p();
       auto end = chrono::high_resolution_clock::now();
@@ -2113,8 +2115,8 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
       duration = elapsed.count()*1e-9;
       totalDuration = totalDuration + duration; 
       mgloqdDuration = mgloqdDuration + duration; 
-      cout << "    ";
-      cout << "MGLOQD solve done. ("<< duration << " seconds)" << endl;
+      PetscPrintf(PETSC_COMM_WORLD,"    ");
+      PetscPrintf(PETSC_COMM_WORLD,"MGLOQD solve done. (%6.4e seconds)\n\n",duration);
       iters.push_back(2);
 
       // Get group fluxes to use in group collapse
@@ -2131,21 +2133,17 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
         ///////////////////
 
         // Calculate collapsed nuclear data
-        cout << "        ";
-        cout << "Collapsing MGLOQD data for ELOT solve...";
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"Collapsing MGLOQD data for ELOT solve...");
         MGQDToMPQD->collapseNuclearData();
-        cout << " done."<< endl;
+        PetscPrintf(PETSC_COMM_WORLD," done.\n");
 
         // Store last iterate of ELOT solution used in ELOT level
-        cout << "        ";
-        cout << "Storing last solution...";
-        //xLastELOTIter = mpqd->x_p;
         petscVecToEigenVec(&(mpqd->x_p),&xLastELOTIter);
-        cout << " done."<< endl;
 
         // Solve ELOT problem
-        cout << "        ";
-        cout << "ELOT solve..." << endl;
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"ELOT solve...\n");
         auto begin = chrono::high_resolution_clock::now();
         solvePsuedoTransientELOT_p();
         auto end = chrono::high_resolution_clock::now();
@@ -2153,8 +2151,8 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
         duration = elapsed.count()*1e-9;
         totalDuration = totalDuration + duration; 
         elotDuration = elotDuration + duration; 
-        cout << "        ";
-        cout << "ELOT solve done. ("<< duration << " seconds)" << endl;
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"ELOT solve done. (%6.4e seconds)\n",duration);
         iters.push_back(1);
 
         // Store newest iterate 
@@ -2163,12 +2161,12 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
         lastResidualELOT = residualELOT; 
 
         // Calculate and print ELOT residual  
-        
+
         residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
         residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
-        cout << "        ";
-        cout << "ELOT Residual: " << residualELOT[0]; 
-        cout << ", " << residualELOT[1] << endl;
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"ELOT Residual: %6.4e, %6.4e \n\n",residualELOT[0],\
+            residualELOT[1]);
 
         // Update iterate counters, store residuals
         itersELOT++;
@@ -2191,7 +2189,7 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
 
         // Store k
         kHist.push_back(mats->oneGroupXS->keff);
-        
+
         // Calculate power
         power = omega.cwiseProduct(mats->oneGroupXS->sigF)\
                 .cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
@@ -2200,10 +2198,8 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
         mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
 
         // Print eigenvalue 
-        cout << "        ";
-        cout << "k: " << setprecision(10) <<mats->oneGroupXS->keff;
-        cout << setprecision(6) <<scientific << endl;
-        cout << endl;
+        PetscPrintf(PETSC_COMM_WORLD,"        ");
+        PetscPrintf(PETSC_COMM_WORLD,"k: %11.10e \n\n",mats->oneGroupXS->keff);
 
         // Calculate difference in past and current eigenvalue
         kdiff = abs(mats->oneGroupXS->kold - mats->oneGroupXS->keff);
@@ -2218,7 +2214,7 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
         {
           // Jump back to MGLOQD level
           break;
-          
+
         } 
         else if (not mesh->verbose)
         { 
@@ -2252,11 +2248,9 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
       // Calculate and print MGLOQD residual 
       residualMGLOQD = MGQDToMPQD->calcResidual(xLastMGLOQDIter,xCurrentIter);
       residualMGLOQD = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGLOQDIter);
-      cout << endl;
-      cout << "    ";
-      cout << "MGLOQD Residual: " << residualMGLOQD[0];
-      cout << ", " << residualMGLOQD[1] << endl;
-      cout << endl;
+      PetscPrintf(PETSC_COMM_WORLD,"    ");
+      PetscPrintf(PETSC_COMM_WORLD,"MGLOQD Residual: %6.4e, %6.4e \n\n",residualMGLOQD[0],\
+          residualMGLOQD[1]);
 
       // Update iterate counters, store residuals
       itersMGLOQD++;
@@ -2295,9 +2289,8 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
     // Calculate and print MGHOT residual 
     residualMGHOT = MGQDToMPQD->calcResidual(xLastMGHOTIter,xCurrentIter);
     residualMGHOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGHOTIter);
-    cout << "MGHOT Residual: " << residualMGHOT[0];
-    cout << ", " << residualMGHOT[1] << endl;
-    cout << endl;
+    PetscPrintf(PETSC_COMM_WORLD,"MGHOT Residual: %6.4e, %6.4e \n\n",residualMGHOT[0],\
+        residualMGHOT[1]);
 
     // Update iterate counters, store residuals
     itersMGHOT++;
@@ -2335,14 +2328,14 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
   // Write vars
   mpqd->updateSteadyStateVarsAfterConvergence_p(); 
   mgqd->updateSteadyStateVarsAfterConvergence(); 
-  
+
   // Correct MGHOT iteration count. (process starts with MGLOQD solve)
   itersMGHOT = itersMGHOT - 1;
 
-  cout << "MGHOT iterations: " << itersMGHOT << endl;
-  cout << "MGLOQD iterations: " << itersMGLOQD << endl;
-  cout << "ELOT iterations: " << itersELOT << endl;
- 
+  PetscPrintf(PETSC_COMM_WORLD,"MGHOT iterations: %i\n", itersMGHOT);
+  PetscPrintf(PETSC_COMM_WORLD,"MGLOQD iterations: %i\n", itersMGLOQD);
+  PetscPrintf(PETSC_COMM_WORLD,"ELOT iterations: %i\n", itersELOT);
+
   // Output iteration counts 
   if (outputVars)
   {
@@ -2374,7 +2367,7 @@ void MultilevelCoupling::solvePsuedoTransientELOT_p()
   mpqd->buildPsuedoTransientLinearSystem_p();
 
   mpqd->solve_p();
-  
+
   //cout << "ELOT x_p" << endl;
   //VecView(mpqd->x_p,PETSC_VIEWER_STDOUT_WORLD);
 
