@@ -307,14 +307,14 @@ void Materials::readFlowVelocity(double time)
       }
     }
   }
-  cout << "Core flow velocity" << endl;
-  cout << flowVelocity << endl;
+  cout << "Max core flow velocity: " << endl;
+  cout << flowVelocity.maxCoeff() << endl;
+
+  cout << "Minimum core flow velocity: " << endl;
+  cout << flowVelocity.minCoeff() << endl;
 
   // Check whether velocities are all positive 
   posVelocity = -1E-10 < flowVelocity.minCoeff();
-
-  cout << flowVelocity << endl;
-  cout << posVelocity << endl;
 
   for (int iR = 0; iR < recircFlowVelocity.cols(); ++iR)
   {
@@ -329,8 +329,11 @@ void Materials::readFlowVelocity(double time)
       recircFlowVelocity(Eigen::all,iR) = tempVelocity;
     }
   }
-  cout << "Recirc flow velocity" << endl;
-  cout << recircFlowVelocity << endl;
+  cout << "Max recirculation loop flow velocity: " << endl;
+  cout << recircFlowVelocity.maxCoeff() << endl;
+
+  cout << "Minimum recirculation loop flow velocity: " << endl;
+  cout << recircFlowVelocity.minCoeff() << endl;
 };
 //==============================================================================
 
