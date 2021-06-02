@@ -1296,7 +1296,6 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
         lastResidualELOT = residualELOT; 
 
         // Calculate and print ELOT residual  
-
         residualELOT = MGQDToMPQD->calcResidual(xLastELOTIter,xCurrentIter);
         residualELOT = MGQDToMPQD->calcResidual(xCurrentIter,xLastELOTIter);
         PetscPrintf(PETSC_COMM_WORLD,"        ");
@@ -1324,13 +1323,17 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
 
         // Store k
         kHist.push_back(mats->oneGroupXS->keff);
-
+          
         // Calculate power
         power = omega.cwiseProduct(mats->oneGroupXS->sigF)\
                 .cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
 
-        // Scale flux to rated power
-        mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
+        if (ratedPower > 0) 
+          // Scale flux to rated power
+          mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
+        else
+          // Normalize flux
+          mpqd->ggqd->sFlux = (1.0/mpqd->ggqd->sFlux.sum())*mpqd->ggqd->sFlux;
 
         // Print eigenvalue 
         PetscPrintf(PETSC_COMM_WORLD,"        ");
@@ -1491,6 +1494,7 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
     mesh->output->write(outputDir,"flux_residuals",fluxResiduals);
     mesh->output->write(outputDir,"temp_residuals",tempResiduals);
     mesh->output->write(outputDir,"k_history",kHist);
+    mesh->output->write(mpqd->outputDir,"Power",power);
   }
 
 };
@@ -1779,7 +1783,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance_p(bool outputVars)
       residualMGLOQD = MGQDToMPQD->calcResidual(xCurrentIter,xLastMGLOQDIter);
       PetscPrintf(PETSC_COMM_WORLD,"    ");
       PetscPrintf(PETSC_COMM_WORLD,"MGLOQD Residual: %6.4e, %6.4e \n\n",residualMGLOQD[0],\
-        residualMGLOQD[1]);
+          residualMGLOQD[1]);
 
       // Update iterate counters, store residuals
       itersMGLOQD++;
@@ -2189,13 +2193,17 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
 
         // Store k
         kHist.push_back(mats->oneGroupXS->keff);
-
+          
         // Calculate power
         power = omega.cwiseProduct(mats->oneGroupXS->sigF)\
                 .cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
 
-        // Scale flux to rated power
-        mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
+        if (ratedPower > 0) 
+          // Scale flux to rated power
+          mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
+        else
+          // Normalize flux
+          mpqd->ggqd->sFlux = (1.0/mpqd->ggqd->sFlux.sum())*mpqd->ggqd->sFlux;
 
         // Print eigenvalue 
         PetscPrintf(PETSC_COMM_WORLD,"        ");
@@ -2350,6 +2358,7 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
     mesh->output->write(outputDir,"flux_residuals",fluxResiduals);
     mesh->output->write(outputDir,"temp_residuals",tempResiduals);
     mesh->output->write(outputDir,"k_history",kHist);
+    mesh->output->write(mpqd->outputDir,"Power",power);
   }
 
   return true;
@@ -2396,6 +2405,8 @@ void MultilevelCoupling::checkOptionalParameters()
   // Check for rated power 
   if ((*input)["parameters"]["ratedPower"])
     ratedPower=(*input)["parameters"]["ratedPower"].as<double>();
+  else
+    ratedPower=-1.0;
 
   // Check for k convergence criteria
   if ((*input)["parameters"]["epsK"])
