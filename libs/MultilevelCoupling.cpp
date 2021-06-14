@@ -1469,9 +1469,15 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
   // Write vars
   mpqd->updateSteadyStateVarsAfterConvergence_p(); 
   mgqd->updateSteadyStateVarsAfterConvergence(); 
-  mpqd->writeVars(); 
-  mgqd->writeVars(); 
-  mats->oneGroupXS->writeVars();
+  
+  if (mesh->verbose_keff_only)
+    mesh->output->write(mpqd->outputDir,"keff",mats->oneGroupXS->keff);
+  else
+  {
+    mpqd->writeVars(); 
+    mgqd->writeVars(); 
+    mats->oneGroupXS->writeVars();
+  }
 
   // Correct MGHOT iteration count. (process starts with MGLOQD solve)
   itersMGHOT = itersMGHOT - 1;
@@ -1584,10 +1590,19 @@ void MultilevelCoupling::solveTransient_p()
       mpqd->updateVarsAfterConvergence_p(); 
       if (mesh->outputOnStep[iTime])
       {
-        mgqd->writeVars();
-        mpqd->writeVars(); 
-        mats->oneGroupXS->writeVars();
+
+        if (mesh->verbose_keff_only)
+        {
+          mesh->output->write(mpqd->outputDir,"keff",mats->oneGroupXS->keff);
+        }
+        else
+        {
+          mgqd->writeVars();
+          mpqd->writeVars(); 
+          mats->oneGroupXS->writeVars();
+        }
         mesh->output->write(outputDir,"Solve_Time",duration);
+
       }
       mesh->advanceOneTimeStep();
     }  
@@ -1983,12 +1998,22 @@ void MultilevelCoupling::solvePseudoTransient_p()
       // Output and update variables
       if (mesh->outputOnStep[iTime])
       {
-        mgqd->writeVars();
-        mpqd->writeVars(); 
-        mats->oneGroupXS->writeVars();
+
+        if (mesh->verbose_keff_only)
+        {
+          mesh->output->write(mpqd->outputDir,"keff",mats->oneGroupXS->keff);
+        }
+        else
+        {
+          mgqd->writeVars();
+          mpqd->writeVars(); 
+          mats->oneGroupXS->writeVars();
+        }
         mesh->output->write(outputDir,"Solve_Time",duration);
+
       }
       mesh->advanceOneTimeStep();
+
     }  
     else 
     {
