@@ -1590,19 +1590,10 @@ void MultilevelCoupling::solveTransient_p()
       mpqd->updateVarsAfterConvergence_p(); 
       if (mesh->outputOnStep[iTime])
       {
-
-        if (mesh->verbose_keff_only)
-        {
-          mesh->output->write(mpqd->outputDir,"keff",mats->oneGroupXS->keff);
-        }
-        else
-        {
-          mgqd->writeVars();
-          mpqd->writeVars(); 
-          mats->oneGroupXS->writeVars();
-        }
+        mgqd->writeVars();
+        mpqd->writeVars(); 
+        mats->oneGroupXS->writeVars();
         mesh->output->write(outputDir,"Solve_Time",duration);
-
       }
       mesh->advanceOneTimeStep();
     }  
@@ -2218,7 +2209,7 @@ bool MultilevelCoupling::solvePseudoTransientResidualBalance_p(bool outputVars)
 
         // Store k
         kHist.push_back(mats->oneGroupXS->keff);
-          
+
         // Calculate power
         power = omega.cwiseProduct(mats->oneGroupXS->sigF)\
                 .cwiseProduct(mpqd->ggqd->sFlux).cwiseProduct(volume).sum();
