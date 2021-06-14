@@ -111,8 +111,8 @@ class SingleGroupDNP
         bool fluxSource = true);
 
     // Pseudo-transient 
-    void buildPsuedoTransientCoreLinearSystem_p();
-    int buildPsuedoTransientLinearSystem_p(\
+    void buildPseudoTransientCoreLinearSystem_p();
+    int buildPseudoTransientLinearSystem_p(\
         Mat * A_p,\
         Vec * b_p,\
         Eigen::MatrixXd myDNPConc,\

@@ -474,17 +474,17 @@ int MultiGroupDNP::buildRecircLinearSystem_p()
 };
 //==============================================================================
 
-/* PSUEDO TRANSIENT */
+/* PSEUDO TRANSIENT */
 
 //==============================================================================
 /// Build linear system for steady state DNPs in multiphysics coupled 
 /// quasidiffusion system
 ///
-void MultiGroupDNP::buildPsuedoTransientCoreLinearSystem_p()
+void MultiGroupDNP::buildPseudoTransientCoreLinearSystem_p()
 {
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
-    DNPs[iGroup]->buildPsuedoTransientCoreLinearSystem_p();
+    DNPs[iGroup]->buildPseudoTransientCoreLinearSystem_p();
   }
 };
 //==============================================================================

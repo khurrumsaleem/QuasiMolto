@@ -61,8 +61,8 @@ class MultiGroupDNP
     void buildCoreLinearSystem_p();
     int buildRecircLinearSystem_p();
 
-    // Psuedo transient
-    void buildPsuedoTransientCoreLinearSystem_p();
+    // Pseudo transient
+    void buildPseudoTransientCoreLinearSystem_p();
 
   private:
     Materials * mats;

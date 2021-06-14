@@ -1391,7 +1391,7 @@ int SingleGroupDNP::buildLinearSystem_p(
 //==============================================================================
 /// Build linear system governing transient core DNP concentrations
 ///
-void SingleGroupDNP::buildPsuedoTransientCoreLinearSystem_p()
+void SingleGroupDNP::buildPseudoTransientCoreLinearSystem_p()
 {
 
   Eigen::MatrixXd coreDirac,coreFlux;
@@ -1409,7 +1409,7 @@ void SingleGroupDNP::buildPsuedoTransientCoreLinearSystem_p()
       inletVelocity,\
       mesh->dzsCorner);
 
-  buildPsuedoTransientLinearSystem_p(&(mgdnp->mpqd->A_p),\
+  buildPseudoTransientLinearSystem_p(&(mgdnp->mpqd->A_p),\
       &(mgdnp->mpqd->b_p),\
       dnpConc,\
       coreFlux,\
@@ -1430,7 +1430,7 @@ void SingleGroupDNP::buildPsuedoTransientCoreLinearSystem_p()
 /// @param [in] dzs axial heights on advecting mesh
 /// @param [in] myIndexOffset row to start building linear system on 
 /// @param [in] fluxSource indicator for whether a flux source is present 
-int SingleGroupDNP::buildPsuedoTransientLinearSystem_p(
+int SingleGroupDNP::buildPseudoTransientLinearSystem_p(
     Mat * A_p,\
     Vec * b_p,\
     Eigen::MatrixXd myDNPConc,\

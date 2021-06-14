@@ -65,11 +65,11 @@ class MultilevelCoupling
     void solveMGLOQD_p();
     void solveELOT_p();
 
-    // Psuedo transient
-    void solveSteadyStatePsuedoTransient_p(bool outputVars);
-    void solvePsuedoTransient_p();
-    bool solvePsuedoTransientResidualBalance_p(bool outputVars);
-    void solvePsuedoTransientELOT_p();
+    // Pseudo transient
+    void solveSteadyStatePseudoTransient_p(bool outputVars);
+    void solvePseudoTransient_p();
+    bool solvePseudoTransientResidualBalance_p(bool outputVars);
+    void solvePseudoTransientELOT_p();
 
 
   private:

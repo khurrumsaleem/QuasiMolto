@@ -1927,10 +1927,10 @@ void MultilevelCoupling::solveELOT_p()
 };
 //==============================================================================
 
-// PSUEDO TRANSIENT
+// PSEUDO TRANSIENT
 
 //==============================================================================
-void MultilevelCoupling::solveSteadyStatePsuedoTransient_p(bool outputVars)
+void MultilevelCoupling::solveSteadyStatePseudoTransient_p(bool outputVars)
 {
   mesh->state=0;
   MatSetOption(mpqd->A_p, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
@@ -1938,14 +1938,14 @@ void MultilevelCoupling::solveSteadyStatePsuedoTransient_p(bool outputVars)
   mesh->advanceOneTimeStep();
   MatDestroy(&(mpqd->A_p));
   initPETScMat(&(mpqd->A_p),mpqd->nUnknowns,40);
-  solvePsuedoTransient_p();
+  solvePseudoTransient_p();
 }
 //==============================================================================
 
 //==============================================================================
-/// Solve multiple step psuedo transient
+/// Solve multiple step pseudo transient
 ///
-void MultilevelCoupling::solvePsuedoTransient_p()
+void MultilevelCoupling::solvePseudoTransient_p()
 {
 
   // Timing variables
@@ -1970,7 +1970,7 @@ void MultilevelCoupling::solvePsuedoTransient_p()
 
     //startTime = clock(); 
     auto begin = chrono::high_resolution_clock::now();
-    if(solvePsuedoTransientResidualBalance_p(mesh->outputOnStep[iTime]))
+    if(solvePseudoTransientResidualBalance_p(mesh->outputOnStep[iTime]))
     {
       // Report solution time
       auto end = chrono::high_resolution_clock::now();
@@ -2023,9 +2023,9 @@ void MultilevelCoupling::solvePsuedoTransient_p()
 //==============================================================================
 
 //==============================================================================
-/// Perform psuedo transient solve for a single step
+/// Perform pseudo transient solve for a single step
 ///
-bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
+bool MultilevelCoupling::solvePseudoTransientResidualBalance_p(bool outputVars)
 {
 
   Eigen::VectorXd xCurrentIter, xLastMGHOTIter, xLastMGLOQDIter,xLastELOTIter,\
@@ -2149,7 +2149,7 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
         PetscPrintf(PETSC_COMM_WORLD,"        ");
         PetscPrintf(PETSC_COMM_WORLD,"ELOT solve...\n");
         auto begin = chrono::high_resolution_clock::now();
-        solvePsuedoTransientELOT_p();
+        solvePseudoTransientELOT_p();
         auto end = chrono::high_resolution_clock::now();
         auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
         duration = elapsed.count()*1e-9;
@@ -2369,11 +2369,11 @@ bool MultilevelCoupling::solvePsuedoTransientResidualBalance_p(bool outputVars)
 //==============================================================================
 /// Perform a solve at the ELOT level 
 ///
-void MultilevelCoupling::solvePsuedoTransientELOT_p()
+void MultilevelCoupling::solvePseudoTransientELOT_p()
 {
 
   // Build ELOT system
-  mpqd->buildPsuedoTransientLinearSystem_p();
+  mpqd->buildPseudoTransientLinearSystem_p();
 
   mpqd->solve_p();
 

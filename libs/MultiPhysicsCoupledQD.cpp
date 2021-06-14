@@ -818,12 +818,12 @@ int MultiPhysicsCoupledQD::buildLinearSystem_p()
 };
 //==============================================================================
 
-// Build psuedo-transient system
+// Build pseudo-transient system
 
 //==============================================================================
 /// Build linear system for multiphysics coupled quasidiffusion system
 ///
-int MultiPhysicsCoupledQD::buildPsuedoTransientLinearSystem_p()
+int MultiPhysicsCoupledQD::buildPseudoTransientLinearSystem_p()
 {
 
   PetscErrorCode ierr;
@@ -839,7 +839,7 @@ int MultiPhysicsCoupledQD::buildPsuedoTransientLinearSystem_p()
   heat->buildLinearSystem_p();
 
   // Build delayed neutron precursor balance system in core
-  mgdnp->buildPsuedoTransientCoreLinearSystem_p();  
+  mgdnp->buildPseudoTransientCoreLinearSystem_p();  
 
   // Build delayed neutron precursor balance system in recirculation loop
   mgdnp->buildRecircLinearSystem_p();  

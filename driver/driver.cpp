@@ -58,7 +58,7 @@ int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
 void testTransientMultilevelPETScCoupling(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
-void testSteadyStateThenPsuedoTransient(Materials * myMaterials,\
+void testSteadyStateThenPseudoTransient(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
 
@@ -158,8 +158,8 @@ int main(int argc, char** argv) {
       testSteadyStateMultilevelPETScCoupling(myMaterials,myMesh,input);
     else if (solveType == "testTransientMultilevelPETScCoupling")
       testTransientMultilevelPETScCoupling(myMaterials,myMesh,input);
-    else if (solveType == "steady_state_then_psuedo_transient")
-      testSteadyStateThenPsuedoTransient(myMaterials,myMesh,input);
+    else if (solveType == "steady_state_then_pseudo_transient")
+      testSteadyStateThenPseudoTransient(myMaterials,myMesh,input);
     else
       myMGT->solveTransportOnly();
   }
@@ -881,7 +881,7 @@ void testTransientMultilevelPETScCoupling(Materials * myMaterials,\
 
 }
 
-void testSteadyStateThenPsuedoTransient(Materials * myMaterials,\
+void testSteadyStateThenPseudoTransient(Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * input){
 
@@ -904,7 +904,7 @@ void testSteadyStateThenPsuedoTransient(Materials * myMaterials,\
 
   cout << "Starting solves..." << endl;
 
-  myMLCoupling->solveSteadyStatePsuedoTransient_p(true);
+  myMLCoupling->solveSteadyStatePseudoTransient_p(true);
 
   cout << "Completed multilevel solve" << endl;
 
