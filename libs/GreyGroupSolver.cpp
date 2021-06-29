@@ -5110,14 +5110,16 @@ int GreyGroupSolver::assertPseudoTransientZerothMoment_p(int iR,int iZ,int iEq)
 
   // Scattering source term (implicit)
   scatterCoeff = materials->oneGroupXS->sigS(iZ,iR);
-  Atemp.insert(iEq,indices[iCF]) = -geoParams[iCF] * scatterCoeff;
+  value = -geoParams[iCF] * scatterCoeff; 
+  index = indices[iCF];
+  ierr = MatSetValue(MPQD->A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
 
   // Fission source term (explicit for power iteration)
   fissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
   keff = materials->oneGroupXS->keff;
   cellFlux = GGQD->sFlux(iZ,iR);
-  (*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
-              ( fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
+  value = geoParams[iCF]*(fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
+  ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   // DNP source term
   GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF], &Atemp);
@@ -5210,9 +5212,6 @@ void GreyGroupSolver::formPseudoTransientLinearSystem_p()
 };
 
 //==============================================================================
-
-
-
 
 //==============================================================================
 /// Assign pointers to linear system components 
