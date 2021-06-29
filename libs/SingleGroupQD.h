@@ -97,6 +97,7 @@ class SingleGroupQD
     void formContributionToBackCalcSystem_p();
     void formSteadyStateContributionToLinearSystem_p();
     void formSteadyStateContributionToBackCalcSystem_p();
+    void formPseudoTransientContributionToLinearSystem_p();
 
   private:
     MultiGroupQD * MGQD;

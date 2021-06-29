@@ -38,6 +38,7 @@ class MultilevelCoupling
     bool initialSolve();
     void solveMGHOT();
     void solveSteadyStateMGHOT();
+    void solvePseudoTransientMGHOT();
     void solveMGLOQD();
     void solveSteadyStateMGLOQD();
     void solveELOT(Eigen::VectorXd xGuess);
@@ -69,6 +70,7 @@ class MultilevelCoupling
     void solveSteadyStatePseudoTransient_p(bool outputVars);
     void solvePseudoTransient_p();
     bool solvePseudoTransientResidualBalance_p(bool outputVars);
+    void solvePseudoTransientMGLOQD_p();
     void solvePseudoTransientELOT_p();
 
 

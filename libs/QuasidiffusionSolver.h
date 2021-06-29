@@ -389,6 +389,12 @@ class QDSolver
 
     int steadyStateGreyGroupSources_p(int iR,int iZ,int iEq,int toEnergyGroup,\
         vector<double> geoParams);
+    
+    /*=================== PSEUDO-TRANSIENT FUNCTIONS ====================*/
+    
+    void formPseudoTransientLinearSystem_p(SingleGroupQD * SGQD);
+    int assertPseudoTransientZerothMoment_p(int iR,int iZ,int iEq,\
+        int energyGroup,SingleGroupQD * SGQD);
 
   private:
     // private variables

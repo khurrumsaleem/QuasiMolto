@@ -833,7 +833,7 @@ int MultiPhysicsCoupledQD::buildPseudoTransientLinearSystem_p()
   VecZeroEntries(b_p);
 
   // Build QD system
-  ggqd->buildSteadyStateLinearSystem_p();
+  ggqd->buildPseudoTransientLinearSystem_p();
 
   // Build heat transfer system
   heat->buildLinearSystem_p();

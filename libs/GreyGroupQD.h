@@ -106,6 +106,9 @@ class GreyGroupQD
     // Transient
     void buildLinearSystem_p();
 
+    // Pseudo transient
+    void buildPseudoTransientLinearSystem_p();
+
   private:
     Materials * materials;
     Mesh * mesh; 

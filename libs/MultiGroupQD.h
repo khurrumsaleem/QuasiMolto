@@ -52,6 +52,7 @@ class MultiGroupQD
     void backCalculateCurrent_p();
     int buildLinearSystem_p();
     int buildBackCalcSystem_p();
+    int buildPseudoTransientLinearSystem_p();
 
   private:
     YAML::Node * input;

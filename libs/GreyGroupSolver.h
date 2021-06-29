@@ -274,6 +274,10 @@ class GreyGroupSolver
     int assertSGoldinP1BC_p(int iR,int iZ,int iEq);
     int assertEGoldinP1BC_p(int iR,int iZ,int iEq);
 
+    /* PSEUDO TRANSIENT FUNCTIONS */
+    int assertPseudoTransientZerothMoment_p(int iR,int iZ,int iEq);
+    void formPseudoTransientLinearSystem_p();
+
   private:
     // private variables
     GreyGroupQD * GGQD;

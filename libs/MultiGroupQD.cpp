@@ -488,6 +488,37 @@ void MultiGroupQD::backCalculateCurrent_p()
 }
 //==============================================================================
 
+/* Pseudo-transient functions */
+
+//==============================================================================
+/// Loops over energy groups and builds the linear system to solve the 
+/// multigroup quasidiffusion equations
+int MultiGroupQD::buildPseudoTransientLinearSystem_p()
+{
+  
+  PetscErrorCode ierr;
+  
+  /* Reset linear system */  
+  MatZeroEntries(QDSolve->A_p);
+  VecZeroEntries(QDSolve->b_p);
+
+  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
+  {
+    SGQDs[iGroup]->formPseudoTransientContributionToLinearSystem_p();
+  }
+
+  /* Finalize assembly for A_p and b_p */
+  ierr = MatAssemblyBegin(QDSolve->A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(QDSolve->A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
+  ierr = VecAssemblyBegin(QDSolve->b_p);CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(QDSolve->b_p);CHKERRQ(ierr);
+
+  return ierr;
+
+}
+//==============================================================================
+
+
 //==============================================================================
 /// Assigning pointer to object containing grey group sources 
 void MultiGroupQD::assignMultiPhysicsCoupledQDPointer\

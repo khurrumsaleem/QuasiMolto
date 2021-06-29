@@ -167,6 +167,14 @@ void SingleGroupQD::formSteadyStateContributionToBackCalcSystem_p()
 //==============================================================================
 
 //==============================================================================
+/// Build the portion of low order QD linear system belonging to this object
+void SingleGroupQD::formPseudoTransientContributionToLinearSystem_p()
+{
+  MGQD->QDSolve->formPseudoTransientLinearSystem_p(this);
+}
+//==============================================================================
+
+//==============================================================================
 /// Get the flux for this object
 void SingleGroupQD::getFlux()
 {

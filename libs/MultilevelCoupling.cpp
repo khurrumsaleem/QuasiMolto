@@ -977,6 +977,26 @@ void MultilevelCoupling::solveSteadyStateMGHOT()
 };
 //==============================================================================
 
+//==============================================================================
+/// Perform a pseudo transient solve at the MGHOT level 
+///
+void MultilevelCoupling::solvePseudoTransientMGHOT()
+{
+
+  // Calculate transport sources
+  mgt->calcSources("steady_state");
+
+  // Calculate transport alphas
+  mgt->calcAlphas("noPrint");
+
+  // Solve starting angle transport problem
+  mgt->solveStartAngles();
+
+  // Solve all angle transport problem
+  mgt->solveSCBs();
+
+};
+//==============================================================================
 
 //==============================================================================
 /// Perform a solve at the MGLOQD level 
@@ -1939,7 +1959,9 @@ void MultilevelCoupling::solveELOT_p()
 void MultilevelCoupling::solveSteadyStatePseudoTransient_p(bool outputVars)
 {
   mesh->state=0;
+  cout << "Mat set option...";
   MatSetOption(mpqd->A_p, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+  cout << " done." << endl;
   solveSteadyStateResidualBalance_p(outputVars);
   mesh->advanceOneTimeStep();
   MatDestroy(&(mpqd->A_p));
@@ -2095,7 +2117,7 @@ bool MultilevelCoupling::solvePseudoTransientResidualBalance_p(bool outputVars)
       // Solve MGHOT problem
       PetscPrintf(PETSC_COMM_WORLD,"MGHOT solve...");
       auto begin = chrono::high_resolution_clock::now();
-      solveSteadyStateMGHOT();
+      solvePseudoTransientMGHOT();
       auto end = chrono::high_resolution_clock::now();
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
@@ -2129,7 +2151,7 @@ bool MultilevelCoupling::solvePseudoTransientResidualBalance_p(bool outputVars)
       PetscPrintf(PETSC_COMM_WORLD,"    ");
       PetscPrintf(PETSC_COMM_WORLD,"MGLOQD solve...\n");
       auto begin = chrono::high_resolution_clock::now();
-      solveSteadyStateMGLOQD_p();
+      solvePseudoTransientMGLOQD_p();
       auto end = chrono::high_resolution_clock::now();
       auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
       duration = elapsed.count()*1e-9;
@@ -2378,6 +2400,32 @@ bool MultilevelCoupling::solvePseudoTransientResidualBalance_p(bool outputVars)
   }
 
   return true;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Perform a solve at the MGLOQD level 
+///
+void MultilevelCoupling::solvePseudoTransientMGLOQD_p()
+{
+
+  PetscErrorCode ierr;
+
+  // Build flux system
+  mgqd->buildPseudoTransientLinearSystem_p();
+
+  // Solve flux system
+  mgqd->solveLinearSystem_p();
+
+  // Build neutron current system
+  mgqd->buildBackCalcSystem_p();
+
+  //cout << "MGLOQD b_p" << endl;
+  //VecView(mgqd->QDSolve->b_p,PETSC_VIEWER_STDOUT_WORLD);
+
+  // Solve neutron current system
+  mgqd->backCalculateCurrent_p();
 
 };
 //==============================================================================

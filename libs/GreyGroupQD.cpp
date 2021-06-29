@@ -167,6 +167,21 @@ void GreyGroupQD::buildLinearSystem_p()
 };
 //==============================================================================
 
+// Pseudo transient
+
+//==============================================================================
+/// Build linear system for pseudo transient QD equations
+///
+void GreyGroupQD::buildPseudoTransientLinearSystem_p()
+{
+
+  // Assuming this is the first set of equations
+  GGSolver->formPseudoTransientLinearSystem_p(); 
+
+};
+//==============================================================================
+
+
 /* Auxiliary functions */
 
 //==============================================================================

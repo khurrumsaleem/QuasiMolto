@@ -2801,7 +2801,6 @@ int GreyGroupSolver::assertSteadyStateZerothMoment_p(int iR,int iZ,int iEq)
   value = -geoParams[iCF] * scatterCoeff; 
   index = indices[iCF];
   ierr = MatSetValue(MPQD->A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
-  //Atemp.insert(iEq,indices[iCF]) = -geoParams[iCF] * scatterCoeff;
 
   // Fission source term (explicit for power iteration)
   fissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
@@ -2809,14 +2808,11 @@ int GreyGroupSolver::assertSteadyStateZerothMoment_p(int iR,int iZ,int iEq)
   cellFlux = GGQD->sFlux(iZ,iR);
   value = geoParams[iCF]*(fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-  //(*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
-  ( fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
 
   // DNP source term
   GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF], &Atemp);
 
   // populate entries representing streaming and reaction terms
-  //Atemp.coeffRef(iEq,indices[iCF]) += geoParams[iCF] * (sigT);
   value = geoParams[iCF] * sigT;
   index = indices[iCF];
   ierr = MatSetValue(MPQD->A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
@@ -5090,6 +5086,132 @@ int GreyGroupSolver::calcEastCurrent_p(int iR,int iZ,int iEq)
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Assert the pseudo transient zeroth moment equation for cell (iR,iZ)
+///
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+int GreyGroupSolver::assertPseudoTransientZerothMoment_p(int iR,int iZ,int iEq)
+{
+  vector<int> indices;
+  vector<double> geoParams = mesh->getGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->oneGroupXS->neutV(iZ,iR);
+  double vPast = materials->oneGroupXS->neutVPast(iZ,iR);
+  double sigT = materials->oneGroupXS->sigT(iZ,iR);
+  double scatterCoeff, fissionCoeff, keff, cellFlux;
+  PetscErrorCode ierr;
+  PetscScalar value,past_flux;
+  PetscInt index;
+
+  indices = getIndices(iR,iZ);
+
+  // Scattering source term (implicit)
+  scatterCoeff = materials->oneGroupXS->sigS(iZ,iR);
+  Atemp.insert(iEq,indices[iCF]) = -geoParams[iCF] * scatterCoeff;
+
+  // Fission source term (explicit for power iteration)
+  fissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
+  keff = materials->oneGroupXS->keff;
+  cellFlux = GGQD->sFlux(iZ,iR);
+  (*b)(iEq) = (*b)(iEq) + geoParams[iCF]*\
+              ( fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
+
+  // DNP source term
+  GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF], &Atemp);
+
+  // populate entries representing streaming and reaction terms
+  value = geoParams[iCF] * ((1/(v*deltaT)) + sigT);
+  index = indices[iCF];
+  ierr = MatSetValue(MPQD->A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+
+  westCurrent_p(-geoParams[iWF],iR,iZ,iEq);
+
+  eastCurrent_p(geoParams[iEF],iR,iZ,iEq);
+
+  northCurrent_p(-geoParams[iNF],iR,iZ,iEq);
+
+  southCurrent_p(geoParams[iSF],iR,iZ,iEq);
+
+  // formulate RHS entry
+  VecGetValues(MPQD->xPast_p_seq,1,&index,&past_flux);CHKERRQ(ierr);
+  value = geoParams[iCF]*((past_flux/(vPast*deltaT)) + GGQD->q(iZ,iR));
+  ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+
+  return ierr;
+
+};
+//==============================================================================
+
+//==============================================================================
+/// Form a portion of the linear system  
+
+void GreyGroupSolver::formPseudoTransientLinearSystem_p()	      
+{
+
+  int iEq = GGQD->indexOffset;
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+
+      // apply zeroth moment equation
+      assertPseudoTransientZerothMoment_p(iR,iZ,iEq);
+      iEq = iEq + 1;
+
+      // south face
+      if (iZ == mesh->dzsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSBC_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on south face
+        applyAxialBoundary_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      }
+
+      // east face
+      if (iR == mesh->drsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertEBC_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on north face
+        applyRadialBoundary_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      }
+
+      // north face
+      if (iZ == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertNBC_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertWBC_p(iR,iZ,iEq);
+        iEq = iEq + 1;
+      } 
+
+    }
+  }
+};
+
+//==============================================================================
+
+
 
 
 //==============================================================================

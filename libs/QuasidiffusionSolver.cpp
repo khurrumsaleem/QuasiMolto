@@ -5115,6 +5115,138 @@ int QDSolver::calcEastCurrent_p(int iR,int iZ,int iEq,\
 };
 //==============================================================================
 
+/* PSEUDO-TRANSIENT FUNCTIONS */
+
+//==============================================================================
+/// Form a portion of the linear system that belongs to SGQD 
+/// @param [in] SGQD quasidiffusion energy group to build portion of linear 
+///   for
+void QDSolver::formPseudoTransientLinearSystem_p(SingleGroupQD * SGQD)	      
+{
+  int iEq = SGQD->energyGroup*nGroupUnknowns;
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+  {
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
+    {
+
+      // apply zeroth moment equation
+      assertPseudoTransientZerothMoment_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+      iEq = iEq + 1;
+
+      // south face
+      if (iZ == mesh->dzsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertSBC_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on south face
+        applyAxialBoundary_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      }
+
+      // east face
+      if (iR == mesh->drsCorner.size()-1)
+      {
+        // if on the boundary, assert boundary conditions
+        assertEBC_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } else
+      {
+        // otherwise assert first moment balance on north face
+        applyRadialBoundary_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      }
+
+      // north face
+      if (iZ == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertNBC_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
+      // west face
+      if (iR == 0)
+      {
+        // if on the boundary, assert boundary conditions
+        assertWBC_p(iR,iZ,iEq,SGQD->energyGroup,SGQD);
+        iEq = iEq + 1;
+      } 
+
+    }
+  }
+};
+
+//==============================================================================
+
+//==============================================================================
+/// Assert the zeroth moment equation for cell (iR,iZ)
+/// @param [in] iR radial index of cell
+/// @param [in] iZ axial index of cell
+/// @param [in] iEq row to place equation in
+/// @param [in] energyGroup energy group to assert equation for
+/// @param [in] SGQD of this energyGroup
+// ToDo: eliminate energyGroup input, as it can just be defined from the SGQD
+// object. Same with a lot of functions in this class
+int QDSolver::assertPseudoTransientZerothMoment_p(int iR,int iZ,int iEq,
+    int energyGroup,SingleGroupQD * SGQD)
+{
+  vector<int> indices;
+  vector<double> geoParams = calcGeoParams(iR,iZ);
+  double deltaT = mesh->dt;
+  double v = materials->neutVel(iZ,iR,energyGroup);
+  double sigT = materials->sigT(iZ,iR,energyGroup);
+  double groupSourceCoeff;
+  PetscErrorCode ierr;
+  PetscScalar value,past_flux;
+  PetscInt index;
+
+  // populate entries representing sources from scattering and fission in 
+  // this and other energy groups
+  if (useMPQDSources)
+    steadyStateGreyGroupSources_p(iR,iZ,iEq,energyGroup,geoParams);
+  else
+  {
+    for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup)
+    {
+      index = getIndices(iR,iZ,iGroup)[iCF];
+      groupSourceCoeff = calcScatterAndFissionCoeff(iR,iZ,energyGroup,iGroup);
+      value = -geoParams[iCF] * groupSourceCoeff;
+      ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+    }
+  }
+
+  // populate entries representing streaming and reaction terms
+  indices = getIndices(iR,iZ,energyGroup);
+
+  value = geoParams[iCF] * ((1/(v*deltaT)) + sigT);
+  index = indices[iCF];
+  ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+
+  westCurrent_p(-geoParams[iWF],iR,iZ,iEq,energyGroup,SGQD);
+
+  eastCurrent_p(geoParams[iEF],iR,iZ,iEq,energyGroup,SGQD);
+
+  northCurrent_p(-geoParams[iNF],iR,iZ,iEq,energyGroup,SGQD);
+
+  southCurrent_p(geoParams[iSF],iR,iZ,iEq,energyGroup,SGQD);
+
+  // formulate RHS entry
+  VecGetValues(xPast_p_seq,1,&index,&past_flux);CHKERRQ(ierr);
+  value = geoParams[iCF]*( (past_flux/(v*deltaT)) + SGQD->q(iZ,iR));
+  ierr = VecSetValue(b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+
+
+  return ierr;
+
+};
+//==============================================================================
+
+
 /* ========================*/
 /* MISCELLANEOUS FUNCTIONS */
 /* ========================*/
