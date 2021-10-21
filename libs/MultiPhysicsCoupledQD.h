@@ -79,6 +79,7 @@ class MultiPhysicsCoupledQD
 
     // Pseudo transient
     int buildPseudoTransientLinearSystem_p();
+    void updatePseudoTransientVars_p();
 
     // Pointers
     HeatTransfer * heat;

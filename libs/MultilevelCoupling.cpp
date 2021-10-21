@@ -1333,7 +1333,7 @@ void MultilevelCoupling::solveSteadyStateResidualBalance_p(bool outputVars)
           mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
         else
           // Normalize flux
-          mpqd->ggqd->sFlux = (1.0/mpqd->ggqd->sFlux.sum())*mpqd->ggqd->sFlux;
+          mpqd->ggqd->sFlux = (fluxNormalization/mpqd->ggqd->sFlux.sum())*mpqd->ggqd->sFlux;
 
         // Print eigenvalue 
         PetscPrintf(PETSC_COMM_WORLD,"        ");
@@ -2197,7 +2197,7 @@ bool MultilevelCoupling::solvePseudoTransientResidualBalance_p(bool outputVars)
         oldFlux = mpqd->ggqd->sFlux;
 
         // Update variables and get new flux
-        mpqd->updateSteadyStateVarsAfterConvergence_p(); 
+        mpqd->updatePseudoTransientVars_p(); 
         newFlux = mpqd->ggqd->sFlux;
 
         // Store previous eigenvalue
@@ -2219,7 +2219,7 @@ bool MultilevelCoupling::solvePseudoTransientResidualBalance_p(bool outputVars)
           mpqd->ggqd->sFlux = (ratedPower/power)*mpqd->ggqd->sFlux;
         else
           // Normalize flux
-          mpqd->ggqd->sFlux = (1.0/mpqd->ggqd->sFlux.sum())*mpqd->ggqd->sFlux;
+          mpqd->ggqd->sFlux = (fluxNormalization/mpqd->ggqd->sFlux.sum())*mpqd->ggqd->sFlux;
 
         // Print eigenvalue 
         PetscPrintf(PETSC_COMM_WORLD,"        ");
@@ -2242,7 +2242,7 @@ bool MultilevelCoupling::solvePseudoTransientResidualBalance_p(bool outputVars)
         } 
         else if (not mesh->verbose)
         { 
-          mesh->output->deleteLines(12);
+          mesh->output->deleteLines(7);
         }
 
 
@@ -2423,6 +2423,12 @@ void MultilevelCoupling::checkOptionalParameters()
     ratedPower=(*input)["parameters"]["ratedPower"].as<double>();
   else
     ratedPower=-1.0;
+  
+  // Check for flux normalization factor
+  if ((*input)["parameters"]["fluxNormalization"])
+    fluxNormalization=(*input)["parameters"]["fluxNormalization"].as<double>();
+  else
+    fluxNormalization=1.0;
 
   // Check for k convergence criteria
   if ((*input)["parameters"]["epsK"])

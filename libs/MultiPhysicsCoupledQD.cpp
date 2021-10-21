@@ -704,7 +704,7 @@ int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
 //==============================================================================
 
 //==============================================================================
-/// Run transient with multiple solves 
+/// Update 2D variables after a converged steady state solve
 ///
 void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
 {
@@ -744,6 +744,28 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
 
 };
 //==============================================================================
+
+//==============================================================================
+/// Update 2D vars after a converged pseudo transient solve
+///
+void MultiPhysicsCoupledQD::updatePseudoTransientVars_p()
+{
+
+  // Object for broadcasting PETSc variable 
+  VecScatter     ctx;
+
+  // Read solutions from 1D vector to 2D matrices 
+  ggqd->GGSolver->getFlux();
+
+  // Back calculate currents
+  // ToDo Add PETSc support for back calc system
+  ggqd->GGSolver->formSteadyStateBackCalcSystem_p();
+  ggqd->GGSolver->backCalculateCurrent_p();
+  ggqd->GGSolver->getCurrent();
+
+};
+//==============================================================================
+
 
 //==============================================================================
 /// Converge a steady state ELOT solve 

@@ -29,7 +29,7 @@ class MultilevelCoupling
         MultiGroupQD * myMGQD,\
         MultiPhysicsCoupledQD * myMPQD);
     double resetThreshold = 1E100, relaxTolELOT = 3E-4, relaxTolMGLOQD = 3E-4,\
-           ratedPower = 8e6, epsK = 1E-8;
+           ratedPower = 8e6, fluxNormalization = 1, epsK = 1E-8;
     bool p1Approx = false, iterativeMGLOQD = false, iterativeELOT = false;
     bool solveOneStep();
     bool solveOneStepResidualBalance(bool outputVars);
