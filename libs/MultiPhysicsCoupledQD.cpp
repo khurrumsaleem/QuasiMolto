@@ -135,8 +135,7 @@ int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
 /// @param [in] iR radial location
 /// @param [in] iEq equation index
 /// @param [in] coeff coefficient of dnp source
-int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff,\
-    Eigen::SparseMatrix<double,Eigen::RowMajor> * myA)
+int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
 {
   int index,indexOffset;
   double groupLambda;
@@ -149,13 +148,8 @@ int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff,\
     index = mgdnp->DNPs[iGroup]->getIndex(iZ,iR,indexOffset);
     groupLambda = mgdnp->DNPs[iGroup]->lambda;
 
-    if (mesh->petsc)
-    {
-      value = coeff*groupLambda;
-      ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
-    }
-    else
-      myA->coeffRef(iEq,index) += coeff*groupLambda;
+    value = coeff*groupLambda;
+    ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
   }
 
   return ierr;
@@ -623,7 +617,7 @@ int MultiPhysicsCoupledQD::solve_p()
   auto begin = chrono::high_resolution_clock::now();
   /* Get matrix dimensions */
   ierr = MatGetSize(A_p, &m, &n); CHKERRQ(ierr);
-  
+
   // Set solve tolerances
   absTol= 1e-50;
   relTol = 1.e-9/((m+1)*(n+1));
