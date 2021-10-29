@@ -63,6 +63,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 
   // Assign pointers in ggqd object
   ggqd->GGSolver->assignMPQDPointer(this);
+  ggqd->GGSolverBase->assignLinearSystemPointers(&A_p,&x_p,&xPast_p,&xPast_p_seq,&b_p);
   ggqd->GGSolver->assignPointers(&A,&x,&xPast,&b);
 
   // Initialize xPast 
@@ -135,7 +136,7 @@ int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
 /// @param [in] iR radial location
 /// @param [in] iEq equation index
 /// @param [in] coeff coefficient of dnp source
-int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
+int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff,Eigen::SparseMatrix<double,Eigen::RowMajor> * myA)
 {
   int index,indexOffset;
   double groupLambda;
