@@ -42,6 +42,12 @@ set_target_properties(scbSolverTest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TEST_E
 add_executable(startAngleSolverTest ${TEST_SRC_DIR}/startAngleSolverTest.cpp)
 set_target_properties(startAngleSolverTest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TEST_EXE_DIR})
 
+add_executable(multiphysicsCoupledQDTest ${TEST_SRC_DIR}/multiphysicsCoupledQDTest.cpp)
+set_target_properties(multiphysicsCoupledQDTest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TEST_EXE_DIR})
+
+add_executable(multilevelCouplingTest ${TEST_SRC_DIR}/multilevelCouplingTest.cpp)
+set_target_properties(multilevelCouplingTest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TEST_EXE_DIR})
+
 # Add the tests
 target_link_libraries(inputTest PRIVATE yaml-cpp)
 add_test(input ${TEST_EXE_DIR}/inputTest)
@@ -75,6 +81,12 @@ add_test(starting_angle_solver ${TEST_EXE_DIR}/startAngleSolverTest)
 
 target_link_libraries(scbSolverTest PRIVATE libs yaml-cpp)
 add_test(simple_corner_balance_solver ${TEST_EXE_DIR}/scbSolverTest)
+
+target_link_libraries(multiphysicsCoupledQDTest PRIVATE libs yaml-cpp)
+add_test(multiphysics_coupled_qd ${TEST_EXE_DIR}/multiphysicsCoupledQDTest)
+
+target_link_libraries(multilevelCouplingTest PRIVATE libs yaml-cpp)
+add_test(multilevel_coupling ${TEST_EXE_DIR}/multilevelCouplingTest)
 
 # Copy over input file
 file(COPY ${TEST_SRC_INPUT_DIR}/1-group-test.yaml DESTINATION ${TEST_BIN_INPUT_DIR})
