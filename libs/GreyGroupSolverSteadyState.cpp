@@ -13,7 +13,7 @@ using namespace std;
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
+int GreyGroupSolverSteadyState::assertZerothMoment(int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -32,14 +32,14 @@ int GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
   scatterCoeff = materials->oneGroupXS->sigS(iZ,iR);
   value = -geoParams[iCF] * scatterCoeff; 
   index = indices[iCF];
-  ierr = MatSetValue(MPQD->A,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
 
   // Fission source term (explicit for power iteration)
   fissionCoeff = materials->oneGroupXS->qdFluxCoeff(iZ,iR);
   keff = materials->oneGroupXS->keff;
   cellFlux = GGQD->sFlux(iZ,iR);
   value = geoParams[iCF]*(fissionCoeff*cellFlux/keff + GGQD->q(iZ,iR));
-  ierr = VecSetValue(MPQD->b,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = VecSetValue(*b,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   // DNP source term
   GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF], &Atemp);
@@ -47,7 +47,7 @@ int GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
   // populate entries representing streaming and reaction terms
   value = geoParams[iCF] * sigT;
   index = indices[iCF];
-  ierr = MatSetValue(MPQD->A,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
 
   westCurrent(-geoParams[iWF],iR,iZ,iEq);
 
@@ -69,7 +69,7 @@ int GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
+int GreyGroupSolverSteadyState::southCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -110,7 +110,7 @@ int GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
 
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
 
-  ierr = MatSetValues(MPQD->A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(*A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
 
@@ -124,7 +124,7 @@ int GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
+int GreyGroupSolverSteadyState::northCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -165,7 +165,7 @@ int GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
 
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
 
-  ierr = MatSetValues(MPQD->A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(*A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
 
@@ -179,7 +179,7 @@ int GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
+int GreyGroupSolverSteadyState::westCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -222,7 +222,7 @@ int GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
 
   index[3] = indices[iWF]; value[3] = coeff*(hDown*ErrW/(hDown*deltaR) - zetaL);
 
-  ierr = MatSetValues(MPQD->A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(*A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
 
@@ -236,7 +236,7 @@ int GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
+int GreyGroupSolverSteadyState::eastCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -279,7 +279,7 @@ int GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
 
   index[3] = indices[iEF]; value[3] = -coeff*(hUp*ErrE/(hUp*deltaR) + zetaL);
 
-  ierr = MatSetValues(MPQD->A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(*A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   return ierr;
 
@@ -291,7 +291,7 @@ int GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
+int GreyGroupSolverSteadyState::calcSouthCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -344,7 +344,7 @@ int GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
+int GreyGroupSolverSteadyState::calcNorthCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -399,7 +399,7 @@ int GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
+int GreyGroupSolverSteadyState::calcWestCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -454,7 +454,7 @@ int GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
+int GreyGroupSolverSteadyState::calcEastCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);

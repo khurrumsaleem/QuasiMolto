@@ -13,7 +13,7 @@ using namespace std;
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
+int GreyGroupSolverTransient::assertZerothMoment(int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -32,7 +32,7 @@ int GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
   groupSourceCoeff = calcScatterAndFissionCoeff(iR,iZ);
   value = -geoParams[iCF] * groupSourceCoeff; 
   index = indices[iCF];
-  ierr = MatSetValue(MPQD->A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
 
   // DNP source term
   GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF], &Atemp);
@@ -42,20 +42,20 @@ int GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
 
   value = geoParams[iCF] * ((1/(v*deltaT)) + sigT);
   index = indices[iCF];
-  ierr = MatSetValue(MPQD->A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
 
-  westCurrent_p(-geoParams[iWF],iR,iZ,iEq);
+  westCurrent(-geoParams[iWF],iR,iZ,iEq);
 
-  eastCurrent_p(geoParams[iEF],iR,iZ,iEq);
+  eastCurrent(geoParams[iEF],iR,iZ,iEq);
 
-  northCurrent_p(-geoParams[iNF],iR,iZ,iEq);
+  northCurrent(-geoParams[iNF],iR,iZ,iEq);
 
-  southCurrent_p(geoParams[iSF],iR,iZ,iEq);
+  southCurrent(geoParams[iSF],iR,iZ,iEq);
 
   // formulate RHS entry
-  VecGetValues(MPQD->xPast_p_seq,1,&index,&past_flux);CHKERRQ(ierr);
+  VecGetValues(*xPastSeq,1,&index,&past_flux);CHKERRQ(ierr);
   value = geoParams[iCF]*((past_flux/(vPast*deltaT)) + GGQD->q(iZ,iR));
-  ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = VecSetValue(*b,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
 
@@ -69,7 +69,7 @@ int GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
+int GreyGroupSolverTransient::southCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -112,7 +112,7 @@ int GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
 
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
 
-  ierr = MatSetValues(MPQD->A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(*A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
   if (GGQD->useMGQDSources)
@@ -130,16 +130,16 @@ int GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
 
       // Set coefficient (curr_value) in RHS vector
       curr_value = -(coeff/deltaT)*(curr_value/mgqdNeutV);;
-      ierr = VecSetValue(MPQD->b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+      ierr = VecSetValue(*b,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
     }
   }
   else
   {
     curr_index = indices[iSC];
-    VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+    VecGetValues(currPastSeq,1,&curr_index,&curr_value);CHKERRQ(ierr);
     curr_value = -coeff*(curr_value/(vPast*deltaT));
-    ierr = VecSetValue(MPQD->b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+    ierr = VecSetValue(*b,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
   }
 
   return ierr;
@@ -154,7 +154,7 @@ int GreyGroupSolver::southCurrent(double coeff,int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
+int GreyGroupSolverTransient::northCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -197,7 +197,7 @@ int GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
 
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
 
-  ierr = MatSetValues(MPQD->A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(*A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
   if (GGQD->useMGQDSources)
@@ -214,16 +214,16 @@ int GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
 
       // Set coefficient (curr_value) in RHS vector
       curr_value = -(coeff/deltaT)*(curr_value/mgqdNeutV);;
-      ierr = VecSetValue(MPQD->b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+      ierr = VecSetValue(*b,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
     }
   }
   else
   {
     curr_index = indices[iNC];
-    VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+    VecGetValues(currPastSeq,1,&curr_index,&curr_value);CHKERRQ(ierr);
     curr_value = -coeff*(curr_value/(vPast*deltaT));
-    ierr = VecSetValue(MPQD->b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+    ierr = VecSetValue(*b,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
   }
 
@@ -239,7 +239,7 @@ int GreyGroupSolver::northCurrent(double coeff,int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
+int GreyGroupSolverTransient::westCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -284,7 +284,7 @@ int GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
 
   index[3] = indices[iWF]; value[3] = coeff*(hDown*ErrW/(hDown*deltaR) - zetaL);
 
-  ierr = MatSetValues(MPQD->A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(*A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
   if (GGQD->useMGQDSources)
@@ -301,16 +301,16 @@ int GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
 
       // Set coefficient (curr_value) in RHS vector
       curr_value = -(coeff/deltaT)*(curr_value/mgqdNeutV);
-      ierr = VecSetValue(MPQD->b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+      ierr = VecSetValue(*b,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
     }
   }
   else
   {
     curr_index = indices[iWC];
-    VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+    VecGetValues(currPastSeq,1,&curr_index,&curr_value);CHKERRQ(ierr);
     curr_value = -coeff*(curr_value/(vPast*deltaT));
-    ierr = VecSetValue(MPQD->b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+    ierr = VecSetValue(*b,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
   }
 
@@ -326,7 +326,7 @@ int GreyGroupSolver::westCurrent(double coeff,int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
+int GreyGroupSolverTransient::eastCurrent(double coeff,int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -371,7 +371,7 @@ int GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
 
   index[3] = indices[iEF]; value[3] = -coeff*(hUp*ErrE/(hUp*deltaR) + zetaL);
 
-  ierr = MatSetValues(MPQD->A_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(*A,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
   if (GGQD->useMGQDSources)
@@ -388,16 +388,16 @@ int GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
 
       // Set coefficient (curr_value) in RHS vector
       curr_value = -(coeff/deltaT)*(curr_value/mgqdNeutV);;
-      ierr = VecSetValue(MPQD->b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+      ierr = VecSetValue(*b,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
     }
   }
   else
   {
     curr_index = indices[iEC];
-    VecGetValues(currPast_p_seq,1,&curr_index,&curr_value);CHKERRQ(ierr);
+    VecGetValues(currPastSeq,1,&curr_index,&curr_value);CHKERRQ(ierr);
     curr_value = -coeff*(curr_value/(vPast*deltaT));
-    ierr = VecSetValue(MPQD->b_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+    ierr = VecSetValue(*b,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
   }
 
@@ -411,7 +411,7 @@ int GreyGroupSolver::eastCurrent(double coeff,int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
+int GreyGroupSolverTransient::calcSouthCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -453,7 +453,7 @@ int GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
 
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
 
-  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(C,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
   if (GGQD->useMGQDSources)
@@ -472,14 +472,18 @@ int GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
 
       // Set coefficient (curr_value) in RHS vector
       curr_value = (coeff/deltaT)*(curr_value/mgqdNeutV);;
-      ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+      ierr = VecSetValue(d,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
     }
   }
   else
   {
-    curr_value = coeff*(currPast(indices[iSC])/(vPast*deltaT));
-    ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+    //curr_value = coeff*(currPast(indices[iSC])/(vPast*deltaT));
+    curr_index = indices[iSC];
+    VecGetValues(currPast,1,&curr_index,\
+          &curr_value);CHKERRQ(ierr);
+    curr_value = coeff*(curr_value/(vPast*deltaT));
+    ierr = VecSetValue(d,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
   }
 
   return ierr;
@@ -492,7 +496,7 @@ int GreyGroupSolver::calcSouthCurrent(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
+int GreyGroupSolverTransient::calcNorthCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -534,7 +538,7 @@ int GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
 
   index[3] = indices[iEF]; value[3] = -coeff*rUp*ErzE/(rAvg*deltaR);
 
-  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(C,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
   if (GGQD->useMGQDSources)
@@ -553,14 +557,18 @@ int GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
 
       // Set coefficient (curr_value) in RHS vector
       curr_value = (coeff/deltaT)*(curr_value/mgqdNeutV);;
-      ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+      ierr = VecSetValue(d,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
     }
   }
   else
   {
-    curr_value = coeff*(currPast(indices[iNC])/(vPast*deltaT));
-    ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+    //curr_value = coeff*(currPast(indices[iNC])/(vPast*deltaT));
+    curr_index = indices[iNC];
+    VecGetValues(currPast,1,&curr_index,\
+          &curr_value);CHKERRQ(ierr);
+    curr_value = coeff*(curr_value/(vPast*deltaT));
+    ierr = VecSetValue(d,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
   }
 
   return ierr;
@@ -573,7 +581,7 @@ int GreyGroupSolver::calcNorthCurrent(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
+int GreyGroupSolverTransient::calcWestCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -616,7 +624,7 @@ int GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
 
   index[3] = indices[iWF]; value[3] = coeff*(hDown*ErrW/(hDown*deltaR) - zetaL);
 
-  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(C,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
   if (GGQD->useMGQDSources)
@@ -634,14 +642,18 @@ int GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
 
       // Set coefficient (curr_value) in RHS vector
       curr_value = (coeff/deltaT)*(curr_value/mgqdNeutV);;
-      ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+      ierr = VecSetValue(d,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
     }
   }
   else
   {
-    curr_value = coeff*(currPast(indices[iWC])/(vPast*deltaT));
-    ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+    //curr_value = coeff*(currPast(indices[iWC])/(vPast*deltaT));
+    curr_index = indices[iWC];
+    VecGetValues(currPast,1,&curr_index,\
+          &curr_value);CHKERRQ(ierr);
+    curr_value = coeff*(curr_value/(vPast*deltaT));
+    ierr = VecSetValue(d,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
   }
 
   return ierr;
@@ -654,7 +666,7 @@ int GreyGroupSolver::calcWestCurrent(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
+int GreyGroupSolverTransient::calcEastCurrent(int iR,int iZ,int iEq)
 {
   vector<int> indices;
   vector<double> geoParams = mesh->getGeoParams(iR,iZ);
@@ -698,7 +710,7 @@ int GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
 
   index[3] = indices[iEF]; value[3] = -coeff*(hUp*ErrE/(hUp*deltaR) + zetaL);
 
-  ierr = MatSetValues(C_p,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
+  ierr = MatSetValues(C,1,&iEq,4,index,value,ADD_VALUES);CHKERRQ(ierr);
 
   // formulate RHS entry
   if (GGQD->useMGQDSources)
@@ -716,14 +728,18 @@ int GreyGroupSolver::calcEastCurrent(int iR,int iZ,int iEq)
 
       // Set coefficient (curr_value) in RHS vector
       curr_value = (coeff/deltaT)*(curr_value/mgqdNeutV);;
-      ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+      ierr = VecSetValue(d,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
 
     }
   }
   else
   {
-    curr_value = coeff*(currPast(indices[iEC])/(vPast*deltaT));
-    ierr = VecSetValue(d_p,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
+    //curr_value = coeff*(currPast(indices[iEC])/(vPast*deltaT));
+    curr_index = indices[iEC];
+    VecGetValues(currPast,1,&curr_index,\
+          &curr_value);CHKERRQ(ierr);
+    curr_value = coeff*(curr_value/(vPast*deltaT));
+    ierr = VecSetValue(d,iEq,curr_value,ADD_VALUES);CHKERRQ(ierr); 
   }
 
   return ierr;

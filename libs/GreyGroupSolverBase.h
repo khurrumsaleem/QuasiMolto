@@ -13,12 +13,12 @@ using namespace std;
 //==============================================================================
 //! GreyGroupSolver class that solves RZ neutron transport
 
-class GreyGroupSolver
+class GreyGroupSolverBase
 {
   public:
 
     // Constructor
-    GreyGroupSolver(GreyGroupQD * myGGQD,\
+    GreyGroupSolverBase(GreyGroupQD * myGGQD,\
         Mesh * myMesh,\
         Materials * myMaterials,\
         YAML::Node * myInput);
@@ -30,31 +30,37 @@ class GreyGroupSolver
     bool diffusionBCs = false;
 
     /* PETSc variables and functions */
-    Mat A; 
-    Vec x,xPast,b;
-    Vec xPastSeq;
+    Mat * A; 
+    Vec * x,*xPast,*b;
+    Vec * xPastSeq;
     Mat C;
     Vec currPast,d,xFlux;
     Vec currPastSeq;
     KSP ksp;
     PC pc;
+    Eigen::SparseMatrix<double,Eigen::RowMajor> Atemp;
 
     // Public functions
     void formLinearSystem();
-    void formBackCalcSystem();
-    void backCalculateCurrent();
+    int formBackCalcSystem();
+    int backCalculateCurrent();
     void checkOptionalParams();
     void assignMPQDPointer(MultiPhysicsCoupledQD * myMPQD);
+    void assignLinearSystemPointers(Mat * myA,\
+        Vec * myx,\
+        Vec * myxPast,\
+        Vec * myxPastSeq,\
+        Vec * myb);
     
     // funcations to apply interface conditions
     void applyRadialBoundary(int iR,int iZ,int iEq);
     void applyAxialBoundary(int iR,int iZ,int iEq);
 
     // functions to assert flux BCs
-    void assertWFluxBC(int iR,int iZ,int iEq);
-    void assertEFluxBC(int iR,int iZ,int iEq);
-    void assertNFluxBC(int iR,int iZ,int iEq);
-    void assertSFluxBC(int iR,int iZ,int iEq);
+    int assertWFluxBC(int iR,int iZ,int iEq);
+    int assertEFluxBC(int iR,int iZ,int iEq);
+    int assertNFluxBC(int iR,int iZ,int iEq);
+    int assertSFluxBC(int iR,int iZ,int iEq);
 
     // functions to assert current BCs
     void assertWCurrentBC(int iR,int iZ,int iEq);
@@ -63,14 +69,14 @@ class GreyGroupSolver
     void assertSCurrentBC(int iR,int iZ,int iEq);
 
     // functions to assert Gol'din BCs
-    void assertNGoldinBC(int iR,int iZ,int iEq);
-    void assertSGoldinBC(int iR,int iZ,int iEq);
-    void assertEGoldinBC(int iR,int iZ,int iEq);
+    int assertNGoldinBC(int iR,int iZ,int iEq);
+    int assertSGoldinBC(int iR,int iZ,int iEq);
+    int assertEGoldinBC(int iR,int iZ,int iEq);
 
     // functions to assert Gol'din P1 BCs
-    void assertNGoldinP1BC(int iR,int iZ,int iEq);
-    void assertSGoldinP1BC(int iR,int iZ,int iEq);
-    void assertEGoldinP1BC(int iR,int iZ,int iEq);
+    int assertNGoldinP1BC(int iR,int iZ,int iEq);
+    int assertSGoldinP1BC(int iR,int iZ,int iEq);
+    int assertEGoldinP1BC(int iR,int iZ,int iEq);
     
     // wrapper to assert either a flux or current BC
     void assertWBC(int iR,int iZ,int iEq);
@@ -99,7 +105,8 @@ class GreyGroupSolver
     Eigen::VectorXd getFluxSolutionVector();
     Eigen::VectorXd getCurrentSolutionVector();
 
-  private:
+  protected:
+
     // Private variables
     GreyGroupQD * GGQD;
     MultiPhysicsCoupledQD * MPQD;
@@ -112,22 +119,20 @@ class GreyGroupSolver
     int iWF = 1, iEF = 2, iNF = 3, iSF = 4;
     int iWC = 5, iEC = 6, iNC = 7, iSC = 8;
     
-    // Private functions
-
     // functions to enforce governing equations
-    virtual void assertZerothMoment(int iR,int iZ,int iEq);
+    virtual int assertZerothMoment(int iR,int iZ,int iEq) = 0;
 
     // functions to enforce coefficients for facial currents
-    virtual void southCurrent(double coeff,int iR,int iZ,int iEq);
-    virtual void northCurrent(double coeff,int iR,int iZ,int iEq);
-    virtual void westCurrent(double coeff,int iR,int iZ,int iEq);
-    virtual void eastCurrent(double coeff,int iR,int iZ,int iEq);
+    virtual int southCurrent(double coeff,int iR,int iZ,int iEq) = 0;
+    virtual int northCurrent(double coeff,int iR,int iZ,int iEq) = 0;
+    virtual int westCurrent(double coeff,int iR,int iZ,int iEq) = 0;
+    virtual int eastCurrent(double coeff,int iR,int iZ,int iEq) = 0;
 
     // functions to enforce coefficients for calculation of facial currents
-    virtual void calcSouthCurrent(int iR,int iZ,int iEq);
-    virtual void calcNorthCurrent(int iR,int iZ,int iEq);
-    virtual void calcWestCurrent(int iR,int iZ,int iEq);
-    virtual void calcEastCurrent(int iR,int iZ,int iEq);
+    virtual int calcSouthCurrent(int iR,int iZ,int iEq) = 0;
+    virtual int calcNorthCurrent(int iR,int iZ,int iEq) = 0;
+    virtual int calcWestCurrent(int iR,int iZ,int iEq) = 0;
+    virtual int calcEastCurrent(int iR,int iZ,int iEq) = 0;
 
 };
 

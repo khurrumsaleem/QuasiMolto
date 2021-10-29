@@ -9,6 +9,7 @@
 using namespace std;
 
 class MultiPhysicsCoupledQD;
+class GreyGroupSolverBase;
 class GreyGroupSolver;
 
 //==============================================================================
@@ -86,6 +87,7 @@ class GreyGroupQD
     // FUNCTIONS
 
     shared_ptr<GreyGroupSolver> GGSolver;
+    shared_ptr<GreyGroupSolverBase> GGSolverBase;
 
     GreyGroupQD(Materials * myMaterials,\
         Mesh * myMesh,\

@@ -17,10 +17,25 @@ class GreyGroupSolverSteadyState: public GreyGroupSolverBase
         Mesh * myMesh,\
         Materials * myMaterials,\
         YAML::Node * myInput)\
-        :GreyGroupSolver(myGGQD,\
-        myMesh,\ 
-        myMaterials,\ 
-        myInput);
+        :GreyGroupSolverBase(myGGQD,\
+        myMesh,\
+        myMaterials,\
+        myInput){};
+
+    // functions to enforce governing equations
+    int assertZerothMoment(int iR,int iZ,int iEq);
+
+    // functions to enforce coefficients for facial currents
+    int southCurrent(double coeff,int iR,int iZ,int iEq);
+    int northCurrent(double coeff,int iR,int iZ,int iEq);
+    int westCurrent(double coeff,int iR,int iZ,int iEq);
+    int eastCurrent(double coeff,int iR,int iZ,int iEq);
+
+    // functions to enforce coefficients for calculation of facial currents
+    int calcSouthCurrent(int iR,int iZ,int iEq);
+    int calcNorthCurrent(int iR,int iZ,int iEq);
+    int calcWestCurrent(int iR,int iZ,int iEq);
+    int calcEastCurrent(int iR,int iZ,int iEq);
 
 };
 

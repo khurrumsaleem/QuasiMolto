@@ -3,7 +3,8 @@
 // Date: April 9, 2020
 
 #include "GreyGroupQD.h"
-#include "GreyGroupSolver.h"
+#include "GreyGroupSolverTransient.h"
+#include "GreyGroupSolverSteadyState.h"
 #include "MultiPhysicsCoupledQD.h"
 
 using namespace std;
@@ -31,6 +32,7 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   input = myInput;
 
   GGSolver = std::make_shared<GreyGroupSolver>(this,mesh,materials,input);
+  GGSolverBase = std::make_shared<GreyGroupSolverSteadyState>(this,mesh,materials,input);
 
   // initialize Eddington factors to diffusion physics
   double diagValue = 1.0/3.0, offDiagValue = 0.0;

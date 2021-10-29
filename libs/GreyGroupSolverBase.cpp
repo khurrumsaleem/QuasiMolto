@@ -1,8 +1,8 @@
-// File: GreyGroupSolver.cpp
+// File: GreyGroupSolverBase.cpp
 // Purpose: Solve RZ quasidiffusion equations  
 // Date: February 05, 2020
 
-#include "GreyGroupSolver.h"
+#include "GreyGroupSolverBase.h"
 #include "GreyGroupQD.h"
 
 using namespace std; 
@@ -14,7 +14,7 @@ using namespace std;
 /// @param [in] myMaterials Materials object for the simulation
 /// @param [in] myInput YAML input object for the simulation
 /// @param [in] myMPQD multiphysics coupled QD object for the simulation
-GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
+GreyGroupSolverBase::GreyGroupSolverBase(GreyGroupQD * myGGQD,\
     Mesh * myMesh,\
     Materials * myMaterials,\
     YAML::Node * myInput)	      
@@ -36,16 +36,16 @@ GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
 
   /* Initialize PETSc variables */
   // Multiphysics system variables 
-  initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,20);
-  initPETScVec(&currPast_p,nCurrentUnknowns);
-  initPETScVec(&d_p,nCurrentUnknowns);
-  initPETScVec(&xFlux_p,nUnknowns);
+  initPETScRectMat(&C,nCurrentUnknowns,nUnknowns,20);
+  initPETScVec(&currPast,nCurrentUnknowns);
+  initPETScVec(&d,nCurrentUnknowns);
+  initPETScVec(&xFlux,nUnknowns);
 
   // Broadcast currPast
-  VecScatterCreateToAll(currPast_p,&ctx,&(currPast_p_seq));
-  VecScatterBegin(ctx,currPast_p,currPast_p_seq,\
+  VecScatterCreateToAll(currPast,&ctx,&(currPastSeq));
+  VecScatterBegin(ctx,currPast,currPastSeq,\
       INSERT_VALUES,SCATTER_FORWARD);
-  VecScatterEnd(ctx,currPast_p,currPast_p_seq,\
+  VecScatterEnd(ctx,currPast,currPastSeq,\
       INSERT_VALUES,SCATTER_FORWARD);
   VecScatterDestroy(&ctx);
 
@@ -61,7 +61,7 @@ GreyGroupSolver::GreyGroupSolver(GreyGroupQD * myGGQD,\
 ////==============================================================================
 /// Form a portion of the linear system  
 
-void GreyGroupSolver::formLinearSystem()	      
+void GreyGroupSolverBase::formLinearSystem()	      
 {
 
   int iEq = GGQD->indexOffset;
@@ -130,7 +130,7 @@ void GreyGroupSolver::formLinearSystem()
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-void GreyGroupSolver::applyRadialBoundary(int iR,int iZ,int iEq)
+void GreyGroupSolverBase::applyRadialBoundary(int iR,int iZ,int iEq)
 {
   eastCurrent(1,iR,iZ,iEq);
   westCurrent(-1,iR+1,iZ,iEq);
@@ -143,7 +143,7 @@ void GreyGroupSolver::applyRadialBoundary(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-void GreyGroupSolver::applyAxialBoundary(int iR,int iZ,int iEq)
+void GreyGroupSolverBase::applyAxialBoundary(int iR,int iZ,int iEq)
 {
   northCurrent(1,iR,iZ+1,iEq);
   southCurrent(-1,iR,iZ,iEq);
@@ -153,7 +153,7 @@ void GreyGroupSolver::applyAxialBoundary(int iR,int iZ,int iEq)
 ////==============================================================================
 /// Form a portion of the current back calc linear system that belongs to GGQD 
 ///
-int GreyGroupSolver::formBackCalcSystem()	      
+int GreyGroupSolverBase::formBackCalcSystem()	      
 {
   int iEq = GGQD->indexOffset;
   PetscErrorCode ierr;
@@ -194,7 +194,7 @@ int GreyGroupSolver::formBackCalcSystem()
     }
   }
 
-  /* Finalize assembly for C_p and d_p */
+  /* Finalize assembly for C and d */
   ierr = MatAssemblyBegin(C,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(C,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);  
   ierr = VecAssemblyBegin(d);CHKERRQ(ierr);
@@ -209,7 +209,7 @@ int GreyGroupSolver::formBackCalcSystem()
 ////==============================================================================
 /// Compute currents from flux values in x
 ///
-int GreyGroupSolver::backCalculateCurrent_p()
+int GreyGroupSolverBase::backCalculateCurrent()
 {
   // PETSc object to broadcast variables 
   VecScatter     ctx;
@@ -236,16 +236,16 @@ int GreyGroupSolver::backCalculateCurrent_p()
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-void GreyGroupSolver::assertNBC_p(int iR,int iZ,int iEq)
+void GreyGroupSolverBase::assertNBC(int iR,int iZ,int iEq)
 {
   if (reflectingBCs)
-    assertNCurrentBC_p(iR,iZ,iEq);
+    assertNCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
-    assertNGoldinBC_p(iR,iZ,iEq);
+    assertNGoldinBC(iR,iZ,iEq);
   else if (diffusionBCs)
-    assertNGoldinP1BC_p(iR,iZ,iEq);
+    assertNGoldinP1BC(iR,iZ,iEq);
   else
-    assertNFluxBC_p(iR,iZ,iEq);
+    assertNFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -254,16 +254,16 @@ void GreyGroupSolver::assertNBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-void GreyGroupSolver::assertSBC_p(int iR,int iZ,int iEq)
+void GreyGroupSolverBase::assertSBC(int iR,int iZ,int iEq)
 {
   if (reflectingBCs)
-    assertSCurrentBC_p(iR,iZ,iEq);
+    assertSCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
-    assertSGoldinBC_p(iR,iZ,iEq);
+    assertSGoldinBC(iR,iZ,iEq);
   else if (diffusionBCs)
-    assertSGoldinP1BC_p(iR,iZ,iEq);
+    assertSGoldinP1BC(iR,iZ,iEq);
   else
-    assertSFluxBC_p(iR,iZ,iEq);
+    assertSFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -272,15 +272,15 @@ void GreyGroupSolver::assertSBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-void GreyGroupSolver::assertWBC_p(int iR,int iZ,int iEq)
+void GreyGroupSolverBase::assertWBC(int iR,int iZ,int iEq)
 {
   if (reflectingBCs or goldinBCs)
-    assertWCurrentBC_p(iR,iZ,iEq);
+    assertWCurrentBC(iR,iZ,iEq);
   else
     // Can't think of a circumstance where there wouldn't be a reflecting BC at
     //   r = 0 
     //assertWFluxBC(iR,iZ,iEq);
-    assertWCurrentBC_p(iR,iZ,iEq);
+    assertWCurrentBC(iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -289,16 +289,16 @@ void GreyGroupSolver::assertWBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-void GreyGroupSolver::assertEBC_p(int iR,int iZ,int iEq)
+void GreyGroupSolverBase::assertEBC(int iR,int iZ,int iEq)
 {
   if (reflectingBCs)
-    assertECurrentBC_p(iR,iZ,iEq);
+    assertECurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
-    assertEGoldinBC_p(iR,iZ,iEq);
+    assertEGoldinBC(iR,iZ,iEq);
   else if (diffusionBCs)
-    assertEGoldinP1BC_p(iR,iZ,iEq);
+    assertEGoldinP1BC(iR,iZ,iEq);
   else
-    assertEFluxBC_p(iR,iZ,iEq);
+    assertEFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -308,9 +308,9 @@ void GreyGroupSolver::assertEBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-void GreyGroupSolver::assertNCurrentBC_p(int iR,int iZ,int iEq)
+void GreyGroupSolverBase::assertNCurrentBC(int iR,int iZ,int iEq)
 {
-  northCurrent_p(1,iR,iZ,iEq);
+  northCurrent(1,iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -320,9 +320,9 @@ void GreyGroupSolver::assertNCurrentBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-void GreyGroupSolver::assertSCurrentBC_p(int iR,int iZ,int iEq)
+void GreyGroupSolverBase::assertSCurrentBC(int iR,int iZ,int iEq)
 {
-  southCurrent_p(1,iR,iZ,iEq);
+  southCurrent(1,iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -332,9 +332,9 @@ void GreyGroupSolver::assertSCurrentBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-void GreyGroupSolver::assertWCurrentBC_p(int iR,int iZ,int iEq)
+void GreyGroupSolverBase::assertWCurrentBC(int iR,int iZ,int iEq)
 {
-  westCurrent_p(1,iR,iZ,iEq);
+  westCurrent(1,iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -344,9 +344,9 @@ void GreyGroupSolver::assertWCurrentBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-void GreyGroupSolver::assertECurrentBC_p(int iR,int iZ,int iEq)
+void GreyGroupSolverBase::assertECurrentBC(int iR,int iZ,int iEq)
 {
-  eastCurrent_p(1,iR,iZ,iEq);
+  eastCurrent(1,iR,iZ,iEq);
 };
 //==============================================================================
 
@@ -356,7 +356,7 @@ void GreyGroupSolver::assertECurrentBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertNGoldinBC_p(int iR,int iZ,int iEq)
+int GreyGroupSolverBase::assertNGoldinBC(int iR,int iZ,int iEq)
 {
   PetscErrorCode ierr;
   double value;
@@ -368,11 +368,11 @@ int GreyGroupSolver::assertNGoldinBC_p(int iR,int iZ,int iEq)
   double inwardCurrent = GGQD->nInwardCurrentBC(iR);
   double inwardFlux = GGQD->nInwardFluxBC(iR);
 
-  northCurrent_p(1.0,iR,iZ,iEq);
+  northCurrent(1.0,iR,iZ,iEq);
   value = -ratio; 
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
-  ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = VecSetValue(*b,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
 
@@ -385,7 +385,7 @@ int GreyGroupSolver::assertNGoldinBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertSGoldinBC_p(int iR,int iZ,int iEq)
+int GreyGroupSolverBase::assertSGoldinBC(int iR,int iZ,int iEq)
 {
   PetscErrorCode ierr;
   double value;
@@ -397,11 +397,11 @@ int GreyGroupSolver::assertSGoldinBC_p(int iR,int iZ,int iEq)
   double inwardCurrent = GGQD->sInwardCurrentBC(iR);
   double inwardFlux = GGQD->sInwardFluxBC(iR);
 
-  southCurrent_p(1.0,iR,iZ,iEq);
+  southCurrent(1.0,iR,iZ,iEq);
   value = -ratio; 
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
-  ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = VecSetValue(*b,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
 
@@ -414,7 +414,7 @@ int GreyGroupSolver::assertSGoldinBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertEGoldinBC_p(int iR,int iZ,int iEq)
+int GreyGroupSolverBase::assertEGoldinBC(int iR,int iZ,int iEq)
 {
   PetscErrorCode ierr;
   double value;
@@ -426,11 +426,11 @@ int GreyGroupSolver::assertEGoldinBC_p(int iR,int iZ,int iEq)
   double inwardCurrent = GGQD->eInwardCurrentBC(iZ);
   double inwardFlux = GGQD->eInwardFluxBC(iZ);
 
-  eastCurrent_p(1.0,iR,iZ,iEq);
+  eastCurrent(1.0,iR,iZ,iEq);
   value = -ratio; 
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = inwardCurrent-inFluxWeightRatio*inwardFlux; 
-  ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = VecSetValue(*b,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
 
@@ -443,15 +443,15 @@ int GreyGroupSolver::assertEGoldinBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertNGoldinP1BC_p(int iR,int iZ,int iEq)
+int GreyGroupSolverBase::assertNGoldinP1BC(int iR,int iZ,int iEq)
 {
   PetscErrorCode ierr;
   double value;
   vector<int> indices = getIndices(iR,iZ);
 
-  northCurrent_p(1.0,iR,iZ,iEq);
+  northCurrent(1.0,iR,iZ,iEq);
   value = 1.0/sqrt(3.0); 
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
 
@@ -464,15 +464,15 @@ int GreyGroupSolver::assertNGoldinP1BC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertSGoldinP1BC_p(int iR,int iZ,int iEq)
+int GreyGroupSolverBase::assertSGoldinP1BC(int iR,int iZ,int iEq)
 {
   PetscErrorCode ierr;
   double value;
   vector<int> indices = getIndices(iR,iZ);
 
-  southCurrent_p(1.0,iR,iZ,iEq);
+  southCurrent(1.0,iR,iZ,iEq);
   value = -1.0/sqrt(3.0); 
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
 
@@ -485,15 +485,15 @@ int GreyGroupSolver::assertSGoldinP1BC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertEGoldinP1BC_p(int iR,int iZ,int iEq)
+int GreyGroupSolverBase::assertEGoldinP1BC(int iR,int iZ,int iEq)
 {
   PetscErrorCode ierr;
   double value;
   vector<int> indices = getIndices(iR,iZ);
 
-  eastCurrent_p(1.0,iR,iZ,iEq);
+  eastCurrent(1.0,iR,iZ,iEq);
   value = -1.0/sqrt(3.0); 
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
 
@@ -504,7 +504,7 @@ int GreyGroupSolver::assertEGoldinP1BC_p(int iR,int iZ,int iEq)
 /// Calculate multigroup source coefficient for cell at (iR,iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
-double GreyGroupSolver::calcScatterAndFissionCoeff(int iR,int iZ)
+double GreyGroupSolverBase::calcScatterAndFissionCoeff(int iR,int iZ)
 {
 
   double localFissionSource,localSigF,localNu,localChiP,localSigS,\
@@ -523,7 +523,7 @@ double GreyGroupSolver::calcScatterAndFissionCoeff(int iR,int iZ)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] rEval radial location to evaluate integrating factor at
-double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval,int iLoc) 
+double GreyGroupSolverBase::calcIntegratingFactor(int iR,int iZ,double rEval,int iLoc) 
 {
   double g0,g1,hEval,G;
   int p = 2;
@@ -563,7 +563,7 @@ double GreyGroupSolver::calcIntegratingFactor(int iR,int iZ,double rEval,int iLo
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [out] index global index for south face current in cell at (iR,iZ)
-vector<int> GreyGroupSolver::getIndices(int iR,int iZ)
+vector<int> GreyGroupSolverBase::getIndices(int iR,int iZ)
 {
 
   vector<int> oneGroupIndices;
@@ -592,7 +592,7 @@ vector<int> GreyGroupSolver::getIndices(int iR,int iZ)
 /// @param [in] iZ axial index of cell
 /// @param [out] gParams vector containing volume and surfaces areas of the 
 ///   west, east, north, and south faces, in that order.
-vector<double> GreyGroupSolver::calcGeoParams(int iR,int iZ)
+vector<double> GreyGroupSolverBase::calcGeoParams(int iR,int iZ)
 {
   double rDown,rUp,zDown,zUp,volume,wFaceSA,eFaceSA,nFaceSA,sFaceSA;
 
@@ -607,7 +607,7 @@ vector<double> GreyGroupSolver::calcGeoParams(int iR,int iZ)
   eFaceSA = 2*M_PI*rUp*(zUp-zDown);
   wFaceSA = 2*M_PI*rDown*(zUp-zDown);
 
-  vector<double> gparams {volume,
+  vector<double> gParams {volume,
                           wFaceSA,
                           eFaceSA,
                           nFaceSA,
@@ -623,7 +623,7 @@ vector<double> GreyGroupSolver::calcGeoParams(int iR,int iZ)
 /// @param [in] rDown location of left cell edge
 /// @param [in] rUp location of right cell edge
 /// @param [out] volAvgR volume-averaged radial coordinate 
-double GreyGroupSolver::calcVolAvgR(double rDown,double rUp)
+double GreyGroupSolverBase::calcVolAvgR(double rDown,double rUp)
 {
   // calculate volume-averaged radius
   double volAvgR = (2.0/3.0)*(pow(rUp,3) - pow(rDown,3))/(pow(rUp,2)-pow(rDown,2));
@@ -638,7 +638,7 @@ double GreyGroupSolver::calcVolAvgR(double rDown,double rUp)
 /// @param [in] iZ axial coordinate 
 /// @param [in] iR radial coordinate 
 /// @param [out] Eddington value to use at interface 
-double GreyGroupSolver::getWestErr(int iZ,int iR)
+double GreyGroupSolverBase::getWestErr(int iZ,int iR)
 {
 
   double volLeft,volRight,totalVol;
@@ -665,7 +665,7 @@ double GreyGroupSolver::getWestErr(int iZ,int iR)
 /// @param [in] iZ axial coordinate 
 /// @param [in] iR radial coordinate 
 /// @param [out] Eddington value to use at interface 
-double GreyGroupSolver::getWestErz(int iZ,int iR)
+double GreyGroupSolverBase::getWestErz(int iZ,int iR)
 {
 
   double volLeft,volRight,totalVol;
@@ -692,7 +692,7 @@ double GreyGroupSolver::getWestErz(int iZ,int iR)
 /// @param [in] iZ axial coordinate 
 /// @param [in] iR radial coordinate 
 /// @param [out] Eddington value to use at interface 
-double GreyGroupSolver::getEastErr(int iZ,int iR)
+double GreyGroupSolverBase::getEastErr(int iZ,int iR)
 {
 
   double volLeft,volRight,totalVol;
@@ -719,7 +719,7 @@ double GreyGroupSolver::getEastErr(int iZ,int iR)
 /// @param [in] iZ axial coordinate 
 /// @param [in] iR radial coordinate 
 /// @param [out] Eddington value to use at interface 
-double GreyGroupSolver::getEastErz(int iZ,int iR)
+double GreyGroupSolverBase::getEastErz(int iZ,int iR)
 {
 
   double volLeft,volRight,totalVol;
@@ -746,7 +746,7 @@ double GreyGroupSolver::getEastErz(int iZ,int iR)
 /// @param [in] iZ axial coordinate 
 /// @param [in] iR radial coordinate 
 /// @param [out] Eddington value to use at interface 
-double GreyGroupSolver::getNorthEzz(int iZ,int iR)
+double GreyGroupSolverBase::getNorthEzz(int iZ,int iR)
 {
 
   double volDown,volUp,totalVol;
@@ -773,7 +773,7 @@ double GreyGroupSolver::getNorthEzz(int iZ,int iR)
 /// @param [in] iZ axial coordinate 
 /// @param [in] iR radial coordinate 
 /// @param [out] Eddington value to use at interface 
-double GreyGroupSolver::getNorthErz(int iZ,int iR)
+double GreyGroupSolverBase::getNorthErz(int iZ,int iR)
 {
 
   double volDown,volUp,totalVol;
@@ -800,7 +800,7 @@ double GreyGroupSolver::getNorthErz(int iZ,int iR)
 /// @param [in] iZ axial coordinate 
 /// @param [in] iR radial coordinate 
 /// @param [out] Eddington value to use at interface 
-double GreyGroupSolver::getSouthEzz(int iZ,int iR)
+double GreyGroupSolverBase::getSouthEzz(int iZ,int iR)
 {
 
   double volDown,volUp,totalVol;
@@ -827,7 +827,7 @@ double GreyGroupSolver::getSouthEzz(int iZ,int iR)
 /// @param [in] iZ axial coordinate 
 /// @param [in] iR radial coordinate 
 /// @param [out] Eddington value to use at interface 
-double GreyGroupSolver::getSouthErz(int iZ,int iR)
+double GreyGroupSolverBase::getSouthErz(int iZ,int iR)
 {
 
   double volDown,volUp,totalVol;
@@ -850,85 +850,54 @@ double GreyGroupSolver::getSouthErz(int iZ,int iR)
 
 //==============================================================================
 /// Extract cell average values from solution vector and store
-int GreyGroupSolver::getFlux()
+int GreyGroupSolverBase::getFlux()
 {
   vector<int> indices;
   PetscErrorCode ierr;
   PetscScalar value[5]; 
   PetscInt index[5]; 
   VecScatter     ctx;
-  Vec temp_x_p_seq;
+  Vec temp_x_seq;
 
-  if (mesh->petsc)
+  // Gather values of x on all procs
+  VecScatterCreateToAll(*x,&ctx,&temp_x_seq);
+  VecScatterBegin(ctx,*x,temp_x_seq,INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,*x,temp_x_seq,INSERT_VALUES,SCATTER_FORWARD);
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
   {
-
-    // Gather values of x_p on all procs
-    VecScatterCreateToAll(MPQD->x_p,&ctx,&temp_x_p_seq);
-    VecScatterBegin(ctx,MPQD->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,MPQD->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-
-    // loop over spatial mesh
-    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
-      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
-      {
-        indices = getIndices(iR,iZ);
+      indices = getIndices(iR,iZ);
 
-        index[0] = indices[iCF];
-        index[1] = indices[iWF];
-        index[2] = indices[iEF];
-        index[3] = indices[iNF];
-        index[4] = indices[iSF];
+      index[0] = indices[iCF];
+      index[1] = indices[iWF];
+      index[2] = indices[iEF];
+      index[3] = indices[iNF];
+      index[4] = indices[iSF];
 
-        // Read fluxes into flux vector
-        ierr = VecGetValues(temp_x_p_seq,5,index,value);
-        ierr = VecSetValues(xFlux_p,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
+      // Read fluxes into flux vector
+      ierr = VecGetValues(temp_x_seq,5,index,value);
+      ierr = VecSetValues(xFlux,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
 
-        // Read fluxes into GGQD object
-        GGQD->sFlux(iZ,iR) = value[0]; 
-        GGQD->sFluxR(iZ,iR) = value[1];
-        GGQD->sFluxR(iZ,iR+1) = value[2];
-        GGQD->sFluxZ(iZ,iR) = value[3]; 
-        GGQD->sFluxZ(iZ+1,iR) = value[4]; 
+      // Read fluxes into GGQD object
+      GGQD->sFlux(iZ,iR) = value[0]; 
+      GGQD->sFluxR(iZ,iR) = value[1];
+      GGQD->sFluxR(iZ,iR+1) = value[2];
+      GGQD->sFluxZ(iZ,iR) = value[3]; 
+      GGQD->sFluxZ(iZ+1,iR) = value[4]; 
 
-      }
-    } 
+    }
+  } 
 
-    /* Destroy scatter context */
-    VecScatterDestroy(&ctx);
-    VecDestroy(&temp_x_p_seq);
+  /* Destroy scatter context */
+  VecScatterDestroy(&ctx);
+  VecDestroy(&temp_x_seq);
 
-    /* Finalize assembly of xFlux_p */
-    VecAssemblyBegin(xFlux_p);
-    VecAssemblyEnd(xFlux_p);
-
-  }
-  else
-  {
-    // loop over spatial mesh
-    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
-    {
-      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
-      {
-        indices = getIndices(iR,iZ);
-
-        // Read fluxes into recirculation back calc vector
-        xFlux(indices[iCF]) = (*x)(indices[iCF]);
-        xFlux(indices[iWF]) = (*x)(indices[iWF]);
-        xFlux(indices[iEF]) = (*x)(indices[iEF]);
-        xFlux(indices[iNF]) = (*x)(indices[iNF]);
-        xFlux(indices[iSF]) = (*x)(indices[iSF]);
-
-        // Read fluxes into GGQD object
-        GGQD->sFlux(iZ,iR) = xFlux(indices[iCF]);
-        GGQD->sFluxR(iZ,iR) = xFlux(indices[iWF]);
-        GGQD->sFluxR(iZ,iR+1) = xFlux(indices[iEF]);
-        GGQD->sFluxZ(iZ,iR) = xFlux(indices[iNF]);
-        GGQD->sFluxZ(iZ+1,iR) = xFlux(indices[iSF]);
-
-      }
-    } 
-  }
+  /* Finalize assembly of xFlux */
+  VecAssemblyBegin(xFlux);
+  VecAssemblyEnd(xFlux);
 
   return ierr;
 
@@ -937,70 +906,47 @@ int GreyGroupSolver::getFlux()
 
 //==============================================================================
 /// Extract cell average values from solution vector and store
-int GreyGroupSolver::getCurrent()
+int GreyGroupSolverBase::getCurrent()
 {
   vector<int> indices;
   PetscErrorCode ierr;
   PetscScalar value[4]; 
   PetscInt index[4]; 
   VecScatter     ctx;
-  Vec temp_currPast_p_seq;
+  Vec temp_currPast_seq;
 
-  if (mesh->petsc)
+  // Gather values of x on all procs
+  VecScatterCreateToAll(currPast,&ctx,&temp_currPast_seq);
+  VecScatterBegin(ctx,currPast,temp_currPast_seq,INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,currPast,temp_currPast_seq,INSERT_VALUES,SCATTER_FORWARD);
+
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
   {
-
-    // Gather values of x_p on all procs
-    VecScatterCreateToAll(currPast_p,&ctx,&temp_currPast_p_seq);
-    VecScatterBegin(ctx,currPast_p,temp_currPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,currPast_p,temp_currPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-
-    // loop over spatial mesh
-    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
-      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
-      {
-        indices = getIndices(iR,iZ);
+      indices = getIndices(iR,iZ);
 
-        index[0] = indices[iWC];
-        index[1] = indices[iEC];
-        index[2] = indices[iNC];
-        index[3] = indices[iSC];
+      index[0] = indices[iWC];
+      index[1] = indices[iEC];
+      index[2] = indices[iNC];
+      index[3] = indices[iSC];
 
-        // Read fluxes into flux vector
-        ierr = VecGetValues(temp_currPast_p_seq,4,index,value);
+      // Read fluxes into flux vector
+      ierr = VecGetValues(temp_currPast_seq,4,index,value);
 
-        // Get cell currents 
-        GGQD->currentR(iZ,iR) = value[0];
-        GGQD->currentR(iZ,iR+1) = value[1]; 
-        GGQD->currentZ(iZ,iR) = value[2];
-        GGQD->currentZ(iZ+1,iR) = value[3];
+      // Get cell currents 
+      GGQD->currentR(iZ,iR) = value[0];
+      GGQD->currentR(iZ,iR+1) = value[1]; 
+      GGQD->currentZ(iZ,iR) = value[2];
+      GGQD->currentZ(iZ+1,iR) = value[3];
 
-      }
-    } 
+    }
+  } 
 
-    /* Destroy scatter context */
-    VecScatterDestroy(&ctx);
-    VecDestroy(&temp_currPast_p_seq);
-
-  }
-  else
-  {
-    // loop over spatial mesh
-    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
-    {
-      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
-      {
-        indices = getIndices(iR,iZ);
-
-        // Get cell currents 
-        GGQD->currentR(iZ,iR) = currPast(indices[iWC]);
-        GGQD->currentR(iZ,iR+1) = currPast(indices[iEC]);
-        GGQD->currentZ(iZ,iR) = currPast(indices[iNC]);
-        GGQD->currentZ(iZ+1,iR) = currPast(indices[iSC]);
-
-      }
-    } 
-  }
+  /* Destroy scatter context */
+  VecScatterDestroy(&ctx);
+  VecDestroy(&temp_currPast_seq);
 
   return ierr;
 
@@ -1009,7 +955,7 @@ int GreyGroupSolver::getCurrent()
 
 //==============================================================================
 /// Map values from 2D matrix to 1D solution vector
-int GreyGroupSolver::setFlux()
+int GreyGroupSolverBase::setFlux()
 {
   vector<int> indices;
   PetscErrorCode ierr;
@@ -1017,64 +963,41 @@ int GreyGroupSolver::setFlux()
   PetscInt index[5]; 
   VecScatter     ctx;
 
-  // if PETSc
-  if (mesh->petsc)
+  // loop over spatial mesh
+  for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
   {
-    // loop over spatial mesh
-    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
+    for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
     {
-      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
-      {
-        indices = getIndices(iR,iZ);
+      indices = getIndices(iR,iZ);
 
-        value[0] = GGQD->sFlux(iZ,iR);
-        value[1] = GGQD->sFluxR(iZ,iR);
-        value[2] = GGQD->sFluxR(iZ,iR+1);
-        value[3] = GGQD->sFluxZ(iZ,iR);
-        value[4] = GGQD->sFluxZ(iZ+1,iR);
+      value[0] = GGQD->sFlux(iZ,iR);
+      value[1] = GGQD->sFluxR(iZ,iR);
+      value[2] = GGQD->sFluxR(iZ,iR+1);
+      value[3] = GGQD->sFluxZ(iZ,iR);
+      value[4] = GGQD->sFluxZ(iZ+1,iR);
 
-        index[0] = indices[iCF];
-        index[1] = indices[iWF]; 
-        index[2] = indices[iEF]; 
-        index[3] = indices[iNF]; 
-        index[4] = indices[iSF]; 
+      index[0] = indices[iCF];
+      index[1] = indices[iWF]; 
+      index[2] = indices[iEF]; 
+      index[3] = indices[iNF]; 
+      index[4] = indices[iSF]; 
 
-        ierr = VecSetValues(MPQD->xPast_p,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
-      }
-    }  
-
-    // Finalize assembly of xPast_p
-    VecAssemblyBegin(MPQD->xPast_p);
-    VecAssemblyEnd(MPQD->xPast_p);
-
-    // Form xPast_p_seq
-    VecScatterCreateToAll(MPQD->xPast_p,&ctx,&(MPQD->xPast_p_seq));
-    VecScatterBegin(ctx,MPQD->xPast_p,MPQD->xPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,MPQD->xPast_p,MPQD->xPast_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-
-    /* Destroy scatter context */
-    VecScatterDestroy(&ctx);
-
-  }
-  // if anything else
-  else
-  {
-    // loop over spatial mesh
-    for (int iR = 0; iR < mesh->drsCorner.size(); iR++)
-    {
-      for (int iZ = 0; iZ < mesh->dzsCorner.size(); iZ++)
-      {
-        indices = getIndices(iR,iZ);
-
-        (*xPast)(indices[iCF]) = GGQD->sFlux(iZ,iR);
-        (*xPast)(indices[iWF]) = GGQD->sFluxR(iZ,iR);
-        (*xPast)(indices[iEF]) = GGQD->sFluxR(iZ,iR+1);
-        (*xPast)(indices[iNF]) = GGQD->sFluxZ(iZ,iR);
-        (*xPast)(indices[iSF]) = GGQD->sFluxZ(iZ+1,iR);
-
-      }
+      ierr = VecSetValues(*xPast,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
     }
-  }
+  }  
+
+  // Finalize assembly of xPast
+  VecAssemblyBegin(*xPast);
+  VecAssemblyEnd(*xPast);
+
+  // Form xPast_seq
+  VecScatterCreateToAll(*xPast,&ctx,xPastSeq);
+  VecScatterBegin(ctx,*xPast,*xPastSeq,INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,*xPast,*xPastSeq,INSERT_VALUES,SCATTER_FORWARD);
+
+  /* Destroy scatter context */
+  VecScatterDestroy(&ctx);
+
 
   return ierr;
 
@@ -1084,7 +1007,7 @@ int GreyGroupSolver::setFlux()
 //==============================================================================
 /// Extract flux values from GGQD object, store to solution vector, and return 
 /// @param [out] solVector flux values mapped to the 1D vector
-Eigen::VectorXd GreyGroupSolver::getFluxSolutionVector()
+Eigen::VectorXd GreyGroupSolverBase::getFluxSolutionVector()
 {
   Eigen::VectorXd solVector(nUnknowns);
   solVector.setZero();
@@ -1114,7 +1037,7 @@ Eigen::VectorXd GreyGroupSolver::getFluxSolutionVector()
 /// Extract current values from GGQD object, store to solution vector, and 
 /// return 
 /// @param [out] solVector current values mapped to the 1D vector
-Eigen::VectorXd GreyGroupSolver::getCurrentSolutionVector()
+Eigen::VectorXd GreyGroupSolverBase::getCurrentSolutionVector()
 {
   Eigen::VectorXd solVector(nCurrentUnknowns);
   solVector.setZero();
@@ -1143,16 +1066,16 @@ Eigen::VectorXd GreyGroupSolver::getCurrentSolutionVector()
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertNFluxBC_p(int iR,int iZ,int iEq)
+int GreyGroupSolverBase::assertNFluxBC(int iR,int iZ,int iEq)
 {
   PetscErrorCode ierr;
   double value;
   vector<int> indices = getIndices(iR,iZ);
 
   value = 1.0;
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = GGQD->nFluxBC(iR);
-  ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = VecSetValue(*b,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   //Atemp.insert(iEq,indices[iNF]) = 1.0;
   //(*b)(iEq) = GGQD->nFluxBC(iR);
@@ -1167,16 +1090,16 @@ int GreyGroupSolver::assertNFluxBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertSFluxBC_p(int iR,int iZ,int iEq)
+int GreyGroupSolverBase::assertSFluxBC(int iR,int iZ,int iEq)
 {
   PetscErrorCode ierr;
   double value;
   vector<int> indices = getIndices(iR,iZ);
 
   value = 1.0;
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = GGQD->sFluxBC(iR);
-  ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = VecSetValue(*b,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   //Atemp.insert(iEq,indices[iSF]) = 1.0;
   //(*b)(iEq) = GGQD->sFluxBC(iR);
@@ -1191,16 +1114,16 @@ int GreyGroupSolver::assertSFluxBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertWFluxBC_p(int iR,int iZ,int iEq)
+int GreyGroupSolverBase::assertWFluxBC(int iR,int iZ,int iEq)
 {
   PetscErrorCode ierr;
   double value;
   vector<int> indices = getIndices(iR,iZ);
 
   value = 1.0;
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iWF],value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,indices[iWF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = GGQD->wFluxBC(iZ);
-  ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = VecSetValue(*b,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   //Atemp.insert(iEq,indices[iWF]) = 1.0;
   //(*b)(iEq) = GGQD->wFluxBC(iZ);
@@ -1215,16 +1138,16 @@ int GreyGroupSolver::assertWFluxBC_p(int iR,int iZ,int iEq)
 /// @param [in] iR radial index of cell
 /// @param [in] iZ axial index of cell
 /// @param [in] iEq row to place equation in
-int GreyGroupSolver::assertEFluxBC_p(int iR,int iZ,int iEq)
+int GreyGroupSolverBase::assertEFluxBC(int iR,int iZ,int iEq)
 {
   PetscErrorCode ierr;
   double value;
   vector<int> indices = getIndices(iR,iZ);
 
   value = 1.0;
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(*A,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
   value = GGQD->eFluxBC(iZ);
-  ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = VecSetValue(*b,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   //Atemp.insert(iEq,indices[iEF]) = 1.0;
   //(*b)(iEq) = GGQD->eFluxBC(iZ);
@@ -1237,7 +1160,7 @@ int GreyGroupSolver::assertEFluxBC_p(int iR,int iZ,int iEq)
 //==============================================================================
 /// Assign pointers to linear system components 
 ///
-void GreyGroupSolver::assignMPQDPointer(MultiPhysicsCoupledQD * myMPQD)
+void GreyGroupSolverBase::assignMPQDPointer(MultiPhysicsCoupledQD * myMPQD)
 {
 
   MPQD = myMPQD;
@@ -1246,8 +1169,28 @@ void GreyGroupSolver::assignMPQDPointer(MultiPhysicsCoupledQD * myMPQD)
 //==============================================================================
 
 //==============================================================================
+/// Assign pointers to linear system components 
+///
+void GreyGroupSolverBase::assignLinearSystemPointers(Mat * myA,\
+    Vec * myx,\
+    Vec * myxPast,\
+    Vec * myxPastSeq,\
+    Vec * myb)
+{
+
+  A = myA;
+  x = myx;
+  xPast = myxPast;
+  xPastSeq = myxPastSeq;
+  b = myb;
+
+};
+//==============================================================================
+
+
+//==============================================================================
 /// Check for optional inputs of relevance to this object
-void GreyGroupSolver::checkOptionalParams()
+void GreyGroupSolverBase::checkOptionalParams()
 {
   string boundaryType;
 
