@@ -22,6 +22,9 @@ add_library(libs
         WriteData.cpp
         MultilevelCoupling.cpp
         PETScWrapper.cpp
+        GreyGroupSolverBase.cpp
+        GreyGroupSolverSteadyState.cpp
+        GreyGroupSolverTransient.cpp
         )
 
 target_link_libraries(libs superlu)

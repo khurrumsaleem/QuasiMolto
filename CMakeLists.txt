@@ -60,6 +60,9 @@ add_executable(QuasiMolto
                ${PROJECT_SOURCE_DIR}/libs/WriteData.cpp
                ${PROJECT_SOURCE_DIR}/libs/MultilevelCoupling.cpp
                ${PROJECT_SOURCE_DIR}/libs/PETScWrapper.cpp
+               ${PROJECT_SOURCE_DIR}/libs/GreyGroupSolverBase.cpp
+               ${PROJECT_SOURCE_DIR}/libs/GreyGroupSolverSteadyState.cpp
+               ${PROJECT_SOURCE_DIR}/libs/GreyGroupSolverTransient.cpp
                )
 
 target_link_libraries(
