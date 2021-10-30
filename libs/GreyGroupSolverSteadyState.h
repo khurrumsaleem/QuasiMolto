@@ -22,6 +22,10 @@ class GreyGroupSolverSteadyState: public GreyGroupSolverBase
         myMaterials,\
         myInput){};
 
+    // Copy constructor
+    GreyGroupSolverSteadyState(const GreyGroupSolverBase& solver)
+      :GreyGroupSolverBase(solver){};
+
     // functions to enforce governing equations
     int assertZerothMoment(int iR,int iZ,int iEq);
 

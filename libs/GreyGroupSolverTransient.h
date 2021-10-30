@@ -21,6 +21,10 @@ class GreyGroupSolverTransient: public GreyGroupSolverBase
         myMesh,\
         myMaterials,\
         myInput){};
+    
+    // Copy constructor
+    GreyGroupSolverTransient(const GreyGroupSolverBase& solver)
+      :GreyGroupSolverBase(solver){};
 
     // functions to enforce governing equations
     int assertZerothMoment(int iR,int iZ,int iEq);

@@ -17,11 +17,13 @@ class GreyGroupSolverBase
 {
   public:
 
-    // Constructor
+    // Default constructor
     GreyGroupSolverBase(GreyGroupQD * myGGQD,\
         Mesh * myMesh,\
         Materials * myMaterials,\
         YAML::Node * myInput);
+
+    GreyGroupSolverBase(const GreyGroupSolverBase &solver);
 
     // Public variables
     int energyGroups,nR,nZ,nUnknowns,nCurrentUnknowns;

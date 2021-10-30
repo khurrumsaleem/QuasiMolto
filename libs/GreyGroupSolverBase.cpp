@@ -58,6 +58,33 @@ GreyGroupSolverBase::GreyGroupSolverBase(GreyGroupQD * myGGQD,\
 
 //==============================================================================
 
+//==============================================================================
+/// GreyGroupSolver copy constructor
+///
+/// @param [in] myMPQD multiphysics coupled QD object for the simulation
+GreyGroupSolverBase::GreyGroupSolverBase(const GreyGroupSolverBase &solver)
+  : GGQD(solver.GGQD) 
+  , mesh(solver.mesh) 
+  , input(solver.input) 
+  , materials(solver.materials) 
+  , nR(solver.nR) 
+  , nZ(solver.nZ) 
+  , nUnknowns(solver.nUnknowns) 
+  , nCurrentUnknowns(solver.nCurrentUnknowns) 
+  , C(solver.C)
+  , currPast(solver.currPast)
+  , d(solver.d)
+  , xFlux(solver.xFlux)
+  , currPastSeq(solver.currPastSeq)
+{
+  
+  checkOptionalParams();
+
+};
+
+//==============================================================================
+
+
 ////==============================================================================
 /// Form a portion of the linear system  
 
@@ -982,7 +1009,7 @@ int GreyGroupSolverBase::setFlux()
       index[3] = indices[iNF]; 
       index[4] = indices[iSF]; 
 
-      ierr = VecSetValues(*xPast,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
+      ierr = VecSetValues(&xPast,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
     }
   }  
 
@@ -1005,6 +1032,7 @@ int GreyGroupSolverBase::setFlux()
 //==============================================================================
 
 //==============================================================================
+
 /// Extract flux values from GGQD object, store to solution vector, and return 
 /// @param [out] solVector flux values mapped to the 1D vector
 Eigen::VectorXd GreyGroupSolverBase::getFluxSolutionVector()
