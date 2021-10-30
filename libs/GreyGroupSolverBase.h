@@ -33,8 +33,7 @@ class GreyGroupSolverBase
 
     /* PETSc variables and functions */
     Mat * A; 
-    Vec * x,*xPast,*b;
-    Vec * xPastSeq;
+    Vec *x, *xPast, *xPastSeq, *b;
     Mat C;
     Vec currPast,d,xFlux;
     Vec currPastSeq;

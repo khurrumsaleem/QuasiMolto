@@ -1009,7 +1009,7 @@ int GreyGroupSolverBase::setFlux()
       index[3] = indices[iNF]; 
       index[4] = indices[iSF]; 
 
-      ierr = VecSetValues(&xPast,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
+      ierr = VecSetValues(*xPast,5,index,value,INSERT_VALUES);CHKERRQ(ierr); 
     }
   }  
 
@@ -1024,7 +1024,6 @@ int GreyGroupSolverBase::setFlux()
 
   /* Destroy scatter context */
   VecScatterDestroy(&ctx);
-
 
   return ierr;
 

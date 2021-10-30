@@ -38,3 +38,4 @@ parameters:
   initial alpha: [1.0] 
   initial previous flux: [1000.0]
   solve type: TQD
+  petsc: true
