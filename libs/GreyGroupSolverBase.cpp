@@ -1214,7 +1214,6 @@ void GreyGroupSolverBase::assignLinearSystemPointers(Mat * myA,\
 };
 //==============================================================================
 
-
 //==============================================================================
 /// Check for optional inputs of relevance to this object
 void GreyGroupSolverBase::checkOptionalParams()
