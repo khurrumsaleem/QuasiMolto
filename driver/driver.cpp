@@ -313,7 +313,8 @@ void testMultilevelCoupling(Materials * myMaterials,\
 
   // Initialize MultiPhysicsCoupledQD
   MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+  vector<solve_mode> mpqd_modes = {transient, transient, transient};
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input,mpqd_modes);
 
   // Initialize MultiPhysicsCoupledQD
   MultilevelCoupling * myMLCoupling; 
@@ -345,7 +346,10 @@ void testSteadyState(Materials * myMaterials,\
 
   // Initialize MultiPhysicsCoupledQD
   MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+  vector<solve_mode> mpqd_modes = {steady_state, 
+                                   steady_state, 
+                                   steady_state};
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input,mpqd_modes);
 
   // Initialize MultiPhysicsCoupledQD
   MultilevelCoupling * myMLCoupling; 
@@ -388,7 +392,10 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
 
   // Initialize MultiPhysicsCoupledQD
   MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+  vector<solve_mode> mpqd_modes = {steady_state, 
+                                   steady_state, 
+                                   steady_state};
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input,mpqd_modes);
 
   // Initialize MultiPhysicsCoupledQD
   MultilevelCoupling * myMLCoupling; 
@@ -815,7 +822,10 @@ int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
 
   // Initialize MultiPhysicsCoupledQD
   MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+  vector<solve_mode> mpqd_modes = {steady_state, 
+                                   steady_state, 
+                                   steady_state};
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input,mpqd_modes);
 
   // Initialize MultiPhysicsCoupledQD
   MultilevelCoupling * myMLCoupling; 
@@ -860,7 +870,10 @@ void testTransientMultilevelPETScCoupling(Materials * myMaterials,\
 
   // Initialize MultiPhysicsCoupledQD
   MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+  vector<solve_mode> mpqd_modes = {steady_state, 
+                                   steady_state, 
+                                   steady_state};
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input,mpqd_modes);
 
   // Initialize MultilevelCoupling
   MultilevelCoupling * myMLCoupling; 
