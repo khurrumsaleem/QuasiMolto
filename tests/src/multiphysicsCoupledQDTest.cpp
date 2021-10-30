@@ -5,6 +5,7 @@
 #include "../../libs/MultiGroupTransport.h"
 #include "../../libs/MultiGroupQD.h"
 #include "../../libs/MultiPhysicsCoupledQD.h"
+#include "../../libs/Utils.h"
 
 using namespace std;
 
@@ -35,7 +36,8 @@ int main(int argc, char** argv)
 
   // Initialize MultiPhysicsCoupledQD
   MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
+  vector<solve_mode> mpqd_modes = {transient, transient, transient};
+  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input,mpqd_modes);
 
   cout << "Initialized multiphysics-coupled quasidiffusion class" << endl;
   

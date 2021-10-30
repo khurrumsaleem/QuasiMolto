@@ -5,6 +5,7 @@
 #include "Materials.h"
 #include "MultiGroupQD.h"
 #include "SingleGroupQD.h"
+#include "Utils.h"
 
 using namespace std;
 
@@ -86,13 +87,13 @@ class GreyGroupQD
 
     // FUNCTIONS
 
-    shared_ptr<GreyGroupSolver> GGSolver;
-    shared_ptr<GreyGroupSolverBase> GGSolverBase;
+    shared_ptr<GreyGroupSolverBase> GGSolver;
 
     GreyGroupQD(Materials * myMaterials,\
         Mesh * myMesh,\
         YAML::Node * myInput,\
-        MultiPhysicsCoupledQD * myMPQD);
+        MultiPhysicsCoupledQD * myMPQD,\
+        solve_mode mode = steady_state);
 
     void buildLinearSystem();
     void buildSteadyStateLinearSystem();

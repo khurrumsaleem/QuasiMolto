@@ -7,6 +7,7 @@
 #include "GreyGroupSolverBase.h"
 #include "SingleGroupDNP.h"
 #include "WriteData.h"
+#include "Utils.h"
 
 using namespace std;
 
@@ -25,7 +26,8 @@ class MultiPhysicsCoupledQD
     // Constructor
     MultiPhysicsCoupledQD(Materials * myMats,\
         Mesh * myMesh,\
-        YAML::Node * myInput);
+        YAML::Node * myInput,
+        vector<solve_mode> modes = {steady_state, steady_state, steady_state});
 
     // Variables
     Eigen::SparseMatrix<double,Eigen::RowMajor> A;

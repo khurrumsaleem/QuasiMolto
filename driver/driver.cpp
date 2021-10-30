@@ -22,6 +22,7 @@ static char help[] = "Solves CFR reactor kinetics problem with KSP.\n\n";
 #include "../libs/MultilevelCoupling.h"
 #include "../libs/PETScWrapper.h"
 #include "../libs/MMS.h"
+#include "../libs/Utils.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
 using namespace std;

@@ -17,7 +17,8 @@ using namespace std;
 /// @param [in] blankType blank for this material
 MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
     Mesh * myMesh,\
-    YAML::Node * myInput) 
+    YAML::Node * myInput,
+    vector<solve_mode> modes) 
 {
   int tempIndexOffset;
 
@@ -27,7 +28,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   input = myInput;
 
   // Initialize grey group qd object
-  ggqd = new GreyGroupQD(mats,mesh,input,this);
+  ggqd = new GreyGroupQD(mats,mesh,input,this,modes[0]);
   ggqd->indexOffset = 0;  
 
   // Initialize heat transfer object and set index offset
@@ -62,9 +63,9 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   }
 
   // Assign pointers in ggqd object
-  ggqd->GGSolver->assignMPQDPointer(this);
-  ggqd->GGSolverBase->assignLinearSystemPointers(&A_p,&x_p,&xPast_p,&xPast_p_seq,&b_p);
-  ggqd->GGSolver->assignPointers(&A,&x,&xPast,&b);
+  //ggqd->GGSolver->assignMPQDPointer(this);
+  ggqd->GGSolver->assignLinearSystemPointers(&A_p,&x_p,&xPast_p,&xPast_p_seq,&b_p);
+  //ggqd->GGSolver->assignPointers(&A,&x,&xPast,&b);
 
   // Initialize xPast 
   initializeXPast();
@@ -472,7 +473,7 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence()
   mgdnp->getRecircDNPConc();
 
   // Back calculate currents
-  ggqd->GGSolver->formSteadyStateBackCalcSystem();
+  ggqd->GGSolver->formBackCalcSystem();
   ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
 
@@ -718,8 +719,8 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
 
   // Back calculate currents
   // ToDo Add PETSc support for back calc system
-  ggqd->GGSolver->formSteadyStateBackCalcSystem_p();
-  ggqd->GGSolver->backCalculateCurrent_p();
+  ggqd->GGSolver->formBackCalcSystem();
+  ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
 
   // Set xPast and past neutron velocities 
@@ -754,8 +755,8 @@ void MultiPhysicsCoupledQD::updatePseudoTransientVars_p()
 
   // Back calculate currents
   // ToDo Add PETSc support for back calc system
-  ggqd->GGSolver->formSteadyStateBackCalcSystem_p();
-  ggqd->GGSolver->backCalculateCurrent_p();
+  ggqd->GGSolver->formBackCalcSystem();
+  ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
 
 };
@@ -891,8 +892,8 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence_p()
 
   // Back calculate currents
   // ToDo Add PETSc support for back calc system
-  ggqd->GGSolver->formBackCalcSystem_p();
-  ggqd->GGSolver->backCalculateCurrent_p();
+  ggqd->GGSolver->formBackCalcSystem();
+  ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
 
   // Set xPast and past neutron velocities 

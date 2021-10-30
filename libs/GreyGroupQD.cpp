@@ -19,7 +19,8 @@ using namespace std;
 GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * myInput,\
-    MultiPhysicsCoupledQD * myMPQD)
+    MultiPhysicsCoupledQD * myMPQD,
+    solve_mode mode)
 {
   // Variables for reading inputs
   vector<double> inpSFluxPrev0;
@@ -31,8 +32,17 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   mesh = myMesh;
   input = myInput;
 
-  GGSolver = std::make_shared<GreyGroupSolver>(this,mesh,materials,input);
-  GGSolverBase = std::make_shared<GreyGroupSolverSteadyState>(this,mesh,materials,input);
+  switch (mode)
+  {
+    case steady_state:
+      cout << "GGQD: steady state" << endl;
+      GGSolver = std::make_shared<GreyGroupSolverSteadyState>(this,mesh,materials,input);
+      break;
+    case transient:
+      cout << "GGQD: transient" << endl;
+      GGSolver = std::make_shared<GreyGroupSolverTransient>(this,mesh,materials,input);
+      break;
+  }
 
   // initialize Eddington factors to diffusion physics
   double diagValue = 1.0/3.0, offDiagValue = 0.0;
@@ -136,7 +146,8 @@ void GreyGroupQD::buildLinearSystem()
 void GreyGroupQD::buildSteadyStateLinearSystem()
 {
 
-  GGSolver->formSteadyStateLinearSystem(); // Assuming this is the first set of equations
+  //GGSolver->formSteadyStateLinearSystem(); // Assuming this is the first set of equations
+  GGSolver->formLinearSystem(); // Assuming this is the first set of equations
 
 };
 //==============================================================================
@@ -151,7 +162,8 @@ void GreyGroupQD::buildSteadyStateLinearSystem()
 void GreyGroupQD::buildSteadyStateLinearSystem_p()
 {
 
-  GGSolver->formSteadyStateLinearSystem_p(); // Assuming this is the first set of equations
+  //GGSolver->formSteadyStateLinearSystem_p(); // Assuming this is the first set of equations
+  GGSolver->formLinearSystem(); // Assuming this is the first set of equations
 
 };
 //==============================================================================
@@ -164,7 +176,8 @@ void GreyGroupQD::buildSteadyStateLinearSystem_p()
 void GreyGroupQD::buildLinearSystem_p()
 {
 
-  GGSolver->formLinearSystem_p(); // Assuming this is the first set of equations
+  //GGSolver->formLinearSystem_p(); // Assuming this is the first set of equations
+  GGSolver->formLinearSystem(); // Assuming this is the first set of equations
 
 };
 //==============================================================================
