@@ -14,6 +14,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: check compiler versions
+      run: sudo ln -s /usr/bin/gcc-6 /usr/local/bin/gcc
+      run: sudo ln -s /usr/bin/g++-6 /usr/local/bin/g++
       run: gcc -v && g++ -v && cmake --version
     #- name: make
     #  run: make
