@@ -1,4 +1,6 @@
 # QuasiMolto [![Build Status](https://travis-ci.org/aaronjamesreynolds/QuasiMolto.svg?branch=master)](https://travis-ci.org/aaronjamesreynolds/QuasiMolto)
+[![Build Actions Status](https://github.com/aaronjamesreynolds/QuasiMolto/workflows/c-cpp.yml/badge.svg)](https://github.com/aaronjamesreynolds/QuasiMolto/actions)
+![example workflow](https://github.com/aaronjamesreynolds/QuasiMolto/workflows/c-cpp.yml/badge.svg)
 
 A multigroup, multiphysics, multilevel transport solver for circulating fuel reactor kinetics. 
 Contains transient and steady-state solvers. 
