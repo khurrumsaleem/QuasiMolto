@@ -38,6 +38,7 @@ class HeatTransfer
   Eigen::MatrixXd calcExplicitFissionEnergy();
   Eigen::MatrixXd calcExplicitAxialFissionEnergy();
   Eigen::MatrixXd calcExplicitAxialFuelFissionEnergy();
+  Eigen::MatrixXd calcGreyModFluxShapedGammaDep();
   void calcDiracs();
   void calcFluxes();
   void calcImplicitFluxes();
