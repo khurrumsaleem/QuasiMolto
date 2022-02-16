@@ -1,0 +1,124 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-serial:
+
+    runs-on: ubuntu-latest
+    env:
+      CC: /usr/bin/gcc
+      CXX: /usr/bin/g++
+
+    steps:
+      - uses: actions/checkout@v2
+        with: 
+          submodules: 'true'
+      - run: $CC -v && $CXX -v && cmake --version
+      # Compile Armadillo
+      - name: Set armadillo install prefix
+        working-directory: ./TPLs/armadillo
+        run: cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
+      - name: Make armadillo
+        working-directory: ./TPLs/armadillo
+        run: make
+      - name: Install armadillo
+        working-directory: ./TPLs/armadillo
+        run: make install
+      # Compile SuperLU 
+      - name: Set superlu install prefix
+        working-directory: ./TPLs/superlu
+        run: cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
+      - name: Make superlu
+        working-directory: ./TPLs/superlu
+        run: make
+      - name: Install superlu
+        working-directory: ./TPLs/superlu
+        run: make install
+      # Compile PETSc 
+      - name: Configure PETSC
+        working-directory: ./TPLs/petsc
+        run: ./configure --with-fc=0 --with-mpi=0
+      - name: Install PETSC
+        working-directory: ./TPLs/petsc
+        run: make PETSC_DIR=$(pwd) PETSC_ARCH=arch-linux-c-debug all
+      - name: Test PETSC install
+        working-directory: ./TPLs/petsc
+        run: make PETSC_DIR=$(pwd) PETSC_ARCH=arch-linux-c-debug check
+      # Compile QuasiMolto 
+      - name: Create test directory to build in
+        run: mkdir ../test-build
+      - name: Initialize QuasiMolto build directory
+        working-directory: ../test-build
+        run: cmake -DCMAKE_BUILD_TYPE=Release ../QuasiMolto/
+      - name: Make QuasiMolto
+        working-directory: ../test-build
+        run: make all
+      - name: Run tests for QuasiMolto
+        working-directory: ../test-build
+        run: make test
+
+  build-mpi:
+
+    runs-on: ubuntu-latest
+    env:
+      CC: /usr/bin/mpicc
+      CXX: /usr/bin/mpicxx
+    strategy:
+      matrix:
+        mpi: [ 'mpich', 'openmpi' ]
+        #mpi: [ 'mpich']
+
+    steps:
+      - uses: actions/checkout@v2
+        with: 
+          submodules: 'true'
+      - uses: mpi4py/setup-mpi@v1
+        with:
+          mpi: ${{ matrix.mpi }}
+      # Check versions of gcc, g++ and cmake
+      - run: $CC -v && $CXX -v && cmake --version
+      # Compile Armadillo
+      - name: Set armadillo install prefix
+        working-directory: ./TPLs/armadillo
+        run: cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
+      - name: Make armadillo
+        working-directory: ./TPLs/armadillo
+        run: make
+      - name: Install armadillo
+        working-directory: ./TPLs/armadillo
+        run: make install
+      # Compile SuperLU 
+      - name: Set superlu install prefix
+        working-directory: ./TPLs/superlu
+        run: cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
+      - name: Make superlu
+        working-directory: ./TPLs/superlu
+        run: make
+      - name: Install superlu
+        working-directory: ./TPLs/superlu
+        run: make install
+      # Compile PETSc 
+      - name: Configure PETSC
+        working-directory: ./TPLs/petsc
+        run: ./configure --with-fc=0
+      - name: Install PETSC
+        working-directory: ./TPLs/petsc
+        run: make PETSC_DIR=$(pwd) PETSC_ARCH=arch-linux-c-debug all
+      - name: Test PETSC install
+        working-directory: ./TPLs/petsc
+        run: make PETSC_DIR=$(pwd) PETSC_ARCH=arch-linux-c-debug check
+      # QuasiMolto 
+      - name: Create test directory to build in
+        run: mkdir ../test-build
+      - name: Initialize QuasiMolto build directory
+        working-directory: ../test-build
+        run: cmake -DCMAKE_BUILD_TYPE=Release ../QuasiMolto/
+      - name: Make QuasiMolto
+        working-directory: ../test-build
+        run: make all
+      - name: Run tests for QuasiMolto
+        working-directory: ../test-build
+        run: make test

@@ -1,9 +1,15 @@
-# QuasiMolto [![Build Status](https://travis-ci.org/aaronjamesreynolds/QuasiMolto.svg?branch=master)](https://travis-ci.org/aaronjamesreynolds/QuasiMolto)
-
+# QuasiMolto [![CI Actions Status](https://github.com/aaronjamesreynolds/QuasiMolto/actions/workflows/ci.yaml/badge.svg)](https://github.com/aaronjamesreynolds/QuasiMolto/actions)
 A multigroup, multiphysics, multilevel transport solver for circulating fuel reactor kinetics. 
 Contains transient and steady-state solvers. 
 
 ## Build instructions
+
+  * Set compilers (note: compatability confirmed for the 7.5.0 versions of `mpicc` and `mpicxx` distributed by GNU) 
+
+    ```export CC=mpicc```
+    
+    ```export CXX=mpicxx```
+
   * Clone the QuasiMolto repository and its submodules
 
     ```git clone --recurse-submodules git@github.com:aaronjamesreynolds/QuasiMolto.git```

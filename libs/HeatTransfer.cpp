@@ -433,6 +433,54 @@ void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff,\
 //==============================================================================
 
 //==============================================================================
+/// Calculate grey group neutron flux shaped gamma energy deposition term
+///
+Eigen::MatrixXd HeatTransfer::calcGreyModFluxShapedGammaDep()
+{
+  
+  double localVolume, localFlux, totalVolume, localSigF, localOmega,
+    accumFissionEnergy = 0;
+  
+  Eigen::MatrixXd modFlux, modVol;
+  modFlux.setZero(temp.rows(),temp.cols());
+  modVol.setZero(temp.rows(),temp.cols());
+ 
+  totalVolume = M_PI*mesh->R*mesh->R*mesh->Z;
+ 
+  for (int iZ = 0; iZ < temp.rows(); iZ++)
+  {
+    for (int iR = 0; iR < temp.cols(); iR++)
+    {
+      // Get local parameters
+      localSigF = mats->oneGroupXS->sigF(iZ,iR);
+      localOmega = mats->omega(iZ,iR);
+      localFlux = mpqd->ggqd->sFlux(iZ,iR);
+      localVolume = mesh->getGeoParams(iR,iZ)[0];
+
+      if (not localSigF > 0.0)
+      {
+        modFlux(iZ,iR) = localFlux;
+        modVol(iZ,iR) = localVolume;
+      }
+
+      // Calculate gamma source coefficient
+      accumFissionEnergy += localVolume *(localOmega * localSigF * localFlux); 
+    }
+  }
+
+  double coreAvgFissionEnergy = accumFissionEnergy / totalVolume; 
+  double volAvgModFlux = modFlux.cwiseProduct(modVol).sum() / modVol.sum();
+
+  Eigen::MatrixXd greyModFluxShapedGammaDep = 
+    coreAvgFissionEnergy * modFlux / volAvgModFlux;
+  
+  return greyModFluxShapedGammaDep;
+
+};
+//==============================================================================
+
+
+//==============================================================================
 /// Calculate core-average gamma energy deposition term
 ///
 Eigen::MatrixXd HeatTransfer::calcExplicitFissionEnergy()
@@ -557,8 +605,6 @@ Eigen::MatrixXd HeatTransfer::calcExplicitAxialFuelFissionEnergy()
 
 };
 //==============================================================================
-
-
 
 //==============================================================================
 /// Calculate energy diracs
@@ -1021,7 +1067,8 @@ int HeatTransfer::buildSteadyStateLinearSystem_p()
 
   // Calculate core-average gamma deposition term
   if (modIrradiation == axial)
-    volAvgGammaDep = calcExplicitAxialFissionEnergy();
+    volAvgGammaDep = calcGreyModFluxShapedGammaDep();
+    //volAvgGammaDep = calcExplicitAxialFissionEnergy();
   else if (modIrradiation == fuel)
     volAvgGammaDep = calcExplicitAxialFuelFissionEnergy();
   else
@@ -1221,7 +1268,8 @@ int HeatTransfer::buildLinearSystem_p()
 
   // Calculate core-average gamma deposition term
   if (modIrradiation == axial)
-    volAvgGammaDep = calcExplicitAxialFissionEnergy();
+    volAvgGammaDep = calcGreyModFluxShapedGammaDep();
+    //volAvgGammaDep = calcExplicitAxialFissionEnergy();
   else if (modIrradiation == fuel)
     volAvgGammaDep = calcExplicitAxialFuelFissionEnergy();
   else
