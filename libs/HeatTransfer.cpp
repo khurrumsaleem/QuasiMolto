@@ -438,11 +438,12 @@ void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff,\
 Eigen::MatrixXd HeatTransfer::calcGreyModFluxShapedGammaDep()
 {
   
-  double localVolume,localFlux,totalVolume,localSigF,localOmega,\
-    accumFissionEnergy = 0, modVol = 0, accumModFlux;
+  double localVolume, localFlux, totalVolume, localSigF, localOmega,
+    accumFissionEnergy = 0;
   
-  Eigen::MatrixXd modFlux;
+  Eigen::MatrixXd modFlux, modVol;
   modFlux.setZero(temp.rows(),temp.cols());
+  modVol.setZero(temp.rows(),temp.cols());
  
   totalVolume = M_PI*mesh->R*mesh->R*mesh->Z;
  
@@ -456,11 +457,10 @@ Eigen::MatrixXd HeatTransfer::calcGreyModFluxShapedGammaDep()
       localFlux = mpqd->ggqd->sFlux(iZ,iR);
       localVolume = mesh->getGeoParams(iR,iZ)[0];
 
-      if (not localSigF > 0)
+      if (not localSigF > 0.0)
       {
-        modVol += localVolume;
-        accumModFlux += localFlux * localVolume;
         modFlux(iZ,iR) = localFlux;
+        modVol(iZ,iR) = localVolume;
       }
 
       // Calculate gamma source coefficient
@@ -469,10 +469,11 @@ Eigen::MatrixXd HeatTransfer::calcGreyModFluxShapedGammaDep()
   }
 
   double coreAvgFissionEnergy = accumFissionEnergy / totalVolume; 
+  double volAvgModFlux = modFlux.cwiseProduct(modVol).sum() / modVol.sum();
 
   Eigen::MatrixXd greyModFluxShapedGammaDep = 
-    modVol * coreAvgFissionEnergy * modFlux / accumModFlux;
-
+    coreAvgFissionEnergy * modFlux / volAvgModFlux;
+  
   return greyModFluxShapedGammaDep;
 
 };
