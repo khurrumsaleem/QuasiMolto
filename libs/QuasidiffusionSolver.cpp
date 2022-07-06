@@ -3384,7 +3384,7 @@ int QDSolver::assertSteadyStateNGoldinP1BC_p(int iR,int iZ,int iEq,\
   vector<int> indices = getIndices(iR,iZ,energyGroup);
 
   steadyStateNorthCurrent_p(1.0,iR,iZ,iEq,energyGroup,SGQD);
-  value = 1.0/sqrt(3.0); 
+  value = 1.0/sqrt(3.0);
   ierr = MatSetValue(A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //A.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
@@ -3412,7 +3412,7 @@ int QDSolver::assertSteadyStateSGoldinP1BC_p(int iR,int iZ,int iEq,\
   vector<int> indices = getIndices(iR,iZ,energyGroup);
 
   steadyStateSouthCurrent_p(1.0,iR,iZ,iEq,energyGroup,SGQD);
-  value = -1.0/sqrt(3.0); 
+  value = -1.0/sqrt(3.0);
   ierr = MatSetValue(A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //A.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
@@ -3440,8 +3440,8 @@ int QDSolver::assertSteadyStateEGoldinP1BC_p(int iR,int iZ,int iEq,\
   vector<int> indices = getIndices(iR,iZ,energyGroup);
 
   steadyStateEastCurrent_p(1.0,iR,iZ,iEq,energyGroup,SGQD);
-  value = -1.0/sqrt(3.0); 
-  ierr = MatSetValue(A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
+  value = -1.0/sqrt(3.0);
+  ierr = MatSetValue(A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //A.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
 
