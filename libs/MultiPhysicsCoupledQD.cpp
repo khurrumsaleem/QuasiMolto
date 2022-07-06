@@ -89,12 +89,7 @@ int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
   vector<int> indices = ggqd->GGSolver->getIndices(iR,iZ);
   PetscErrorCode ierr;
 
-  if (mesh->petsc)
-  {
-    ierr = MatSetValue(A_p,iEq,indices[0],coeff,ADD_VALUES);CHKERRQ(ierr); 
-  }
-  else
-    myA->coeffRef(iEq,indices[0]) += coeff; 
+  ierr = MatSetValue(A_p,iEq,indices[0],coeff,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
 };
@@ -114,19 +109,12 @@ int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
   int iCF = 0; // index of cell-average flux value in index vector  
   vector<int> indices = ggqd->GGSolver->getIndices(iR,iZ);
   PetscErrorCode ierr;
-
-  if (mesh->petsc)
-  {
-    ierr = MatSetValue(A_p,iEq,indices[0],coeff,ADD_VALUES);CHKERRQ(ierr); 
-  }
-  else
-    (*myA)(iEq,indices[0]) += coeff; 
+  
+  ierr = MatSetValue(A_p,iEq,indices[0],coeff,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
-
 };
 //==============================================================================
-
 
 //==============================================================================
 /// Include a dnp source in the linear system
@@ -149,79 +137,11 @@ int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff,\
     index = mgdnp->DNPs[iGroup]->getIndex(iZ,iR,indexOffset);
     groupLambda = mgdnp->DNPs[iGroup]->lambda;
 
-    if (mesh->petsc)
-    {
-      value = coeff*groupLambda;
-      ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
-    }
-    else
-      myA->coeffRef(iEq,index) += coeff*groupLambda;
+    value = coeff*groupLambda;
+    ierr = MatSetValue(A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
   }
 
   return ierr;
-
-};
-//==============================================================================
-
-//==============================================================================
-/// Build linear system for multiphysics coupled quasidiffusion system
-///
-void MultiPhysicsCoupledQD::buildLinearSystem()
-{
-
-  // Get number of non-zero elements in sparse matrix to optimize building 
-  // linear system
-  int nonZeros = A.nonZeros(); 
-
-  // Reset linear system
-  A.setZero();
-  A.reserve(nonZeros); 
-  x.setZero();
-  b.setZero();
-
-  // Build QD system
-  ggqd->buildLinearSystem();
-
-  // Build heat transfer system
-  heat->buildLinearSystem();
-
-  // Build delayed neutron precursor balance system in core
-  mgdnp->buildCoreLinearSystem();  
-
-  // Build delayed neutron precursor balance system in recirculation loop
-  mgdnp->buildRecircLinearSystem();  
-
-};
-//==============================================================================
-
-//==============================================================================
-/// Build linear system for multiphysics coupled quasidiffusion system
-///
-void MultiPhysicsCoupledQD::buildSteadyStateLinearSystem()
-{
-
-  // Get number of non-zero elements in sparse matrix to optimize building 
-  // linear system
-  int nonZeros = A.nonZeros(); 
-
-  // Reset linear system
-  A.setZero();
-  A.reserve(nonZeros); 
-  x.setZero();
-  b.setZero();
-
-  // Build QD system
-  ggqd->buildSteadyStateLinearSystem();
-
-  // Build heat transfer system
-  heat->buildSteadyStateLinearSystem();
-
-  // Build delayed neutron precursor balance system in core
-  mgdnp->buildSteadyStateCoreLinearSystem();  
-
-  // Build delayed neutron precursor balance system in recirculation loop
-  mgdnp->buildSteadyStateRecircLinearSystem();  
-
 };
 //==============================================================================
 
@@ -245,248 +165,22 @@ void MultiPhysicsCoupledQD::initializeXPast()
   mgdnp->setRecircDNPConc();  
 
   /* Calculate currents consistent with fluxes in xPast */
-  if (mesh->petsc)
-  {
-    x_p = xPast_p; // getFlux() pulls from x
+  x_p = xPast_p; // getFlux() pulls from x
 
-    // Broadcast xPast
-    VecScatterCreateToAll(xPast_p,&ctx,&(xPast_p_seq));
-    VecScatterBegin(ctx,xPast_p,xPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,xPast_p,xPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterDestroy(&ctx);
-  }
-  else
-  {
-    x = xPast; // getFlux() pulls from x
-  }
+  // Broadcast xPast
+  VecScatterCreateToAll(xPast_p,&ctx,&(xPast_p_seq));
+  VecScatterBegin(ctx,xPast_p,xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,xPast_p,xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterDestroy(&ctx);
 
   ggqd->GGSolver->getFlux();
   ggqd->GGSolver->formBackCalcSystem();
   ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
 
-  if(mesh->petsc)
-    VecZeroEntries(x_p);
-  else
-    x.setZero(); // Reset x
-};
-//==============================================================================
-
-//==============================================================================
-/// Solve linear system for multiphysics coupled quasidiffusion system
-///
-void MultiPhysicsCoupledQD::solveLinearSystem()
-{
-
-  solveSuperLU();
-  mgdnp->solveRecircLinearSystem();
-
-};
-//==============================================================================
-
-//==============================================================================
-/// Solve linear system for multiphysics coupled quasidiffusion system with an
-/// iterative solver
-///
-void MultiPhysicsCoupledQD::solveLinearSystemIterative(Eigen::VectorXd xGuess)
-{
-
-  double duration,totalDuration = 0.0;
-  clock_t startTime;
-  int n = Eigen::nbThreads();
-  int solveOutcome;
-
-  if (preconditioner == iluPreconditioner) 
-    solveOutcome = solveIterativeILU(xGuess);
-  else if (preconditioner == diagPreconditioner)
-  {
-    solveOutcome = solveIterativeDiag(xGuess);
-    if (solveOutcome != Eigen::Success)
-    {
-      cout << "            " << "BiCGSTAB solve failed! Attempting iterative";
-      cout << " solve with ILU preconditioner." << endl;
-      solveOutcome = solveIterativeILU(xGuess);
-    }
-  }
-
-  if (solveOutcome != Eigen::Success)
-  {
-    cout << "            " << "Iterative solve failed! ";
-    cout << "Using SuperLU direct solve.";  
-    solveSuperLU();
-  }
-
-  // Solve recirc system
-  mgdnp->solveRecircLinearSystem();
-
-};
-//==============================================================================
-
-//==============================================================================
-/// Solve linear system for multiphysics coupled quasidiffusion system with a 
-/// direct solve
-///
-int MultiPhysicsCoupledQD::solveSuperLU()
-{
-
-  int success;
-
-  // Declare SuperLU solver
-  Eigen::SuperLU<Eigen::SparseMatrix<double>> solverLU;
-  A.makeCompressed();
-  solverLU.compute(A);
-  x = solverLU.solve(b);
-
-  // Return outcome of solve
-  return success = solverLU.info();
-
-};
-//==============================================================================
-
-//==============================================================================
-/// Solve linear system for multiphysics coupled quasidiffusion system with an
-/// iterative solver and incomplete LU preconditioner
-///
-int MultiPhysicsCoupledQD::solveIterativeILU(Eigen::VectorXd xGuess)
-{
-
-  int success;
-
-  // Declare solver with ILUT preconditioner
-  Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor>,\
-    Eigen::IncompleteLUT<double> > solver;
-
-  // Set preconditioner parameters
-  solver.preconditioner().setDroptol(1E-4);
-  //solver.preconditioner().setFillfactor(100);
-  //solver.preconditioner().setFillfactor(5);
-
-  // Set convergence parameters
-  //solver.setTolerance(1E-14);
-  //solver.setMaxIterations(20);
-
-  // Solve system
-  A.makeCompressed();
-  solver.analyzePattern(A);
-  solver.factorize(A);
-  x = solver.solveWithGuess(b,xGuess);
-
-  if (mesh->verbose) 
-  {
-    cout << "            ";
-    cout << "info:     " << solver.info() << endl;
-    cout << "            ";
-    cout << "#iterations:     " << solver.iterations() << endl;
-    cout << "            ";
-    cout << "estimated error: " << solver.error() << endl;
-    cout << "            ";
-    cout << "tolerance: " << solver.tolerance() << endl;
-  }
-
-  // Return outcome of solve
-  return success = solver.info();
-
-};
-//==============================================================================
-
-//==============================================================================
-/// Solve linear system for multiphysics coupled quasidiffusion system with an
-/// iterative solver and diagonal preconditioner
-///
-int MultiPhysicsCoupledQD::solveIterativeDiag(Eigen::VectorXd xGuess)
-{
-
-  int success;
-
-  // Declare solver with default diagonal precondition (cheaper to calculate) 
-  // but usually requires more iterations to converge
-  Eigen::BiCGSTAB<Eigen::SparseMatrix<double,Eigen::RowMajor> > solver;
-
-  // Set convergence parameters
-  //solver.setTolerance(1E-14);
-  //solver.setMaxIterations(20);
-
-  // Solve system
-  A.makeCompressed();
-  solver.analyzePattern(A);
-  solver.factorize(A);
-  x = solver.solveWithGuess(b,xGuess);
-
-  if (mesh->verbose) 
-  {
-    cout << "            ";
-    cout << "info:     " << solver.info() << endl;
-    cout << "            ";
-    cout << "#iterations:     " << solver.iterations() << endl;
-    cout << "            ";
-    cout << "estimated error: " << solver.error() << endl;
-    cout << "            ";
-    cout << "tolerance: " << solver.tolerance() << endl;
-  }
-
-  // Return outcome of solve
-  return success = solver.info();
-
-};
-//==============================================================================
-
-//==============================================================================
-/// Run transient with multiple solves 
-///
-void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
-{
-
-  // Read solutions from 1D vector to 2D matrices 
-  ggqd->GGSolver->getFlux();
-
-  heat->getTemp();
-
-  mgdnp->getCoreDNPConc();
-
-  mgdnp->getRecircDNPConc();
-
-  // Back calculate currents
-  ggqd->GGSolver->formBackCalcSystem();
-  ggqd->GGSolver->backCalculateCurrent();
-  ggqd->GGSolver->getCurrent();
-
-  // Set xPast and past neutron velocities 
-  xPast = x;
-  mats->oneGroupXS->neutVPast = mats->oneGroupXS->neutV;  
-  mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;  
-  mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;  
-
-};
-//==============================================================================
-
-//==============================================================================
-/// Run transient with multiple solves 
-///
-void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence()
-{
-
-  // Read solutions from 1D vector to 2D matrices 
-  ggqd->GGSolver->getFlux();
-
-  heat->getTemp();
-
-  mgdnp->getCoreDNPConc();
-
-  mgdnp->getRecircDNPConc();
-
-  // Back calculate currents
-  ggqd->GGSolver->formSteadyStateBackCalcSystem();
-  ggqd->GGSolver->backCalculateCurrent();
-  ggqd->GGSolver->getCurrent();
-
-  // Set xPast and past neutron velocities 
-  xPast = x;
-  mats->oneGroupXS->neutVPast = mats->oneGroupXS->neutV;  
-  mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;  
-  mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;  
-
+  VecZeroEntries(x_p);
 };
 //==============================================================================
 
@@ -567,42 +261,6 @@ void MultiPhysicsCoupledQD::printVars()
 };
 //==============================================================================
 
-//==============================================================================
-/// Run transient with multiple solves 
-///
-void MultiPhysicsCoupledQD::solveTransient()
-{
-
-  for (int iT = 0; iT < mesh->dts.size(); iT++)
-  {
-    buildLinearSystem();
-    solveLinearSystem();   
-    updateVarsAfterConvergence();
-  }
-
-  writeVars();
-};
-//==============================================================================
-
-//==============================================================================
-/// Converge a steady state ELOT solve 
-///
-void MultiPhysicsCoupledQD::solveSteadyState()
-{
-
-  for (int iT = 0; iT < mesh->dts.size(); iT++)
-  {
-    buildSteadyStateLinearSystem();
-    solveLinearSystem();   
-    updateSteadyStateVarsAfterConvergence();
-  }
-
-  writeVars();
-
-};
-//==============================================================================
-
-
 /* PETSc functions */
 
 // Dual purpose
@@ -611,7 +269,7 @@ void MultiPhysicsCoupledQD::solveSteadyState()
 /// Solve linear system for multiphysics coupled quasidiffusion system with a 
 /// direct solve
 ///
-int MultiPhysicsCoupledQD::solve_p()
+int MultiPhysicsCoupledQD::solve()
 {
 
   string PetscSolver = "bicg";
@@ -633,7 +291,6 @@ int MultiPhysicsCoupledQD::solve_p()
   /* Create solver */
   ierr = KSPCreate(PETSC_COMM_WORLD,&ksp);CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp,A_p,A_p);CHKERRQ(ierr);
-  //ierr = KSPSetTolerances(ksp,1.e-9/((m+1)*(n+1)),1.e-50,PETSC_DEFAULT,PETSC_DEFAULT);
   ierr = KSPSetTolerances(ksp,relTol,absTol,PETSC_DEFAULT,PETSC_DEFAULT);
   CHKERRQ(ierr);
 
@@ -648,18 +305,15 @@ int MultiPhysicsCoupledQD::solve_p()
   ierr = KSPSolve(ksp,b_p,x_p);CHKERRQ(ierr);
   auto end = chrono::high_resolution_clock::now();
   auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-  //ierr = VecView(x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //cout << "solve time: " << elapsed.count()*1e-9 << endl;
 
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
-  //ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
 
   /* Destroy solver */
   ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
 
   /* Solve for recirculation concentrations */
-  mgdnp->solveRecircLinearSystem_p();
+  mgdnp->solveRecircLinearSystem();
 
   return ierr;
 
@@ -671,7 +325,7 @@ int MultiPhysicsCoupledQD::solve_p()
 //==============================================================================
 /// Build linear system for multiphysics coupled quasidiffusion system
 ///
-int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
+int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem()
 {
 
   PetscErrorCode ierr;
@@ -681,16 +335,16 @@ int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
   VecZeroEntries(b_p);
 
   // Build QD system
-  ggqd->buildSteadyStateLinearSystem_p();
+  ggqd->buildSteadyStateLinearSystem();
 
   // Build heat transfer system
-  heat->buildSteadyStateLinearSystem_p();
+  heat->buildSteadyStateLinearSystem();
 
   // Build delayed neutron precursor balance system in core
-  mgdnp->buildSteadyStateCoreLinearSystem_p();  
+  mgdnp->buildSteadyStateCoreLinearSystem();  
 
   // Build delayed neutron precursor balance system in recirculation loop
-  mgdnp->buildSteadyStateRecircLinearSystem_p();  
+  mgdnp->buildSteadyStateRecircLinearSystem();  
 
   /* Finalize assembly for A_p and b_p */
   ierr = MatAssemblyBegin(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -706,7 +360,7 @@ int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem_p()
 //==============================================================================
 /// Update 2D variables after a converged steady state solve
 ///
-void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
+void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence()
 {
 
   // Object for broadcasting PETSc variable 
@@ -723,8 +377,8 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
 
   // Back calculate currents
   // ToDo Add PETSc support for back calc system
-  ggqd->GGSolver->formSteadyStateBackCalcSystem_p();
-  ggqd->GGSolver->backCalculateCurrent_p();
+  ggqd->GGSolver->formSteadyStateBackCalcSystem();
+  ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
 
   // Set xPast and past neutron velocities 
@@ -748,7 +402,7 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence_p()
 //==============================================================================
 /// Update 2D vars after a converged pseudo transient solve
 ///
-void MultiPhysicsCoupledQD::updatePseudoTransientVars_p()
+void MultiPhysicsCoupledQD::updatePseudoTransientVars()
 {
 
   // Object for broadcasting PETSc variable 
@@ -758,9 +412,8 @@ void MultiPhysicsCoupledQD::updatePseudoTransientVars_p()
   ggqd->GGSolver->getFlux();
 
   // Back calculate currents
-  // ToDo Add PETSc support for back calc system
-  ggqd->GGSolver->formSteadyStateBackCalcSystem_p();
-  ggqd->GGSolver->backCalculateCurrent_p();
+  ggqd->GGSolver->formSteadyStateBackCalcSystem();
+  ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
 
 };
@@ -770,14 +423,14 @@ void MultiPhysicsCoupledQD::updatePseudoTransientVars_p()
 //==============================================================================
 /// Converge a steady state ELOT solve 
 ///
-void MultiPhysicsCoupledQD::solveSteadyState_p()
+void MultiPhysicsCoupledQD::solveSteadyState()
 {
 
   for (int iT = 0; iT < mesh->dts.size(); iT++)
   {
-    buildSteadyStateLinearSystem_p();
-    solve_p();   
-    updateSteadyStateVarsAfterConvergence_p();
+    buildSteadyStateLinearSystem();
+    solve();   
+    updateSteadyStateVarsAfterConvergence();
   }
 
   writeVars();
@@ -790,14 +443,14 @@ void MultiPhysicsCoupledQD::solveSteadyState_p()
 //==============================================================================
 /// Run transient with multiple solves 
 ///
-void MultiPhysicsCoupledQD::solveTransient_p()
+void MultiPhysicsCoupledQD::solveTransient()
 {
 
   for (int iT = 0; iT < mesh->dts.size(); iT++)
   {
-    buildLinearSystem_p();
-    solve_p();   
-    updateVarsAfterConvergence_p();
+    buildLinearSystem();
+    solve();   
+    updateVarsAfterConvergence();
   }
 
   writeVars();
@@ -808,7 +461,7 @@ void MultiPhysicsCoupledQD::solveTransient_p()
 //==============================================================================
 /// Build linear system for multiphysics coupled quasidiffusion system
 ///
-int MultiPhysicsCoupledQD::buildLinearSystem_p()
+int MultiPhysicsCoupledQD::buildLinearSystem()
 {
 
   PetscErrorCode ierr;
@@ -818,16 +471,16 @@ int MultiPhysicsCoupledQD::buildLinearSystem_p()
   VecZeroEntries(b_p);
 
   // Build QD system
-  ggqd->buildLinearSystem_p();
+  ggqd->buildLinearSystem();
 
   // Build heat transfer system
-  heat->buildLinearSystem_p();
+  heat->buildLinearSystem();
 
   // Build delayed neutron precursor balance system in core
-  mgdnp->buildCoreLinearSystem_p();  
+  mgdnp->buildCoreLinearSystem();  
 
   // Build delayed neutron precursor balance system in recirculation loop
-  mgdnp->buildRecircLinearSystem_p();  
+  mgdnp->buildRecircLinearSystem();  
 
   /* Finalize assembly for A_p and b_p */
   ierr = MatAssemblyBegin(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -845,7 +498,7 @@ int MultiPhysicsCoupledQD::buildLinearSystem_p()
 //==============================================================================
 /// Build linear system for multiphysics coupled quasidiffusion system
 ///
-int MultiPhysicsCoupledQD::buildPseudoTransientLinearSystem_p()
+int MultiPhysicsCoupledQD::buildPseudoTransientLinearSystem()
 {
 
   PetscErrorCode ierr;
@@ -855,16 +508,16 @@ int MultiPhysicsCoupledQD::buildPseudoTransientLinearSystem_p()
   VecZeroEntries(b_p);
 
   // Build QD system
-  ggqd->buildSteadyStateLinearSystem_p();
+  ggqd->buildSteadyStateLinearSystem();
 
   // Build heat transfer system
-  heat->buildLinearSystem_p();
+  heat->buildLinearSystem();
 
   // Build delayed neutron precursor balance system in core
-  mgdnp->buildPseudoTransientCoreLinearSystem_p();  
+  mgdnp->buildPseudoTransientCoreLinearSystem();  
 
   // Build delayed neutron precursor balance system in recirculation loop
-  mgdnp->buildRecircLinearSystem_p();  
+  mgdnp->buildRecircLinearSystem();  
 
   /* Finalize assembly for A_p and b_p */
   ierr = MatAssemblyBegin(A_p,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -880,7 +533,7 @@ int MultiPhysicsCoupledQD::buildPseudoTransientLinearSystem_p()
 //==============================================================================
 /// Update variables after convergence
 ///
-void MultiPhysicsCoupledQD::updateVarsAfterConvergence_p()
+void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
 {
   // Object for broadcasting PETSc variable 
   VecScatter     ctx;
@@ -896,8 +549,8 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence_p()
 
   // Back calculate currents
   // ToDo Add PETSc support for back calc system
-  ggqd->GGSolver->formBackCalcSystem_p();
-  ggqd->GGSolver->backCalculateCurrent_p();
+  ggqd->GGSolver->formBackCalcSystem();
+  ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
 
   // Set xPast and past neutron velocities 

@@ -31,8 +31,6 @@ class HeatTransfer
   Eigen::MatrixXd temp,flux,dirac,inletTemp;
   Eigen::VectorXd inletDensity,inletVelocity,inletcP,outletTemp;        
   int getIndex(int iZ,int iR);
-  void buildLinearSystem();
-  void buildSteadyStateLinearSystem();
   void gammaSource(int iZ,int iR,int iEq,double coeff,\
       Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA);
   Eigen::MatrixXd calcExplicitFissionEnergy();
@@ -54,10 +52,10 @@ class HeatTransfer
   /* PETSc functions */
 
   // Steady state functions
-  int buildSteadyStateLinearSystem_p();
+  int buildSteadyStateLinearSystem();
   
   // Transient functions
-  int buildLinearSystem_p();
+  int buildLinearSystem();
   
   private:
   Materials * mats;

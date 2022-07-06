@@ -39,26 +39,6 @@ class SingleGroupDNP
     void updateBoundaryConditions();
     void calcCoreDNPFluxes();
     void calcRecircDNPFluxes();
-    void buildCoreLinearSystem();
-    void buildSteadyStateCoreLinearSystem();
-    void buildRecircLinearSystem();
-    void buildSteadyStateRecircLinearSystem();
-    void buildLinearSystem(Eigen::SparseMatrix<double,Eigen::RowMajor> * myA,\
-        Eigen::VectorXd * myb,\
-        Eigen::MatrixXd myDNPConc,\
-        Eigen::MatrixXd myDNPFlux,\
-        arma::rowvec dzs,\
-        int myIndexOffset,
-        bool fluxSource = true);
-    void buildSteadyStateLinearSystem(\
-        Eigen::SparseMatrix<double,Eigen::RowMajor> * myA,\
-        Eigen::VectorXd * myb,\
-        Eigen::MatrixXd myDNPConc,\
-        Eigen::MatrixXd myDNPFlux,\
-        Eigen::MatrixXd myInletDNP,\
-        arma::rowvec dzs,\
-        int myIndexOffset,
-        bool fluxSource = true);
 
     Eigen::MatrixXd getInitialConc(double initConc);
     Eigen::MatrixXd calcDiracs(Eigen::MatrixXd dnpConc,\
@@ -86,9 +66,9 @@ class SingleGroupDNP
 
     // Steady state
 
-    void buildSteadyStateCoreLinearSystem_p();
-    void buildSteadyStateRecircLinearSystem_p();
-    int buildSteadyStateLinearSystem_p(\
+    void buildSteadyStateCoreLinearSystem();
+    void buildSteadyStateRecircLinearSystem();
+    int buildSteadyStateLinearSystem(\
         Mat * myA_p,\
         Vec * myb_p,\
         Eigen::MatrixXd myDNPConc,\
@@ -99,9 +79,9 @@ class SingleGroupDNP
         bool fluxSource = true);
     
     // Transient 
-    void buildCoreLinearSystem_p();
-    void buildRecircLinearSystem_p();
-    int buildLinearSystem_p(\
+    void buildCoreLinearSystem();
+    void buildRecircLinearSystem();
+    int buildLinearSystem(\
         Mat * A_p,\
         Vec * b_p,\
         Eigen::MatrixXd myDNPConc,\
@@ -111,8 +91,8 @@ class SingleGroupDNP
         bool fluxSource = true);
 
     // Pseudo-transient 
-    void buildPseudoTransientCoreLinearSystem_p();
-    int buildPseudoTransientLinearSystem_p(\
+    void buildPseudoTransientCoreLinearSystem();
+    int buildPseudoTransientLinearSystem(\
         Mat * A_p,\
         Vec * b_p,\
         Eigen::MatrixXd myDNPConc,\

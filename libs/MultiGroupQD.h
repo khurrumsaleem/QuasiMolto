@@ -25,15 +25,7 @@ class MultiGroupQD
     MultiGroupQD(Materials * myMaterials,\
         Mesh * myMesh,\
         YAML::Node * myInput);
-    void buildLinearSystem();
-    void buildSteadyStateLinearSystem();
-    void solveLinearSystem();
-    void solveLinearSystemIterative();
-    void buildBackCalcSystem();
-    void buildSteadyStateBackCalcSystem();
-    void backCalculateCurrent();
     void setInitialCondition();
-    void solveMGQDOnly();
     void getFluxes();
     void updateVarsAfterConvergence();
     void updateSteadyStateVarsAfterConvergence();
@@ -45,13 +37,13 @@ class MultiGroupQD
     string outputDir = "MGQD/";
 
     /* PETSc functions */
-    void solveMGQDOnly_p();
-    int buildSteadyStateLinearSystem_p();
-    void solveLinearSystem_p();
-    int buildSteadyStateBackCalcSystem_p();
-    void backCalculateCurrent_p();
-    int buildLinearSystem_p();
-    int buildBackCalcSystem_p();
+    void solveMGQDOnly();
+    int buildSteadyStateLinearSystem();
+    void solveLinearSystem();
+    int buildSteadyStateBackCalcSystem();
+    void backCalculateCurrent();
+    int buildLinearSystem();
+    int buildBackCalcSystem();
 
   private:
     YAML::Node * input;

@@ -180,60 +180,6 @@ void MultiGroupDNP::readInput()
 //==============================================================================
 
 //==============================================================================
-/// Build linear system for DNP recirculation
-///
-void MultiGroupDNP::buildRecircLinearSystem()
-{
-  recircA.setZero();
-  recircb.setZero();
-  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
-  {
-    DNPs[iGroup]->buildRecircLinearSystem();
-  }
-};
-//==============================================================================
-
-//==============================================================================
-/// Build linear system for steady state DNP recirculation
-///
-void MultiGroupDNP::buildSteadyStateRecircLinearSystem()
-{
-  recircA.setZero();
-  recircb.setZero();
-  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
-  {
-    DNPs[iGroup]->buildSteadyStateRecircLinearSystem();
-  }
-};
-//==============================================================================
-
-//==============================================================================
-/// Build linear system for transient DNPs in multiphysics coupled 
-/// quasidiffusion system
-///
-void MultiGroupDNP::buildCoreLinearSystem()
-{
-  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
-  {
-    DNPs[iGroup]->buildCoreLinearSystem();
-  }
-};
-//==============================================================================
-
-//==============================================================================
-/// Build linear system for steady state DNPs in multiphysics coupled 
-/// quasidiffusion system
-///
-void MultiGroupDNP::buildSteadyStateCoreLinearSystem()
-{
-  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
-  {
-    DNPs[iGroup]->buildSteadyStateCoreLinearSystem();
-  }
-};
-//==============================================================================
-
-//==============================================================================
 /// Extract core DNP concentrations into 2D matrices in each group 
 ///
 void MultiGroupDNP::getCoreDNPConc()
@@ -262,52 +208,30 @@ void MultiGroupDNP::getCumulativeDNPDecaySource()
 
   dnpSource.setZero();
 
-  if (mesh->petsc)
-  { 
+  // Gather values of x_p on all procs
+  VecScatterCreateToAll(mpqd->x_p,&ctx,&temp_x_p_seq);
+  VecScatterBegin(ctx,mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
 
-    // Gather values of x_p on all procs
-    VecScatterCreateToAll(mpqd->x_p,&ctx,&temp_x_p_seq);
-    VecScatterBegin(ctx,mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,mpqd->x_p,temp_x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-
-    for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
-    {
-      groupLambda = DNPs[iGroup]->lambda;
-      groupOffset = DNPs[iGroup]->coreIndexOffset;
-      for (int iR = 0; iR < mesh->nR; iR++)
-      {
-        for (int iZ = 0; iZ < mesh->nZ; iZ++)
-        {
-          index[0] = DNPs[iGroup]->getIndex(iZ,iR,groupOffset);
-          ierr = VecGetValues(temp_x_p_seq,1,index,value);
-          localGroupConc = value[0];
-          //localGroupConc = mpqd->x(DNPs[iGroup]->getIndex(iZ,iR,groupOffset)); 
-          dnpSource(iZ,iR) += groupLambda*localGroupConc;  
-        }
-      }
-    }
-    
-    /* Destroy scatter context */
-    VecScatterDestroy(&ctx);
-    VecDestroy(&temp_x_p_seq);
-  }
-  else
+  for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
-    for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
+    groupLambda = DNPs[iGroup]->lambda;
+    groupOffset = DNPs[iGroup]->coreIndexOffset;
+    for (int iR = 0; iR < mesh->nR; iR++)
     {
-      groupLambda = DNPs[iGroup]->lambda;
-      groupOffset = DNPs[iGroup]->coreIndexOffset;
-      for (int iR = 0; iR < mesh->nR; iR++)
+      for (int iZ = 0; iZ < mesh->nZ; iZ++)
       {
-        for (int iZ = 0; iZ < mesh->nZ; iZ++)
-        {
-          localGroupConc = mpqd->x(DNPs[iGroup]->getIndex(iZ,iR,groupOffset)); 
-          dnpSource(iZ,iR) += groupLambda*localGroupConc;  
-        }
+        index[0] = DNPs[iGroup]->getIndex(iZ,iR,groupOffset);
+        ierr = VecGetValues(temp_x_p_seq,1,index,value);
+        localGroupConc = value[0];
+        dnpSource(iZ,iR) += groupLambda*localGroupConc;  
       }
-      //dnpSource += DNPs[iGroup]->lambda*DNPs[iGroup]->dnpConc;
     }
   }
+
+  /* Destroy scatter context */
+  VecScatterDestroy(&ctx);
+  VecDestroy(&temp_x_p_seq);
 };
 //==============================================================================
 
@@ -373,19 +297,6 @@ void MultiGroupDNP::printRecircDNPConc()
 };
 //==============================================================================
 
-//==============================================================================
-/// Solve linear system for multiphysics coupled quasidiffusion system
-///
-void MultiGroupDNP::solveRecircLinearSystem()
-{
-  Eigen::SparseLU<Eigen::SparseMatrix<double>,\
-    Eigen::COLAMDOrdering<int> > solverLU;
-  recircA.makeCompressed();
-  solverLU.compute(recircA);
-  recircx = solverLU.solve(recircb);
-};
-//==============================================================================
-
 /* PETSc functions */
 
 // Steady state
@@ -394,11 +305,11 @@ void MultiGroupDNP::solveRecircLinearSystem()
 /// Build linear system for steady state DNPs in multiphysics coupled 
 /// quasidiffusion system
 ///
-void MultiGroupDNP::buildSteadyStateCoreLinearSystem_p()
+void MultiGroupDNP::buildSteadyStateCoreLinearSystem()
 {
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
-    DNPs[iGroup]->buildSteadyStateCoreLinearSystem_p();
+    DNPs[iGroup]->buildSteadyStateCoreLinearSystem();
   }
 };
 //==============================================================================
@@ -407,7 +318,7 @@ void MultiGroupDNP::buildSteadyStateCoreLinearSystem_p()
 /// Build linear system for steady state DNPs in multiphysics coupled 
 /// quasidiffusion system
 ///
-int MultiGroupDNP::buildSteadyStateRecircLinearSystem_p()
+int MultiGroupDNP::buildSteadyStateRecircLinearSystem()
 {
   PetscErrorCode ierr;
 
@@ -417,7 +328,7 @@ int MultiGroupDNP::buildSteadyStateRecircLinearSystem_p()
 
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
-    DNPs[iGroup]->buildSteadyStateRecircLinearSystem_p();
+    DNPs[iGroup]->buildSteadyStateRecircLinearSystem();
   }
 
   /* Finalize assembly for A_p and b_p */
@@ -437,11 +348,11 @@ int MultiGroupDNP::buildSteadyStateRecircLinearSystem_p()
 /// Build linear system for steady state DNPs in multiphysics coupled 
 /// quasidiffusion system
 ///
-void MultiGroupDNP::buildCoreLinearSystem_p()
+void MultiGroupDNP::buildCoreLinearSystem()
 {
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
-    DNPs[iGroup]->buildCoreLinearSystem_p();
+    DNPs[iGroup]->buildCoreLinearSystem();
   }
 };
 //==============================================================================
@@ -450,7 +361,7 @@ void MultiGroupDNP::buildCoreLinearSystem_p()
 /// Build linear system for steady state DNPs in multiphysics coupled 
 /// quasidiffusion system
 ///
-int MultiGroupDNP::buildRecircLinearSystem_p()
+int MultiGroupDNP::buildRecircLinearSystem()
 {
   PetscErrorCode ierr;
 
@@ -460,7 +371,7 @@ int MultiGroupDNP::buildRecircLinearSystem_p()
 
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
-    DNPs[iGroup]->buildRecircLinearSystem_p();
+    DNPs[iGroup]->buildRecircLinearSystem();
   }
 
   /* Finalize assembly for A_p and b_p */
@@ -480,11 +391,11 @@ int MultiGroupDNP::buildRecircLinearSystem_p()
 /// Build linear system for steady state DNPs in multiphysics coupled 
 /// quasidiffusion system
 ///
-void MultiGroupDNP::buildPseudoTransientCoreLinearSystem_p()
+void MultiGroupDNP::buildPseudoTransientCoreLinearSystem()
 {
   for (int iGroup = 0; iGroup < DNPs.size(); ++iGroup)
   {
-    DNPs[iGroup]->buildPseudoTransientCoreLinearSystem_p();
+    DNPs[iGroup]->buildPseudoTransientCoreLinearSystem();
   }
 };
 //==============================================================================
@@ -494,7 +405,7 @@ void MultiGroupDNP::buildPseudoTransientCoreLinearSystem_p()
 //==============================================================================
 /// Solve linear system for recirculation loop DNP concentrations
 ///
-int MultiGroupDNP::solveRecircLinearSystem_p()
+int MultiGroupDNP::solveRecircLinearSystem()
 {
 
   string PetscSolver = "gmres";
@@ -517,7 +428,6 @@ int MultiGroupDNP::solveRecircLinearSystem_p()
   /* Create solver */
   ierr = KSPCreate(PETSC_COMM_WORLD,&ksp);CHKERRQ(ierr);
   ierr = KSPSetOperators(ksp,recircA_p,recircA_p);CHKERRQ(ierr);
-  //ierr = KSPSetTolerances(ksp,1.e-9/((m+1)*(n+1)),1.e-50,PETSC_DEFAULT,PETSC_DEFAULT);
   ierr = KSPSetTolerances(ksp,relTol,absTol,PETSC_DEFAULT,PETSC_DEFAULT);
   CHKERRQ(ierr);
 
@@ -532,14 +442,12 @@ int MultiGroupDNP::solveRecircLinearSystem_p()
   ierr = KSPSolve(ksp,recircb_p,recircx_p);CHKERRQ(ierr);
   auto end = chrono::high_resolution_clock::now();
   auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-  //cout << "solve time: " << elapsed.count()*1e-9 << endl;
 
   /* Print solve information */
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
 
   /* Destroy solver */
   ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
-  //ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %g iterations %D\n",(double)norm,its);CHKERRQ(ierr);
 
   return ierr;
 

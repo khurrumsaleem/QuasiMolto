@@ -62,7 +62,7 @@ bool MGQDToMPQDCoupling::solveOneStep()
     collapseNuclearData();
     xPrevIter = mpqd->x;
     mpqd->buildLinearSystem();
-    mpqd->solveLinearSystem();
+    mpqd->solve();
     xCurrentIter = mpqd->x;
     //cout << "xCurrentIter:" << endl;
     //cout << xCurrentIter << endl;

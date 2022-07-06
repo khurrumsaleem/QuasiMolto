@@ -205,7 +205,7 @@ void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input){
   cout << myMPQD->A << endl;;
   cout << "b: " << endl;   
   cout << myMPQD->b << endl;;
-  myMPQD->solveLinearSystem();
+  myMPQD->solve();
   cout << "x: " << endl;   
   cout << myMPQD->x << endl;;
   myMPQD->heat->getTemp();
@@ -245,7 +245,7 @@ void testMultiGroupPrecursor(Materials * myMaterials,\
   cout << myMPQD->A << endl;
   cout << "b" << endl;
   cout << myMPQD->b << endl;
-  myMPQD->solveLinearSystem();
+  myMPQD->solve();
   cout << "x: " << endl;   
   cout << myMPQD->x << endl;
   cout << "building recirc system..." << endl;
@@ -321,10 +321,7 @@ void testMultilevelCoupling(Materials * myMaterials,\
 
   cout << "Initialized multilevel transient solve." << endl;
 
-  if (myMesh->petsc)
-    myMLCoupling->solveTransient_p();
-  else
-    myMLCoupling->solveTransient();
+  myMLCoupling->solveTransient();
 
   cout << "Completed multilevel transient solve." << endl;
 
@@ -356,21 +353,15 @@ void testSteadyState(Materials * myMaterials,\
 
   cout << "Initialized multilevel steady state solve." << endl;
 
-  if (myMesh->petsc)
-    myMLCoupling->solveSteadyStateResidualBalance_p(true);
-  else
-    myMLCoupling->solveSteadyStateResidualBalance(true);
-
+  myMLCoupling->solveSteadyStateResidualBalance(true);
 
   cout << "Completed multilevel steady state solve." << endl;
 
   // Delete pointers
-
   delete myMGT;
   delete myMGQD;
   delete myMPQD;
   delete myMLCoupling;
-
 }
 
 void testSteadyStateThenTransient(Materials * myMaterials,\
@@ -401,12 +392,10 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
   cout << "Completed multilevel solve" << endl;
 
   // Delete pointers
-
   delete myMGT;
   delete myMGQD;
   delete myMPQD;
   delete myMLCoupling;
-
 }
 
 int testMGQDPETScCoupling(Materials * myMaterials,\
@@ -431,96 +420,11 @@ int testMGQDPETScCoupling(Materials * myMaterials,\
   MultilevelCoupling * myMLCoupling; 
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
       myMPQD);
-  //
-  //  /* PETSc steady state*/  
-  //  cout << "Build PETSc MGQD linear system...";
-  //  myMGQD->buildSteadyStateLinearSystem_p();
-  //  cout << " done." << endl;
-  //  
-  //  cout << "Solve system...";
-  //  myMGQD->solveLinearSystem_p();
-  //  cout << " done." << endl;
-  //
-  //  cout << "Build system to back calculate current...";
-  //  myMGQD->buildSteadyStateBackCalcSystem_p();
-  //  cout << " done." << endl;
-  //  
-  //  cout << "Solve system...";
-  //  myMGQD->backCalculateCurrent_p();
-  //  cout << " done." << endl;
-  //  myMGQD->getFluxes();
-  //  myMGQD->writeVars();
-  //
-  //  /* EIGEN steady state*/  
-  //  cout << "Build Eigen MGQD linear system...";
-  //  myMGQD->buildSteadyStateLinearSystem();
-  //  cout << " done." << endl;
-  //  
-  //  cout << "Solve system...";
-  //  myMGQD->QDSolve->solveSuperLU();
-  //  cout << " done." << endl;
-  //  
-  //  cout << "Build system to back calculate current...";
-  //  myMGQD->buildSteadyStateBackCalcSystem();
-  //  cout << " done." << endl;
-  //  
-  //  cout << "Solve system...";
-  //  myMGQD->backCalculateCurrent();
-  //  cout << " done." << endl;
-  //
-  //  /* PETSc transient*/  
-  //  cout << "Build transient PETSc MGQD linear system...";
-  //  myMGQD->buildLinearSystem_p();
-  //  cout << " done." << endl;
-  //  
-  //  cout << "Solve system...";
-  //  myMGQD->solveLinearSystem_p();
-  //  cout << " done." << endl;
-  //  //ierr = VecView(myMGQD->QDSolve->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //
-  //  cout << "Build system to back calculate current...";
-  //  myMGQD->buildBackCalcSystem_p();
-  //  cout << " done." << endl;
-  //
-  //  cout << "Solve system...";
-  //  myMGQD->backCalculateCurrent_p();
-  //  cout << " done." << endl;
-  //  ierr = VecView(myMGQD->QDSolve->currPast_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //  //myMGQD->getFluxes();
-  //  //myMGQD->writeVars();
-  //
-  //  /* EIGEN transient*/  
-  //  cout << "Build Eigen MGQD linear system...";
-  //  myMGQD->buildLinearSystem();
-  //  cout << " done." << endl;
-  //  
-  //  cout << "Solve system...";
-  //  myMGQD->QDSolve->solveSuperLU();
-  //  cout << " done." << endl;
-  //  //cout << myMGQD->QDSolve->x << endl;
-  //  
-  //  cout << "Build system to back calculate current...";
-  //  myMGQD->buildBackCalcSystem();
-  //  cout << " done." << endl;
-  //  
-  //  cout << "Solve system...";
-  //  myMGQD->backCalculateCurrent();
-  //  cout << " done." << endl;
-  //  cout << myMGQD->QDSolve->currPast<< endl;
 
   /* PETSc transient*/  
-  if (myMesh->petsc)
-  {
-    cout << "Run PETSc transient...";
-    myMGQD->solveMGQDOnly_p();
-    cout << " done." << endl;
-  }
-  else
-  {
-    cout << "Run Eigen transient...";
-    myMGQD->solveMGQDOnly();
-    cout << " done." << endl;
-  }
+  cout << "Run PETSc transient...";
+  myMGQD->solveMGQDOnly();
+  cout << " done." << endl;
 
   // Delete pointers
   delete myMGT;
@@ -529,13 +433,11 @@ int testMGQDPETScCoupling(Materials * myMaterials,\
   delete myMLCoupling;
 
   return(0);
-
 }
 
 int testELOTPETScCoupling(Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * input){
-
   PetscErrorCode ierr;
 
   // initialize multigroup transport object
@@ -555,238 +457,9 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
       myMPQD);
 
-  // Test GGSolver setFlux
-  //ierr = VecView(myMPQD->xPast_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-
   /* STEADY STATE */
-
-  // Test GGSolver steadyStateCurrent functions
-  double testDub = 0.1;
-  int testInt = 0;
-  //myMPQD->ggqd->GGSolver->steadyStateSouthCurrent_p(testDub,\
-  //    testInt,testInt,testInt);
-  //cout << "south current" << endl;
-  //myMPQD->ggqd->GGSolver->steadyStateNorthCurrent_p(testDub,\
-  //    testInt,testInt,testInt);
-  //cout << "north current" << endl;
-  //myMPQD->ggqd->GGSolver->steadyStateWestCurrent_p(testDub,\
-  //    testInt,testInt,testInt);
-  //cout << "west current" << endl;
-  //myMPQD->ggqd->GGSolver->steadyStateEastCurrent_p(testDub,\
-  //    testInt,testInt,testInt);
-  //cout << "east current" << endl;
-
-  //// Test zeroth moment, radial, and axial current conditions
-  //myMPQD->ggqd->GGSolver->assertSteadyStateZerothMoment_p(testInt,testInt,testInt);
-  //cout << "zeroth moment" << endl;
-  //myMPQD->ggqd->GGSolver->applySteadyStateRadialBoundary_p(testInt,testInt,testInt);
-  //cout << "radial boundary" << endl;
-  //myMPQD->ggqd->GGSolver->applySteadyStateAxialBoundary_p(testInt,testInt,testInt);
-  //cout << "axial boundary" << endl;
-
-  //// Test steady-state boundary conditions on current
-  //myMPQD->ggqd->GGSolver->assertSteadyStateWCurrentBC_p(testInt,testInt,testInt);
-  //cout << "west current bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertSteadyStateECurrentBC_p(testInt,testInt,testInt);
-  //cout << "east current bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertSteadyStateNCurrentBC_p(testInt,testInt,testInt);
-  //cout << "north current bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertSteadyStateSCurrentBC_p(testInt,testInt,testInt);
-  //cout << "south current bc" << endl;
-
-  //// Test steady-state boundary conditions on current
-  //myMPQD->ggqd->GGSolver->assertSteadyStateNGoldinBC_p(testInt,testInt,testInt);
-  //cout << "north current goldin bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertSteadyStateSGoldinBC_p(testInt,testInt,testInt);
-  //cout << "south current goldin bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertSteadyStateEGoldinBC_p(testInt,testInt,testInt);
-  //cout << "east current goldin bc" << endl;
-
-  //// Test steady-state P1 boundary conditions on current
-  //myMPQD->ggqd->GGSolver->assertSteadyStateNGoldinP1BC_p(testInt,testInt,testInt);
-  //cout << "north current goldin p1 bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertSteadyStateSGoldinP1BC_p(testInt,testInt,testInt);
-  //cout << "south current goldin p1 bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertSteadyStateEGoldinP1BC_p(testInt,testInt,testInt);
-  //cout << "east current goldin p1 bc" << endl;
-
-  //// Test steady-state P1 boundary conditions on current
-  //myMPQD->ggqd->GGSolver->assertNFluxBC_p(testInt,testInt,testInt);
-  //cout << "north flux bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertSFluxBC_p(testInt,testInt,testInt);
-  //cout << "south flux bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertEFluxBC_p(testInt,testInt,testInt);
-  //cout << "east flux bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertWFluxBC_p(testInt,testInt,testInt);
-  //cout << "west flux bc" << endl;
-
-  //// Test build steady state QD linear system call
-  //myMPQD->ggqd->GGSolver->formSteadyStateLinearSystem_p();
-  //cout << "form ggqd steady state linear system" << endl;
-
-  //// Test build steady state heat transfer linear system call
-  //myMPQD->heat->buildSteadyStateLinearSystem_p();
-  //cout << "form heat transfer steady state linear system" << endl;
-
-  //// Test build steady state precursor balance linear system call
-  //myMPQD->mgdnp->buildSteadyStateCoreLinearSystem_p();
-  //cout << "form mgdnp transfer steady state linear system" << endl;
-
-  // Test calcSteadyStateCurrent functions
-  //myMPQD->ggqd->GGSolver->calcSteadyStateSouthCurrent_p(testInt,testInt,testInt);
-  //cout << "calc south current" << endl;
-  //myMPQD->ggqd->GGSolver->calcSteadyStateNorthCurrent_p(testInt,testInt,testInt);
-  //cout << "calc north current" << endl;
-  //myMPQD->ggqd->GGSolver->calcSteadyStateWestCurrent_p(testInt,testInt,testInt);
-  //cout << "calc west current" << endl;
-  //myMPQD->ggqd->GGSolver->calcSteadyStateEastCurrent_p(testInt,testInt,testInt);
-  //cout << "calc east current" << endl;
-
-  // Build full ELOT system
-  //myMPQD->buildSteadyStateLinearSystem_p();
-  ////ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //myMPQD->solve_p();
-  //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //myMPQD->updateSteadyStateVarsAfterConvergence_p();
-  if (myMesh->petsc)
-  {
-    cout << "Run ELOT PETSc steady state solve...";
-    myMPQD->solveSteadyState_p();
-    //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-    //ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-    //ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-    //ierr = MatView(myMPQD->ggqd->GGSolver->C_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-    //cout << " done." << endl;
-  }
-  else
-  {
-    cout << "Run ELOT eigen steady state solve...";
-    myMPQD->solveSteadyState();
-    //cout << "x" << endl;
-    //cout << myMPQD->x << endl;
-    //cout << "b" << endl;
-    //cout << myMPQD->b << endl;
-    //cout << "A" << endl;
-    //cout << myMPQD->A << endl;
-    //cout << "C" << endl;
-    //cout << myMPQD->ggqd->GGSolver->C << endl;
-    //cout << " done." << endl;
-  }
-
-  /* TRANSIENT */
-
-  //VecScatter     ctx;
-  //VecScatterCreateToAll(myMPQD->ggqd->GGSolver->currPast_p,&ctx,&(myMPQD->ggqd->GGSolver->currPast_p_seq));
-  //VecScatterBegin(ctx,myMPQD->ggqd->GGSolver->currPast_p,myMPQD->ggqd->GGSolver->currPast_p_seq,\
-  //    INSERT_VALUES,SCATTER_FORWARD);
-  //VecScatterEnd(ctx,myMPQD->ggqd->GGSolver->currPast_p,myMPQD->ggqd->GGSolver->currPast_p_seq,\
-  INSERT_VALUES,SCATTER_FORWARD);
-
-  //myMPQD->ggqd->GGSolver->southCurrent_p(testDub,\
-  //    testInt,testInt,testInt);
-  //cout << "south current" << endl;
-  //myMPQD->ggqd->GGSolver->northCurrent_p(testDub,\
-  //    testInt,testInt,testInt);
-  //cout << "north current" << endl;
-  //myMPQD->ggqd->GGSolver->westCurrent_p(testDub,\
-  //    testInt,testInt,testInt);
-  //cout << "west current" << endl;
-  //myMPQD->ggqd->GGSolver->eastCurrent_p(testDub,\
-  //    testInt,testInt,testInt);
-  //cout << "east current" << endl;
-
-  //// Test steady-state boundary conditions on current
-  //myMPQD->ggqd->GGSolver->assertWCurrentBC_p(testInt,testInt,testInt);
-  //cout << "west current bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertECurrentBC_p(testInt,testInt,testInt);
-  //cout << "east current bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertNCurrentBC_p(testInt,testInt,testInt);
-  //cout << "north current bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertSCurrentBC_p(testInt,testInt,testInt);
-  //cout << "south current bc" << endl;
-
-  //// Test steady-state boundary conditions on current
-  //myMPQD->ggqd->GGSolver->assertNGoldinBC_p(testInt,testInt,testInt);
-  //cout << "north current goldin bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertSGoldinBC_p(testInt,testInt,testInt);
-  //cout << "south current goldin bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertEGoldinBC_p(testInt,testInt,testInt);
-  //cout << "east current goldin bc" << endl;
-
-  //// Test steady-state P1 boundary conditions on current
-  //myMPQD->ggqd->GGSolver->assertNGoldinP1BC_p(testInt,testInt,testInt);
-  //cout << "north current goldin p1 bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertSGoldinP1BC_p(testInt,testInt,testInt);
-  //cout << "south current goldin p1 bc" << endl;
-  //myMPQD->ggqd->GGSolver->assertEGoldinP1BC_p(testInt,testInt,testInt);
-  //cout << "east current goldin p1 bc" << endl;
-
-  //myMPQD->ggqd->GGSolver->assertZerothMoment_p(testInt,testInt,testInt);
-  //cout << "zeroth moment" << endl;
-  //myMPQD->ggqd->GGSolver->applyRadialBoundary_p(testInt,testInt,testInt);
-  //cout << "radial boundary" << endl;
-  //myMPQD->ggqd->GGSolver->applyAxialBoundary_p(testInt,testInt,testInt);
-  //cout << "axial boundary" << endl;
-  //
-  //// Test build steady state QD linear system call
-  //myMPQD->ggqd->GGSolver->formLinearSystem_p();
-  //cout << "form ggqd linear system" << endl;
-  //
-  //// Test build heat transfer linear system call
-  //myMPQD->heat->buildLinearSystem_p();
-  //cout << "form heat transfer linear system" << endl;
-
-  //// Test build steady state precursor balance linear system call
-  //myMPQD->mgdnp->buildCoreLinearSystem_p();
-  //cout << "form mgdnp core linear system" << endl;
-
-  // Test build steady state precursor balance linear system call
-  //myMPQD->mgdnp->buildRecircLinearSystem_p();
-  //cout << "form mgdnp recirc linear system" << endl;
-  //myMPQD->mgdnp->solveRecircLinearSystem_p();
-  //cout << "solved mgdnp recirc linear system" << endl;
-
-  // Test calcSteadyStateCurrent functions
-  //myMPQD->ggqd->GGSolver->calcSteadyStateSouthCurrent_p(testInt,testInt,testInt);
-  //cout << "calc south current" << endl;
-  //myMPQD->ggqd->GGSolver->calcSteadyStateNorthCurrent_p(testInt,testInt,testInt);
-  //cout << "calc north current" << endl;
-  //myMPQD->ggqd->GGSolver->calcSteadyStateWestCurrent_p(testInt,testInt,testInt);
-  //cout << "calc west current" << endl;
-  //myMPQD->ggqd->GGSolver->calcEastCurrent_p(testInt,testInt,testInt);
-  //cout << "calc east current" << endl;
-
-  //// Test formBackCalc functions
-  //myMPQD->ggqd->GGSolver->formBackCalcSystem_p();
-  //cout << "form back calc system" << endl;
-
-  //PETSc system 
-  //if (myMesh->petsc)
-  //{
-  //  myMPQD->solveTransient_p();
-  //  //cout << "x_p" << endl;
-  //  //ierr = VecView(myMPQD->x_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //  //cout << "b_p" << endl;
-  //  //ierr = VecView(myMPQD->b_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //  //cout << "A_p" << endl;
-  //  //ierr = MatView(myMPQD->A_p,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
-  //}
-  //// Eigen system 
-  //else
-  //{
-  //  myMPQD->solveTransient();
-  //  //cout << "x" << endl;
-  //  //cout << myMPQD->x << endl;
-  //  //cout << "b" << endl;
-  //  //cout << myMPQD->b << endl;
-  //  //cout << "A" << endl;
-  //  //cout << myMPQD->A << endl;
-  //  //cout << "C" << endl;
-  //  //cout << myMPQD->ggqd->GGSolver->C << endl;
-  //  //cout << " done." << endl;
-
-  //}
-
+  cout << "Run ELOT steady state solve...";
+  myMPQD->solveSteadyState();
 
   // Delete pointers
   delete myMGT;
@@ -795,7 +468,6 @@ int testELOTPETScCoupling(Materials * myMaterials,\
   delete myMLCoupling;
 
   return(0);
-
 }
 
 int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
@@ -827,7 +499,7 @@ int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
   cout << "Initialized steady state solve" << endl;
 
   if (myMesh->petsc)
-    myMLCoupling->solveSteadyStateResidualBalance_p(true);
+    myMLCoupling->solveSteadyStateResidualBalance(true);
   else
     myMLCoupling->solveSteadyStateResidualBalance(true);
 
@@ -867,7 +539,7 @@ void testTransientMultilevelPETScCoupling(Materials * myMaterials,\
       myMPQD);
 
   if (myMesh->petsc)
-    myMLCoupling->solveTransient_p();
+    myMLCoupling->solveTransient();
   else
     myMLCoupling->solveTransient();
 
@@ -904,7 +576,7 @@ void testSteadyStateThenPseudoTransient(Materials * myMaterials,\
 
   cout << "Starting solves..." << endl;
 
-  myMLCoupling->solveSteadyStatePseudoTransient_p(true);
+  myMLCoupling->solveSteadyStatePseudoTransient(true);
 
   cout << "Completed multilevel solve" << endl;
 
