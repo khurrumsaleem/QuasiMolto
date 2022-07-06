@@ -3623,7 +3623,7 @@ int GreyGroupSolver::assertSteadyStateNGoldinP1BC_p(int iR,int iZ,int iEq)
   vector<int> indices = getIndices(iR,iZ);
 
   steadyStateNorthCurrent_p(1.0,iR,iZ,iEq);
-  value = 1.0/sqrt(3.0); 
+  value = 1.0 / sqrt(3.0);
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iNF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //Atemp.coeffRef(iEq,indices[iNF]) += 1.0/sqrt(3.0);
@@ -3646,7 +3646,7 @@ int GreyGroupSolver::assertSteadyStateSGoldinP1BC_p(int iR,int iZ,int iEq)
   vector<int> indices = getIndices(iR,iZ);
 
   steadyStateSouthCurrent_p(1.0,iR,iZ,iEq);
-  value = -1.0/sqrt(3.0); 
+  value = -1.0 / sqrt(3.0);
   ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //Atemp.coeffRef(iEq,indices[iSF]) -= 1.0/sqrt(3.0);
@@ -3669,8 +3669,8 @@ int GreyGroupSolver::assertSteadyStateEGoldinP1BC_p(int iR,int iZ,int iEq)
   vector<int> indices = getIndices(iR,iZ);
 
   steadyStateEastCurrent_p(1.0,iR,iZ,iEq);
-  value = -1.0/sqrt(3.0); 
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
+  value = -1.0 / sqrt(3.0); 
+  ierr = MatSetValue(MPQD->A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //Atemp.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
 
@@ -4635,7 +4635,7 @@ int GreyGroupSolver::assertEGoldinP1BC_p(int iR,int iZ,int iEq)
 
   eastCurrent_p(1.0,iR,iZ,iEq);
   value = -1.0/sqrt(3.0); 
-  ierr = MatSetValue(MPQD->A_p,iEq,indices[iSF],value,ADD_VALUES);CHKERRQ(ierr); 
+  ierr = MatSetValue(MPQD->A_p,iEq,indices[iEF],value,ADD_VALUES);CHKERRQ(ierr); 
 
   //eastCurrent(1.0,iR,iZ,iEq);
   //Atemp.coeffRef(iEq,indices[iEF]) -= 1.0/sqrt(3.0);
