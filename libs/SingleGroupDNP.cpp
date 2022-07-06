@@ -86,7 +86,17 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   outletConc.setZero(mesh->nR);
   recircOutletConc.setZero(mesh->nR);
 
-  // assign boundary conditions depending on direction of flow
+  // Check for optional input  
+  if ((*(mgdnp->input))["parameters"]["flux limiter"])
+  {
+
+    // Read in input
+    fluxLimiter = (*(mgdnp->input))["parameters"]\
+             ["flux limiter"].as<string>();
+
+  }
+
+  // Assign boundary conditions depending on direction of flow
   assignBoundaryIndices();
 
 };
