@@ -38,102 +38,6 @@ MultiGroupQD::MultiGroupQD(Materials * myMaterials,\
 //==============================================================================
 
 //==============================================================================
-/// Loops over energy groups and builds the linear system to solve the 
-/// multigroup quasidiffusion equations
-void MultiGroupQD::buildLinearSystem()
-{
-  // Get non-zero elements to optimize building linear system
-  int nonZeros = QDSolve->A.nonZeros();
-
-  QDSolve->A.setZero();
-  QDSolve->A.reserve(nonZeros);
-  QDSolve->b.setZero();
-  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
-  {
-    SGQDs[iGroup]->formContributionToLinearSystem();
-  }
-}
-//==============================================================================
-
-//==============================================================================
-/// Loops over energy groups and builds the linear system to solve the 
-/// multigroup quasidiffusion equations
-void MultiGroupQD::buildSteadyStateLinearSystem()
-{
-  // Get non-zero elements to optimize building linear system
-  int nonZeros = QDSolve->A.nonZeros();
-
-  QDSolve->A.setZero();
-  QDSolve->A.reserve(nonZeros);
-  QDSolve->b.setZero();
-  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
-  {
-    SGQDs[iGroup]->formSteadyStateContributionToLinearSystem();
-  }
-}
-//==============================================================================
-
-//==============================================================================
-/// Solves the linear system formed by the muligroup quasidiffusion equations
-void MultiGroupQD::solveLinearSystem()
-{
-  QDSolve->solve();
-}
-//==============================================================================
-
-
-//==============================================================================
-/// Solves the linear system formed by the muligroup quasidiffusion equations
-/// using a parallelized method
-void MultiGroupQD::solveLinearSystemIterative()
-{
-  QDSolve->solveIterative();
-}
-//==============================================================================
-
-//==============================================================================
-/// Loops over energy groups and builds linear system to calculate the net 
-/// neutron currents from the flux values currrently held in x, the solution
-/// vector
-void MultiGroupQD::buildBackCalcSystem()
-{
-  QDSolve->C.setZero();
-  QDSolve->d.setZero();
-  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
-  {
-    SGQDs[iGroup]->formContributionToBackCalcSystem();
-  }
-}
-//==============================================================================
-
-//==============================================================================
-/// Loops over energy groups and builds linear system to calculate the net 
-/// neutron currents from the flux values currrently held in x, the solution
-/// vector
-void MultiGroupQD::buildSteadyStateBackCalcSystem()
-{
-  QDSolve->C.setZero();
-  QDSolve->d.setZero();
-  for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
-  {
-    SGQDs[iGroup]->formSteadyStateContributionToBackCalcSystem();
-  }
-}
-//==============================================================================
-
-
-//==============================================================================
-/// Solve the linear system which calculates net currents from the current flux
-/// values
-void MultiGroupQD::backCalculateCurrent()
-{
-
-  QDSolve->backCalculateCurrent();
-
-}
-//==============================================================================
-
-//==============================================================================
 /// Set the initial previous solution vectors to the values currently held in 
 /// the flux and current matrices
 void MultiGroupQD::setInitialCondition()
@@ -141,6 +45,7 @@ void MultiGroupQD::setInitialCondition()
 
   PetscErrorCode ierr; 
   VecScatter     ctx;
+
   // Initialize vectors
   Eigen::VectorXd initialFluxCondition(QDSolve->energyGroups*\
       QDSolve->nGroupUnknowns);
@@ -159,52 +64,22 @@ void MultiGroupQD::setInitialCondition()
   }
 
   // Set initial conditions in QDSolver object
-  if (mesh->petsc)
-  {
-    eigenVecToPETScVec(&initialFluxCondition,&(QDSolve->xPast_p));
-    eigenVecToPETScVec(&initialCurrentCondition,&(QDSolve->currPast_p));
+  eigenVecToPETScVec(&initialFluxCondition,&(QDSolve->xPast_p));
+  eigenVecToPETScVec(&initialCurrentCondition,&(QDSolve->currPast_p));
 
-    VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
-    VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+  VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
+  VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
       INSERT_VALUES,SCATTER_FORWARD);
 
-    VecScatterCreateToAll(QDSolve->xPast_p,&ctx,&(QDSolve->xPast_p_seq));
-    VecScatterBegin(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterCreateToAll(QDSolve->xPast_p,&ctx,&(QDSolve->xPast_p_seq));
+  VecScatterBegin(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
 
-    VecScatterDestroy(&ctx);
-  }
-  else
-  {
-    QDSolve->xPast = initialFluxCondition;
-    QDSolve->currPast = initialCurrentCondition;
-  }
-  
-}
-//==============================================================================
-
-//==============================================================================
-/// Solve a transient problem without any transport coupling using diffusion
-/// values for the Eddington factors
-void MultiGroupQD::solveMGQDOnly()
-{
-  setInitialCondition();
-  for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
-  {
-    buildLinearSystem();
-    cout << "time: " <<mesh->ts[iTime+1] << endl;
-    solveLinearSystem();
-    updateVarsAfterConvergence();
-    //QDSolve->xPast = QDSolve->x;
-    //buildBackCalcSystem();
-    //backCalculateCurrent();
-    //getFluxes();
-  }
-  writeVars();
+  VecScatterDestroy(&ctx);
 }
 //==============================================================================
 
@@ -224,44 +99,34 @@ void MultiGroupQD::getFluxes()
 /// values for the Eddington factors
 void MultiGroupQD::updateVarsAfterConvergence()
 {
-  if (mesh->petsc)
-  {
-    VecScatter     ctxFlux,ctxCurr;
+  VecScatter     ctxFlux,ctxCurr;
 
-    QDSolve->xPast_p = QDSolve->x_p;
+  QDSolve->xPast_p = QDSolve->x_p;
 
-    /* Collect flux solutions */
-    VecDestroy(&(QDSolve->xPast_p_seq));
-    VecScatterCreateToAll(QDSolve->xPast_p,&ctxFlux,&(QDSolve->xPast_p_seq));
-    VecScatterBegin(ctxFlux,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctxFlux,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
+  /* Collect flux solutions */
+  VecDestroy(&(QDSolve->xPast_p_seq));
+  VecScatterCreateToAll(QDSolve->xPast_p,&ctxFlux,&(QDSolve->xPast_p_seq));
+  VecScatterBegin(ctxFlux,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctxFlux,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
 
-    buildBackCalcSystem_p();
-    backCalculateCurrent_p();
-      
-    /* Collect current solutions */
-    VecDestroy(&(QDSolve->currPast_p_seq));
-    VecScatterCreateToAll(QDSolve->currPast_p,&ctxCurr,&(QDSolve->currPast_p_seq));
-    VecScatterBegin(ctxCurr,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctxCurr,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
+  buildBackCalcSystem();
+  backCalculateCurrent();
 
-    getFluxes();
+  /* Collect current solutions */
+  VecDestroy(&(QDSolve->currPast_p_seq));
+  VecScatterCreateToAll(QDSolve->currPast_p,&ctxCurr,&(QDSolve->currPast_p_seq));
+  VecScatterBegin(ctxCurr,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctxCurr,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
 
-    /* Destory scatter context */
-    VecScatterDestroy(&ctxFlux);
-    VecScatterDestroy(&ctxCurr);
-  }
-  else
-  {
-    QDSolve->xPast = QDSolve->x;
-    buildBackCalcSystem();
-    backCalculateCurrent();
-    getFluxes();
-  }
+  getFluxes();
+
+  /* Destory scatter context */
+  VecScatterDestroy(&ctxFlux);
+  VecScatterDestroy(&ctxCurr);
 }
 //==============================================================================
 
@@ -270,93 +135,59 @@ void MultiGroupQD::updateVarsAfterConvergence()
 /// values for the Eddington factors
 void MultiGroupQD::updateSteadyStateVarsAfterConvergence()
 {
+  VecScatter     ctx;
 
-  if (mesh->petsc)
-  {
-    VecScatter     ctx;
+  QDSolve->xPast_p = QDSolve->x_p;
 
-    QDSolve->xPast_p = QDSolve->x_p;
+  /* Collect flux solutions */
+  VecScatterCreateToAll(QDSolve->xPast_p,&ctx,&(QDSolve->xPast_p_seq));
+  VecScatterBegin(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
 
-    /* Collect flux solutions */
-    VecScatterCreateToAll(QDSolve->xPast_p,&ctx,&(QDSolve->xPast_p_seq));
-    VecScatterBegin(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
+  buildSteadyStateBackCalcSystem();
+  backCalculateCurrent();
 
-    buildSteadyStateBackCalcSystem_p();
-    backCalculateCurrent_p();
-      
-    /* Collect current solutions */
-    VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
-    VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
-    VecScatterEnd(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
-        INSERT_VALUES,SCATTER_FORWARD);
+  /* Collect current solutions */
+  VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
+  VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
+  VecScatterEnd(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
+      INSERT_VALUES,SCATTER_FORWARD);
 
-    getFluxes();
+  getFluxes();
 
-    /* Destory scatter context */
-    VecScatterDestroy(&ctx);
-  }
-  else
-  {
-    QDSolve->xPast = QDSolve->x;
-    buildSteadyStateBackCalcSystem();
-    backCalculateCurrent();
-    getFluxes();
-  }
+  /* Destory scatter context */
+  VecScatterDestroy(&ctx);
 }
 //==============================================================================
 
 //==============================================================================
 /// Solve a transient problem without any transport coupling using diffusion
 /// values for the Eddington factors
-void MultiGroupQD::solveMGQDOnly_p()
+void MultiGroupQD::solveMGQDOnly()
 {
   PetscErrorCode ierr;
-  //VecScatter     ctx;
   
   setInitialCondition();
 
   for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
   {
-    buildLinearSystem_p();
+    buildLinearSystem();
     cout << "time: " <<mesh->ts[iTime+1] << endl;
-    solveLinearSystem_p();
+    solveLinearSystem();
     updateVarsAfterConvergence();
-//    QDSolve->xPast_p = QDSolve->x_p;
-//
-//    /* Flux solutions */
-//    VecScatterCreateToAll(QDSolve->xPast_p,&ctx,&(QDSolve->xPast_p_seq));
-//    VecScatterBegin(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
-//        INSERT_VALUES,SCATTER_FORWARD);
-//    VecScatterEnd(ctx,QDSolve->xPast_p,QDSolve->xPast_p_seq,\
-//        INSERT_VALUES,SCATTER_FORWARD);
-//
-//    buildBackCalcSystem_p();
-//    backCalculateCurrent_p();
-//    getFluxes();
-//      
-//    /* Current solutions */
-//    VecScatterCreateToAll(QDSolve->currPast_p,&ctx,&(QDSolve->currPast_p_seq));
-//    VecScatterBegin(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
-//        INSERT_VALUES,SCATTER_FORWARD);
-//    VecScatterEnd(ctx,QDSolve->currPast_p,QDSolve->currPast_p_seq,\
-//        INSERT_VALUES,SCATTER_FORWARD);
-
   }
-  writeVars();
 
-  /* Destory scatter context */
-  //VecScatterDestroy(&ctx);
+  writeVars();
 }
 //==============================================================================
 
 //==============================================================================
 /// Loops over energy groups and builds the linear system to solve the 
 /// multigroup quasidiffusion equations
-int MultiGroupQD::buildSteadyStateLinearSystem_p()
+int MultiGroupQD::buildSteadyStateLinearSystem()
 {
   
   PetscErrorCode ierr;
@@ -367,7 +198,7 @@ int MultiGroupQD::buildSteadyStateLinearSystem_p()
   
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
-    SGQDs[iGroup]->formSteadyStateContributionToLinearSystem_p();
+    SGQDs[iGroup]->formSteadyStateContributionToLinearSystem();
   }
 
   /* Finalize assembly for A_p and b_p */
@@ -384,7 +215,7 @@ int MultiGroupQD::buildSteadyStateLinearSystem_p()
 //==============================================================================
 /// Loops over energy groups and builds the linear system to solve the 
 /// multigroup quasidiffusion equations
-int MultiGroupQD::buildLinearSystem_p()
+int MultiGroupQD::buildLinearSystem()
 {
   
   PetscErrorCode ierr;
@@ -395,7 +226,7 @@ int MultiGroupQD::buildLinearSystem_p()
 
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
-    SGQDs[iGroup]->formContributionToLinearSystem_p();
+    SGQDs[iGroup]->formContributionToLinearSystem();
   }
 
   /* Finalize assembly for A_p and b_p */
@@ -413,7 +244,7 @@ int MultiGroupQD::buildLinearSystem_p()
 /// Loops over energy groups and builds linear system to calculate the net 
 /// neutron currents from the flux values currrently held in x, the solution
 /// vector
-int MultiGroupQD::buildBackCalcSystem_p()
+int MultiGroupQD::buildBackCalcSystem()
 {
 
   PetscErrorCode ierr;
@@ -426,7 +257,7 @@ int MultiGroupQD::buildBackCalcSystem_p()
 
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
-    SGQDs[iGroup]->formContributionToBackCalcSystem_p();
+    SGQDs[iGroup]->formContributionToBackCalcSystem();
   }
 
   /* Finalize assembly for C_p and d_p */
@@ -442,9 +273,9 @@ int MultiGroupQD::buildBackCalcSystem_p()
 
 //==============================================================================
 /// Solves the linear system formed by the muligroup quasidiffusion equations
-void MultiGroupQD::solveLinearSystem_p()
+void MultiGroupQD::solveLinearSystem()
 {
-  QDSolve->solve_p();
+  QDSolve->solve();
 }
 //==============================================================================
 
@@ -452,7 +283,7 @@ void MultiGroupQD::solveLinearSystem_p()
 /// Loops over energy groups and builds linear system to calculate the net 
 /// neutron currents from the flux values currrently held in x, the solution
 /// vector
-int MultiGroupQD::buildSteadyStateBackCalcSystem_p()
+int MultiGroupQD::buildSteadyStateBackCalcSystem()
 {
   PetscErrorCode ierr;
   int tempCurrUnknowns=QDSolve->nCurrentUnknowns,\
@@ -464,7 +295,7 @@ int MultiGroupQD::buildSteadyStateBackCalcSystem_p()
 
   for (int iGroup = 0; iGroup < SGQDs.size(); iGroup++)
   {
-    SGQDs[iGroup]->formSteadyStateContributionToBackCalcSystem_p();
+    SGQDs[iGroup]->formSteadyStateContributionToBackCalcSystem();
   }
 
   /* Finalize assembly for C_p and d_p */
@@ -480,10 +311,10 @@ int MultiGroupQD::buildSteadyStateBackCalcSystem_p()
 //==============================================================================
 /// Solve the linear system which calculates net currents from the current flux
 /// values
-void MultiGroupQD::backCalculateCurrent_p()
+void MultiGroupQD::backCalculateCurrent()
 {
 
-  QDSolve->backCalculateCurrent_p();
+  QDSolve->backCalculateCurrent();
 
 }
 //==============================================================================

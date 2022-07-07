@@ -18,7 +18,6 @@ set(LIBS_DIR ${CMAKE_SOURCE_DIR}/libs)
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories(${TPLS_DIR}/yaml-cpp/include)
 include_directories(${TPLS_DIR}/armadillo/include)
-include_directories(${TPLS_DIR}/superlu/include)
 include_directories(${TPLS_DIR}/petsc/include)
 include_directories(${TPLS_DIR}/petsc/arch-linux-c-debug/include)
 
@@ -30,7 +29,6 @@ add_subdirectory(${DRIVER_DIR})
 add_subdirectory(${LIBS_DIR})
 add_subdirectory(${TPLS_DIR}/yaml-cpp)
 add_subdirectory(${TPLS_DIR}/armadillo)
-add_subdirectory(${TPLS_DIR}/superlu)
 
 #find_package(Armadillo REQUIRED)
 #include_directories(${ARMADILLO_INCLUDE_DIRS})
@@ -65,7 +63,6 @@ add_executable(QuasiMolto
 target_link_libraries(
     QuasiMolto
     PUBLIC
-    superlu
     ${ARMADILLO_LIBRARIES} 
     petsc
     PRIVATE

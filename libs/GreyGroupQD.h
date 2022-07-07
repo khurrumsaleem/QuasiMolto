@@ -98,14 +98,6 @@ class GreyGroupQD
     void printEddingtons();
     void assignMGQDPointer(MultiGroupQD * myMGQD);
 
-    /* PETSc functions */
-
-    // Steady state
-    void buildSteadyStateLinearSystem_p();
-    
-    // Transient
-    void buildLinearSystem_p();
-
   private:
     Materials * materials;
     Mesh * mesh; 

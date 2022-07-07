@@ -81,10 +81,6 @@ class SingleGroupQD
         Materials * myMaterials,\
         Mesh * myMesh,\
         YAML::Node * myInput);
-    void formContributionToLinearSystem();
-    void formSteadyStateContributionToLinearSystem();
-    void formContributionToBackCalcSystem();
-    void formSteadyStateContributionToBackCalcSystem();
     void getFlux();
     Eigen::VectorXd getFluxSolutionVector();
     Eigen::VectorXd getCurrentSolutionVector();
@@ -93,10 +89,10 @@ class SingleGroupQD
     void writeFlux();
 
     /* PETSc function */
-    void formContributionToLinearSystem_p();
-    void formContributionToBackCalcSystem_p();
-    void formSteadyStateContributionToLinearSystem_p();
-    void formSteadyStateContributionToBackCalcSystem_p();
+    void formContributionToLinearSystem();
+    void formContributionToBackCalcSystem();
+    void formSteadyStateContributionToLinearSystem();
+    void formSteadyStateContributionToBackCalcSystem();
 
   private:
     MultiGroupQD * MGQD;

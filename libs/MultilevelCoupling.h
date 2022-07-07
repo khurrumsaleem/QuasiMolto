@@ -31,18 +31,8 @@ class MultilevelCoupling
     double resetThreshold = 1E100, relaxTolELOT = 3E-4, relaxTolMGLOQD = 3E-4,\
            ratedPower = 8e6, fluxNormalization = 1, epsK = 1E-8;
     bool p1Approx = false, iterativeMGLOQD = false, iterativeELOT = false;
-    bool solveOneStep();
-    bool solveOneStepResidualBalance(bool outputVars);
-    void solveSteadyStateResidualBalance(bool outputVars);
-    void solveSteadyStateTransientResidualBalance(bool outputVars);
-    bool initialSolve();
     void solveMGHOT();
     void solveSteadyStateMGHOT();
-    void solveMGLOQD();
-    void solveSteadyStateMGLOQD();
-    void solveELOT(Eigen::VectorXd xGuess);
-    void solveSteadyStateELOT(Eigen::VectorXd xGuess);
-    void solveTransient();
     double calcK(Eigen::MatrixXd oldFlux, Eigen::MatrixXd newFlux,\
         Eigen::MatrixXd volume, double kold);
     double eps(double residual, double relaxationTolerance = 1E-14);
@@ -54,22 +44,22 @@ class MultilevelCoupling
     /* PETSc FUNCTIONS */
 
     // Steady state
-    void solveSteadyStateResidualBalance_p(bool outputVars);
-    void solveSteadyStateMGLOQD_p();
-    void solveSteadyStateELOT_p();
+    void solveSteadyStateResidualBalance(bool outputVars);
+    void solveSteadyStateMGLOQD();
+    void solveSteadyStateELOT();
 
     // Transient
-    bool solveOneStepResidualBalance_p(bool outputVars);
-    void solveTransient_p();
-    void solveSteadyStateTransientResidualBalance_p(bool outputVars);
-    void solveMGLOQD_p();
-    void solveELOT_p();
+    bool solveOneStepResidualBalance(bool outputVars);
+    void solveTransient();
+    void solveSteadyStateTransientResidualBalance(bool outputVars);
+    void solveMGLOQD();
+    void solveELOT();
 
     // Pseudo transient
-    void solveSteadyStatePseudoTransient_p(bool outputVars);
-    void solvePseudoTransient_p();
-    bool solvePseudoTransientResidualBalance_p(bool outputVars);
-    void solvePseudoTransientELOT_p();
+    void solveSteadyStatePseudoTransient(bool outputVars);
+    void solvePseudoTransient();
+    bool solvePseudoTransientResidualBalance(bool outputVars);
+    void solvePseudoTransientELOT();
 
 
   private:

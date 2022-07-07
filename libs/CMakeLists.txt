@@ -24,7 +24,6 @@ add_library(libs
         PETScWrapper.cpp
         )
 
-target_link_libraries(libs superlu)
 target_link_libraries(libs petsc)
 
 # Add compilier flags

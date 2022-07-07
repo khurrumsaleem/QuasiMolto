@@ -408,43 +408,25 @@ double SingleGroupTransport::calcAlpha(string calcType)
       alpha.setZero();
     else
     {
-      if (mesh->petsc) 
-      {
+      VecScatterCreateToAll(MGT->mgqd->QDSolve->x_p,&ctx,&x_p_seq);
+      VecScatterBegin(ctx,MGT->mgqd->QDSolve->x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
+      VecScatterEnd(ctx,MGT->mgqd->QDSolve->x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
 
-        VecScatterCreateToAll(MGT->mgqd->QDSolve->x_p,&ctx,&x_p_seq);
-        VecScatterBegin(ctx,MGT->mgqd->QDSolve->x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-        VecScatterEnd(ctx,MGT->mgqd->QDSolve->x_p,x_p_seq,INSERT_VALUES,SCATTER_FORWARD);
-        
-        for (int iZ = 0; iZ < alpha.rows(); ++iZ){
-          for (int iR = 0; iR < alpha.cols(); ++iR){
-            
-            index = MGT->mgqd->QDSolve->getIndices(iR,iZ,energyGroup)[0]; 
+      for (int iZ = 0; iZ < alpha.rows(); ++iZ){
+        for (int iR = 0; iR < alpha.cols(); ++iR){
 
-            // Get local values
-            ierr = VecGetValues(x_p_seq,1,&index,&localFlux);CHKERRQ(ierr);
-            ierr = VecGetValues(MGT->mgqd->QDSolve->xPast_p_seq,1,&index,&localFluxPrev);CHKERRQ(ierr);
-            alpha(iZ,iR) = (1.0/deltaT)*log(localFlux/localFluxPrev);
+          index = MGT->mgqd->QDSolve->getIndices(iR,iZ,energyGroup)[0]; 
 
-          } // iR
-        } // iZ
-    
-        VecScatterDestroy(&ctx);
-        VecDestroy(&x_p_seq);
-      } 
-      else
-      {
-        for (int iZ = 0; iZ < alpha.rows(); ++iZ){
-          for (int iR = 0; iR < alpha.cols(); ++iR){
+          // Get local values
+          ierr = VecGetValues(x_p_seq,1,&index,&localFlux);CHKERRQ(ierr);
+          ierr = VecGetValues(MGT->mgqd->QDSolve->xPast_p_seq,1,&index,&localFluxPrev);CHKERRQ(ierr);
+          alpha(iZ,iR) = (1.0/deltaT)*log(localFlux/localFluxPrev);
 
-            // Get local values
-            indices = MGT->mgqd->QDSolve->getIndices(iR,iZ,energyGroup); 
-            localFlux = MGT->mgqd->QDSolve->x(indices[0]);
-            localFluxPrev = MGT->mgqd->QDSolve->xPast(indices[0]);
-            alpha(iZ,iR) = (1.0/deltaT)*log(localFlux/localFluxPrev);
+        } // iR
+      } // iZ
 
-          } // iR
-        } // iZ
-      }
+      VecScatterDestroy(&ctx);
+      VecDestroy(&x_p_seq);
     }
   }
   else

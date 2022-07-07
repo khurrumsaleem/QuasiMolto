@@ -27,16 +27,6 @@ jobs:
       - name: Install armadillo
         working-directory: ./TPLs/armadillo
         run: make install
-      # Compile SuperLU 
-      - name: Set superlu install prefix
-        working-directory: ./TPLs/superlu
-        run: cmake . -DCMAKE_INSTALL_PREFIX:PATH=.
-      - name: Make superlu
-        working-directory: ./TPLs/superlu
-        run: make
-      - name: Install superlu
-        working-directory: ./TPLs/superlu
-        run: make install
       # Compile PETSc 
       - name: Configure PETSC
         working-directory: ./TPLs/petsc

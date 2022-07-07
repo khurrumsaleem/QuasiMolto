@@ -34,24 +34,9 @@ class MultiPhysicsCoupledQD
     int nUnknowns;
    
     // Functions 
-    int fluxSource(int iZ,int iR,int iEq,double coeff,\
-      Eigen::SparseMatrix<double,Eigen::RowMajor> * myA);
-    int fluxSource(int iZ,int iR,int iEq,double coeff,\
-      Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA);
-    int dnpSource(int iZ,int iR,int iEq,double coeff,\
-      Eigen::SparseMatrix<double,Eigen::RowMajor> * myA);
+    int fluxSource(int iZ,int iR,int iEq,double coeff);
+    int dnpSource(int iZ,int iR,int iEq,double coeff);
     void initializeXPast();
-    void buildLinearSystem();
-    void buildSteadyStateLinearSystem();
-    void solveLinearSystem();
-    void solveLinearSystemIterative(Eigen::VectorXd xGuess);
-    int solveSuperLU();
-    int solveIterativeDiag(Eigen::VectorXd xGuess);
-    int solveIterativeILU(Eigen::VectorXd xGuess);
-    void solveTransient();
-    void solveSteadyState();
-    void updateVarsAfterConvergence();
-    void updateSteadyStateVarsAfterConvergence();
     void writeVars();
     void printVars();
     void checkOptionalParams();
@@ -65,21 +50,21 @@ class MultiPhysicsCoupledQD
     PC pc;
 
     // Dual purpose
-    int solve_p();
+    int solve();
 
     // Steady state 
-    int buildSteadyStateLinearSystem_p();
-    void updateSteadyStateVarsAfterConvergence_p();
-    void solveSteadyState_p();
+    int buildSteadyStateLinearSystem();
+    void updateSteadyStateVarsAfterConvergence();
+    void solveSteadyState();
 
     // Transient
-    int buildLinearSystem_p();
-    void updateVarsAfterConvergence_p();
-    void solveTransient_p();
+    int buildLinearSystem();
+    void updateVarsAfterConvergence();
+    void solveTransient();
 
     // Pseudo transient
-    int buildPseudoTransientLinearSystem_p();
-    void updatePseudoTransientVars_p();
+    int buildPseudoTransientLinearSystem();
+    void updatePseudoTransientVars();
 
     // Pointers
     HeatTransfer * heat;

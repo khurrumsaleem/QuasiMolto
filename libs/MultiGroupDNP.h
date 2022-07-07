@@ -29,10 +29,6 @@ class MultiGroupDNP
         MultiPhysicsCoupledQD * myMPQD,\
         int myIndexOffset);
     void readInput();
-    void buildCoreLinearSystem();
-    void buildSteadyStateCoreLinearSystem();
-    void buildRecircLinearSystem();
-    void buildSteadyStateRecircLinearSystem();
     void getCoreDNPConc();
     void getCumulativeDNPDecaySource();
     void setCoreDNPConc();
@@ -40,7 +36,6 @@ class MultiGroupDNP
     void getRecircDNPConc();
     void setRecircDNPConc();
     void printRecircDNPConc();
-    void solveRecircLinearSystem();
     MultiPhysicsCoupledQD * mpqd;
     YAML::Node * input;
 
@@ -51,18 +46,18 @@ class MultiGroupDNP
     PC pc;
    
     // Dual purpose
-    int solveRecircLinearSystem_p();
+    int solveRecircLinearSystem();
 
     // Steady state
-    void buildSteadyStateCoreLinearSystem_p();
-    int buildSteadyStateRecircLinearSystem_p();
+    void buildSteadyStateCoreLinearSystem();
+    int buildSteadyStateRecircLinearSystem();
     
     // Transient
-    void buildCoreLinearSystem_p();
-    int buildRecircLinearSystem_p();
+    void buildCoreLinearSystem();
+    int buildRecircLinearSystem();
 
     // Pseudo transient
-    void buildPseudoTransientCoreLinearSystem_p();
+    void buildPseudoTransientCoreLinearSystem();
 
   private:
     Materials * mats;
