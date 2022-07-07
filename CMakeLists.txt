@@ -74,7 +74,7 @@ target_link_libraries(
 )
 
 # Add compilier flags
-SET(CMAKE_CXX_FLAGS "-std=c++11 -Ofast -fopenmp")
+SET(CMAKE_CXX_FLAGS "-std=c++11 -Ofast -fopenmp -llapack -lblas")
 SET(CMAKE_CXX_FLAGS_DEBUG "-pg")
 
 # Enable testing
