@@ -4,9 +4,6 @@
 [submodule "TPLs/eigen-git-mirror"]
 	path = TPLs/eigen-git-mirror
 	url = https://github.com/eigenteam/eigen-git-mirror.git
-[submodule "TPLs/superlu"]
-	path = TPLs/superlu
-	url = https://github.com/xiaoyeli/superlu.git
 [submodule "TPLs/petsc"]
 	path = TPLs/petsc
 	url = https://github.com/petsc/petsc.git

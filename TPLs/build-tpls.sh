@@ -5,11 +5,6 @@ cd armadillo/
 cmake . -DCMAKE_INSTALL_PREFIX:PATH=$(pwd)
 make
 make install
-# SuperLU
-cd ../superlu
-cmake . -DCMAKE_INSTALL_PREFIX:PATH=$(pwd)
-make
-make install
 # PETSc
 cd ../petsc
 ./configure --with-fc=0
