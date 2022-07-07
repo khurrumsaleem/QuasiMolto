@@ -1,6 +1,6 @@
 // test.cpp
 
-static char help[] = "Solves CFR reactor kinetics problem with KSP.\n\n";
+static char help[] = "Solves CFR reactor kinetics problems.\n\n";
 
 #include <iostream>
 #include "../libs/Materials.h"
@@ -24,41 +24,36 @@ static char help[] = "Solves CFR reactor kinetics problem with KSP.\n\n";
 #include "../libs/MMS.h"
 #include "../TPLs/yaml-cpp/include/yaml-cpp/yaml.h"
 
+enum SolveId 
+{
+  transient,
+  steadyState,
+  steadyStateThenTransient,
+  steadyStateThenPseudoTransient,
+  numSolveIds
+};
+
+const char* solveTypes[] =
+{ 
+  "transient",
+  "steady_state",
+  "steady_state_then_transient",
+  "steady_state_then_pseudo_transient"
+};
+
 using namespace std;
-void testHeatTransfer(Materials * myMaterials,\
+
+// Declare various solver types
+void transientSolve(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
-void testMultiGroupPrecursor(Materials * myMaterials,\
+void steadyStateSolve(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
-void testMultiPhysicsCoupledQD(Materials * myMaterials,\
+void steadyStateThenTransientSolve(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
-void testMultiGroupToGreyGroupCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input);
-void testMultilevelCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input);
-void testSteadyState(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input);
-void testSteadyStateThenTransient(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input);
-int testMGQDPETScCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input);
-int testELOTPETScCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input);
-int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input);
-void testTransientMultilevelPETScCoupling(Materials * myMaterials,\
-  Mesh * myMesh,\
-  YAML::Node * input);
-void testSteadyStateThenPseudoTransient(Materials * myMaterials,\
+void steadyStateThenPseudoTransientSolve(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
 
@@ -66,39 +61,38 @@ int main(int argc, char** argv) {
 
   PetscMPIInt size;
   PetscErrorCode ierr; 
-  string solveType;
+  string solveString;
 
-  // initialize PETSc
+  // Initialize PETSc
   PetscInitialize(&argc,&argv,(char*)0,help);
   ierr = MPI_Comm_size(PETSC_COMM_WORLD,&size); CHKERRQ(ierr);
 
-  // get input file
+  // Get input file
   YAML::Node * input;
   input = new YAML::Node;
-  if (argc>1){
+  if (argc>1)
     *input = YAML::LoadFile(argv[1]);
-  } else {
+  else 
     *input = YAML::LoadFile("input.yaml");
-  }
 
-  // initialize mesh object
+  // Initialize mesh object
   Mesh * myMesh; 
   myMesh = new Mesh(input);
   myMesh->printQuadSet();
 
-  // initialize materials object
+  // Initialize materials object
   Materials * myMaterials;
   myMaterials = new Materials(myMesh,input);
 
-  // initialize multigroup transport object
+  // Initialize multigroup transport object
   MultiGroupTransport * myMGT; 
   myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
 
-  // initialize multigroup quasidiffusion object
+  // Initialize multigroup quasidiffusion object
   MultiGroupQD * myMGQD; 
   myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
 
-  // initialize T2QD coupling object
+  // Initialize T2QD coupling object
   TransportToQDCoupling * myT2QD; 
   myT2QD = new TransportToQDCoupling(myMaterials,myMesh,input,myMGT,myMGQD);
 
@@ -118,58 +112,47 @@ int main(int argc, char** argv) {
     Eigen::setNbThreads(1);
   }
 
-  if ((*input)["parameters"]["solve type"]){
+  // Launch solver based on user-specified solve type
+  if ((*input)["parameters"]["solve type"])
+  {
+    // Read in user-specified solve type  
+    solveString=(*input)["parameters"]["solve type"].as<string>();
+    cout << "User specified solve type: " << solveString << endl;
 
-    solveType=(*input)["parameters"]["solve type"].as<string>();
-
-    cout << solveType << endl;
-
-    if (solveType == "MMS" or solveType == "mms")    
-      myMMS->timeDependent();
-    else if (solveType == "MGQD" or solveType == "mgqd") 
-      myMGQD->solveMGQDOnly();
-    else if (solveType == "TQD" or solveType == "TQD")
-    { 
-      // myMGT->solveTransportOnly();
-      // myT2QD->calcEddingtonFactors();
-      // myT2QD->calcBCs();
-      // myMGQD->solveMGQDOnly();
-      myT2QD->solveTransportWithQDAcceleration();
-    }
-    else if (solveType == "testHeatTransfer")
-      testHeatTransfer(myMaterials,myMesh,input);
-    else if (solveType == "testMultiGroupPrecursor")
-      testMultiGroupPrecursor(myMaterials,myMesh,input);
-    else if (solveType == "testMultiPhysicsCoupledQD")
-      testMultiPhysicsCoupledQD(myMaterials,myMesh,input);
-    else if (solveType == "testMultiGroupToGreyGroupCoupling")
-      testMultiGroupToGreyGroupCoupling(myMaterials,myMesh,input);
-    else if (solveType == "transient")
-      testMultilevelCoupling(myMaterials,myMesh,input);
-    else if (solveType == "steady_state")
-      testSteadyState(myMaterials,myMesh,input);
-    else if (solveType == "testSteadyStateThenTransient")
-      testSteadyStateThenTransient(myMaterials,myMesh,input);
-    else if (solveType == "testMGQDPETScCoupling")
-      testMGQDPETScCoupling(myMaterials,myMesh,input);
-    else if (solveType == "testELOTPETScCoupling")
-      testELOTPETScCoupling(myMaterials,myMesh,input);
-    else if (solveType == "testSteadyStateMultilevelPETScCoupling")
-      testSteadyStateMultilevelPETScCoupling(myMaterials,myMesh,input);
-    else if (solveType == "testTransientMultilevelPETScCoupling")
-      testTransientMultilevelPETScCoupling(myMaterials,myMesh,input);
-    else if (solveType == "steady_state_then_pseudo_transient")
-      testSteadyStateThenPseudoTransient(myMaterials,myMesh,input);
+    // Transient solve
+    if (solveString == solveTypes[transient])
+      transientSolve(myMaterials,myMesh,input);
+    // Steady state solve
+    else if (solveString == solveTypes[steadyState])
+      steadyStateSolve(myMaterials,myMesh,input);
+    // Steady state initial solve followed by a transient solve
+    else if (solveString == solveTypes[steadyStateThenTransient])
+      steadyStateThenTransientSolve(myMaterials,myMesh,input);
+    // Steady state initial solve followed by a pseudo transient solve 
+    else if (solveString == solveTypes[steadyStateThenPseudoTransient])
+      steadyStateThenPseudoTransientSolve(myMaterials,myMesh,input);
+    // User-specified solve type is not supported
     else
-      myMGT->solveTransportOnly();
+    {
+      cout << "Solve type " << solveString << " not recognized." << endl;
+      cout << "Supported solve types are: " << endl; 
+      for (int supportedSolveId = 0; 
+           supportedSolveId != numSolveIds; 
+           supportedSolveId++)
+      {
+        cout << "  ";
+        cout << solveTypes[supportedSolveId] << endl;
+      }
+    }
   }
+  // Default to steady state solve if solve type is not specified
   else
   {
-    myMGT->solveTransportOnly();
+    cout << "Defaulting to steady state solve." << endl;
+    steadyStateSolve(myMaterials,myMesh,input);
   }
 
   // Delete pointers
-
   delete myMesh;
   delete myMaterials;
   delete myMGT; 
@@ -183,122 +166,13 @@ int main(int argc, char** argv) {
   return(0);
 }
 
-void testHeatTransfer(Materials * myMaterials,Mesh * myMesh,YAML::Node * input){
-
-  MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
-  myMPQD->heat->updateBoundaryConditions();
-  myMPQD->heat->calcDiracs();
-  cout << "diracs: " << endl;   
-  cout << myMPQD->heat->dirac << endl;
-  cout << "flux: " << endl;   
-  cout << myMPQD->heat->flux << endl;
-  myMPQD->heat->calcFluxes();
-  myMaterials->oneGroupXS->sigF.setOnes(myMesh->nZ,myMesh->nR);
-  myMPQD->A.resize(myMesh->nZ*myMesh->nR,myMesh->nZ*myMesh->nR);
-  cout << "Set size of A." << endl;
-  myMPQD->b.resize(myMesh->nZ*myMesh->nR);
-  myMPQD->x.resize(myMesh->nZ*myMesh->nR);
-  cout << "Set size of b." << endl;
-  myMPQD->heat->buildLinearSystem();
-  cout << "A: " << endl;   
-  cout << myMPQD->A << endl;;
-  cout << "b: " << endl;   
-  cout << myMPQD->b << endl;;
-  myMPQD->solve();
-  cout << "x: " << endl;   
-  cout << myMPQD->x << endl;;
-  myMPQD->heat->getTemp();
-  cout << myMPQD->heat->temp << endl;;
-
-}
-
-void testMultiGroupPrecursor(Materials * myMaterials,\
-    Mesh * myMesh,\
-    YAML::Node * input){
-
-  MultiPhysicsCoupledQD * myMPQD; 
-  MultiGroupDNP * myMGP; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
-
-  myMPQD->mgdnp->buildRecircLinearSystem();
-  cout << "recirculation A: " << endl;
-  cout << myMPQD->mgdnp->recircA << endl;
-  myMPQD->mgdnp->solveRecircLinearSystem();
-
-  cout << myMPQD->mgdnp->beta << endl;
-  cout << "recirculation Z: " << myMesh->recircZ << endl;
-
-  myMPQD->mgdnp->DNPs[0]->assignBoundaryIndices();
-  myMPQD->mgdnp->DNPs[0]->updateBoundaryConditions();
-  cout << "Updated boundary conditions" << endl;
-
-  myMPQD->mgdnp->DNPs[0]->calcRecircDNPFluxes();
-  myMPQD->mgdnp->DNPs[0]->calcCoreDNPFluxes();
-  cout << "Setting size of A and b..." << endl;
-  myMPQD->A.resize(myMesh->nZ*myMesh->nR,myMesh->nZ*myMesh->nR);
-  myMPQD->b.resize(myMesh->nZ*myMesh->nR);
-  cout << "Set size of A and b" << endl;
-  myMPQD->mgdnp->DNPs[0]->buildCoreLinearSystem();
-  cout << "built core system" << endl;
-  cout << "A" << endl;
-  cout << myMPQD->A << endl;
-  cout << "b" << endl;
-  cout << myMPQD->b << endl;
-  myMPQD->solve();
-  cout << "x: " << endl;   
-  cout << myMPQD->x << endl;
-  cout << "building recirc system..." << endl;
-  myMPQD->mgdnp->recircA.resize(myMesh->nZrecirc*myMesh->nR,\
-      myMesh->nZrecirc*myMesh->nR);
-  myMPQD->mgdnp->recircb.resize(myMesh->nZrecirc*myMesh->nR);
-  myMPQD->mgdnp->DNPs[0]->buildRecircLinearSystem();
-  cout << "built recirc system" << endl;
-  cout << "recircA:" << endl;
-  cout << myMPQD->mgdnp->recircA << endl;
-  cout << "recircb:" << endl;
-  cout << myMPQD->mgdnp->recircb << endl;
-  myMPQD->mgdnp->solveRecircLinearSystem();
-  cout << "recircx: " << endl;   
-  cout << myMPQD->mgdnp->recircx << endl;
-}
-
-void testMultiPhysicsCoupledQD(Materials * myMaterials,\
-    Mesh * myMesh,\
-    YAML::Node * input){
-
-  MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
-  myMPQD->solveTransient();
-}
-
-void testMultiGroupToGreyGroupCoupling(Materials * myMaterials,\
-    Mesh * myMesh,\
-    YAML::Node * input){
-
-  // initialize multigroup quasidiffusion object
-  MultiGroupQD * myMGQD; 
-  myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
-
-  // Initialize MultiPhysicsCoupledQD
-  MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
-
-  // Initialize MultiPhysicsCoupledQD
-  MGQDToMPQDCoupling * myMGToGG; 
-  myMGToGG = new MGQDToMPQDCoupling(myMesh,myMaterials,input,myMPQD,myMGQD);
-
-  cout << "Initialized MGQDToMGQDCoupling" << endl;
-
-  // Collapse nuclear data
-  myMGToGG->solveTransient();
-  myMaterials->oneGroupXS->print();
-  myMPQD->ggqd->printBCParams();
-
-  cout << "Collapsed nuclear data" << endl;
-}
-
-void testMultilevelCoupling(Materials * myMaterials,\
+//==============================================================================
+/// Execute a transient solve
+///
+/// @param [in] myMaterials Materials object for the simulation
+/// @param [in] myMesh Mesh object for the simulation
+/// @param [in] input YAML input object for the simulation
+void transientSolve(Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * input){
 
@@ -326,8 +200,15 @@ void testMultilevelCoupling(Materials * myMaterials,\
   cout << "Completed multilevel transient solve." << endl;
 
 }
+//==============================================================================
 
-void testSteadyState(Materials * myMaterials,\
+//==============================================================================
+/// Execute a steady state solve
+///
+/// @param [in] myMaterials Materials object for the simulation
+/// @param [in] myMesh Mesh object for the simulation
+/// @param [in] input YAML input object for the simulation
+void steadyStateSolve(Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * input){
 
@@ -363,8 +244,16 @@ void testSteadyState(Materials * myMaterials,\
   delete myMPQD;
   delete myMLCoupling;
 }
+//==============================================================================
 
-void testSteadyStateThenTransient(Materials * myMaterials,\
+//==============================================================================
+/// Execute a steady state solve, and then use the steady state solution as the
+/// the initial condition for a transient solve
+///
+/// @param [in] myMaterials Materials object for the simulation
+/// @param [in] myMesh Mesh object for the simulation
+/// @param [in] input YAML input object for the simulation
+void steadyStateThenTransientSolve(Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * input){
 
@@ -389,7 +278,7 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
 
   myMLCoupling->solveSteadyStateTransientResidualBalance(true);
 
-  cout << "Completed multilevel solve" << endl;
+  cout << "Completed multilevel solve." << endl;
 
   // Delete pointers
   delete myMGT;
@@ -397,163 +286,18 @@ void testSteadyStateThenTransient(Materials * myMaterials,\
   delete myMPQD;
   delete myMLCoupling;
 }
+//==============================================================================
 
-int testMGQDPETScCoupling(Materials * myMaterials,\
-    Mesh * myMesh,\
-    YAML::Node * input){
-
-  PetscErrorCode ierr;
-
-  // initialize multigroup transport object
-  MultiGroupTransport * myMGT; 
-  myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
-
-  // initialize multigroup quasidiffusion object
-  MultiGroupQD * myMGQD; 
-  myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
-
-  // Initialize MultiPhysicsCoupledQD
-  MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
-
-  // Initialize MultiPhysicsCoupledQD
-  MultilevelCoupling * myMLCoupling; 
-  myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
-      myMPQD);
-
-  /* PETSc transient*/  
-  cout << "Run PETSc transient...";
-  myMGQD->solveMGQDOnly();
-  cout << " done." << endl;
-
-  // Delete pointers
-  delete myMGT;
-  delete myMGQD;
-  delete myMPQD;
-  delete myMLCoupling;
-
-  return(0);
-}
-
-int testELOTPETScCoupling(Materials * myMaterials,\
-    Mesh * myMesh,\
-    YAML::Node * input){
-  PetscErrorCode ierr;
-
-  // initialize multigroup transport object
-  MultiGroupTransport * myMGT; 
-  myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
-
-  // initialize multigroup quasidiffusion object
-  MultiGroupQD * myMGQD; 
-  myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
-
-  // Initialize MultiPhysicsCoupledQD
-  MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
-
-  // Initialize MultiPhysicsCoupledQD
-  MultilevelCoupling * myMLCoupling; 
-  myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
-      myMPQD);
-
-  /* STEADY STATE */
-  cout << "Run ELOT steady state solve...";
-  myMPQD->solveSteadyState();
-
-  // Delete pointers
-  delete myMGT;
-  delete myMGQD;
-  delete myMPQD;
-  delete myMLCoupling;
-
-  return(0);
-}
-
-int testSteadyStateMultilevelPETScCoupling(Materials * myMaterials,\
-    Mesh * myMesh,\
-    YAML::Node * input){
-
-  PetscErrorCode ierr;
-
-  // initialize multigroup transport object
-  MultiGroupTransport * myMGT; 
-  myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
-
-  // initialize multigroup quasidiffusion object
-  MultiGroupQD * myMGQD; 
-  myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
-
-  // Initialize MultiPhysicsCoupledQD
-  MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
-
-  // Initialize MultiPhysicsCoupledQD
-  MultilevelCoupling * myMLCoupling; 
-  myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
-      myMPQD);
-
-  // Set state to zero for initial steady state solve
-  myMesh->state=0;
-
-  cout << "Initialized steady state solve" << endl;
-
-  if (myMesh->petsc)
-    myMLCoupling->solveSteadyStateResidualBalance(true);
-  else
-    myMLCoupling->solveSteadyStateResidualBalance(true);
-
-  cout << "Completed steady state solve" << endl;
-
-  // Delete pointers
-  delete myMGT;
-  delete myMGQD;
-  delete myMPQD;
-  delete myMLCoupling;
-
-  return(0);
-
-}
-
-void testTransientMultilevelPETScCoupling(Materials * myMaterials,\
-    Mesh * myMesh,\
-    YAML::Node * input){
-
-  PetscErrorCode ierr;
-
-  // initialize multigroup transport object
-  MultiGroupTransport * myMGT; 
-  myMGT = new MultiGroupTransport(myMaterials,myMesh,input);
-
-  // initialize multigroup quasidiffusion object
-  MultiGroupQD * myMGQD; 
-  myMGQD = new MultiGroupQD(myMaterials,myMesh,input);
-
-  // Initialize MultiPhysicsCoupledQD
-  MultiPhysicsCoupledQD * myMPQD; 
-  myMPQD = new MultiPhysicsCoupledQD(myMaterials,myMesh,input);
-
-  // Initialize MultilevelCoupling
-  MultilevelCoupling * myMLCoupling; 
-  myMLCoupling = new MultilevelCoupling(myMesh,myMaterials,input,myMGT,myMGQD,\
-      myMPQD);
-
-  if (myMesh->petsc)
-    myMLCoupling->solveTransient();
-  else
-    myMLCoupling->solveTransient();
-
-  cout << "Completed transient solve" << endl;
-
-  // Delete pointers
-  delete myMGT;
-  delete myMGQD;
-  delete myMPQD;
-  delete myMLCoupling;
-
-}
-
-void testSteadyStateThenPseudoTransient(Materials * myMaterials,\
+//==============================================================================
+/// Execute a steady state solve, and then use the steady state solution as the
+/// the initial condition for a pseudo transient solve. In the pseudo transient
+/// solve, the precursor balance and heat transfer equations have time 
+/// derivatives, but the neutron transport equations utilizes an eigenvalue
+///
+/// @param [in] myMaterials Materials object for the simulation
+/// @param [in] myMesh Mesh object for the simulation
+/// @param [in] input YAML input object for the simulation
+void steadyStateThenPseudoTransientSolve(Materials * myMaterials,\
     Mesh * myMesh,\
     YAML::Node * input){
 
@@ -578,14 +322,13 @@ void testSteadyStateThenPseudoTransient(Materials * myMaterials,\
 
   myMLCoupling->solveSteadyStatePseudoTransient(true);
 
-  cout << "Completed multilevel solve" << endl;
+  cout << "Completed multilevel solve." << endl;
 
   // Delete pointers
-
   delete myMGT;
   delete myMGQD;
   delete myMPQD;
   delete myMLCoupling;
-
 }
+//==============================================================================
 

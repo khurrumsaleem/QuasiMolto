@@ -949,8 +949,6 @@ int SingleGroupDNP::buildLinearSystem(
     int myIndexOffset,\
     bool fluxSource)
 {
-
-  //int myIndex,iEq = myIndexOffset;
   int myIndex,iEq = myIndexOffset;
   int iEqTemp=0,nDNPUnknowns = myDNPConc.rows()*myDNPConc.cols();
   double coeff;
@@ -958,7 +956,6 @@ int SingleGroupDNP::buildLinearSystem(
   PetscErrorCode ierr;
   PetscScalar value;
 
-  //#pragma omp parallel for private(myIndex,iEq,iEqTemp)
   for (int iZ = 0; iZ < myDNPConc.rows(); iZ++)
   {
     for (int iR = 0; iR < myDNPConc.cols(); iR++)
@@ -969,25 +966,21 @@ int SingleGroupDNP::buildLinearSystem(
 
       value = 1 + mesh->dt*lambda;
       ierr = MatSetValue(*A_p,iEq,myIndex,value,ADD_VALUES);CHKERRQ(ierr); 
-      //testMat(iEqTemp,myIndex) = 1 + mesh->dt*lambda; 
 
       // Time term
       value = myDNPConc(iZ,iR);
       ierr = VecSetValue(*b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-      //(*myb)(iEq) = myDNPConc(iZ,iR);
 
       // Flux source term 
       if (fluxSource)
       {
         coeff = -mesh->dt*mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID); 
-        mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff,&testMat);
+        mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
       }
 
       // Advection term
       value = (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
       ierr = VecSetValue(*b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
-      //(*myb)(iEq) += (mesh->dt/dzs(iZ))*(myDNPFlux(iZ,iR)-myDNPFlux(iZ+1,iR));
-
     }
   }
 
@@ -1049,7 +1042,6 @@ int SingleGroupDNP::buildPseudoTransientLinearSystem(
   int myIndex,iEq = myIndexOffset;
   int iEqTemp=0,nDNPUnknowns = myDNPConc.rows()*myDNPConc.cols();
   double coeff,keff;
-  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> testMat;
   PetscErrorCode ierr;
   PetscScalar value;
 
@@ -1073,7 +1065,7 @@ int SingleGroupDNP::buildPseudoTransientLinearSystem(
       {
         keff = mats->oneGroupXS->keff; 
         coeff = -mesh->dt*mats->oneGroupXS->dnpFluxCoeff(iZ,iR,dnpID)/keff; 
-        mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff,&testMat);
+        mgdnp->mpqd->fluxSource(iZ,iR,iEq,coeff);
       }
 
       // Advection term

@@ -51,10 +51,8 @@ HeatTransfer::HeatTransfer(Materials * myMaterials,\
 /// @param [in] iR radial index 
 /// @param [in] iEq equation index 
 /// @param [in] coeff Coefficient to multiple gamma source term by  
-void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff,\
-    Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA)
+void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff)
 {
-
   int myIndex;
   double localVolume,totalVolume;
   double localGamma,localSigF,localOmega,gammaSourceCoeff;
@@ -74,11 +72,9 @@ void HeatTransfer::gammaSource(int iZ,int iR,int iEq,double coeff,\
       // Calculate gamma source coefficient 
       gammaSourceCoeff = coeff*localGamma*localOmega*localSigF;
       gammaSourceCoeff = localVolume*gammaSourceCoeff/totalVolume; 
-      mpqd->fluxSource(iZ,iR,iEq,gammaSourceCoeff,myA);
-      
+      mpqd->fluxSource(iZ,iR,iEq,gammaSourceCoeff);
     }
   }
-   
 };
 //==============================================================================
 
@@ -867,8 +863,6 @@ int HeatTransfer::buildLinearSystem()
   else
     volAvgGammaDep = calcExplicitFissionEnergy();
 
-  Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> Atemp;
-  
   for (int iZ = 0; iZ < temp.rows(); iZ++)
   {
 
@@ -969,7 +963,7 @@ int HeatTransfer::buildLinearSystem()
 
       // Flux source term 
       coeff = -mesh->dt*mats->omega(iZ,iR)*mats->oneGroupXS->sigF(iZ,iR);
-      mpqd->fluxSource(iZ,iR,iEq,coeff,&Atemp);
+      mpqd->fluxSource(iZ,iR,iEq,coeff);
       
       // Gamma source term 
       coeff = mesh->dt;

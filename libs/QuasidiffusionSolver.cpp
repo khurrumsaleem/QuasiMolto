@@ -23,9 +23,6 @@ QDSolver::QDSolver(Mesh * myMesh,\
   input = myInput;
   materials = myMaterials;
 
-  // temporary variables for initialization
-  //int nUnknowns,nCurrentUnknowns;
-
   // calculate number of unknowns  
   energyGroups = materials->nGroups;
   nR = mesh->rCornerCent.size();
@@ -35,37 +32,21 @@ QDSolver::QDSolver(Mesh * myMesh,\
   nUnknowns = energyGroups*nGroupUnknowns;
   nCurrentUnknowns = energyGroups*nGroupCurrentUnknowns;
 
-  // initialize size of linear system
-  if (!mesh->petsc)
-  {
-    A.resize(nUnknowns,nUnknowns);
-    A.reserve(3*nUnknowns+nUnknowns/5);
-    C.resize(nCurrentUnknowns,nUnknowns);
-    C.reserve(4*nCurrentUnknowns);
-    x.setZero(nUnknowns);
-    xPast.setZero(nUnknowns);
-    currPast.setZero(energyGroups*nGroupCurrentUnknowns);
-    b.setZero(nUnknowns);
-    d.setZero(nCurrentUnknowns);
-  }
-  else
-  {
-    /* Initialize PETSc variables */
-    // Flux system variables 
-    initPETScMat(&A_p,nUnknowns,20);
-    initPETScVec(&x_p,nUnknowns);
-    initPETScVec(&xPast_p,nUnknowns);
-    initPETScVec(&b_p,nUnknowns);
+  /* Initialize PETSc variables */
+  // Flux system variables 
+  initPETScMat(&A_p,nUnknowns,20);
+  initPETScVec(&x_p,nUnknowns);
+  initPETScVec(&xPast_p,nUnknowns);
+  initPETScVec(&b_p,nUnknowns);
 
-    // Current system variables 
-    initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,20);
-    initPETScVec(&currPast_p,nCurrentUnknowns);
-    initPETScVec(&d_p,nCurrentUnknowns);
+  // Current system variables 
+  initPETScRectMat(&C_p,nCurrentUnknowns,nUnknowns,20);
+  initPETScVec(&currPast_p,nCurrentUnknowns);
+  initPETScVec(&d_p,nCurrentUnknowns);
 
-    // Initialize sequential variables
-    initPETScVec(&xPast_p_seq,nUnknowns);
-    initPETScVec(&currPast_p_seq,nCurrentUnknowns);
-  }
+  // Initialize sequential variables
+  initPETScVec(&xPast_p_seq,nUnknowns);
+  initPETScVec(&currPast_p_seq,nCurrentUnknowns);
 
   checkOptionalParams();
 };
@@ -81,7 +62,6 @@ QDSolver::QDSolver(Mesh * myMesh,\
 double QDSolver::calcScatterAndFissionCoeff(int iR,int iZ,int toEnergyGroup,\
     int fromEnergyGroup)
 {
-
   double localSigF,localNu,localChiP,localSigS,sourceCoefficient;
 
   localSigF = materials->sigF(iZ,iR,fromEnergyGroup);

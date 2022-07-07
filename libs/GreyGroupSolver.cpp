@@ -783,7 +783,7 @@ int GreyGroupSolver::assertSteadyStateZerothMoment(int iR,int iZ,int iEq)
   ierr = VecSetValue(MPQD->b_p,iEq,value,ADD_VALUES);CHKERRQ(ierr); 
 
   // DNP source term
-  GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF], &Atemp);
+  GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF]);
 
   // populate entries representing streaming and reaction terms
   value = geoParams[iCF] * sigT;
@@ -1729,7 +1729,7 @@ int GreyGroupSolver::assertZerothMoment(int iR,int iZ,int iEq)
   ierr = MatSetValue(MPQD->A_p,iEq,index,value,ADD_VALUES);CHKERRQ(ierr); 
 
   // DNP source term
-  GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF], &Atemp);
+  GGQD->mpqd->dnpSource(iZ,iR,iEq,-geoParams[iCF]);
 
   // populate entries representing streaming and reaction terms
   indices = getIndices(iR,iZ);

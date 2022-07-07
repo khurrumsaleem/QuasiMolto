@@ -27,12 +27,10 @@ class HeatTransfer
   string modIrradiation = "volume", axial = "axial", volume = "volume",\
                            fuel = "fuel";
   string fluxLimiter = "superbee";
-  Eigen::SparseMatrix<double,Eigen::RowMajor> Atemp;
   Eigen::MatrixXd temp,flux,dirac,inletTemp;
   Eigen::VectorXd inletDensity,inletVelocity,inletcP,outletTemp;        
   int getIndex(int iZ,int iR);
-  void gammaSource(int iZ,int iR,int iEq,double coeff,\
-      Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA);
+  void gammaSource(int iZ,int iR,int iEq,double coeff);
   Eigen::MatrixXd calcExplicitFissionEnergy();
   Eigen::MatrixXd calcExplicitAxialFissionEnergy();
   Eigen::MatrixXd calcExplicitAxialFuelFissionEnergy();

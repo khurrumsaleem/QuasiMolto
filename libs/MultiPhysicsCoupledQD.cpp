@@ -40,30 +40,19 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 
   // Set size of linear system
   nUnknowns = ggqd->nUnknowns + heat->nUnknowns + mgdnp->nCoreUnknowns;
-  if (!mesh->petsc)
-  {
-    A.resize(nUnknowns,nUnknowns); 
-    x.setZero(nUnknowns); 
-    xPast.setOnes(nUnknowns); 
-    b.setZero(nUnknowns);
-  }
-  else
-  {
 
-    /* Initialize PETSc variables */
-    // Multiphysics system variables 
-    initPETScMat(&A_p,nUnknowns,40);
-    initPETScVec(&x_p,nUnknowns);
-    initPETScVec(&xPast_p,nUnknowns);
-    initPETScVec(&b_p,nUnknowns);
+  /* Initialize PETSc variables */
+  // Multiphysics system variables 
+  initPETScMat(&A_p,nUnknowns,40);
+  initPETScVec(&x_p,nUnknowns);
+  initPETScVec(&xPast_p,nUnknowns);
+  initPETScVec(&b_p,nUnknowns);
 
-    // Initialize sequential variables
-    initPETScVec(&xPast_p_seq,nUnknowns);
-  }
+  // Initialize sequential variables
+  initPETScVec(&xPast_p_seq,nUnknowns);
 
   // Assign pointers in ggqd object
   ggqd->GGSolver->assignMPQDPointer(this);
-  ggqd->GGSolver->assignPointers(&A,&x,&xPast,&b);
 
   // Initialize xPast 
   initializeXPast();
@@ -76,40 +65,16 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
 //==============================================================================
 /// Include a flux source in the linear system
 ///
-
 /// @param [in] iZ axial location 
 /// @param [in] iR radial location
 /// @param [in] iEq equation index
 /// @param [in] coeff coefficient of flux source
-int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
-    Eigen::SparseMatrix<double,Eigen::RowMajor> * myA)
+int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff)
 {
-
   int iCF = 0; // index of cell-average flux value in index vector  
   vector<int> indices = ggqd->GGSolver->getIndices(iR,iZ);
   PetscErrorCode ierr;
 
-  ierr = MatSetValue(A_p,iEq,indices[0],coeff,ADD_VALUES);CHKERRQ(ierr); 
-
-  return ierr;
-};
-//==============================================================================
-
-//==============================================================================
-/// Include a flux source in the linear system
-///
-/// @param [in] iZ axial location 
-/// @param [in] iR radial location
-/// @param [in] iEq equation index
-/// @param [in] coeff coefficient of flux source
-int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
-    Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> * myA)
-{
-
-  int iCF = 0; // index of cell-average flux value in index vector  
-  vector<int> indices = ggqd->GGSolver->getIndices(iR,iZ);
-  PetscErrorCode ierr;
-  
   ierr = MatSetValue(A_p,iEq,indices[0],coeff,ADD_VALUES);CHKERRQ(ierr); 
 
   return ierr;
@@ -123,8 +88,7 @@ int MultiPhysicsCoupledQD::fluxSource(int iZ,int iR,int iEq,double coeff,\
 /// @param [in] iR radial location
 /// @param [in] iEq equation index
 /// @param [in] coeff coefficient of dnp source
-int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff,\
-    Eigen::SparseMatrix<double,Eigen::RowMajor> * myA)
+int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
 {
   int index,indexOffset;
   double groupLambda;
