@@ -476,7 +476,7 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     // Check converge criteria 
     if (eps(mpqd->epsFlux) > residualMGHOT[0] and\
         epsTemp(mpqd->epsTemp) > residualMGHOT[1] and\
-        relaxedEpsK(mpqd->epsFlux) > kdiff) 
+        relaxedEpsK(epsK) > kdiff) 
     {
       convergedMGHOT = true;
     }
@@ -1370,7 +1370,7 @@ bool MultilevelCoupling::solvePseudoTransientResidualBalance(bool outputVars)
     // Check converge criteria 
     if (eps(mpqd->epsFlux) > residualMGHOT[0] and\
         epsTemp(mpqd->epsTemp) > residualMGHOT[1] and\
-        relaxedEpsK(mpqd->epsFlux) > kdiff) 
+        relaxedEpsK(epsK) > kdiff) 
     {
       convergedMGHOT = true;
     }
