@@ -402,7 +402,6 @@ void TransportToQDCoupling::calcIntFactorCoeffs()
 }
 //==============================================================================
 
-
 //==============================================================================
 /// Calculate a number a parameters used for forming the boundary conditions of
 /// low order problem 
@@ -579,56 +578,6 @@ void TransportToQDCoupling::calcBCs()
 
   } //iGroup
 
-}
-//==============================================================================
-
-//==============================================================================
-/// Use a multigroup transport solve to form the BCs and Eddington factors,
-/// which are then used in a multigroup quasidiffusion solve. The solution of 
-/// the MGQD system is used to update the sources in the transport problem. This
-/// process repeats until the eddington factors, sources and alphas are 
-/// converged.
-void TransportToQDCoupling::solveTransportWithQDAcceleration()
-{
-
-  bool alphaConverged=false,eddingtonConverged=false,sourcesConverged=false;
-
-  MGQD->setInitialCondition();
-
-  // loop over time steps
-  for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
-  {
-
-    MGQD->buildLinearSystem();
-    MGQD->solveLinearSystem();
-    updateTransportFluxes();
-    MGT->calcSources("fs");
-
-    // iterate until eddington and alpha are converged. Max iterations set
-    // to 1000 for now. ToDo: make maxIters and input.
-    for (int iSteps = 0; iSteps < 1000; iSteps++)
-    {
-      MGT->solveStartAngles();
-      MGT->solveSCBs();
-      MGT->calcFluxes();
-      eddingtonConverged = calcEddingtonFactors();
-      calcBCs();
-      MGQD->buildLinearSystem();
-      MGQD->solveLinearSystem();
-      updateTransportFluxes();
-      sourcesConverged = MGT->calcSources("fs");
-      if (sourcesConverged) alphaConverged = MGT->calcAlphas("print");
-      if (alphaConverged and eddingtonConverged and sourcesConverged) break;
-    }
-
-    MGQD->writeFluxes();
-    MGT->calcFluxes();
-    MGT->writeFluxes();
-    MGQD->QDSolve->xPast = MGQD->QDSolve->x;
-    MGQD->buildBackCalcSystem();
-    MGQD->backCalculateCurrent();
-    updateTransportPrevFluxes();
-  }
 }
 //==============================================================================
 

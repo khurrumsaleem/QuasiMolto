@@ -49,16 +49,12 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   dnpConc.setZero(mesh->nZ,mesh->nR);
 
   // Check for optional input  
-  if ((*(mgdnp->input))["parameters"]["initial dnp concentration"])
+  if ((*(mgdnp->input))["parameters"]["initial core dnp concentration"])
   {
-
     // Read in input
-    inpConc0=(*(mgdnp->input))["parameters"]["initial dnp concentration"]\
+    inpConc0=(*(mgdnp->input))["parameters"]["initial core dnp concentration"]\
              .as<double>();
-
-    //dnpConc = getInitialConc(inpConc0);
     dnpConc.setConstant(inpConc0);
-
   }
 
   flux.setZero(mesh->nZ+1,mesh->nR); 
@@ -68,13 +64,10 @@ SingleGroupDNP::SingleGroupDNP(Materials * myMats,\
   // Check for optional input  
   if ((*(mgdnp->input))["parameters"]["initial recirc dnp concentration"])
   {
-
     // Read in input
     inpConc0=(*(mgdnp->input))["parameters"]\
              ["initial recirc dnp concentration"].as<double>();
-
     recircConc.setConstant(inpConc0);
-
   }
 
   recircFlux.setZero(mesh->nZrecirc+1,mesh->nR); 

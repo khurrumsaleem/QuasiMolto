@@ -32,8 +32,8 @@ StartingAngle::StartingAngle(Mesh * myMesh,\
 
   // ToDo: make function to read in optional arguments
   // Check for optional inputs
-  if ((*input)["parameters"]["upperBC"]){
-    inpUpperBC=(*input)["parameters"]["upperBC"].as<vector<double>>();
+  if ((*input)["parameters"]["upperAngularFluxBC"]){
+    inpUpperBC=(*input)["parameters"]["upperAngularFluxBC"].as<vector<double>>();
 
     // Check if a blanket or unique conditions are input
     if (inpUpperBC.size() == 1)
@@ -47,8 +47,8 @@ StartingAngle::StartingAngle(Mesh * myMesh,\
     std::fill(upperBC.begin(),upperBC.end(),0.0);
   }
 
-  if ((*input)["parameters"]["lowerBC"]){
-    inpLowerBC=(*input)["parameters"]["lowerBC"].as<vector<double>>();
+  if ((*input)["parameters"]["lowerAngularFluxBC"]){
+    inpLowerBC=(*input)["parameters"]["lowerAngularFluxBC"].as<vector<double>>();
 
     // Check if a blanket or unique conditions are input
     if (inpLowerBC.size() == 1)
@@ -63,8 +63,8 @@ StartingAngle::StartingAngle(Mesh * myMesh,\
     std::fill(lowerBC.begin(),lowerBC.end(),0.0);
   }
 
-  if ((*input)["parameters"]["outerBC"]){
-    inpOuterBC=(*input)["parameters"]["outerBC"].as<vector<double>>();
+  if ((*input)["parameters"]["outerAngularFluxBC"]){
+    inpOuterBC=(*input)["parameters"]["outerAngularFluxBC"].as<vector<double>>();
 
     // Check if a blanket or unique conditions are input
     if (inpOuterBC.size() == 1)

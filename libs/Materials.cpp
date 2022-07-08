@@ -44,8 +44,10 @@ Materials::Materials(Mesh * myMesh,YAML::Node * myInput)
 
   // Print information on materials and geometry, and check to see if nuclear 
   // data is sensible
-  edit();
-  checkMats();        
+  // ToDo: both these functions need to be fixed after temperature dependent data
+  // were implemented
+  //edit();
+  //checkMats();        
 
   // Check if neutron velocities are specified in input
   if ((*input)["parameters"]["neutron velocity"]){
@@ -145,10 +147,9 @@ void Materials::readMats()
   bool stationary;
 
   int iCount=0;
-  for (YAML::const_iterator it=mats.begin(); it!=mats.end(); ++it){
-    cout << iCount << endl;
-    
-    // reset boolean
+  for (YAML::const_iterator it=mats.begin(); it!=mats.end(); ++it)
+  {
+    // Reset boolean
     stationary = true;
 
     // Add material to material to index map  
@@ -243,8 +244,6 @@ void Materials::readMats()
       flowVelocity(0,1) = flowVelocityInp;
     }
 
-    cout << "flowVelocity: " << flowVelocity << endl;
-
     chiPInp = it->second["chiP"].as<vector<double>>();
     chiDInp = it->second["chiD"].as<vector<double>>();
     density = it->second["density"].as<double>();
@@ -307,11 +306,15 @@ void Materials::readFlowVelocity(double time)
       }
     }
   }
-  cout << "Max core flow velocity: " << endl;
-  cout << flowVelocity.maxCoeff() << endl;
 
-  cout << "Minimum core flow velocity: " << endl;
-  cout << flowVelocity.minCoeff() << endl;
+  if (mesh->verbose)
+  {
+    cout << "Max core flow velocity: " << endl;
+    cout << flowVelocity.maxCoeff() << endl;
+
+    cout << "Minimum core flow velocity: " << endl;
+    cout << flowVelocity.minCoeff() << endl;
+  }
 
   // Check whether velocities are all positive 
   posVelocity = -1E-10 < flowVelocity.minCoeff();
@@ -329,11 +332,15 @@ void Materials::readFlowVelocity(double time)
       recircFlowVelocity(Eigen::all,iR) = tempVelocity;
     }
   }
-  cout << "Max recirculation loop flow velocity: " << endl;
-  cout << recircFlowVelocity.maxCoeff() << endl;
+  
+  if (mesh->verbose)
+  {
+    cout << "Max recirculation loop flow velocity: " << endl;
+    cout << recircFlowVelocity.maxCoeff() << endl;
 
-  cout << "Minimum recirculation loop flow velocity: " << endl;
-  cout << recircFlowVelocity.minCoeff() << endl;
+    cout << "Minimum recirculation loop flow velocity: " << endl;
+    cout << recircFlowVelocity.minCoeff() << endl;
+  }
 };
 //==============================================================================
 
@@ -755,7 +762,6 @@ vector<Eigen::MatrixXd> Materials::readTempDependentYaml(string fileName)
       myMatrix(iRow,0) = myTemps[iRow];
       myMatrix(iRow,1) = myXSs[iRow];
     }
-    cout << myMatrix << endl;
     params.push_back(myMatrix);
   }
   return params;
@@ -841,12 +847,7 @@ void Materials::initCollapsedXS()
 
 void Materials::edit()
 {
-  cout << "Material map: " << endl;
-  cout << matMap << endl;
-  cout << endl;
-  for (int iCount = 0; iCount < matBank.size(); ++iCount){
+  for (int iCount = 0; iCount < matBank.size(); ++iCount)
     matBank[iCount]->edit();
-  }
-
 };
 //==============================================================================

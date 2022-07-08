@@ -160,193 +160,87 @@ Eigen::VectorXd SingleGroupQD::getCurrentSolutionVector()
 ///
 void SingleGroupQD::printEddingtons()
 {
+  cout << "Err: " << endl;
+  cout << Err << endl;
+  cout << endl;
 
-cout << "Err: " << endl;
-cout << Err << endl;
-cout << endl;
+  cout << "Ezz: " << endl;
+  cout << Ezz << endl;
+  cout << endl;
 
-cout << "Ezz: " << endl;
-cout << Ezz << endl;
-cout << endl;
+  cout << "Erz: " << endl;
+  cout << Erz << endl;
+  cout << endl;
 
-cout << "Erz: " << endl;
-cout << Erz << endl;
-cout << endl;
+  cout << "ErrAxial: " << endl;
+  cout << ErrAxial << endl;
+  cout << endl;
 
-cout << "ErrAxial: " << endl;
-cout << ErrAxial << endl;
-cout << endl;
+  cout << "EzzAxial: " << endl;
+  cout << EzzAxial << endl;
+  cout << endl;
 
-cout << "EzzAxial: " << endl;
-cout << EzzAxial << endl;
-cout << endl;
+  cout << "ErzAxial: " << endl;
+  cout << ErzAxial << endl;
+  cout << endl;
 
-cout << "ErzAxial: " << endl;
-cout << ErzAxial << endl;
-cout << endl;
+  cout << "ErrRadial: " << endl;
+  cout << ErrRadial << endl;
+  cout << endl;
 
-cout << "ErrRadial: " << endl;
-cout << ErrRadial << endl;
-cout << endl;
+  cout << "EzzRadial: " << endl;
+  cout << EzzRadial << endl;
+  cout << endl;
 
-cout << "EzzRadial: " << endl;
-cout << EzzRadial << endl;
-cout << endl;
-
-cout << "ErzRadial: " << endl;
-cout << ErzRadial << endl;
-cout << endl;
-
+  cout << "ErzRadial: " << endl;
+  cout << ErzRadial << endl;
+  cout << endl;
 };
 //==============================================================================
-
 
 //==============================================================================
 // Check for optional input parameters relevant to this object
 void SingleGroupQD::checkOptionalParams()
 {
   // vectors for reading in optional parameters
-  vector<double> inpaFlux,inpCurrent,inpSFluxPrev,inpCurrentPrev;
+  vector<double> inpFluxBC, inpInitFlux;
 
   // check for optional parameters specified in input file
-
-  if ((*input)["parameters"]["lowerBC"]){
-
-    inpaFlux=(*input)["parameters"]["lowerBC"]\
-             .as<vector<double> >();
-
-    nFluxBC.setOnes();
-    if (inpaFlux.size() == 1)
-      nFluxBC = 4.0*inpaFlux[0]*nFluxBC;
-    else
-      nFluxBC = 4.0*inpaFlux[energyGroup]*nFluxBC;
-  }
-
-  if ((*input)["parameters"]["upperBC"]){
-
-    inpaFlux=(*input)["parameters"]["upperBC"]\
-             .as<vector<double> >();
-
-    sFluxBC.setOnes();
-    if (inpaFlux.size() == 1)
-      sFluxBC = 4.0*inpaFlux[0]*sFluxBC;
-    else
-      sFluxBC = 4.0*inpaFlux[energyGroup]*sFluxBC;
-  }
-
-  if ((*input)["parameters"]["innerBC"]){
-
-    inpaFlux=(*input)["parameters"]["innerBC"]\
-             .as<vector<double> >();
-
-    wFluxBC.setOnes();
-    if (inpaFlux.size() == 1)
-      wFluxBC = 4.0*inpaFlux[0]*wFluxBC;
-    else
-      wFluxBC = 4.0*inpaFlux[energyGroup]*wFluxBC;
-  }
-
-  if ((*input)["parameters"]["outerBC"]){
-
-    inpaFlux=(*input)["parameters"]["outerBC"]\
-             .as<vector<double> >();
-
-    eFluxBC.setOnes();
-    if (inpaFlux.size() == 1)
-      eFluxBC = 4.0*inpaFlux[0]*eFluxBC;
-    else
-      eFluxBC = 4.0*inpaFlux[energyGroup]*eFluxBC;
-  }
-
-  if ((*input)["parameters"]["lowerCurrentBC"]){
-
-    inpCurrent=(*input)["parameters"]["lowerCurrentBC"]\
-               .as<vector<double> >();
-
-    nCurrentZBC.setOnes();
-    if (inpaFlux.size() == 1)
-      nCurrentZBC = inpCurrent[0]*nCurrentZBC;
-    else
-      nCurrentZBC = inpCurrent[energyGroup]*nCurrentZBC;
-  }
-
-  if ((*input)["parameters"]["upperCurrentBC"]){
-
-    inpCurrent=(*input)["parameters"]["upperCurrentBC"]\
-               .as<vector<double> >();
-
-    sCurrentZBC.setOnes();
-    if (inpaFlux.size() == 1)
-      sCurrentZBC = inpCurrent[0]*sCurrentZBC;
-    else
-      sCurrentZBC = inpCurrent[energyGroup]*sCurrentZBC;
-  }
-
-  if ((*input)["parameters"]["innerCurrentBC"]){
-
-    inpCurrent=(*input)["parameters"]["innerCurrentBC"]\
-               .as<vector<double> >();
-
-    wCurrentRBC.setOnes();
-    if (inpaFlux.size() == 1)
-      wCurrentRBC = inpCurrent[0]*wCurrentRBC;
-    else
-      wCurrentRBC = inpCurrent[energyGroup]*wCurrentRBC;
-  }
-
-  if ((*input)["parameters"]["outerCurrentBC"]){
-
-    inpCurrent=(*input)["parameters"]["outerCurrentBC"]\
-               .as<vector<double> >();
-
-    eCurrentRBC.setOnes();
-    if (inpaFlux.size() == 1)
-      eCurrentRBC = inpCurrent[0]*eCurrentRBC;
-    else
-      eCurrentRBC = inpCurrent[energyGroup]*eCurrentRBC;
-  }
-
-  if ((*input)["parameters"]["initial previous flux"]){
-
-    inpSFluxPrev=(*input)["parameters"]["initial previous flux"]\
-                 .as<vector<double> >();
-
+  if ((*input)["parameters"]["initial flux"])
+  {
+    inpInitFlux = (*input)["parameters"]["initial flux"]\
+                   .as<vector<double> >();
     sFlux.setOnes();
     sFluxR.setOnes();
     sFluxZ.setOnes();
-    if (inpSFluxPrev.size() == 1)
-    {
-      sFlux = inpSFluxPrev[0]*sFlux;
-      sFluxR = inpSFluxPrev[0]*sFluxR;
-      sFluxZ = inpSFluxPrev[0]*sFluxZ;
-    }
-    else
-    {
-      sFlux = inpSFluxPrev[energyGroup]*sFlux;
-      sFluxR = inpSFluxPrev[energyGroup]*sFluxR;
-      sFluxZ = inpSFluxPrev[energyGroup]*sFluxZ;
-    }
+    sFlux  = inpInitFlux[energyGroup] * sFlux;
+    sFluxR = inpInitFlux[energyGroup] * sFluxR;
+    sFluxZ = inpInitFlux[energyGroup] * sFluxZ;
   }
 
-  if ((*input)["parameters"]["initial previous current"]){
-
-    inpCurrentPrev=(*input)["parameters"]["initial previous current"]\
-                   .as<vector<double> >();
-
-    currentR.setOnes();
-    currentZ.setOnes();
-    if (inpSFluxPrev.size() == 1)
-    {
-      currentR = inpCurrentPrev[0]*currentR;
-      currentZ = inpCurrentPrev[0]*currentZ;
-    }
-    else
-    {
-      currentR = inpCurrentPrev[energyGroup]*currentR;
-      currentZ = inpCurrentPrev[energyGroup]*currentZ;
-    }
+  if ((*input)["parameters"]["lowerScalarFluxBC"])
+  {
+    inpFluxBC = (*input)["parameters"]["lowerScalarFluxBC"]\
+              .as<vector<double> >();
+    nFluxBC.setOnes();
+    nFluxBC = inpFluxBC[energyGroup] * nFluxBC;
   }
 
+  if ((*input)["parameters"]["upperScalarFluxBC"])
+  {
+    inpFluxBC = (*input)["parameters"]["upperScalarFluxBC"]\
+              .as<vector<double> >();
+    sFluxBC.setOnes();
+    sFluxBC = inpFluxBC[energyGroup] * sFluxBC;
+  }
+
+  if ((*input)["parameters"]["outerScalarFluxBC"])
+  {
+    inpFluxBC = (*input)["parameters"]["outerScalarFluxBC"]\
+             .as<vector<double> >();
+    eFluxBC.setOnes();
+    eFluxBC = inpFluxBC[energyGroup] * eFluxBC;
+  }
 }
 //==============================================================================
 

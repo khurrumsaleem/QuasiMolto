@@ -190,65 +190,66 @@ double Material::interpolateParameter(Eigen::MatrixXd param,double temp)
 
 //==============================================================================
 /// Make sure that the input data for this material makes sense
-
+///
+/// ToDo: need to fix for temperature dependent data
 void Material::checkMat()
 {
   double totalSigS=0.0,totalChiD=0.0,totalChiP=0.0;
 
-//  // Loop over groups 
-//  for (int iGroup = 0; iGroup < sigS.rows(); ++iGroup){ 
-//
-//    totalSigS=0;
-//  
-//    // Take sum of group transfer cross sections
-//    for (int iSig = 0; iSig < sigS.cols(); ++iSig){
-//    
-//      totalSigS = totalSigS + sigS(iGroup,iSig);
-//
-//    }
-//
-//    // Check to see if the sum of the fission and scattering cross sections
-//    // exceed the total cross section
-//    if (totalSigS+sigF(iGroup)>sigT(iGroup)){
-//     
-//      // Print a warning 
-//      cout << "***WARNING***: Material '" << name <<"', group " << iGroup <<endl;
-//      cout<< "Sum of scattering and fission cross sections ";
-//      cout << "exceeds total cross section." << endl;
-//      cout << endl;
-//      cout << "sigT:"<<endl;
-//      //cout << sigT[iGroup] << endl;
-//      cout << endl;
-//      cout << "sigS:"<< endl;
-//      //cout << sigS[iGroup].row(iGroup) << endl;
-//      cout << endl;
-//      cout << "sigF:"<< endl; 
-//      //cout << sigF(iGroup) << endl;
-//      cout << endl;
-//
-//    }
-//    // Accumulate chiPs and chiDs
-//    totalChiP = totalChiP + chiP(iGroup);
-//    totalChiD = totalChiD + chiD(iGroup);
-//  }
-//
-//  // Check to see if chiP does not sum to one
-//  if (totalChiP != 1.0){
-//      
-//    cout << "***WARNING***: Material '" << name <<"'"<< endl;
-//    cout << "ChiP does not sum to 1.0." << endl;
-//    cout << endl;
-//
-//  }
-//
-//  // Check to see if chiD does not sum to one
-//  if (totalChiD != 1.0){
-//      
-//    cout << "***WARNING***: Material '" << name <<"'"<<endl;
-//    cout<< "ChiD does not sum to 1.0." << endl;
-//    cout << endl;
-//
-//  }
+  //// Loop over groups 
+  //for (int iGroup = 0; iGroup < sigS.rows(); ++iGroup){ 
+
+  //  totalSigS=0;
+  //
+  //  // Take sum of group transfer cross sections
+  //  for (int iSig = 0; iSig < sigS.cols(); ++iSig){
+  //  
+  //    totalSigS = totalSigS + sigS(iGroup,iSig);
+
+  //  }
+
+  //  // Check to see if the sum of the fission and scattering cross sections
+  //  // exceed the total cross section
+  //  if (totalSigS+sigF(iGroup)>sigT(iGroup)){
+  //   
+  //    // Print a warning 
+  //    cout << "***WARNING***: Material '" << name <<"', group " << iGroup <<endl;
+  //    cout<< "Sum of scattering and fission cross sections ";
+  //    cout << "exceeds total cross section." << endl;
+  //    cout << endl;
+  //    cout << "sigT:"<<endl;
+  //    //cout << sigT[iGroup] << endl;
+  //    cout << endl;
+  //    cout << "sigS:"<< endl;
+  //    //cout << sigS[iGroup].row(iGroup) << endl;
+  //    cout << endl;
+  //    cout << "sigF:"<< endl; 
+  //    //cout << sigF(iGroup) << endl;
+  //    cout << endl;
+
+  //  }
+  //  // Accumulate chiPs and chiDs
+  //  totalChiP = totalChiP + chiP(iGroup);
+  //  totalChiD = totalChiD + chiD(iGroup);
+  //}
+
+  //// Check to see if chiP does not sum to one
+  //if (totalChiP != 1.0){
+  //    
+  //  cout << "***WARNING***: Material '" << name <<"'"<< endl;
+  //  cout << "ChiP does not sum to 1.0." << endl;
+  //  cout << endl;
+
+  //}
+
+  //// Check to see if chiD does not sum to one
+  //if (totalChiD != 1.0){
+  //    
+  //  cout << "***WARNING***: Material '" << name <<"'"<<endl;
+  //  cout<< "ChiD does not sum to 1.0." << endl;
+  //  cout << endl;
+
+  //}
 };
 
 //==============================================================================
@@ -256,7 +257,8 @@ void Material::checkMat()
 
 //==============================================================================
 /// Print material information
-
+///
+/// ToDo: need to fix for temperature dependent data
 void Material::edit()
 {
   int spacing = 5,spacing2 = 5;

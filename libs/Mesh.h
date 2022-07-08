@@ -55,7 +55,7 @@ class Mesh
   	int n,nAngles,nR,nZ;		
         int state = 1; 
         double dz,dr,drCorner,dzCorner,Z,R,dt,T,totalWeight; 
-        bool verbose = false, petsc = false, verbose_keff_only = false;
+        bool verbose = false, verbose_keff_only = false;
   	vector< vector<double> > quadSet;
   	vector< vector<double> > alpha;
         vector< vector<double> > tau;

@@ -61,7 +61,8 @@ class GreyGroupSolver
     int energyGroups,nR,nZ,nUnknowns,nCurrentUnknowns;
     bool reflectingBCs = false;
     bool goldinBCs = false;
-    bool diffusionBCs = false;
+    bool p1BCs = false;
+    bool fluxBCs = false;
 
     /* PETSc variables and functions */
     // Variables
@@ -75,7 +76,6 @@ class GreyGroupSolver
     PC pc;
 
     // Functions
-
     void assignMPQDPointer(MultiPhysicsCoupledQD * myMPQD);
 
     // functions to get Eddington factors

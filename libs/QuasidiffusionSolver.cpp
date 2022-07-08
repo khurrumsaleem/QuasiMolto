@@ -928,9 +928,9 @@ void QDSolver::assertSteadyStateNBC(int iR,int iZ,int iEq,int energyGroup,\
     assertSteadyStateNCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (goldinBCs)
     assertSteadyStateNGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertSteadyStateNGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
-  else
+  else if (fluxBCs)
     assertNFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
@@ -949,9 +949,9 @@ void QDSolver::assertSteadyStateSBC(int iR,int iZ,int iEq,int energyGroup,\
     assertSteadyStateSCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (goldinBCs)
     assertSteadyStateSGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertSteadyStateSGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
-  else
+  else if (fluxBCs)
     assertSFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
@@ -966,11 +966,6 @@ void QDSolver::assertSteadyStateSBC(int iR,int iZ,int iEq,int energyGroup,\
 void QDSolver::assertSteadyStateWBC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD)
 {
-  // Can't think of a circumstance where there wouldn't be a reflecting BC at
-  //   r = 0 
-  if (reflectingBCs or goldinBCs)
-    assertSteadyStateWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
-  else
     assertSteadyStateWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
@@ -989,9 +984,9 @@ void QDSolver::assertSteadyStateEBC(int iR,int iZ,int iEq,int energyGroup,\
     assertSteadyStateECurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (goldinBCs)
     assertSteadyStateEGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertSteadyStateEGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
-  else
+  else if (fluxBCs)
     assertEFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
@@ -2127,9 +2122,9 @@ void QDSolver::assertNBC(int iR,int iZ,int iEq,int energyGroup,\
     assertNCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
   else if (goldinBCs)
     assertNGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertNGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
-  else
+  else if (fluxBCs)
     assertNFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
@@ -2146,11 +2141,11 @@ void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
 {
   if (reflectingBCs)
     assertSCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
-  else if (goldinBCs)
+  else if (goldinBCs) 
     assertSGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertSGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
-  else
+  else if (fluxBCs)
     assertSFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
@@ -2165,11 +2160,6 @@ void QDSolver::assertSBC(int iR,int iZ,int iEq,int energyGroup,\
 void QDSolver::assertWBC(int iR,int iZ,int iEq,int energyGroup,\
     SingleGroupQD * SGQD)
 {
-  // Can't think of a circumstance where there wouldn't be a reflecting BC at
-  //   r = 0 
-  if (reflectingBCs or goldinBCs)
-    assertWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
-  else
     assertWCurrentBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
@@ -2186,11 +2176,11 @@ void QDSolver::assertEBC(int iR,int iZ,int iEq,int energyGroup,\
 {
   if (reflectingBCs)
     assertECurrentBC(iR,iZ,iEq,energyGroup,SGQD);
-  else if (goldinBCs)
+  else if (goldinBCs) 
     assertEGoldinBC(iR,iZ,iEq,energyGroup,SGQD);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertEGoldinP1BC(iR,iZ,iEq,energyGroup,SGQD);
-  else
+  else if (fluxBCs)
     assertEFluxBC(iR,iZ,iEq,energyGroup,SGQD);
 };
 //==============================================================================
@@ -2737,22 +2727,12 @@ int QDSolver::calcEastCurrent(int iR,int iZ,int iEq,\
 /// Check for optional inputs of relevance to this object
 void QDSolver::checkOptionalParams()
 {
-  string boundaryType,precondInput;
+  string boundaryType;
 
   // check for optional parameters specified in input file
-
-  if ((*input)["parameters"]["solve type"])
+  if ((*input)["parameters"]["bcs"])
   {
-
-    boundaryType=(*input)["parameters"]["solve type"].as<string>();
-    if (boundaryType == "TQD") goldinBCs = true;
-
-  }
-
-  if ((*input)["parameters"]["mgqd-bcs"])
-  {
-
-    boundaryType=(*input)["parameters"]["mgqd-bcs"].as<string>();
+    boundaryType=(*input)["parameters"]["bcs"].as<string>();
 
     if (boundaryType == "reflective" or boundaryType == "REFLECTIVE"\
         or boundaryType == "Reflective")
@@ -2760,23 +2740,13 @@ void QDSolver::checkOptionalParams()
     else if (boundaryType == "goldin" or boundaryType == "GOLDIN" \
         or boundaryType == "Goldin")
       goldinBCs = true;
-    else if (boundaryType == "diffusion" or boundaryType == "DIFFUSION" \
-        or boundaryType == "Diffusion")
-      diffusionBCs = true;
-
-
+    else if (boundaryType == "p1" or boundaryType == "P1")
+      p1BCs = true;
+    else if (boundaryType == "flux" or boundaryType == "FLUX" \
+        or boundaryType == "Flux")
+      fluxBCs = true;
   }
-
-  if ((*input)["parameters"]["preconditionerMGLOQD"])
-  {
-    precondInput=(*input)["parameters"]["preconditionerMGLOQD"].as<string>();
-
-    if (precondInput == "ilu")
-      preconditioner = iluPreconditioner;
-    else if (precondInput == "diagonal" or precondInput == "diag")
-      preconditioner = diagPreconditioner;
-
-  }
-
+  else
+    goldinBCs = true;
 }
 //==============================================================================

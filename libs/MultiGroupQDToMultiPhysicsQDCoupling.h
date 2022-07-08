@@ -23,29 +23,31 @@ class MGQDToMPQDCoupling
         YAML::Node * myInput,\
         MultiPhysicsCoupledQD * myMPQD,\
         MultiGroupQD * myMGQD);
-  void initCollapsedNuclearData();
-  bool solveOneStep();
-  void solveTransient();
-  void collapseNuclearData();
-  void calculateFluxWeightedData();
-  void calculateFluxWeightedInterfaceEddingtons();
-  void calculateFluxWeightedBCData();
-  void calculateAxialCurrentWeightedData();
-  void calculateRadialCurrentWeightedData();
-  void calculateRadialZetaFactors();
-  void calculateAxialZetaFactors();
-  void calculateCollapsedG();
-  void calculateCollapsedIntFactorCoeffs();
-  double checkForZeroFlux(int iZ,int iR);
-  double checkForZeroInwardFluxSouthBC(int iR);
-  double checkForZeroInwardFluxNorthBC(int iR);
-  double checkForZeroInwardFluxEastBC(int iZ);
-  double checkForZeroRadialFlux(int iZ,int iR);
-  double checkForZeroAxialFlux(int iZ,int iR);
-  double checkForZeroRadialCurrent(int iZ,int iR);
-  double checkForZeroAxialCurrent(int iZ,int iR);
-  vector<double> calcResidual(Eigen::VectorXd vector1, Eigen::VectorXd vector2);
-  double biasEps = 1E-25;
+    
+    // Class variables 
+    double biasEps = 1E-25;
+    
+    // Class functions
+    void initCollapsedNuclearData();
+    void collapseNuclearData();
+    void calculateFluxWeightedData();
+    void calculateFluxWeightedInterfaceEddingtons();
+    void calculateFluxWeightedBCData();
+    void calculateAxialCurrentWeightedData();
+    void calculateRadialCurrentWeightedData();
+    void calculateRadialZetaFactors();
+    void calculateAxialZetaFactors();
+    void calculateCollapsedG();
+    void calculateCollapsedIntFactorCoeffs();
+    double checkForZeroFlux(int iZ,int iR);
+    double checkForZeroInwardFluxSouthBC(int iR);
+    double checkForZeroInwardFluxNorthBC(int iR);
+    double checkForZeroInwardFluxEastBC(int iZ);
+    double checkForZeroRadialFlux(int iZ,int iR);
+    double checkForZeroAxialFlux(int iZ,int iR);
+    double checkForZeroRadialCurrent(int iZ,int iR);
+    double checkForZeroAxialCurrent(int iZ,int iR);
+    vector<double> calcResidual(Eigen::VectorXd vector1, Eigen::VectorXd vector2);
 
   private:
     Mesh * mesh; 

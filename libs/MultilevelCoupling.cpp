@@ -48,7 +48,6 @@ MultilevelCoupling::MultilevelCoupling(Mesh * myMesh,\
   
   // Check for optional input parameters 
   checkOptionalParameters();
-
 };
 //==============================================================================
 
@@ -82,10 +81,10 @@ double MultilevelCoupling::eps(double residual, double relaxationTolerance)
 
   double eps;
 
-  if (residual*relaxationTolerance > mpqd->epsMPQD)
+  if (residual*relaxationTolerance > mpqd->epsFlux)
     eps = residual*relaxationTolerance;
   else
-    eps = mpqd->epsMPQD; 
+    eps = mpqd->epsFlux; 
 
   return eps;
 
@@ -100,10 +99,10 @@ double MultilevelCoupling::epsTemp(double residual, double relaxationTolerance)
 
   double eps;
 
-  if (residual*relaxationTolerance > mpqd->epsMPQDTemp)
+  if (residual*relaxationTolerance > mpqd->epsTemp)
     eps = residual*relaxationTolerance;
   else
-    eps = mpqd->epsMPQDTemp; 
+    eps = mpqd->epsTemp; 
 
   return eps;
 
@@ -119,7 +118,7 @@ double MultilevelCoupling::relaxedEpsK(double residual, double relaxationToleran
 
   double eps;
 
-  if (residual*relaxationTolerance > mpqd->epsMPQD)
+  if (residual*relaxationTolerance > mpqd->epsFlux)
     eps = residual*relaxationTolerance;
   else
     eps = epsK; 
@@ -161,7 +160,7 @@ void MultilevelCoupling::solveSteadyStateMGHOT()
   mgt->calcSources("steady_state");
 
   // Calculate transport alphas
-  mgt->calcAlphas("noPrint","steady_state");
+  mgt->calcAlphas("noPrint", "steady_state");
 
   // Solve starting angle transport problem
   mgt->solveStartAngles();
@@ -229,7 +228,7 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     ////////////////////
 
     // Only solve the MGHOT after we've got an estimate for the ELOT solution
-    if (itersMGHOT != 0 and not p1Approx)
+    if (itersMGHOT != 0 and not skipMGHOT)
     {
       // Solve MGHOT problem
       PetscPrintf(PETSC_COMM_WORLD,"MGHOT solve...");
@@ -256,7 +255,6 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
 
     // Store last iterate of ELOT solution used in MGHOT level
     petscVecToEigenVec(&(mpqd->x_p),&xLastMGHOTIter);
-    
 
     while (not convergedMGLOQD)
     {
@@ -383,7 +381,7 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
 
         // Check converge criteria 
         if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
-            eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1] and\
+            epsTemp(residualMGLOQD[1], relaxTolELOT) > residualELOT[1] and\
             relaxedEpsK(residualMGLOQD[0], relaxTolELOT) > kdiff)
         {
           convergedELOT = true;
@@ -437,7 +435,7 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
 
       // Check converge criteria 
       if (eps(residualMGHOT[0],relaxTolMGLOQD) > residualMGLOQD[0] and\
-          eps(residualMGHOT[1],relaxTolMGLOQD) > residualMGLOQD[1])
+          epsTemp(residualMGHOT[1],relaxTolMGLOQD) > residualMGLOQD[1])
       { 
         convergedMGLOQD = true;
       }
@@ -476,9 +474,9 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
     tempResMGHOT.clear();
 
     // Check converge criteria 
-    if (eps(mpqd->epsMPQD) > residualMGHOT[0] and\
-        eps(mpqd->epsMPQD) > residualMGHOT[1] and\
-        relaxedEpsK(mpqd->epsMPQD) > kdiff) 
+    if (eps(mpqd->epsFlux) > residualMGHOT[0] and\
+        epsTemp(mpqd->epsTemp) > residualMGHOT[1] and\
+        relaxedEpsK(mpqd->epsFlux) > kdiff) 
     {
       convergedMGHOT = true;
     }
@@ -488,7 +486,6 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   auto outerEnd = chrono::high_resolution_clock::now();
   auto elapsed = chrono::duration_cast<std::chrono::nanoseconds>(outerEnd - outerBegin);
   duration = elapsed.count()*1e-9;
-  //cout << "Outer solve time: " << duration << " seconds." << endl;      
   PetscPrintf(PETSC_COMM_WORLD,"Outer solve time: %6.4e\n", duration);
 
   // Write vars
@@ -536,7 +533,6 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
 ///
 void MultilevelCoupling::solveSteadyStateMGLOQD()
 {
-
   // Build flux system
   mgqd->buildSteadyStateLinearSystem();
 
@@ -548,7 +544,6 @@ void MultilevelCoupling::solveSteadyStateMGLOQD()
 
   // Solve neutron current system
   mgqd->backCalculateCurrent();
-
 };
 //==============================================================================
 
@@ -557,7 +552,6 @@ void MultilevelCoupling::solveSteadyStateMGLOQD()
 ///
 void MultilevelCoupling::solveSteadyStateELOT()
 {
-
   // Build ELOT system
   mpqd->buildSteadyStateLinearSystem();
 
@@ -583,7 +577,6 @@ void MultilevelCoupling::solveSteadyStateTransientResidualBalance(bool outputVar
 ///
 void MultilevelCoupling::solveTransient()
 {
-
   // Timing variables
   double duration,totalDuration = 0.0;
   clock_t startTime;
@@ -649,7 +642,6 @@ void MultilevelCoupling::solveTransient()
   // Report total solve time
   PetscPrintf(PETSC_COMM_WORLD,"Total solve time: %6.4e\n", totalDuration);
   mesh->output->write(outputDir,"Solve_Time",duration,true);
-
 };
 //==============================================================================
 
@@ -659,21 +651,46 @@ void MultilevelCoupling::solveTransient()
 bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
 {
 
-  Eigen::VectorXd xCurrentIter, xLastMGHOTIter, xLastMGLOQDIter,xLastELOTIter,\
-    residualVector;
-  vector<double> lastResidualELOT, lastResidualMGLOQD, residualMGHOT = {1,1,1},\
-                                                                       residualMGLOQD = {1,1,1}, residualELOT = {1,1,1};
-  bool eddingtonConverged;
-  bool convergedMGHOT=false, convergedMGLOQD=false, convergedELOT=false;
-  int itersMGHOT = 0, itersMGLOQD = 0, itersELOT = 0;
-  vector<int> iters;
-  vector<double> tempResMGHOT,tempResMGLOQD,tempResELOT,tempResiduals;
-  vector<double> fluxResMGHOT,fluxResMGLOQD,fluxResELOT,fluxResiduals;
+  // Convergence and residual variables
+  bool            eddingtonConverged,
+                  convergedMGHOT  = false, 
+                  convergedMGLOQD = false, 
+                  convergedELOT   = false;
+
+  int             itersMGHOT  = 0, 
+                  itersMGLOQD = 0, 
+                  itersELOT   = 0;
+
+  vector<double>  lastResidualELOT,
+                  lastResidualMGLOQD, 
+                  tempResMGHOT,
+                  tempResMGLOQD,
+                  tempResELOT,
+                  tempResiduals,
+                  fluxResMGHOT,
+                  fluxResMGLOQD,
+                  fluxResELOT,
+                  fluxResiduals,
+                  residualMGHOT  = {1,1,1},
+                  residualMGLOQD = {1,1,1}, 
+                  residualELOT   = {1,1,1};
+
+  vector<int>     iters;
+
+  Eigen::VectorXd xCurrentIter, 
+                  xLastMGHOTIter, 
+                  xLastMGLOQDIter,
+                  xLastELOTIter,
+                  residualVector;
 
   // Timing variables 
-  double duration,totalDuration = 0.0,elotDuration = 0,\
-                                  mgloqdDuration = 0, mghotDuration = 0;
-  clock_t startTime;
+  double          duration,
+                  totalDuration  = 0.0,
+                  elotDuration   = 0.0,
+                  mgloqdDuration = 0.0, 
+                  mghotDuration  = 0.0;
+
+  clock_t         startTime;
 
   while (not convergedMGHOT){ 
 
@@ -682,7 +699,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
     ////////////////////
 
     // Only solve the MGHOT after we've got an estimate for the ELOT solution
-    if (itersMGHOT != 0 and not p1Approx)
+    if (itersMGHOT != 0 and not skipMGHOT)
     {
       // Solve MGHOT problem
       PetscPrintf(PETSC_COMM_WORLD,"MGHOT solve...");
@@ -792,7 +809,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
 
         // Check converge criteria 
         if (eps(residualMGLOQD[0], relaxTolELOT) > residualELOT[0] and\
-            eps(residualMGLOQD[1], relaxTolELOT) > residualELOT[1]) 
+            epsTemp(residualMGLOQD[1], relaxTolELOT) > residualELOT[1]) 
         {
           convergedELOT = true;
         }
@@ -838,7 +855,7 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
 
       // Check converge criteria 
       if (eps(residualMGHOT[0],relaxTolMGLOQD) > residualMGLOQD[0] and\
-          eps(residualMGHOT[1],relaxTolMGLOQD) > residualMGLOQD[1])
+          epsTemp(residualMGHOT[1],relaxTolMGLOQD) > residualMGLOQD[1])
       { 
         convergedMGLOQD = true;
       }
@@ -876,8 +893,8 @@ bool MultilevelCoupling::solveOneStepResidualBalance(bool outputVars)
     tempResMGHOT.clear();
 
     // Check converge criteria 
-    if (eps(mpqd->epsMPQD) > residualMGHOT[0] and\
-        eps(mpqd->epsMPQD) > residualMGHOT[1]) 
+    if (eps(mpqd->epsFlux) > residualMGHOT[0] and\
+        epsTemp(mpqd->epsTemp) > residualMGHOT[1]) 
     {
       convergedMGHOT = true;
     }
@@ -1102,7 +1119,7 @@ bool MultilevelCoupling::solvePseudoTransientResidualBalance(bool outputVars)
     ////////////////////
 
     // Only solve the MGHOT after we've got an estimate for the ELOT solution
-    if (itersMGHOT != 0 and not p1Approx)
+    if (itersMGHOT != 0 and not skipMGHOT)
     {
       // Solve MGHOT problem
       PetscPrintf(PETSC_COMM_WORLD,"MGHOT solve...");
@@ -1351,9 +1368,9 @@ bool MultilevelCoupling::solvePseudoTransientResidualBalance(bool outputVars)
     tempResMGHOT.clear();
 
     // Check converge criteria 
-    if (eps(mpqd->epsMPQD) > residualMGHOT[0] and\
-        epsTemp(mpqd->epsMPQD) > residualMGHOT[1] and\
-        relaxedEpsK(mpqd->epsMPQD) > kdiff) 
+    if (eps(mpqd->epsFlux) > residualMGHOT[0] and\
+        epsTemp(mpqd->epsTemp) > residualMGHOT[1] and\
+        relaxedEpsK(mpqd->epsFlux) > kdiff) 
     {
       convergedMGHOT = true;
     }
@@ -1420,7 +1437,7 @@ void MultilevelCoupling::checkOptionalParameters()
     relaxTolELOT=(*input)["parameters"]["relaxTolELOT"].as<double>();
 
   // Check for relaxTolMGLOQD specification.
-  if ((*input)["parameters"]["relaxTolELOT"])
+  if ((*input)["parameters"]["relaxTolMGLOQD"])
     relaxTolMGLOQD=(*input)["parameters"]["relaxTolMGLOQD"].as<double>();
 
   // Check for resetThreshold specification.
@@ -1432,7 +1449,7 @@ void MultilevelCoupling::checkOptionalParameters()
     ratedPower=(*input)["parameters"]["ratedPower"].as<double>();
   else
     ratedPower=-1.0;
-  
+
   // Check for flux normalization factor
   if ((*input)["parameters"]["fluxNormalization"])
     fluxNormalization=(*input)["parameters"]["fluxNormalization"].as<double>();
@@ -1443,24 +1460,9 @@ void MultilevelCoupling::checkOptionalParameters()
   if ((*input)["parameters"]["epsK"])
     epsK=(*input)["parameters"]["epsK"].as<double>();
 
-  // Check if iterative solver should be used for ELOT 
-  if ((*input)["parameters"]["iterativeELOT"])
-    iterativeELOT=(*input)["parameters"]["iterativeELOT"].as<bool>();
-
-  // Check if iterative solver should be used for MGLOQD 
-  if ((*input)["parameters"]["iterativeMGLOQD"])
-    iterativeMGLOQD=(*input)["parameters"]["iterativeMGLOQD"].as<bool>();
-
   // Check if the P1 approximation should be used
-  if ((*input)["parameters"]["mgqd-bcs"])
-  {
-    boundaryType=(*input)["parameters"]["mgqd-bcs"].as<string>();
-
-    if (boundaryType == "diffusion" or boundaryType == "DIFFUSION" \
-        or boundaryType == "Diffusion")
-      p1Approx = true;
-  } 
-
+  if (not mpqd->ggqd->GGSolver->goldinBCs)
+    skipMGHOT = true;
 
 };
 //==============================================================================

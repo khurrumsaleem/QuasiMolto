@@ -45,94 +45,12 @@ MGQDToMPQDCoupling::MGQDToMPQDCoupling(Mesh * myMesh,\
 //==============================================================================
 /// Collapse nuclear data with flux and current weighting 
 ///
-bool MGQDToMPQDCoupling::solveOneStep()
-{
-
-  Eigen::VectorXd xCurrentIter,xPrevIter,ones,residualVec;
-  vector<double> residual;
-
-  for (int iStep = 0; iStep < 100; iStep++)
-  {
-    mgqd->buildLinearSystem();
-    mgqd->solveLinearSystem();
-    mgqd->buildBackCalcSystem();
-    mgqd->backCalculateCurrent();
-    mgqd->getFluxes();
-
-    collapseNuclearData();
-    xPrevIter = mpqd->x;
-    mpqd->buildLinearSystem();
-    mpqd->solve();
-    xCurrentIter = mpqd->x;
-    //cout << "xCurrentIter:" << endl;
-    //cout << xCurrentIter << endl;
-    residual = calcResidual(xPrevIter,xCurrentIter);
-    cout << "          "; 
-    cout << "MGQD->MPQD Residual: " << residual[0] <<", " << residual[1] <<endl; 
-    if (residual[0] < mpqd->epsMPQD and residual[1] < mpqd->epsMPQD)
-    {
-      return true; 
-    }
-    mpqd->ggqd->GGSolver->getFlux();
-    mpqd->mgdnp->getCumulativeDNPDecaySource();
-    mats->updateTemperature(mpqd->heat->returnCurrentTemp());
-  }
-
-  return false;
-
-};
-//==============================================================================
-
-//==============================================================================
-/// Collapse nuclear data with flux and current weighting 
-///
-void MGQDToMPQDCoupling::solveTransient()
-{
-
-  bool converged; 
-
-  for (int iTime = 0; iTime < mesh->dts.size(); iTime++)
-  {
-    converged = solveOneStep();  
-    if (not converged)
-    {
-      cout << "Multigroup A: " << endl;
-      cout << mgqd->QDSolve->A << endl;
-      cout << endl;
-      cout << "Multigroup b: " << endl;
-      cout << mgqd->QDSolve->b << endl;
-      cout << endl;
-      cout << "Grey group A: " << endl;
-      cout << mpqd->A << endl;
-      cout << endl;
-      cout << "Grey group b: " << endl;
-      cout << mpqd->b << endl;
-      cout << endl;
-      mgqd->updateVarsAfterConvergence(); 
-      mpqd->updateVarsAfterConvergence();
-      break;
-    }
-    mgqd->updateVarsAfterConvergence(); 
-    mpqd->updateVarsAfterConvergence();
-    mpqd->writeVars(); 
-    mgqd->writeVars(); 
-    mesh->advanceOneTimeStep();
-  }
-
-};
-//==============================================================================
-
-//==============================================================================
-/// Collapse nuclear data with flux and current weighting 
-///
 void MGQDToMPQDCoupling::initCollapsedNuclearData()
 {
-
   collapseNuclearData();
   mats->oneGroupXS->neutVPast = mats->oneGroupXS->neutV;
   mats->oneGroupXS->zNeutVPast = mats->oneGroupXS->zNeutV;
   mats->oneGroupXS->rNeutVPast = mats->oneGroupXS->rNeutV;
-
 };
 //==============================================================================
 
@@ -141,7 +59,6 @@ void MGQDToMPQDCoupling::initCollapsedNuclearData()
 ///
 void MGQDToMPQDCoupling::collapseNuclearData()
 {
-
   // Reset collapsed nuclear data
   mats->oneGroupXS->resetData();
 
@@ -154,7 +71,6 @@ void MGQDToMPQDCoupling::collapseNuclearData()
   // Calculate zeta factors
   calculateAxialZetaFactors(); 
   calculateRadialZetaFactors();
-
 };
 //==============================================================================
 
@@ -163,7 +79,6 @@ void MGQDToMPQDCoupling::collapseNuclearData()
 ///
 void MGQDToMPQDCoupling::calculateFluxWeightedData()
 {
-
   // Temporary accumulator variables
   double fluxAccum;
   double flux,beta,nu;
@@ -290,7 +205,6 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
   // Calculate integrating factor parameter
   calculateCollapsedG();
   calculateCollapsedIntFactorCoeffs();
-
 };
 //==============================================================================
 
@@ -299,7 +213,6 @@ void MGQDToMPQDCoupling::calculateFluxWeightedData()
 ///
 void MGQDToMPQDCoupling::calculateFluxWeightedInterfaceEddingtons()
 {
-
   // Temporary accumulator variables
   double fluxAccum;
   double flux;
@@ -411,7 +324,6 @@ void MGQDToMPQDCoupling::calculateFluxWeightedInterfaceEddingtons()
 ///
 void MGQDToMPQDCoupling::calculateCollapsedG()
 {
-
   // Temporary accumulator variables
   double eddingtonRxRates,eddington,numerator,flux;
   double centRad,edgeRad,centG,edgeG,Err,Ezz,frac;
@@ -552,7 +464,6 @@ void MGQDToMPQDCoupling::calculateCollapsedIntFactorCoeffs()
       - mpqd->ggqd->g1(iZ) * pow(centR, p + 1) / (p + 1);
 
   } // iZ
-
 }
 //==============================================================================
 
@@ -561,7 +472,6 @@ void MGQDToMPQDCoupling::calculateCollapsedIntFactorCoeffs()
 ///
 void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
 {
-
   // Temporary accumulator variables
   double nFluxAccum,nFlux,nInwardFlux,nInwardFluxAccum,nRatio;
   double sFluxAccum,sFlux,sInwardFlux,sInwardFluxAccum,sRatio;
@@ -719,7 +629,6 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
     mpqd->ggqd->eInwardFluxBC(iZ) = eInwardFluxAccum\
                                     - mats->nGroups*eInwardBias;
   }
-
 };
 //==============================================================================
 
@@ -728,7 +637,6 @@ void MGQDToMPQDCoupling::calculateFluxWeightedBCData()
 ///
 void MGQDToMPQDCoupling::calculateAxialCurrentWeightedData()
 {
-
   // Temporary accumulator variables
   double zCurrentAccum;
   double zCurrent;
@@ -800,7 +708,6 @@ void MGQDToMPQDCoupling::calculateAxialCurrentWeightedData()
 ///
 void MGQDToMPQDCoupling::calculateRadialCurrentWeightedData()
 {
-
   // Temporary accumulator variables
   double rCurrentAccum;
   double rCurrent;
@@ -871,7 +778,6 @@ void MGQDToMPQDCoupling::calculateRadialCurrentWeightedData()
 ///
 void MGQDToMPQDCoupling::calculateRadialZetaFactors()
 {
-
   // Temporary accumulator variables
   double fluxAccum;
   double flux,rCurrent,rCurrentPast;
@@ -963,7 +869,6 @@ void MGQDToMPQDCoupling::calculateRadialZetaFactors()
 ///
 void MGQDToMPQDCoupling::calculateAxialZetaFactors()
 {
-
   // Temporary accumulator variables
   double fluxAccum;
   double flux,zCurrent,zCurrentPast;
@@ -1058,7 +963,6 @@ void MGQDToMPQDCoupling::calculateAxialZetaFactors()
 /// @param [out] eps bias factor 
 double MGQDToMPQDCoupling::checkForZeroInwardFluxSouthBC(int iR)
 {
-
   double groupFlux;
   bool aboveThreshold = true;  
 
@@ -1074,7 +978,6 @@ double MGQDToMPQDCoupling::checkForZeroInwardFluxSouthBC(int iR)
     return 0.0;
   else
     return biasEps;
-
 };
 //==============================================================================
 
@@ -1087,7 +990,6 @@ double MGQDToMPQDCoupling::checkForZeroInwardFluxSouthBC(int iR)
 /// @param [out] eps bias factor 
 double MGQDToMPQDCoupling::checkForZeroInwardFluxNorthBC(int iR)
 {
-
   double groupFlux;
   bool aboveThreshold = true;  
 
@@ -1103,7 +1005,6 @@ double MGQDToMPQDCoupling::checkForZeroInwardFluxNorthBC(int iR)
     return 0.0;
   else
     return biasEps;
-
 };
 //==============================================================================
 
@@ -1116,7 +1017,6 @@ double MGQDToMPQDCoupling::checkForZeroInwardFluxNorthBC(int iR)
 /// @param [out] eps bias factor 
 double MGQDToMPQDCoupling::checkForZeroInwardFluxEastBC(int iZ)
 {
-
   double groupFlux;
   bool aboveThreshold = true;  
 
@@ -1132,7 +1032,6 @@ double MGQDToMPQDCoupling::checkForZeroInwardFluxEastBC(int iZ)
     return 0.0;
   else
     return biasEps;
-
 };
 //==============================================================================
 
@@ -1145,7 +1044,6 @@ double MGQDToMPQDCoupling::checkForZeroInwardFluxEastBC(int iZ)
 /// @param [out] eps bias factor 
 double MGQDToMPQDCoupling::checkForZeroFlux(int iZ,int iR)
 {
-
   double groupFlux;
   bool aboveThreshold = true;  
 
@@ -1161,7 +1059,6 @@ double MGQDToMPQDCoupling::checkForZeroFlux(int iZ,int iR)
     return 0.0;
   else
     return biasEps;
-
 };
 //==============================================================================
 
@@ -1174,7 +1071,6 @@ double MGQDToMPQDCoupling::checkForZeroFlux(int iZ,int iR)
 /// @param [out] eps bias factor 
 double MGQDToMPQDCoupling::checkForZeroRadialFlux(int iZ,int iR)
 {
-
   double groupFlux;
   bool aboveThreshold = true;  
 
@@ -1190,7 +1086,6 @@ double MGQDToMPQDCoupling::checkForZeroRadialFlux(int iZ,int iR)
     return 0.0;
   else
     return biasEps;
-
 };
 //==============================================================================
 
@@ -1203,7 +1098,6 @@ double MGQDToMPQDCoupling::checkForZeroRadialFlux(int iZ,int iR)
 /// @param [out] eps bias factor 
 double MGQDToMPQDCoupling::checkForZeroAxialFlux(int iZ,int iR)
 {
-
   double groupFlux;
   bool aboveThreshold = true;  
 
@@ -1219,7 +1113,6 @@ double MGQDToMPQDCoupling::checkForZeroAxialFlux(int iZ,int iR)
     return 0.0;
   else
     return biasEps;
-
 };
 //==============================================================================
 
@@ -1232,7 +1125,6 @@ double MGQDToMPQDCoupling::checkForZeroAxialFlux(int iZ,int iR)
 /// @param [out] eps bias factor 
 double MGQDToMPQDCoupling::checkForZeroAxialCurrent(int iZ,int iR)
 {
-
   double groupCurrent;
   bool aboveThreshold = true;  
 
@@ -1248,7 +1140,6 @@ double MGQDToMPQDCoupling::checkForZeroAxialCurrent(int iZ,int iR)
     return 0.0;
   else
     return biasEps;
-
 };
 //==============================================================================
 
@@ -1261,7 +1152,6 @@ double MGQDToMPQDCoupling::checkForZeroAxialCurrent(int iZ,int iR)
 /// @param [out] eps bias factor 
 double MGQDToMPQDCoupling::checkForZeroRadialCurrent(int iZ,int iR)
 {
-
   double groupCurrent;
   bool aboveThreshold = true;  
 
@@ -1277,7 +1167,6 @@ double MGQDToMPQDCoupling::checkForZeroRadialCurrent(int iZ,int iR)
     return 0.0;
   else
     return biasEps;
-
 };
 //==============================================================================
 
@@ -1287,7 +1176,6 @@ double MGQDToMPQDCoupling::checkForZeroRadialCurrent(int iZ,int iR)
 vector<double> MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
     Eigen::VectorXd vector2)
 {
-
   Eigen::VectorXd ones, residualVec, diff;
   Eigen::VectorXd fluxResidualVec, tempResidualVec, dnpResidualVec; 
   vector<double> multiphysicsResiduals;
@@ -1359,8 +1247,6 @@ vector<double> MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
   diff = (vector1-vector2);
   residualVec = diff.cwiseQuotient(vector1);
   residual = (1.0/residualVec.size())*residualVec.norm();
-  //cout << "ResidualVec:" << endl;
-  //cout << residualVec << endl;
 
   fluxResidualVec = residualVec(Eigen::seqN(fluxBeginIdx,fluxEndIdx));
   tempResidualVec = residualVec(Eigen::seqN(heatBeginIdx,heatEndIdx));
@@ -1375,7 +1261,6 @@ vector<double> MGQDToMPQDCoupling::calcResidual(Eigen::VectorXd vector1,\
   multiphysicsResiduals.push_back(dnpResidual);
 
   return multiphysicsResiduals;
-
 };
 //==============================================================================
 

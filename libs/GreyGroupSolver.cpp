@@ -1275,9 +1275,9 @@ void GreyGroupSolver::assertSteadyStateNBC(int iR,int iZ,int iEq)
     assertSteadyStateNCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertSteadyStateNGoldinBC(iR,iZ,iEq);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertSteadyStateNGoldinP1BC(iR,iZ,iEq);
-  else
+  else if (fluxBCs)
     assertNFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
@@ -1293,9 +1293,9 @@ void GreyGroupSolver::assertSteadyStateSBC(int iR,int iZ,int iEq)
     assertSteadyStateSCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertSteadyStateSGoldinBC(iR,iZ,iEq);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertSteadyStateSGoldinP1BC(iR,iZ,iEq);
-  else
+  else if (fluxBCs)
     assertSFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
@@ -1307,12 +1307,6 @@ void GreyGroupSolver::assertSteadyStateSBC(int iR,int iZ,int iEq)
 /// @param [in] iEq row to place equation in
 void GreyGroupSolver::assertSteadyStateWBC(int iR,int iZ,int iEq)
 {
-  if (reflectingBCs or goldinBCs)
-    assertSteadyStateWCurrentBC(iR,iZ,iEq);
-  else
-    // Can't think of a circumstance where there wouldn't be a reflecting BC at
-    //   r = 0 
-    //assertWFluxBC(iR,iZ,iEq);
     assertSteadyStateWCurrentBC(iR,iZ,iEq);
 };
 //==============================================================================
@@ -1328,9 +1322,9 @@ void GreyGroupSolver::assertSteadyStateEBC(int iR,int iZ,int iEq)
     assertSteadyStateECurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertSteadyStateEGoldinBC(iR,iZ,iEq);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertSteadyStateEGoldinP1BC(iR,iZ,iEq);
-  else
+  else if (fluxBCs)
     assertEFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
@@ -2129,9 +2123,9 @@ void GreyGroupSolver::assertNBC(int iR,int iZ,int iEq)
     assertNCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertNGoldinBC(iR,iZ,iEq);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertNGoldinP1BC(iR,iZ,iEq);
-  else
+  else if (fluxBCs)
     assertNFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
@@ -2147,9 +2141,9 @@ void GreyGroupSolver::assertSBC(int iR,int iZ,int iEq)
     assertSCurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertSGoldinBC(iR,iZ,iEq);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertSGoldinP1BC(iR,iZ,iEq);
-  else
+  else if (fluxBCs)
     assertSFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
@@ -2161,12 +2155,6 @@ void GreyGroupSolver::assertSBC(int iR,int iZ,int iEq)
 /// @param [in] iEq row to place equation in
 void GreyGroupSolver::assertWBC(int iR,int iZ,int iEq)
 {
-  if (reflectingBCs or goldinBCs)
-    assertWCurrentBC(iR,iZ,iEq);
-  else
-    // Can't think of a circumstance where there wouldn't be a reflecting BC at
-    //   r = 0 
-    //assertWFluxBC(iR,iZ,iEq);
     assertWCurrentBC(iR,iZ,iEq);
 };
 //==============================================================================
@@ -2182,9 +2170,9 @@ void GreyGroupSolver::assertEBC(int iR,int iZ,int iEq)
     assertECurrentBC(iR,iZ,iEq);
   else if (goldinBCs)
     assertEGoldinBC(iR,iZ,iEq);
-  else if (diffusionBCs)
+  else if (p1BCs)
     assertEGoldinP1BC(iR,iZ,iEq);
-  else
+  else if (fluxBCs)
     assertEFluxBC(iR,iZ,iEq);
 };
 //==============================================================================
@@ -2762,19 +2750,9 @@ void GreyGroupSolver::checkOptionalParams()
   string boundaryType;
 
   // check for optional parameters specified in input file
-
-  if ((*input)["parameters"]["solve type"])
+  if ((*input)["parameters"]["bcs"])
   {
-
-    boundaryType=(*input)["parameters"]["solve type"].as<string>();
-    if (boundaryType == "TQD") goldinBCs = true;
-
-  }
-
-  if ((*input)["parameters"]["mgqd-bcs"])
-  {
-
-    boundaryType=(*input)["parameters"]["mgqd-bcs"].as<string>();
+    boundaryType=(*input)["parameters"]["bcs"].as<string>();
 
     if (boundaryType == "reflective" or boundaryType == "REFLECTIVE"\
         or boundaryType == "Reflective")
@@ -2782,11 +2760,13 @@ void GreyGroupSolver::checkOptionalParams()
     else if (boundaryType == "goldin" or boundaryType == "GOLDIN" \
         or boundaryType == "Goldin")
       goldinBCs = true;
-    else if (boundaryType == "diffusion" or boundaryType == "DIFFUSION" \
-        or boundaryType == "Diffusion")
-      diffusionBCs = true;
-
-
+    else if (boundaryType == "p1" or boundaryType == "P1")
+      p1BCs = true;
+    else if (boundaryType == "flux" or boundaryType == "FLUX" \
+        or boundaryType == "Flux")
+      fluxBCs = true;
   }
+  else
+    goldinBCs = true;
 }
 //==============================================================================

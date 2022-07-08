@@ -36,21 +36,14 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
   SCBSolve = std::make_shared<SimpleCornerBalance>(mesh,materials,input);
 
   // Check to see if any convergence criteria are specified in input
-  if ((*input)["parameters"]["epsAlpha"]){
+  if ((*input)["parameters"]["epsAlpha"])
     epsAlpha=(*input)["parameters"]["epsAlpha"].as<double>();
-  }
-  if ((*input)["parameters"]["epsFlux"]){
+
+  if ((*input)["parameters"]["epsMGHOTFlux"])
     epsFlux=(*input)["parameters"]["epsFlux"].as<double>();
-  }
-  if ((*input)["parameters"]["epsFissionSource"]){
+
+  if ((*input)["parameters"]["epsFissionSource"])
     epsFissionSource=(*input)["parameters"]["epsFissionSource"].as<double>();
-  }
-  if ((*input)["parameters"]["sourceMaxIter"]){
-    epsAlpha=(*input)["parameters"]["sourceMaxIter"].as<double>();
-  }
-  if ((*input)["parameters"]["powerMaxIter"]){
-    epsAlpha=(*input)["parameters"]["powerMaxIter"].as<double>();
-  }
 
 };
 
@@ -100,12 +93,12 @@ bool MultiGroupTransport::calcFluxes(string printResidual)
   double epsilon = 1E-5;
 
   // Boolean indicating whether all fluxes are converged
-  bool allConverged=true;
+  bool allConverged = true;
 
   // Loop over SGTs, calculate fluxes, and determine whether the flux
   // in each SGT is converged
   for (int iGroup = 0; iGroup < materials->nGroups; ++iGroup){
-    residuals(iGroup)=SGTs[iGroup]->calcFlux();
+    residuals(iGroup) = SGTs[iGroup]->calcFlux();
     converged(iGroup) = residuals(iGroup) < epsFlux;
   }
 
@@ -209,7 +202,6 @@ bool MultiGroupTransport::calcAlphas(string printResidual,string calcType)
   }
 
   return allConverged;  
-
 };
 
 //==============================================================================

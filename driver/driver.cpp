@@ -56,12 +56,16 @@ void steadyStateThenTransientSolve(Materials * myMaterials,\
 void steadyStateThenPseudoTransientSolve(Materials * myMaterials,\
   Mesh * myMesh,\
   YAML::Node * input);
+void printLogo();
 
 int main(int argc, char** argv) {
 
   PetscMPIInt size;
   PetscErrorCode ierr; 
   string solveString;
+  
+  // Print logo
+  printLogo();
 
   // Initialize PETSc
   PetscInitialize(&argc,&argv,(char*)0,help);
@@ -78,7 +82,8 @@ int main(int argc, char** argv) {
   // Initialize mesh object
   Mesh * myMesh; 
   myMesh = new Mesh(input);
-  myMesh->printQuadSet();
+  if (myMesh->verbose)
+    myMesh->printQuadSet();
 
   // Initialize materials object
   Materials * myMaterials;
@@ -332,3 +337,20 @@ void steadyStateThenPseudoTransientSolve(Materials * myMaterials,\
 }
 //==============================================================================
 
+//==============================================================================
+void printLogo()
+{
+
+  printf("  ____                          _   __  __           _   _           \n");
+  printf(" / __ \\                        (_) |  \\/  |         | | | |          \n");
+  printf("| |  | |  _   _    __ _   ___   _  | \\  / |   ___   | | | |_    ___  \n");
+  printf("| |  | | | | | |  / _` | / __| | | | |\\/| |  / _ \\  | | | __|  / _ \\ \n");
+  printf("| |__| | | |_| | | (_| | \\__ \\ | | | |  | | | (_) | | | | |_  | (_) |\n");
+  printf(" \\___\\_\\  \\__,_|  \\__,_| |___/ |_| |_|  |_|  \\___/  |_|  \\__|  \\___/ \n");
+  printf("                                                                     \n");
+  printf("An open source research code for circulating fuel reactor kinetics \n\n");
+  printf("BSD 3-Clause License\n");
+  printf("Copyright (c) 2019, Aaron James Reynolds \n");
+  printf("All rights reserved. \n\n");
+}
+//==============================================================================

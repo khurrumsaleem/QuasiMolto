@@ -27,13 +27,13 @@ class MultiGroupTransport
         YAML::Node * myInput);
 
     // default convergence criteria
-    double epsAlpha=1E-3;
-    double epsFlux=1E-5;
-    double epsFissionSource=1E-5;
+    double epsAlpha = 1E-3;
+    double epsFlux = 1E-5;
+    double epsFissionSource = 1E-5;
 
     // defaults for maximum iterations
-    double sourceMaxIter=500;
-    double powerMaxIter=10000;
+    double sourceMaxIter = 500;
+    double powerMaxIter = 10000;
 
     // Boolean to determine use of grey group sources
     bool useMPQDSources = false;    
@@ -45,10 +45,10 @@ class MultiGroupTransport
     // public functions
     void solveStartAngles();
     void solveSCBs();
-    bool calcSources(string calcType="FS");
-    bool calcFluxes(string printResidual="noprint");
-    bool calcAlphas(string printResidual="noprint", string calcType="");
-    bool calcFissionSources(string printResidual="noprint");
+    bool calcSources(string calcType = "FS");
+    bool calcFluxes(string printResidual = "noprint");
+    bool calcAlphas(string printResidual = "noprint", string calcType = "");
+    bool calcFissionSources(string printResidual = "noprint");
     bool sourceIteration();
     bool powerIteration();
     void solveTransportOnly();

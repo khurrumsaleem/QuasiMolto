@@ -144,23 +144,22 @@ double SingleGroupTransport::calcSource(string calcType)
   {
     if (calcType=="s" or calcType=="S")
     {
-
       // Just re-evaluate scattering source
       calcScatterSource();
       q = scatterSource + fissionSource;
-
-    } else if (calcType == "fs" or calcType == "FS")
+    } 
+    else if (calcType == "fs" or calcType == "FS")
     {
-
       // Re-evaluate scattering and fission source
       calcScatterSource();
       calcFissionSource();
-      q = scatterSource+fissionSource;
+      q = scatterSource + fissionSource;
     }
   }
 
   // Calculate residual
   residual =  (q_old-q).norm();
+
   return residual;
 };
 
@@ -214,7 +213,6 @@ double SingleGroupTransport::calcFissionSource()
   // Calculate residual
   residual=fissionSourceDiff.norm();
   return residual;
-
 };
 
 //==============================================================================
@@ -227,7 +225,6 @@ double SingleGroupTransport::calcFissionSource()
 /// scattering source and the past scattering source
 double SingleGroupTransport::calcScatterSource()
 {  
-
   double residual;
   Eigen::MatrixXd scatterSource_old = scatterSource;
 
@@ -249,6 +246,7 @@ double SingleGroupTransport::calcScatterSource()
   // Calculate residual
   residual = ((scatterSource_old-scatterSource)\
       .cwiseQuotient(scatterSource)).norm();
+
   return residual;
 };
 
@@ -259,7 +257,6 @@ double SingleGroupTransport::calcScatterSource()
 ///
 Eigen::MatrixXd SingleGroupTransport::calcMPQDSource()
 {  
-
   double localSigS, localChiP, localChiD, localFissionCoeff, localFlux,\
     localDNPSource;
   double weight = 1.0/mesh->totalWeight; 
@@ -300,10 +297,9 @@ Eigen::MatrixXd SingleGroupTransport::calcMPQDSource()
 ///
 Eigen::MatrixXd SingleGroupTransport::calcSteadyStateMPQDSource()
 {  
-
   double localSigS, localChiP, localChiD, localFissionCoeff, localFlux,\
     localDNPSource, keff;
-  double weight = 1.0/mesh->totalWeight; 
+  double weight = 1.0 / mesh->totalWeight; 
   Eigen::MatrixXd mpqdSource;
 
   // Initialize size of source matrix
@@ -345,7 +341,6 @@ Eigen::MatrixXd SingleGroupTransport::calcSteadyStateMPQDSource()
 /// flux and past flux
 double SingleGroupTransport::calcFlux()
 {
-
   double weight,residual; 
   int weightIdx=3,angIdx;
   Eigen::MatrixXd sFlux_old = sFlux;
@@ -373,8 +368,8 @@ double SingleGroupTransport::calcFlux()
 
   // Calculate residual
   residual = ((sFlux_old-sFlux).cwiseQuotient(sFlux)).norm();
+  
   return residual;
-
 };
 
 //==============================================================================
@@ -387,7 +382,6 @@ double SingleGroupTransport::calcFlux()
 /// and past alpha
 double SingleGroupTransport::calcAlpha(string calcType)
 {  
-
   double localFlux,localFluxPrev,residual,deltaT = mesh->dt;
   vector<int> indices;
   Eigen::MatrixXd alpha_old = alpha;
@@ -397,7 +391,6 @@ double SingleGroupTransport::calcAlpha(string calcType)
   PetscInt index;
   Vec            x_p_seq;
   VecScatter     ctx;
-
 
   // Set alpha to zero
   alpha.setZero();
@@ -415,12 +408,12 @@ double SingleGroupTransport::calcAlpha(string calcType)
       for (int iZ = 0; iZ < alpha.rows(); ++iZ){
         for (int iR = 0; iR < alpha.cols(); ++iR){
 
-          index = MGT->mgqd->QDSolve->getIndices(iR,iZ,energyGroup)[0]; 
+          index = MGT->mgqd->QDSolve->getIndices(iR, iZ, energyGroup)[0]; 
 
           // Get local values
-          ierr = VecGetValues(x_p_seq,1,&index,&localFlux);CHKERRQ(ierr);
-          ierr = VecGetValues(MGT->mgqd->QDSolve->xPast_p_seq,1,&index,&localFluxPrev);CHKERRQ(ierr);
-          alpha(iZ,iR) = (1.0/deltaT)*log(localFlux/localFluxPrev);
+          ierr = VecGetValues(x_p_seq, 1, &index, &localFlux); CHKERRQ(ierr);
+          ierr = VecGetValues(MGT->mgqd->QDSolve->xPast_p_seq, 1, &index, &localFluxPrev); CHKERRQ(ierr);
+          alpha(iZ, iR) = (1.0 / deltaT) * log(localFlux / localFluxPrev);
 
         } // iR
       } // iZ
@@ -432,9 +425,11 @@ double SingleGroupTransport::calcAlpha(string calcType)
   else
   {
     // Calculate alphas
-    for (int iZ = 0; iZ < alpha.rows(); ++iZ){
-      for (int iR = 0; iR < alpha.cols(); ++iR){
-        alpha(iZ,iR) = (1.0/deltaT)*log(sFlux(iZ,iR)/sFluxPrev(iZ,iR));
+    for (int iZ = 0; iZ < alpha.rows(); ++iZ)
+    {
+      for (int iR = 0; iR < alpha.cols(); ++iR)
+      {
+        alpha(iZ, iR) = (1.0 / deltaT) * log(sFlux(iZ, iR) / sFluxPrev(iZ, iR));
       } // iR
     } // iZ
   }
@@ -456,9 +451,7 @@ double SingleGroupTransport::calcAlpha(string calcType)
   residual = alphaDiff.norm();
 
   return residual;
-
 };
-
 //==============================================================================
 
 //==============================================================================
@@ -466,7 +459,6 @@ double SingleGroupTransport::calcAlpha(string calcType)
 
 void SingleGroupTransport::writeFlux()
 {
-
   ofstream fluxFile;
   string fileName;
 
@@ -506,7 +498,6 @@ void SingleGroupTransport::writeFlux()
   }
   fluxFile.close();
 
-
   // if this is the first energy group, write mesh too
   if (energyGroup==0){
     // write radial mesh to .csv 
@@ -530,9 +521,4 @@ void SingleGroupTransport::writeFlux()
     fluxFile.close();
   }
 };
-
 //==============================================================================
-
-
-
-

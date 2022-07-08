@@ -28,23 +28,18 @@ class MultilevelCoupling
         MultiGroupTransport * myMGT,\
         MultiGroupQD * myMGQD,\
         MultiPhysicsCoupledQD * myMPQD);
+    
+    // Class variables 
+    string outputDir = "Solve_Metrics/";
+   
+    // User-definable variables
     double resetThreshold = 1E100, relaxTolELOT = 3E-4, relaxTolMGLOQD = 3E-4,\
            ratedPower = 8e6, fluxNormalization = 1, epsK = 1E-8;
-    bool p1Approx = false, iterativeMGLOQD = false, iterativeELOT = false;
-    void solveMGHOT();
-    void solveSteadyStateMGHOT();
-    double calcK(Eigen::MatrixXd oldFlux, Eigen::MatrixXd newFlux,\
-        Eigen::MatrixXd volume, double kold);
-    double eps(double residual, double relaxationTolerance = 1E-14);
-    double epsTemp(double residual, double relaxationTolerance = 1E-14);
-    double relaxedEpsK(double residual, double relaxationTolerance = 1E-14);
-    void checkOptionalParameters();
-    string outputDir = "Solve_Metrics/";
+    bool skipMGHOT = false;
     
-    /* PETSc FUNCTIONS */
-
     // Steady state
     void solveSteadyStateResidualBalance(bool outputVars);
+    void solveSteadyStateMGHOT();
     void solveSteadyStateMGLOQD();
     void solveSteadyStateELOT();
 
@@ -52,6 +47,7 @@ class MultilevelCoupling
     bool solveOneStepResidualBalance(bool outputVars);
     void solveTransient();
     void solveSteadyStateTransientResidualBalance(bool outputVars);
+    void solveMGHOT();
     void solveMGLOQD();
     void solveELOT();
 
@@ -61,6 +57,13 @@ class MultilevelCoupling
     bool solvePseudoTransientResidualBalance(bool outputVars);
     void solvePseudoTransientELOT();
 
+    // Utility functions
+    double calcK(Eigen::MatrixXd oldFlux, Eigen::MatrixXd newFlux,\
+        Eigen::MatrixXd volume, double kold);
+    double eps(double residual, double relaxationTolerance = 1E-14);
+    double epsTemp(double residual, double relaxationTolerance = 1E-14);
+    double relaxedEpsK(double residual, double relaxationTolerance = 1E-14);
+    void   checkOptionalParameters();
 
   private:
     Mesh * mesh; 

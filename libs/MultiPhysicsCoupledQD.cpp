@@ -55,7 +55,7 @@ MultiPhysicsCoupledQD::MultiPhysicsCoupledQD(Materials * myMats,\
   ggqd->GGSolver->assignMPQDPointer(this);
 
   // Initialize xPast 
-  initializeXPast();
+  setInitialCondition();
 
   // Check optional parameters
   checkOptionalParams();
@@ -112,7 +112,7 @@ int MultiPhysicsCoupledQD::dnpSource(int iZ,int iR,int iEq,double coeff)
 //==============================================================================
 /// Map values in multiphysics objects into xPast
 ///
-void MultiPhysicsCoupledQD::initializeXPast()
+void MultiPhysicsCoupledQD::setInitialCondition()
 {
 
   // Object for broadcasting PETSc variable 
@@ -153,7 +153,6 @@ void MultiPhysicsCoupledQD::initializeXPast()
 ///
 void MultiPhysicsCoupledQD::writeVars()
 {
-
   string name; 
 
   // Scalar flux
@@ -180,11 +179,8 @@ void MultiPhysicsCoupledQD::writeVars()
   mesh->output->write(outputDir,"GL",ggqd->GL);
   mesh->output->write(outputDir,"GR",ggqd->GR);
 
-  // Eigen value
+  // Eigenvalue
   mesh->output->write(outputDir,"keff",mats->oneGroupXS->keff);
-
-  //  factors
-  mesh->output->write(outputDir,"Err",ggqd->Err);
 
   // DNP concentrations
   for (int iDNP = 0; iDNP < mgdnp->DNPs.size(); iDNP++)
@@ -199,7 +195,6 @@ void MultiPhysicsCoupledQD::writeVars()
 
   // Temperature
   mesh->output->write(outputDir,"Temperature",heat->temp);
-
 };
 //==============================================================================
 
@@ -224,8 +219,6 @@ void MultiPhysicsCoupledQD::printVars()
 
 };
 //==============================================================================
-
-/* PETSc functions */
 
 // Dual purpose
 
@@ -280,7 +273,6 @@ int MultiPhysicsCoupledQD::solve()
   mgdnp->solveRecircLinearSystem();
 
   return ierr;
-
 };
 //==============================================================================
 
@@ -291,7 +283,6 @@ int MultiPhysicsCoupledQD::solve()
 ///
 int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem()
 {
-
   PetscErrorCode ierr;
 
   // Reset linear system
@@ -317,7 +308,6 @@ int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem()
   ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
 
   return ierr;
-
 };
 //==============================================================================
 
@@ -326,7 +316,6 @@ int MultiPhysicsCoupledQD::buildSteadyStateLinearSystem()
 ///
 void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence()
 {
-
   // Object for broadcasting PETSc variable 
   VecScatter     ctx;
 
@@ -359,7 +348,6 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence()
   VecScatterEnd(ctx,xPast_p,xPast_p_seq,\
       INSERT_VALUES,SCATTER_FORWARD);
   VecScatterDestroy(&ctx);
-
 };
 //==============================================================================
 
@@ -368,7 +356,6 @@ void MultiPhysicsCoupledQD::updateSteadyStateVarsAfterConvergence()
 ///
 void MultiPhysicsCoupledQD::updatePseudoTransientVars()
 {
-
   // Object for broadcasting PETSc variable 
   VecScatter     ctx;
 
@@ -379,17 +366,15 @@ void MultiPhysicsCoupledQD::updatePseudoTransientVars()
   ggqd->GGSolver->formSteadyStateBackCalcSystem();
   ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
-
 };
 //==============================================================================
 
 
 //==============================================================================
-/// Converge a steady state ELOT solve 
-///
+/// Run an ELOT-only steady state 
+/// Note: not accessible to user
 void MultiPhysicsCoupledQD::solveSteadyState()
 {
-
   for (int iT = 0; iT < mesh->dts.size(); iT++)
   {
     buildSteadyStateLinearSystem();
@@ -398,18 +383,16 @@ void MultiPhysicsCoupledQD::solveSteadyState()
   }
 
   writeVars();
-
 };
 //==============================================================================
 
 /* TRANSIENT */
 
 //==============================================================================
-/// Run transient with multiple solves 
-///
+/// Run ELOT-only transient with multiple solves 
+/// Note: not accessible to user
 void MultiPhysicsCoupledQD::solveTransient()
 {
-
   for (int iT = 0; iT < mesh->dts.size(); iT++)
   {
     buildLinearSystem();
@@ -427,7 +410,6 @@ void MultiPhysicsCoupledQD::solveTransient()
 ///
 int MultiPhysicsCoupledQD::buildLinearSystem()
 {
-
   PetscErrorCode ierr;
 
   // Reset linear system
@@ -453,7 +435,6 @@ int MultiPhysicsCoupledQD::buildLinearSystem()
   ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
 
   return ierr;
-
 };
 //==============================================================================
 
@@ -464,7 +445,6 @@ int MultiPhysicsCoupledQD::buildLinearSystem()
 ///
 int MultiPhysicsCoupledQD::buildPseudoTransientLinearSystem()
 {
-
   PetscErrorCode ierr;
 
   // Reset linear system
@@ -490,7 +470,6 @@ int MultiPhysicsCoupledQD::buildPseudoTransientLinearSystem()
   ierr = VecAssemblyEnd(b_p);CHKERRQ(ierr);
 
   return ierr;
-
 };
 //==============================================================================
 
@@ -512,7 +491,6 @@ void MultiPhysicsCoupledQD::updateVarsAfterConvergence()
   mgdnp->getRecircDNPConc();
 
   // Back calculate currents
-  // ToDo Add PETSc support for back calc system
   ggqd->GGSolver->formBackCalcSystem();
   ggqd->GGSolver->backCalculateCurrent();
   ggqd->GGSolver->getCurrent();
@@ -541,27 +519,11 @@ void MultiPhysicsCoupledQD::checkOptionalParams()
 {
   string precondInput;
 
-  if ((*input)["parameters"]["epsMPQD"])
-  {
-    epsMPQD=(*input)["parameters"]["epsMPQD"].as<double>();
-    epsMPQDTemp=epsMPQD;
-  }
+  if ((*input)["parameters"]["epsFlux"])
+    epsFlux = (*input)["parameters"]["epsFlux"].as<double>();
 
-  if ((*input)["parameters"]["epsMPQDTemp"])
-  {
-    epsMPQDTemp=(*input)["parameters"]["epsMPQDTemp"].as<double>();
-  }
+  if ((*input)["parameters"]["epsTemp"])
+    epsTemp = (*input)["parameters"]["epsTemp"].as<double>();
 
-
-  if ((*input)["parameters"]["preconditionerELOT"])
-  {
-    precondInput=(*input)["parameters"]["preconditionerELOT"].as<string>();
-
-    if (precondInput == "ilu")
-      preconditioner = iluPreconditioner;
-    else if (precondInput == "diagonal" or precondInput == "diag")
-      preconditioner = diagPreconditioner;
-
-  }
 }
 //==============================================================================

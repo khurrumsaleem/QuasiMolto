@@ -26,23 +26,19 @@ class MultiPhysicsCoupledQD
         Mesh * myMesh,\
         YAML::Node * myInput);
 
-    // Variables
-    Eigen::SparseMatrix<double,Eigen::RowMajor> A;
-    Eigen::VectorXd x,xPast,b;
-    string outputDir = "MPQD/";
-    double epsMPQD = 1E-6, epsMPQDTemp = 1E-6;
-    int nUnknowns;
-   
-    // Functions 
-    int fluxSource(int iZ,int iR,int iEq,double coeff);
-    int dnpSource(int iZ,int iR,int iEq,double coeff);
-    void initializeXPast();
-    void writeVars();
-    void printVars();
-    void checkOptionalParams();
-    int preconditioner = 1;
+    // Pointers
+    HeatTransfer * heat;
+    MultiGroupDNP * mgdnp;
+    GreyGroupQD * ggqd;
 
-    // PETSc variables
+    // Class variables
+    int nUnknowns;
+    string outputDir = "MPQD/";
+    
+    // User-definable variables
+    double epsFlux = 1E-6, epsTemp = 1E-6;
+    
+    // MPQD linear system variables
     Vec x_p,xPast_p,b_p;
     Vec xPast_p_seq;
     Mat A_p;
@@ -66,16 +62,18 @@ class MultiPhysicsCoupledQD
     int buildPseudoTransientLinearSystem();
     void updatePseudoTransientVars();
 
-    // Pointers
-    HeatTransfer * heat;
-    MultiGroupDNP * mgdnp;
-    GreyGroupQD * ggqd;
+    // Utility functions 
+    int  fluxSource(int iZ, int iR, int iEq, double coeff);
+    int  dnpSource(int iZ, int iR, int iEq, double coeff);
+    void setInitialCondition();
+    void writeVars();
+    void printVars();
+    void checkOptionalParams();
 
   private:
     Materials * mats;
     Mesh * mesh;
     YAML::Node * input;
-    const int iluPreconditioner = 0, diagPreconditioner = 1;
 
 };
 

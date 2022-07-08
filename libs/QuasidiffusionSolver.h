@@ -52,19 +52,17 @@ class QDSolver
     // check for input parameters
     void checkOptionalParams();
 
-    // public variables
-    Eigen::SparseMatrix<double,Eigen::RowMajor> A,C;
-    Eigen::VectorXd x;
-    Eigen::VectorXd xPast,currPast;
-    Eigen::VectorXd b,d;
+    // Class variables
     int energyGroups,nR,nZ,nGroupUnknowns,nGroupCurrentUnknowns;
     int nUnknowns,nCurrentUnknowns;
-    int preconditioner = 1;
-    bool reflectingBCs = false;
-    bool goldinBCs = false;
-    bool diffusionBCs = false;
     bool useMPQDSources = false;
     MultiPhysicsCoupledQD * mpqd;
+
+    // User-definable variables
+    bool reflectingBCs = false;
+    bool goldinBCs = false;
+    bool p1BCs = false;
+    bool fluxBCs = false;
 
     /* PETSc stuff */
     // PETSc variables (the p denotes a petsc variable)
@@ -240,11 +238,11 @@ class QDSolver
     YAML::Node * input;
     Mesh * mesh;
     Materials * materials;
+
     // indices for accessing index and geometry parameters vectors
     const int iCF = 0;
     const int iWF = 1, iEF = 2, iNF = 3, iSF = 4;
     const int iWC = 5, iEC = 6, iNC = 7, iSC = 8;
-    const int iluPreconditioner = 0, diagPreconditioner = 1;
 };
 
 //==============================================================================

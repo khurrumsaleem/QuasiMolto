@@ -1019,25 +1019,11 @@ void Mesh::printQuadSet(){
 /// Check for optional inputs of relevance to this object
 void Mesh::checkOptionalParams()
 {
-
   // check for optional parameters specified in input file
-
   if ((*input)["parameters"]["verbose"])
-  {
     verbose=(*input)["parameters"]["verbose"].as<bool>();
-  }
 
   if ((*input)["parameters"]["verbose_keff_only"])
-  {
     verbose_keff_only=(*input)["parameters"]["verbose_keff_only"].as<bool>();
-  }
-
-
-  if ((*input)["parameters"]["petsc"])
-  {
-    petsc=(*input)["parameters"]["petsc"].as<bool>();
-  }
-
-
 }
 //==============================================================================

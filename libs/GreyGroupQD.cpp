@@ -64,11 +64,10 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
   sFluxZ.setZero(mesh->zCornerCent.size()+1,mesh->rCornerCent.size());
 
   // Check for optional input  
-  if ((*input)["parameters"]["initial previous flux"])
+  if ((*input)["parameters"]["initial flux"])
   {
-
     // Read in input
-    inpSFluxPrev0=(*input)["parameters"]["initial previous flux"]\
+    inpSFluxPrev0 = (*input)["parameters"]["initial flux"]\
                   .as<vector<double>>();
 
     // Get sum of group fluxes 
@@ -77,7 +76,6 @@ GreyGroupQD::GreyGroupQD(Materials * myMaterials,\
     sFlux.setConstant(fluxSum);     
     sFluxR.setConstant(fluxSum);     
     sFluxZ.setConstant(fluxSum);    
-
   }
 
   currentR.setZero(mesh->zCornerCent.size(),mesh->rCornerCent.size()+1);
