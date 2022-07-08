@@ -34,31 +34,21 @@ materials:
     stationary: false # true if material is stationary
 
 parameters:
-  epsAlpha: 1E-3 # Convergence criteria for transport ONLY solve
   epsFlux: 1E-5 # Convergence criteria for transport ONLY solve
-  epsFissionSource: 1E-5 # Convergence criteria for transport ONLY solve
-  epsEddington: 1E-6 # Convergence criteria for transport ONLY solve
-  upperBC: [0.0] # Incident angular flux on top of reactor
-  lowerBC: [0.0] # Incident angular flux on bottom of reactor
-  outerBC: [0.0] # Incident angular flux on outside of reactor
+  epsTemp: 1E-5 # Convergence criteria for transport ONLY solve
+  upperScalarFluxBC: [0.0] # Scalar flux on top of reactor
+  lowerScalarFluxBC: [0.0] # Scalar flux on bottom of reactor
+  outerScalarFluxBC: [0.0] # Scalar flux on outside of reactor
   initial flux: [1.0,1.0]
-  initial alpha: [1E-15] 
-  initial previous flux: [1.0,1.0]
   initial dnp concentration: 0.0
   initial recirc dnp concentration: 0.0
   solve type: transient # change to steady_state for keff solve
   wallTemp: 920
   inletTemp: 920
-  mgqd-bcs: goldin
-  epsMPQD: 1E-8 # convergence criteria for multilevel solve
+  bcs: goldin
   ratedPower: 10E6
   relaxTolELOT: 1 # residual balance parameter
   relaxTolMGLOQD: 1 # residual balance parameter
   resetThreshold: 1 # Break to outer level in residuals increase
   outputDirectory: homogeneous-transient/ 
-  iterativeELOT: false
-  preconditionerELOT: ilu
-  iterativeMGLOQD: false 
-  preconditionerMGLOQD: ilu
-  verbose: false
   outputEveryNSteps: 10 # Interval to output mesh parameters on
