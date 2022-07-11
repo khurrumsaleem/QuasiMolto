@@ -54,6 +54,9 @@ class Materials
         void initCollapsedXS();
         void edit();
 	vector<shared_ptr<Material>> matBank;
+        string getMatErrorMessage(string name, 
+            string firstKeyword, 
+            string secondKeyword = "");
 
         private:
         // private variables

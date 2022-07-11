@@ -20,8 +20,8 @@ materials:
     sigF: [0.0,5.0]
     sigS: [9.99,0.01,
            0.0,5.0]
-    nuFile: custom_fuel_NU.yaml 
-    neutV: [1000000,220000]
+    nu file: custom_fuel_NU.yaml 
+    neutron velocity: [1000000,220000]
     chiP: [1.0,0.0]
     chiD: [1.0,0.0]
     density: 2.146E-3

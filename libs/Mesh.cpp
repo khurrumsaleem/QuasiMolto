@@ -64,20 +64,38 @@ Mesh::Mesh(YAML::Node * myInput){
   input = myInput;
 
   // Currently only works for a quadrature set of order 12 
-  n=12; 
+  n = 12; 
 
-  // Read in input mesh parameters
-  dz = (*input)["mesh"]["dz"].as<double>();
-  dr = (*input)["mesh"]["dr"].as<double>();
-  Z = (*input)["mesh"]["Z"].as<double>();
-  R = (*input)["mesh"]["R"].as<double>();
-  dt = (*input)["mesh"]["dt"].as<double>();
-
-  // Check for recirculation length
-  if ((*input)["mesh"]["recirculation Z"])
+  // Read in required mesh parameters
+  if ((*input)["mesh"]["dz"] and
+      (*input)["mesh"]["dr"] and
+      (*input)["mesh"]["Z"]  and
+      (*input)["mesh"]["R"]  and 
+      (*input)["mesh"]["recirculation Z"])
+  {
+    dz = (*input)["mesh"]["dz"].as<double>();
+    dr = (*input)["mesh"]["dr"].as<double>();
+    Z  = (*input)["mesh"]["Z"].as<double>();
+    R  = (*input)["mesh"]["R"].as<double>();
     recircZ = (*input)["mesh"]["recirculation Z"].as<double>();
+  }
   else
-    recircZ = Z;
+  {
+    string errorMessage = "mesh block must specify: " 
+    "'Z' 'R' 'dz' 'dr' 'recirculation Z'";
+    throw std::invalid_argument(errorMessage);
+  }
+
+  // Read in time-dependent mesh parameters
+  if ((*input)["mesh"]["T"])
+  {
+    T  = (*input)["mesh"]["T"].as<double>();
+  }
+  
+  if ((*input)["mesh"]["dt"])
+  {
+    dt = (*input)["mesh"]["dt"].as<double>();
+  }
   
   // Check for root output directory name 
   if ((*input)["parameters"]["outputDirectory"])
@@ -691,58 +709,52 @@ void Mesh::calcNumAnglesTotalWeight(){
 
 void Mesh::calcTimeMesh(){        
 
-  // Set up vectors holding time steps 
-  if ((*input)["mesh"]["T"])
+  double timeAccum = 0;
+  int nT = round(T / dt);
+  ts.push_back(0.0);
+  for (int iTime = 0; iTime < nT; iTime ++)
   {
-    T = (*input)["mesh"]["T"].as<double>();
-      
-    double timeAccum = 0;
-    int nT = round(T/dt);
-    ts.push_back(0.0);
-    for (int iTime = 0; iTime < nT; iTime ++)
+    timeAccum = timeAccum + dt;
+    ts.push_back(timeAccum);
+    dts.push_back(dt);
+  }
+
+  // Set up vector indicating whether to print
+  if ((*input)["parameters"]["outputEveryNSteps"])
+  {
+    int intervalCount = 0;
+    int interval = (*input)["parameters"]["outputEveryNSteps"].as<int>();
+
+    for (int iTime = 0; iTime < nT; iTime++)
     {
-      timeAccum = timeAccum + dt;
-      ts.push_back(timeAccum);
-      dts.push_back(dt);
-    }
-
-    // Set up vector indicating whether to print
-    if ((*input)["parameters"]["outputEveryNSteps"])
-    {
-      int intervalCount = 0;
-      int interval = (*input)["parameters"]["outputEveryNSteps"].as<int>();
-
-      for (int iTime = 0; iTime < nT; iTime++)
-      {
-        intervalCount += 1;
-        if (intervalCount == interval)
-        {
-          // Print on this step
-          outputOnStep.push_back(true);
-
-          // Reset interval count
-          intervalCount = 0;
-        }
-        else
-        {
-          // Don't print on this step
-          outputOnStep.push_back(false);
-        }
-      } // end iTime
-
-      // Ensure the variables on the last step are output
-      if (interval <= nT)
-        outputOnStep.back() = true;
-    }
-    else
-    {
-      // Print on every time step
-      for (int iTime = 0; iTime < nT; iTime++)
+      intervalCount += 1;
+      if (intervalCount == interval)
       {
         // Print on this step
         outputOnStep.push_back(true);
 
+        // Reset interval count
+        intervalCount = 0;
       }
+      else
+      {
+        // Don't print on this step
+        outputOnStep.push_back(false);
+      }
+    } // end iTime
+
+    // Ensure the variables on the last step are output
+    if (interval <= nT)
+      outputOnStep.back() = true;
+  }
+  else
+  {
+    // Print on every time step
+    for (int iTime = 0; iTime < nT; iTime++)
+    {
+      // Print on this step
+      outputOnStep.push_back(true);
+
     }
   }
 }
@@ -777,13 +789,13 @@ vector<double> Mesh::getGeoParams(int iR,int iZ)
   sFaceSA = nFaceSA;
   eFaceSA = 2*M_PI*rUp*(zUp-zDown);
   wFaceSA = 2*M_PI*rDown*(zUp-zDown);
-  
+
   // List initialization
   vector<double> gParams {volume,
-                          wFaceSA,
-                          eFaceSA,
-                          nFaceSA,
-                          sFaceSA};
+    wFaceSA,
+    eFaceSA,
+    nFaceSA,
+    sFaceSA};
 
   return gParams;
 };
@@ -810,10 +822,10 @@ vector<double> Mesh::getRecircGeoParams(int iR,int iZ)
 
   // List initialization
   vector<double> gParams {volume,
-                          wFaceSA,
-                          eFaceSA,
-                          nFaceSA,
-                          sFaceSA};
+    wFaceSA,
+    eFaceSA,
+    nFaceSA,
+    sFaceSA};
 
   return gParams;
 };
@@ -830,14 +842,14 @@ vector<int> Mesh::getQDCellIndices(int iR,int iZ)
 
   // List initialization
   vector<int> qdCellIndices{qdCells[qdCellIndex].cFIndex,
-                            qdCells[qdCellIndex].wFIndex,
-                            qdCells[qdCellIndex].eFIndex,
-                            qdCells[qdCellIndex].nFIndex,
-                            qdCells[qdCellIndex].sFIndex,
-                            qdCells[qdCellIndex].wCIndex,
-                            qdCells[qdCellIndex].eCIndex,
-                            qdCells[qdCellIndex].nCIndex,
-                            qdCells[qdCellIndex].sCIndex};
+    qdCells[qdCellIndex].wFIndex,
+    qdCells[qdCellIndex].eFIndex,
+    qdCells[qdCellIndex].nFIndex,
+    qdCells[qdCellIndex].sFIndex,
+    qdCells[qdCellIndex].wCIndex,
+    qdCells[qdCellIndex].eCIndex,
+    qdCells[qdCellIndex].nCIndex,
+    qdCells[qdCellIndex].sCIndex};
 
   return qdCellIndices;
 
@@ -863,7 +875,7 @@ int Mesh::quad_index(int p, int q){
   // manipulations to ge the correct index
   else
     index = 42 + 42 - low_quad_index(11 - p, 2*(12 - p) - q);
-                  
+
   return index;
 }
 //==============================================================================
@@ -901,7 +913,7 @@ int Mesh::getQDCellIndex(int iR, int iZ){
 ///
 void Mesh::writeVars()
 {
-  
+
   // Read standard vectors into eigen types.
   Eigen::VectorXd zCent;
   zCent.setZero(zCornerCent.size());
@@ -982,7 +994,7 @@ void Mesh::printQuadSet(){
 
         cout << setw(10) <<quadrature[i].quad[j][k];
       } 
-    cout<<setw(10)<<quadrature[i].ordIdx[j]<< endl;
+      cout<<setw(10)<<quadrature[i].ordIdx[j]<< endl;
     }
   }
 
