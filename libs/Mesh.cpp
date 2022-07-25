@@ -98,8 +98,8 @@ Mesh::Mesh(YAML::Node * myInput){
   }
   
   // Check for root output directory name 
-  if ((*input)["parameters"]["outputDirectory"])
-    myOutputDir = (*input)["parameters"]["outputDirectory"].as<string>();
+  if ((*input)["parameters"]["output directory"])
+    myOutputDir = (*input)["parameters"]["output directory"].as<string>();
   else
     myOutputDir = "output/";
 
@@ -720,10 +720,10 @@ void Mesh::calcTimeMesh(){
   }
 
   // Set up vector indicating whether to print
-  if ((*input)["parameters"]["outputEveryNSteps"])
+  if ((*input)["parameters"]["output interval"])
   {
     int intervalCount = 0;
-    int interval = (*input)["parameters"]["outputEveryNSteps"].as<int>();
+    int interval = (*input)["parameters"]["output interval"].as<int>();
 
     for (int iTime = 0; iTime < nT; iTime++)
     {
@@ -1035,7 +1035,7 @@ void Mesh::checkOptionalParams()
   if ((*input)["parameters"]["verbose"])
     verbose=(*input)["parameters"]["verbose"].as<bool>();
 
-  if ((*input)["parameters"]["verbose_keff_only"])
-    verbose_keff_only=(*input)["parameters"]["verbose_keff_only"].as<bool>();
+  if ((*input)["parameters"]["output keff only"])
+    output_keff_only=(*input)["parameters"]["output keff only"].as<bool>();
 }
 //==============================================================================

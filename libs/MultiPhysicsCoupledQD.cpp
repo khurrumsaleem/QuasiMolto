@@ -519,11 +519,11 @@ void MultiPhysicsCoupledQD::checkOptionalParams()
 {
   string precondInput;
 
-  if ((*input)["parameters"]["epsFlux"])
-    epsFlux = (*input)["parameters"]["epsFlux"].as<double>();
+  if ((*input)["parameters"]["eps flux"])
+    epsFlux = (*input)["parameters"]["eps flux"].as<double>();
 
-  if ((*input)["parameters"]["epsTemp"])
-    epsTemp = (*input)["parameters"]["epsTemp"].as<double>();
+  if ((*input)["parameters"]["eps temp"])
+    epsTemp = (*input)["parameters"]["eps temp"].as<double>();
 
 }
 //==============================================================================

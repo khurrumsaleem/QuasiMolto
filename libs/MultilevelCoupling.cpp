@@ -492,7 +492,7 @@ void MultilevelCoupling::solveSteadyStateResidualBalance(bool outputVars)
   mpqd->updateSteadyStateVarsAfterConvergence(); 
   mgqd->updateSteadyStateVarsAfterConvergence(); 
   
-  if (mesh->verbose_keff_only)
+  if (mesh->output_keff_only)
     mesh->output->write(mpqd->outputDir,"keff",mats->oneGroupXS->keff);
   else
   {
@@ -1019,7 +1019,7 @@ void MultilevelCoupling::solvePseudoTransient()
       if (mesh->outputOnStep[iTime])
       {
 
-        if (mesh->verbose_keff_only)
+        if (mesh->output_keff_only)
         {
           mesh->output->write(mpqd->outputDir,"keff",mats->oneGroupXS->keff);
         }
@@ -1433,32 +1433,32 @@ void MultilevelCoupling::checkOptionalParameters()
   string boundaryType;
 
   // Check for relaxTolELOT specification..
-  if ((*input)["parameters"]["relaxTolELOT"])
-    relaxTolELOT=(*input)["parameters"]["relaxTolELOT"].as<double>();
+  if ((*input)["parameters"]["relax factor ELOT"])
+    relaxTolELOT=(*input)["parameters"]["relax factor ELOT"].as<double>();
 
   // Check for relaxTolMGLOQD specification.
-  if ((*input)["parameters"]["relaxTolMGLOQD"])
-    relaxTolMGLOQD=(*input)["parameters"]["relaxTolMGLOQD"].as<double>();
+  if ((*input)["parameters"]["relax factor MGLOQD"])
+    relaxTolMGLOQD=(*input)["parameters"]["relax factor MGLOQD"].as<double>();
 
   // Check for resetThreshold specification.
-  if ((*input)["parameters"]["resetThreshold"])
-    resetThreshold=(*input)["parameters"]["resetThreshold"].as<double>();
+  if ((*input)["parameters"]["reset threshold"])
+    resetThreshold=(*input)["parameters"]["reset threshold"].as<double>();
 
   // Check for rated power 
-  if ((*input)["parameters"]["ratedPower"])
-    ratedPower=(*input)["parameters"]["ratedPower"].as<double>();
+  if ((*input)["parameters"]["rated power"])
+    ratedPower=(*input)["parameters"]["rated power"].as<double>();
   else
     ratedPower=-1.0;
 
   // Check for flux normalization factor
-  if ((*input)["parameters"]["fluxNormalization"])
-    fluxNormalization=(*input)["parameters"]["fluxNormalization"].as<double>();
+  if ((*input)["parameters"]["flux normalization"])
+    fluxNormalization=(*input)["parameters"]["flux normalization"].as<double>();
   else
     fluxNormalization=1.0;
 
   // Check for k convergence criteria
-  if ((*input)["parameters"]["epsK"])
-    epsK=(*input)["parameters"]["epsK"].as<double>();
+  if ((*input)["parameters"]["eps keff"])
+    epsK=(*input)["parameters"]["eps keff"].as<double>();
 
   // Check if the P1 approximation should be used
   if (not mpqd->ggqd->GGSolver->goldinBCs)

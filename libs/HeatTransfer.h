@@ -24,7 +24,7 @@ class HeatTransfer
   double wallT = 922.0;
   double inletT = 922.0;
   int coreInletIndex,coreOutletIndex,nUnknowns,indexOffset = 0; 
-  string modIrradiation = "volume", axial = "axial", volume = "volume",\
+  string modIrradiation = "volume", grey = "grey", volume = "volume",\
                            fuel = "fuel";
   string fluxLimiter = "superbee";
   Eigen::MatrixXd temp,flux,dirac,inletTemp;
