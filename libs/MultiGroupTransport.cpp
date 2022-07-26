@@ -39,8 +39,8 @@ MultiGroupTransport::MultiGroupTransport(Materials * myMaterials,\
   if ((*input)["parameters"]["epsAlpha"])
     epsAlpha=(*input)["parameters"]["epsAlpha"].as<double>();
 
-  if ((*input)["parameters"]["epsMGHOTFlux"])
-    epsFlux=(*input)["parameters"]["epsFlux"].as<double>();
+  if ((*input)["parameters"]["eps flux"])
+    epsFlux=(*input)["parameters"]["eps flux"].as<double>();
 
   if ((*input)["parameters"]["epsFissionSource"])
     epsFissionSource=(*input)["parameters"]["epsFissionSource"].as<double>();

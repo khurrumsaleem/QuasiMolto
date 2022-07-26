@@ -218,25 +218,25 @@ void SingleGroupQD::checkOptionalParams()
     sFluxZ = inpInitFlux[energyGroup] * sFluxZ;
   }
 
-  if ((*input)["parameters"]["lowerScalarFluxBC"])
+  if ((*input)["parameters"]["lower scalar flux bc"])
   {
-    inpFluxBC = (*input)["parameters"]["lowerScalarFluxBC"]\
+    inpFluxBC = (*input)["parameters"]["lower scalar flux bc"]\
               .as<vector<double> >();
     nFluxBC.setOnes();
     nFluxBC = inpFluxBC[energyGroup] * nFluxBC;
   }
 
-  if ((*input)["parameters"]["upperScalarFluxBC"])
+  if ((*input)["parameters"]["upper scalar flux bc"])
   {
-    inpFluxBC = (*input)["parameters"]["upperScalarFluxBC"]\
+    inpFluxBC = (*input)["parameters"]["upper scalar flux bc"]\
               .as<vector<double> >();
     sFluxBC.setOnes();
     sFluxBC = inpFluxBC[energyGroup] * sFluxBC;
   }
 
-  if ((*input)["parameters"]["outerScalarFluxBC"])
+  if ((*input)["parameters"]["outer scalar flux bc"])
   {
-    inpFluxBC = (*input)["parameters"]["outerScalarFluxBC"]\
+    inpFluxBC = (*input)["parameters"]["outer scalar flux bc"]\
              .as<vector<double> >();
     eFluxBC.setOnes();
     eFluxBC = inpFluxBC[energyGroup] * eFluxBC;

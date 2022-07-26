@@ -154,7 +154,7 @@ Eigen::MatrixXd HeatTransfer::calcExplicitFissionEnergy()
     }
   }
 
-  volAvgGammaDep = volAvgGammaDep/totalVolume; 
+  volAvgGammaDep = volAvgGammaDep / totalVolume; 
 
   avgFissionEnergy.setConstant(temp.rows(),temp.cols(),volAvgGammaDep);
 
@@ -678,7 +678,7 @@ int HeatTransfer::buildSteadyStateLinearSystem()
   calcImplicitFluxes();
 
   // Calculate core-average gamma deposition term
-  if (modIrradiation == axial)
+  if (modIrradiation == grey)
     volAvgGammaDep = calcGreyModFluxShapedGammaDep();
   else if (modIrradiation == fuel)
     volAvgGammaDep = calcExplicitAxialFuelFissionEnergy();
@@ -856,7 +856,7 @@ int HeatTransfer::buildLinearSystem()
   calcFluxes();
 
   // Calculate core-average gamma deposition term
-  if (modIrradiation == axial)
+  if (modIrradiation == grey)
     volAvgGammaDep = calcGreyModFluxShapedGammaDep();
   else if (modIrradiation == fuel)
     volAvgGammaDep = calcExplicitAxialFuelFissionEnergy();
@@ -986,18 +986,18 @@ void HeatTransfer::checkOptionalParams()
 {
 
   // Check for optional inputs 
-  if ((*input)["parameters"]["wallTemp"]){
-    wallT=(*input)["parameters"]["wallTemp"].as<double>();
+  if ((*input)["parameters"]["wall temp"]){
+    wallT=(*input)["parameters"]["wall temp"].as<double>();
   } 
-  if ((*input)["parameters"]["inletTemp"]){
-    inletT=(*input)["parameters"]["inletTemp"].as<double>();
+  if ((*input)["parameters"]["inlet temp"]){
+    inletT=(*input)["parameters"]["inlet temp"].as<double>();
   } 
   if ((*input)["parameters"]["flux limiter"]){
     fluxLimiter=(*input)["parameters"]["flux limiter"].as<string>();
   } 
-  if ((*input)["parameters"]["modIrradiation"])
+  if ((*input)["parameters"]["mod irradiation"])
   {
-    modIrradiation=(*input)["parameters"]["modIrradiation"].as<string>();
+    modIrradiation=(*input)["parameters"]["mod irradiation"].as<string>();
   }
 
 }
